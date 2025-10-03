@@ -492,10 +492,10 @@ app.get("/auth/google/callback", async (req, res) => {
 
     console.log('[GOOGLE-CALLBACK] 쿠키 설정 완료:', { httpOnly: true, sameSite: 'lax' });
 
-    res.redirect(`${origin}/kakao-login-app/callback.html?ok=1`);
+    res.redirect(`${origin}/callback.html?ok=1`);
   } catch (e) {
     console.error(e.response?.data || e);
-    res.redirect(`${fallback}/kakao-login-app/callback.html?ok=0`);
+    res.redirect(`${fallback}/callback.html?ok=0`);
   }
 });
 
@@ -659,7 +659,7 @@ app.get("/auth/kakao/callback", async (req, res) => {
 
     console.log('[KAKAO-CALLBACK] 쿠키 설정 완료:', { httpOnly: true, sameSite: 'lax' });
 
-    const redirectUrl = `${origin}/kakao-login-app/callback.html?ok=1`;
+    const redirectUrl = `${origin}/callback.html?ok=1`;
     console.log('[KAKAO-CALLBACK] Success! Redirecting to:', redirectUrl);
     res.redirect(redirectUrl);
   } catch (e) {
@@ -668,7 +668,7 @@ app.get("/auth/kakao/callback", async (req, res) => {
       data: e.response?.data,
       status: e.response?.status,
     });
-    const redirectUrl = `${fallback}/kakao-login-app/callback.html?ok=0`;
+    const redirectUrl = `${fallback}/callback.html?ok=0`;
     console.log('[KAKAO-CALLBACK] Failed! Redirecting to:', redirectUrl);
     res.redirect(redirectUrl);
   }
