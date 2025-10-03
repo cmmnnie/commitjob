@@ -823,7 +823,16 @@ app.get("/api/userprofile", async (req, res) => {
 });
 
 app.post("/api/logout", (req, res) => {
-  res.clearCookie("app_session", { path: "/" });
+  const isProd = process.env.NODE_ENV === "production";
+
+  // 쿠키 삭제 시 설정할 때와 동일한 옵션 사용
+  res.clearCookie("app_session", {
+    path: "/",
+    httpOnly: true,
+    secure: isProd,
+    sameSite: "none"
+  });
+
   res.json({ ok: true });
 });
 
