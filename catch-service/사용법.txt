@@ -1,0 +1,50 @@
+1. 서버 실행
+서버가 http://localhost:3000에서 실행됩니다
+2. API 문서 제공
+기본 API
+POST /api/init - 스크래퍼 초기화
+POST /api/login - 로그인 (username, password)
+GET /api/status - 현재 상태 확인
+홈페이지용 API
+GET /api/homepage-jobs - IT개발 10개 + 빅데이터·AI 10개
+공고 상세 API
+POST /api/job-detail - 공고 상세 정보 (job_url 필요)
+기업 검색 API
+POST /api/search-company - 기업 공고 검색 (company_name 필요)
+POST /api/search-company-info - 기업 정보 + 리뷰 (company_name 필요)
+대량 수집 API
+GET /api/extract-all-jobs - 전체 공고 수집
+3. 사용 예시 코드
+// 1. 초기화 및 로그인
+await fetch('http://localhost:3000/api/init', { method: 'POST' });
+await fetch('http://localhost:3000/api/login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ username: 'test0137', password: '#test0808' })
+});
+
+// 2. 홈페이지 공고 가져오기
+const homepageResponse = await fetch('http://localhost:3000/api/homepage-jobs');
+const homepageData = await homepageResponse.json();
+
+// 3. 공고 상세 정보
+const jobDetailResponse = await fetch('http://localhost:3000/api/job-detail', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ job_url: '공고URL' })
+});
+
+// 4. 기업 검색
+const companyResponse = await fetch('http://localhost:3000/api/search-company', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ company_name: '카카오' })
+});
+4. 필요한 파일들
+catch_scraper.py (메인 서버 파일)
+requirements.txt (의존성 목록)
+Chrome 드라이버 설치 안내
+5. 주의사항
+서버는 계속 실행 상태로 유지
+순차적 API 호출 (동시 호출 X)
+CORS 설정 완료되어 있어 프론트엔드에서 바로 호출 가능

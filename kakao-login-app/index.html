@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>카카오 로그인 - CommitJob</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 로그인 전 화면 -->
+        <div id="loginSection" class="section">
+            <div class="login-card">
+                <div class="logo-section">
+                    <h1>CommitJob</h1>
+                    <p>AI 채용 추천 플랫폼</p>
+                </div>
+
+                <div class="login-description">
+                    <p>카카오 계정으로 간편하게 로그인하세요</p>
+                </div>
+
+                <!-- 카카오 로그인 버튼 -->
+                <button id="kakaoLoginBtn" class="kakao-login-btn">
+                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTIiIGZpbGw9IiMzQzFFMUUiLz4KPHBhdGggZD0iTTEyIDZDOC4xMzQgNiA1IDguNDYyIDUgMTEuNUM1IDEzLjUwNyA2LjQ1IDE1LjIyNCA4LjUgMTYuMTI1TDcuNSAxOS41TDExIDI3LjVMMTQuNSAyNy41TDE4IDI3LjVMMTcuNSAxNi4xMjVDMTkuNTUgMTUuMjI0IDIxIDEzLjUwNyAyMSAxMS41QzIxIDguNDYyIDE3Ljg2NiA2IDEyIDZaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K" alt="카카오" class="kakao-icon">
+                    <span>카카오로 로그인</span>
+                </button>
+
+                <div class="divider">
+                    <span>또는</span>
+                </div>
+
+                <!-- 테스트용 버튼들 -->
+                <div class="test-buttons">
+                    <button id="checkLoginBtn" class="btn-secondary">
+                        로그인 상태 확인
+                    </button>
+                </div>
+
+                <!-- 상태 메시지 -->
+                <div id="statusMessage" class="status-message"></div>
+            </div>
+
+            <!-- 개발 정보 -->
+            <div class="dev-info">
+                <p>개발 환경</p>
+                <p id="appOrigin">-</p>
+                <p id="backendUrl">-</p>
+            </div>
+        </div>
+
+        <!-- 로그인 후 화면 -->
+        <div id="userSection" class="section hidden">
+            <div class="user-card">
+                <div class="user-header">
+                    <h2>환영합니다!</h2>
+                </div>
+
+                <!-- 사용자 프로필 -->
+                <div id="userProfile" class="user-profile">
+                    <div class="profile-image-wrapper">
+                        <img id="userProfileImage" src="" alt="프로필" class="profile-image">
+                    </div>
+                    <div class="profile-info">
+                        <h3 id="userName" class="user-name">-</h3>
+                        <p id="userEmail" class="user-email">-</p>
+                        <p id="userProvider" class="user-provider">-</p>
+                    </div>
+                </div>
+
+                <!-- 사용자 상세 정보 -->
+                <div id="userDetails" class="user-details">
+                    <div class="detail-item">
+                        <span class="detail-label">사용자 ID:</span>
+                        <span id="userId" class="detail-value">-</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">가입일:</span>
+                        <span id="userCreatedAt" class="detail-value">-</span>
+                    </div>
+                </div>
+
+                <!-- 액션 버튼들 -->
+                <div class="action-buttons">
+                    <button id="refreshUserBtn" class="btn-secondary">
+                        정보 새로고침
+                    </button>
+                    <button id="logoutBtn" class="btn-logout">
+                        로그아웃
+                    </button>
+                </div>
+
+                <!-- 로그아웃 확인 모달 -->
+                <div id="logoutModal" class="modal hidden">
+                    <div class="modal-content">
+                        <h3>로그아웃 하시겠습니까?</h3>
+                        <p>로그아웃하면 다시 로그인해야 합니다.</p>
+                        <div class="modal-buttons">
+                            <button id="confirmLogoutBtn" class="btn-logout">확인</button>
+                            <button id="cancelLogoutBtn" class="btn-secondary">취소</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 로딩 오버레이 -->
+        <div id="loadingOverlay" class="loading-overlay hidden">
+            <div class="spinner"></div>
+            <p id="loadingMessage">처리 중...</p>
+        </div>
+    </div>
+
+    <!-- 설정 파일과 메인 스크립트 로드 -->
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+
+    <!-- 페이지 로드 시 초기화 -->
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            // 앱 초기화
+            App.init();
+
+            // URL 파라미터 확인 (에러 메시지 등)
+            const urlParams = new URLSearchParams(window.location.search);
+            const error = urlParams.get('error');
+
+            if (error === 'login_failed') {
+                App.showStatus('로그인에 실패했습니다. 다시 시도해주세요.', 'error');
+            } else if (error === 'login_cancelled') {
+                App.showStatus('로그인이 취소되었습니다.', 'warning');
+            }
+
+            // 개발 정보 표시
+            document.getElementById('appOrigin').textContent = `앱 Origin: ${CONFIG.APP_ORIGIN}`;
+            document.getElementById('backendUrl').textContent = `백엔드: ${CONFIG.BACKEND_URL}`;
+        });
+    </script>
+</body>
+</html>

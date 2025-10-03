@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>쿠키 테스트</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-box {
+            background: white;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #5568d3; }
+        pre {
+            background: #f9fafb;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+        .success { color: #22c55e; }
+        .error { color: #ef4444; }
+    </style>
+</head>
+<body>
+    <h1>쿠키 전송 테스트</h1>
+
+    <div class="test-box">
+        <h3>현재 상태</h3>
+        <p><strong>프론트엔드 URL:</strong> <span id="frontendUrl"></span></p>
+        <p><strong>백엔드 URL:</strong> http://localhost:4001</p>
+    </div>
+
+    <div class="test-box">
+        <h3>테스트 1: 쿠키 설정</h3>
+        <button onclick="setCookie()">백엔드에서 쿠키 설정</button>
+        <pre id="setCookieResult"></pre>
+    </div>
+
+    <div class="test-box">
+        <h3>테스트 2: 쿠키 확인</h3>
+        <button onclick="checkCookie()">백엔드에서 쿠키 읽기</button>
+        <pre id="checkCookieResult"></pre>
+    </div>
+
+    <div class="test-box">
+        <h3>테스트 3: /api/me 호출</h3>
+        <button onclick="testApiMe()">사용자 정보 API 호출</button>
+        <pre id="apiMeResult"></pre>
+    </div>
+
+    <div class="test-box">
+        <h3>브라우저 쿠키 (JavaScript로 볼 수 있는 것만)</h3>
+        <button onclick="showBrowserCookies()">브라우저 쿠키 보기</button>
+        <pre id="browserCookies"></pre>
+        <p><em>참고: httpOnly 쿠키는 JavaScript로 볼 수 없습니다 (보안상 정상)</em></p>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'http://localhost:4001';
+
+        document.getElementById('frontendUrl').textContent = window.location.origin;
+
+        async function setCookie() {
+            const result = document.getElementById('setCookieResult');
+            result.textContent = '테스트 중...';
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/debug/set-cookie`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                result.textContent =
+                    `✅ 성공!\n\n` +
+                    `응답:\n${JSON.stringify(data, null, 2)}\n\n` +
+                    `Response Headers:\n${[...response.headers.entries()].map(([k,v]) => `${k}: ${v}`).join('\n')}`;
+                result.className = 'success';
+            } catch (error) {
+                result.textContent = `❌ 실패: ${error.message}`;
+                result.className = 'error';
+            }
+        }
+
+        async function checkCookie() {
+            const result = document.getElementById('checkCookieResult');
+            result.textContent = '테스트 중...';
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/debug/check-cookie`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.hasTestCookie || data.hasCookie) {
+                    result.textContent =
+                        `✅ 쿠키 전송 성공!\n\n` +
+                        JSON.stringify(data, null, 2);
+                    result.className = 'success';
+                } else {
+                    result.textContent =
+                        `❌ 쿠키가 백엔드로 전송되지 않음\n\n` +
+                        JSON.stringify(data, null, 2) + '\n\n' +
+                        `먼저 "백엔드에서 쿠키 설정" 버튼을 클릭하세요.`;
+                    result.className = 'error';
+                }
+            } catch (error) {
+                result.textContent = `❌ 실패: ${error.message}`;
+                result.className = 'error';
+            }
+        }
+
+        async function testApiMe() {
+            const result = document.getElementById('apiMeResult');
+            result.textContent = '테스트 중...';
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/me`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    result.textContent =
+                        `✅ 성공! (${response.status})\n\n` +
+                        JSON.stringify(data, null, 2);
+                    result.className = 'success';
+                } else {
+                    result.textContent =
+                        `❌ 실패 (${response.status})\n\n` +
+                        JSON.stringify(data, null, 2) + '\n\n' +
+                        `원인: 로그인이 필요하거나 쿠키가 전송되지 않음`;
+                    result.className = 'error';
+                }
+            } catch (error) {
+                result.textContent = `❌ 실패: ${error.message}`;
+                result.className = 'error';
+            }
+        }
+
+        function showBrowserCookies() {
+            const result = document.getElementById('browserCookies');
+            const cookies = document.cookie;
+
+            if (cookies) {
+                result.textContent = cookies;
+            } else {
+                result.textContent = '(없음 또는 모두 httpOnly)';
+            }
+        }
+
+        // 자동 실행
+        window.addEventListener('DOMContentLoaded', () => {
+            if (window.location.protocol === 'file:') {
+                alert('⚠️ file:// 프로토콜로 실행 중입니다.\n웹 서버를 사용하여 실행해야 합니다.');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CommitJob - AI 채용 추천 시스템 데모</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+        }
+
+        .demo-info {
+            background: #e8f4fd;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            border-left: 4px solid #3498db;
+        }
+
+        .demo-info h3 {
+            color: #2980b9;
+            margin-bottom: 10px;
+        }
+
+        .demo-info ul {
+            color: #34495e;
+            margin-left: 20px;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .section:hover {
+            transform: translateY(-5px);
+        }
+
+        .section h2 {
+            color: #2c3e50;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .input-group {
+            margin: 15px 0;
+        }
+
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e6ed;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .result-container {
+            margin-top: 20px;
+            min-height: 100px;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+            color: #667eea;
+            font-size: 1.1rem;
+        }
+
+        .loading::before {
+            content: '';
+            width: 20px;
+            height: 20px;
+            border: 2px solid #667eea;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            margin-right: 10px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #fee;
+            color: #c53030;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 5px solid #c53030;
+        }
+
+        .success {
+            background: #f0fff4;
+            color: #22543d;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 5px solid #38a169;
+        }
+
+        .warning {
+            background: #fffbeb;
+            color: #92400e;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 5px solid #f59e0b;
+        }
+
+        .job-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            transition: all 0.3s ease;
+        }
+
+        .job-card:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+
+        .job-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+
+        .job-company {
+            color: #667eea;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+
+        .job-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin: 10px 0;
+            font-size: 0.9rem;
+            color: #4a5568;
+        }
+
+        .job-skills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 10px 0;
+        }
+
+        .skill-tag {
+            background: #edf2f7;
+            color: #2d3748;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+        }
+
+        .match-reasons {
+            background: #e6fffa;
+            color: #234e52;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        .question-card {
+            background: #f7fafc;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 0 10px 10px 0;
+        }
+
+        .question-number {
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .question-text {
+            color: #2d3748;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        .question-category {
+            color: #718096;
+            font-size: 0.85rem;
+            margin-top: 8px;
+            font-style: italic;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            background: #f7fafc;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #718096;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .company-analysis {
+            background: #f7fafc;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+
+        .analysis-section {
+            margin: 15px 0;
+        }
+
+        .analysis-title {
+            color: #2d3748;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .powered-by {
+            text-align: center;
+            color: #718096;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .demo-note {
+            background: #f0f9ff;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #0ea5e9;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .container {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 헤더 -->
+        <div class="header">
+            <h1>CommitJob AI 채용 추천 시스템</h1>
+            <p>GPT-4 기반 맞춤형 채용공고 추천 및 면접 질문 생성 데모</p>
+
+            <div class="demo-info">
+                <h3>개발된 주요 기능</h3>
+                <ul style="text-align: left; display: inline-block;">
+                    <li><strong>GPT-4 기반 맞춤 추천:</strong> 사용자 프로필 분석 후 개인화된 채용공고 추천</li>
+                    <li><strong>MCP 서비스 연동:</strong> AI 추천 시스템 구축</li>
+                    <li><strong>Catch 데이터 통합:</strong> 실제 기업 리뷰, 급여, 평점 정보 제공</li>
+                    <li><strong>AI 면접 질문 생성:</strong> 채용공고별 맞춤형 면접 질문 자동 생성</li>
+                    <li><strong>회사 분석 시스템:</strong> 특정 기업과 직무에 대한 상세 분석</li>
+                </ul>
+            </div>
+
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-number" id="totalJobs">0</div>
+                    <div class="stat-label">추천 공고</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="totalQuestions">0</div>
+                    <div class="stat-label">면접 질문</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="apiCalls">0</div>
+                    <div class="stat-label">API 호출</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 메인 그리드 -->
+        <div class="main-grid">
+            <!-- 채용공고 추천 섹션 -->
+            <div class="section">
+                <h2>AI 맞춤 채용공고 추천</h2>
+                <p style="color: #718096; margin-bottom: 15px;">
+                    GPT-4와 MCP 서비스를 활용한 개인화된 채용공고 추천
+                </p>
+
+                <div class="demo-note">
+                    <strong>작동 원리:</strong><br>
+                    1. 사용자 프로필 분석 (경력, 스킬, 선호지역)<br>
+                    2. GPT-4 기반 매칭 알고리즘 실행<br>
+                    3. Catch 서비스에서 실제 기업 데이터 수집<br>
+                    4. 개인화된 추천 결과 제공
+                </div>
+
+                <button class="btn" onclick="setupDemoData()">
+                    데모 데이터 설정
+                </button>
+
+                <button class="btn btn-secondary" onclick="getJobRecommendations()">
+                    AI 추천 받기
+                </button>
+
+                <div class="input-group">
+                    <select id="jobTypeFilter">
+                        <option value="전체">전체 분야</option>
+                        <option value="IT">IT 개발</option>
+                        <option value="빅데이터">빅데이터/AI</option>
+                    </select>
+                </div>
+
+                <div class="result-container" id="recommendationsResult"></div>
+            </div>
+
+            <!-- 면접 준비 섹션 -->
+            <div class="section">
+                <h2>AI 면접 준비</h2>
+                <p style="color: #718096; margin-bottom: 15px;">
+                    이전 추천 이력을 기반으로 한 맞춤형 면접 질문 생성
+                </p>
+
+                <div class="demo-note">
+                    <strong>AI 기능:</strong><br>
+                    • 추천 이력 기반 회사 제안<br>
+                    • 직무별 맞춤 질문 생성<br>
+                    • 기업 문화 반영<br>
+                    • 실시간 GPT-4 처리
+                </div>
+
+                <button class="btn" onclick="loadInterviewPreparation()">
+                    면접 준비 시작
+                </button>
+
+                <button class="btn" onclick="showSampleInterviewQuestions()" style="background: #6c757d;">
+                    샘플 질문 보기
+                </button>
+
+                <div class="result-container" id="interviewResult"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:4001';
+        let apiCallCount = 0;
+        let jobsData = {};
+
+        // API 호출 카운터 업데이트
+        function updateApiCallCount() {
+            apiCallCount++;
+            document.getElementById('apiCalls').textContent = apiCallCount;
+        }
+
+        // 로딩 표시
+        function showLoading(elementId, message = '처리 중...') {
+            document.getElementById(elementId).innerHTML = `
+                <div class="loading">
+                    ${message}
+                </div>
+            `;
+        }
+
+        // 에러 표시
+        function showError(elementId, message) {
+            document.getElementById(elementId).innerHTML = `
+                <div class="error">
+                    ${message}
+                </div>
+            `;
+        }
+
+        // 경고 표시
+        function showWarning(elementId, message) {
+            document.getElementById(elementId).innerHTML = `
+                <div class="warning">
+                    ${message}
+                </div>
+            `;
+        }
+
+        // 성공 메시지 표시
+        function showSuccess(elementId, message) {
+            document.getElementById(elementId).innerHTML = `
+                <div class="success">
+                    ${message}
+                </div>
+            `;
+        }
+
+        // 데모 데이터 설정
+        async function setupDemoData() {
+            showLoading('recommendationsResult', '데모 데이터 설정 중...');
+            updateApiCallCount();
+
+            try {
+                const response = await fetch(`${API_BASE}/api/setup-demo-data`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const data = await response.json();
+                showSuccess('recommendationsResult',
+                    `데모 데이터 설정 완료! 회사 ${data.created.companies}개, 채용공고 ${data.created.jobs}개가 생성되었습니다.`
+                );
+            } catch (error) {
+                showError('recommendationsResult', `데모 데이터 설정 실패: ${error.message}. 백엔드 서버가 실행 중인지 확인해주세요.`);
+            }
+        }
+
+        // 채용공고 추천 받기
+        async function getJobRecommendations() {
+            const jobTypeFilter = document.getElementById('jobTypeFilter');
+            if (!jobTypeFilter) {
+                console.error('jobTypeFilter 요소를 찾을 수 없습니다.');
+                return;
+            }
+
+            const jobType = jobTypeFilter.value;
+            const params = jobType === '전체' ? '?user_id=1' : `?user_id=1&jobType=${jobType}`;
+
+            showLoading('recommendationsResult', 'GPT-4가 맞춤 채용공고를 분석 중입니다...');
+            updateApiCallCount();
+
+            try {
+                const response = await fetch(`${API_BASE}/api/main-recommendations${params}`);
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const data = await response.json();
+                jobsData = data;
+                displayJobRecommendations(data);
+                updateJobSelect(data);
+
+                // 통계 업데이트 - null 체크 추가
+                const totalJobsElement = document.getElementById('totalJobs');
+                if (totalJobsElement) {
+                    const totalJobs = (data.IT?.length || 0) + (data.빅데이터?.length || 0) + (data['빅데이터/AI']?.length || 0);
+                    totalJobsElement.textContent = totalJobs;
+                }
+
+            } catch (error) {
+                console.error('추천 조회 오류:', error);
+                showError('recommendationsResult', `추천 조회 실패: ${error.message}. 먼저 데모 데이터를 설정해주세요.`);
+            }
+        }
+
+        // 채용공고 추천 결과 표시
+        function displayJobRecommendations(data) {
+            // 데이터 안전성 검사
+            if (!data || typeof data !== 'object') {
+                document.getElementById('recommendationsResult').innerHTML =
+                    '<div class="error">추천 데이터를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.</div>';
+                return;
+            }
+
+            let html = '<div style="margin-bottom: 20px;">';
+            let totalJobs = 0;
+
+            // 실제 데이터가 있는 카테고리만 표시
+            Object.keys(data).forEach(category => {
+                if (data[category] && Array.isArray(data[category]) && data[category].length > 0) {
+                    totalJobs += data[category].length;
+                    html += `
+                        <h3 style="color: #2d3748; margin: 25px 0 15px 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">
+                            ${category} 분야 (${data[category].length}개 공고)
+                        </h3>
+                    `;
+
+                    data[category].forEach((job, index) => {
+                        if (!job || typeof job !== 'object') return; // 잘못된 job 객체 스킵
+
+                        // skills 배열 안전하게 처리
+                        let skillsArray = [];
+                        if (Array.isArray(job.skills)) {
+                            skillsArray = job.skills;
+                        } else if (typeof job.skills === 'string' && job.skills.trim()) {
+                            skillsArray = job.skills.split(',').map(s => s.trim()).filter(s => s);
+                        }
+
+                        html += `
+                            <div class="job-card">
+                                <div class="job-title">${job.title || '제목 없음'}</div>
+                                <div class="job-company">${job.company || '회사명 없음'}</div>
+                                <div class="job-details">
+                                    <span>${Array.isArray(job.location) ? job.location.join(', ') : (job.location || '지역 정보 없음')}</span>
+                                    <span>${job.experience || '경력 정보 없음'}</span>
+                                    <span>${job.salary || '급여 정보 없음'}</span>
+                                </div>
+                                <div class="job-skills">
+                                    ${skillsArray.length > 0 ? skillsArray.map(skill => `<span class="skill-tag">${skill}</span>`).join('') : '<span class="skill-tag">기술스택 정보 없음</span>'}
+                                </div>
+                                ${job.match_reasons && Array.isArray(job.match_reasons) && job.match_reasons.length > 0 ? `
+                                    <div class="match-reasons">
+                                        <strong>AI 매칭 이유:</strong> ${job.match_reasons.join(', ')}
+                                    </div>
+                                ` : ''}
+                                ${job.powered_by ? `
+                                    <div class="powered-by">
+                                        ${job.powered_by}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `;
+                    });
+                }
+            });
+
+            if (totalJobs === 0) {
+                html += '<div class="warning">추천할 수 있는 채용공고가 없습니다. 먼저 데모 데이터를 설정해주세요.</div>';
+            } else {
+                html += `
+                    <div class="success" style="margin-top: 20px;">
+                        총 ${totalJobs}개의 맞춤 채용공고를 추천받았습니다!
+                        GPT-4가 분석한 매칭 이유와 실제 기업 데이터를 확인해보세요.
+                    </div>
+                `;
+            }
+
+            html += '</div>';
+            document.getElementById('recommendationsResult').innerHTML = html;
+        }
+
+        // 채용공고 선택 옵션 업데이트
+        function updateJobSelect(data) {
+            const select = document.getElementById('jobSelect');
+            if (!select) {
+                console.error('jobSelect 요소를 찾을 수 없습니다.');
+                return;
+            }
+
+            select.innerHTML = '<option value="">면접 질문을 생성할 채용공고를 선택하세요</option>';
+
+            // 실제 데이터가 있는 카테고리만 처리
+            Object.keys(data).forEach(category => {
+                if (data[category] && data[category].length > 0) {
+                    data[category].forEach(job => {
+                        const option = document.createElement('option');
+                        option.value = job.id;
+                        option.textContent = `${job.title} - ${job.company}`;
+                        option.dataset.category = category;
+                        select.appendChild(option);
+                    });
+                }
+            });
+
+            const interviewBtn = document.getElementById('interviewBtn');
+            if (interviewBtn) {
+                interviewBtn.disabled = false;
+            }
+        }
+
+        // 면접 질문 생성
+        async function generateInterviewQuestions() {
+            const jobId = document.getElementById('jobSelect').value;
+
+            if (!jobId) {
+                showError('interviewResult', '채용공고를 선택해주세요.');
+                return;
+            }
+
+            showLoading('interviewResult', 'GPT-4가 개인화된 면접 질문을 생성하고 있습니다...');
+            updateApiCallCount();
+
+            try {
+                const response = await fetch(`${API_BASE}/session/interview?user_id=1&job_id=${jobId}`);
+
+                if (!response.ok) {
+                    // API 호출 실패시 샘플 질문 표시
+                    showWarning('interviewResult', 'GPT 면접 질문 생성 API에 일시적인 문제가 있습니다. 샘플 질문을 표시합니다.');
+                    setTimeout(showSampleInterviewQuestions, 1000);
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (data.error) {
+                    showWarning('interviewResult', 'GPT 면접 질문 생성에 실패했습니다. 샘플 질문을 표시합니다.');
+                    setTimeout(showSampleInterviewQuestions, 1000);
+                    return;
+                }
+
+                displayInterviewQuestions(data);
+
+                // 통계 업데이트
+                if (data.questions) {
+                    document.getElementById('totalQuestions').textContent = data.questions.length;
+                }
+
+            } catch (error) {
+                showWarning('interviewResult', `면접 질문 생성 중 오류가 발생했습니다. 샘플 질문을 표시합니다.`);
+                setTimeout(showSampleInterviewQuestions, 1000);
+            }
+        }
+
+        // 샘플 면접 질문 표시
+        function showSampleInterviewQuestions() {
+            const selectedJob = document.getElementById('jobSelect');
+            const jobText = selectedJob.options[selectedJob.selectedIndex].text || '백엔드 개발자 - 네이버';
+
+            const sampleQuestions = [
+                {
+                    question: "자신의 개발 경험을 바탕으로 가장 도전적이었던 프로젝트에 대해 설명해주세요.",
+                    category: "경험 및 역량"
+                },
+                {
+                    question: "Node.js와 Express를 사용한 RESTful API 설계 시 고려해야 할 중요한 요소들은 무엇인가요?",
+                    category: "기술 역량"
+                },
+                {
+                    question: "대용량 트래픽을 처리하는 시스템을 설계할 때 어떤 방법들을 고려하시겠습니까?",
+                    category: "시스템 설계"
+                },
+                {
+                    question: "코드 리뷰 과정에서 동료와 의견이 다를 때 어떻게 해결하시나요?",
+                    category: "협업 및 소통"
+                },
+                {
+                    question: "최근 관심을 가지고 학습하고 있는 기술이나 트렌드가 있다면 소개해주세요.",
+                    category: "성장 마인드"
+                }
+            ];
+
+            let html = `
+                <div style="background: #f7fafc; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <h3 style="color: #2d3748; margin-bottom: 10px;">
+                        ${jobText} 면접 질문 (샘플)
+                    </h3>
+                    <p style="color: #718096;">
+                        <strong>총 ${sampleQuestions.length}개 질문</strong> |
+                        <span style="background: #fef3c7; padding: 2px 8px; border-radius: 12px; font-size: 0.85rem;">샘플 데이터</span>
+                    </p>
+                </div>
+            `;
+
+            sampleQuestions.forEach((question, index) => {
+                html += `
+                    <div class="question-card">
+                        <div class="question-number">Q${index + 1}.</div>
+                        <div class="question-text">${question.question}</div>
+                        <div class="question-category">카테고리: ${question.category}</div>
+                    </div>
+                `;
+            });
+
+            html += `
+                <div class="powered-by">
+                    실제 서비스에서는 GPT-4가 채용공고와 사용자 프로필을 분석하여 개인화된 질문을 생성합니다
+                </div>
+            `;
+
+            document.getElementById('interviewResult').innerHTML = html;
+            document.getElementById('totalQuestions').textContent = sampleQuestions.length;
+        }
+
+        // 면접 질문 결과 표시
+        function displayInterviewQuestions(data) {
+            if (!data.questions || data.questions.length === 0) {
+                showSampleInterviewQuestions();
+                return;
+            }
+
+            let html = `
+                <div style="background: #f7fafc; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <h3 style="color: #2d3748; margin-bottom: 10px;">
+                        ${data.job_title || '선택된 포지션'} 면접 질문
+                    </h3>
+                    <p style="color: #718096;">
+                        <strong>회사:</strong> ${data.company || '해당 회사'} |
+                        <strong>총 ${data.questions.length}개 질문</strong>
+                    </p>
+                </div>
+            `;
+
+            data.questions.forEach((question, index) => {
+                html += `
+                    <div class="question-card">
+                        <div class="question-number">Q${index + 1}.</div>
+                        <div class="question-text">${question.question || question}</div>
+                        ${question.category ? `
+                            <div class="question-category">카테고리: ${question.category}</div>
+                        ` : ''}
+                    </div>
+                `;
+            });
+
+            if (data.powered_by) {
+                html += `<div class="powered-by">${data.powered_by}</div>`;
+            }
+
+            document.getElementById('interviewResult').innerHTML = html;
+        }
+
+        // 면접 준비 시작 (추천 이력 기반)
+        async function loadInterviewPreparation() {
+            showLoading('interviewResult', '추천 이력을 확인하고 있습니다...');
+            updateApiCallCount();
+
+            try {
+                // 사용자의 추천 이력 조회
+                const response = await fetch(`${API_BASE}/api/user-recommendation-history?user_id=1`);
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const data = await response.json();
+
+                if (data.success && data.history && data.history.length > 0) {
+                    // 추천 이력이 있는 경우 - 이력 기반 회사 선택
+                    displayRecommendationHistory(data.history);
+                } else {
+                    // 추천 이력이 없는 경우 - 사용자 프로필 기반 추천 회사 제안
+                    displayRecommendedCompanies();
+                }
+
+            } catch (error) {
+                console.error('면접 준비 로드 실패:', error);
+                // 에러 시 기본 추천 회사 표시
+                displayRecommendedCompanies();
+            }
+        }
+
+        // 추천 이력 표시 (스크롤 가능한 선택 박스)
+        function displayRecommendationHistory(history) {
+            let html = `
+                <div style="background: #f7fafc; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <h3 style="color: #2d3748; margin-bottom: 15px;">
+                        이전 추천받은 채용공고
+                    </h3>
+                    <p style="color: #718096; margin-bottom: 15px;">
+                        면접을 준비할 채용공고를 선택해주세요.
+                    </p>
+                    <div style="max-height: 300px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; background: white;">
+            `;
+
+            history.forEach((job, index) => {
+                const date = new Date(job.recommendation_date).toLocaleDateString('ko-KR');
+                html += `
+                    <div class="job-history-item" onclick="generateInterviewQuestionsForJob('${job.job_id}', '${job.title}', '${job.company}')"
+                         style="padding: 15px; border-bottom: 1px solid #e2e8f0; cursor: pointer; transition: background-color 0.2s ease;"
+                         onmouseover="this.style.backgroundColor='#f7fafc'"
+                         onmouseout="this.style.backgroundColor='white'">
+                        <div style="font-weight: 600; color: #2d3748; margin-bottom: 5px;">
+                            ${job.title}
+                        </div>
+                        <div style="color: #667eea; font-weight: 500; margin-bottom: 5px;">
+                            ${job.company}
+                        </div>
+                        <div style="font-size: 0.9rem; color: #718096;">
+                            추천받은 날짜: ${date}
+                        </div>
+                        ${job.match_reasons && job.match_reasons.length > 0 ? `
+                            <div style="margin-top: 8px;">
+                                ${job.match_reasons.map(reason => `<span style="background: #e6fffa; color: #234e52; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; margin-right: 5px;">${reason}</span>`).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            });
+
+            html += `
+                    </div>
+                </div>
+                <div style="text-align: center; margin-top: 15px;">
+                    <small style="color: #718096;">채용공고를 클릭하면 해당 포지션에 맞는 맞춤형 면접 질문을 생성합니다</small>
+                </div>
+            `;
+
+            document.getElementById('interviewResult').innerHTML = html;
+        }
+
+        // 추천 회사 표시 (이력이 없을 때)
+        function displayRecommendedCompanies() {
+            let html = `
+                <div style="background: #f7fafc; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <h3 style="color: #2d3748; margin-bottom: 15px;">
+                        면접 준비를 위한 추가 조건을 입력해주세요
+                    </h3>
+                    <p style="color: #718096; margin-bottom: 20px;">
+                        기본 프로필 정보 외에 추가로 고려할 조건이 있으시면 입력해주세요.<br>
+                        AI가 적합한 회사들을 추천하고, 선택한 회사에 대한 맞춤형 면접 질문을 생성합니다.
+                    </p>
+
+                    <div class="input-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                        <div>
+                            <label style="display: block; font-weight: 600; color: #2d3748; margin-bottom: 8px;">
+                                희망 직무 (선택사항)
+                            </label>
+                            <input type="text" id="preferredJobInput" placeholder="예: 백엔드 개발자, 데이터 분석가"
+                                   style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 16px;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-weight: 600; color: #2d3748; margin-bottom: 8px;">
+                                회사 규모 선호도 (선택사항)
+                            </label>
+                            <select id="companySizeSelect" style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 16px;">
+                                <option value="">상관없음</option>
+                                <option value="스타트업">스타트업 (1-50명)</option>
+                                <option value="중소기업">중소기업 (51-300명)</option>
+                                <option value="중견기업">중견기업 (301-1000명)</option>
+                                <option value="대기업">대기업 (1000명 이상)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="input-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                        <div>
+                            <label style="display: block; font-weight: 600; color: #2d3748; margin-bottom: 8px;">
+                                관심 산업/분야 (선택사항)
+                            </label>
+                            <input type="text" id="industryInput" placeholder="예: IT/소프트웨어, 핀테크, 이커머스"
+                                   style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 16px;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-weight: 600; color: #2d3748; margin-bottom: 8px;">
+                                추가 기술/스킬 (선택사항)
+                            </label>
+                            <input type="text" id="additionalSkillsInput" placeholder="예: AWS, Docker, Kubernetes"
+                                   style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 16px;">
+                        </div>
+                    </div>
+
+                    <button onclick="getCompanyRecommendations()"
+                            style="width: 100%; padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                   color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600;
+                                   cursor: pointer; transition: all 0.3s ease;"
+                            onmouseover="this.style.transform='translateY(-2px)'"
+                            onmouseout="this.style.transform='translateY(0)'">
+                        추천 회사 찾기
+                    </button>
+
+                    <div style="margin-top: 15px; padding: 15px; background: #e6fffa; border: 1px solid #81e6d9; border-radius: 8px;">
+                        <small style="color: #234e52;">
+                            <strong>추천 방식:</strong> 입력된 조건과 기존 프로필을 바탕으로 AI가 적합한 회사들을 추천합니다.<br>
+                            추천받은 회사를 선택하면 해당 회사에 맞춤화된 면접 질문 5개를 생성합니다.
+                        </small>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('interviewResult').innerHTML = html;
+        }
+
+        // 선택된 채용공고 기반 면접 질문 생성
+        async function generateInterviewQuestionsForJob(jobId, jobTitle, company) {
+            showLoading('interviewResult', `${company}의 ${jobTitle} 포지션에 대한 맞춤형 면접 질문을 생성하고 있습니다...`);
+            updateApiCallCount();
+
+            try {
+                const response = await fetch(`${API_BASE}/api/interview-questions`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: '1',
+                        job_id: jobId
+                    })
+                });
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const data = await response.json();
+
+                if (data.success && data.questions) {
+                    displayInterviewQuestions(data);
+
+                    // 통계 업데이트
+                    document.getElementById('totalQuestions').textContent = data.questions.length;
+                } else {
+                    // 에러 시 샘플 질문 표시
+                    showCustomSampleQuestions(jobTitle, company);
+                }
+
+            } catch (error) {
+                console.error('면접 질문 생성 실패:', error);
+                showCustomSampleQuestions(jobTitle, company);
+            }
+        }
+
+        // 맞춤형 샘플 질문 표시
+        function showCustomSampleQuestions(jobTitle, company) {
+            const sampleQuestions = [
+                {
+                    id: 1,
+                    question: "자기소개를 해주세요.",
+                    category: "인성",
+                    difficulty: "쉬움"
+                },
+                {
+                    id: 2,
+                    question: `${company}에 지원한 이유는 무엇인가요?`,
+                    category: "지원동기",
+                    difficulty: "쉬움"
+                },
+                {
+                    id: 3,
+                    question: `${jobTitle} 포지션에서 가장 중요하다고 생각하는 역량은 무엇인가요?`,
+                    category: "직무 이해",
+                    difficulty: "보통"
+                },
+                {
+                    id: 4,
+                    question: "최근에 진행한 프로젝트나 학습한 기술에 대해 설명해주세요.",
+                    category: "기술 역량",
+                    difficulty: "보통"
+                },
+                {
+                    id: 5,
+                    question: "어려운 문제를 해결한 경험이 있다면 공유해주세요.",
+                    category: "문제해결",
+                    difficulty: "어려움"
+                }
+            ];
+
+            let html = `
+                <div style="background: #f7fafc; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <h3 style="color: #2d3748; margin-bottom: 10px;">
+                        ${jobTitle} - ${company} 면접 질문 (샘플)
+                    </h3>
+                    <p style="color: #718096;">
+                        <strong>총 ${sampleQuestions.length}개 질문</strong> |
+                        <span style="background: #fef3c7; padding: 2px 8px; border-radius: 12px; font-size: 0.85rem;">샘플 데이터</span>
+                    </p>
+                </div>
+            `;
+
+            sampleQuestions.forEach((question, index) => {
+                html += `
+                    <div class="question-card">
+                        <div class="question-number">Q${index + 1}.</div>
+                        <div class="question-text">${question.question}</div>
+                        <div class="question-category">카테고리: ${question.category} | 난이도: ${question.difficulty}</div>
+                    </div>
+                `;
+            });
+
+            html += `
+                <div class="powered-by">
+                    실제 서비스에서는 GPT-4가 채용공고와 사용자 프로필을 분석하여 개인화된 질문을 생성합니다
+                </div>
+            `;
+
+            document.getElementById('interviewResult').innerHTML = html;
+            document.getElementById('totalQuestions').textContent = sampleQuestions.length;
+        }
+
+        // 사용자 입력 기반 맞춤형 면접 질문 생성
+        async function generateCustomInterviewQuestions() {
+            // 입력값 수집
+            const companyName = document.getElementById('companyNameInput').value.trim();
+            const position = document.getElementById('positionInput').value.trim();
+            const experience = document.getElementById('experienceInput').value.trim();
+            const region = document.getElementById('regionInput').value.trim();
+            const skills = document.getElementById('skillsInput').value.trim();
+            const salary = document.getElementById('salaryInput').value.trim();
+
+            // 필수 항목 검증
+            const requiredFields = [];
+            if (!companyName) requiredFields.push('희망 회사명');
+            if (!position) requiredFields.push('지원 포지션');
+            if (!experience) requiredFields.push('경력');
+            if (!region) requiredFields.push('희망 지역');
+            if (!skills) requiredFields.push('기술 스킬');
+
+            if (requiredFields.length > 0) {
+                showError('interviewResult', `다음 필수 항목을 입력해주세요: ${requiredFields.join(', ')}`);
+                return;
+            }
+
+            showLoading('interviewResult', `${companyName}의 ${position} 포지션에 대한 맞춤형 면접 질문을 생성하고 있습니다...`);
+            updateApiCallCount();
+
+            try {
+                // skills를 배열로 변환
+                const skillsArray = skills.split(',').map(skill => skill.trim()).filter(skill => skill);
+
+                const response = await fetch(`${API_BASE}/api/interview-questions`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: 1,
+                        custom_company: companyName,
+                        custom_position: position,
+                        user_profile: {
+                            experience: experience,
+                            preferred_regions: [region],
+                            skills: skillsArray,
+                            expected_salary: salary || '',
+                            preferred_jobs: position
+                        },
+                        job_id: 'custom_' + Date.now()
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.success && data.questions && data.questions.length > 0) {
+                    displayInterviewQuestions(data);
+                } else {
+                    showCustomSampleQuestions('custom', position, companyName);
+                }
+
+            } catch (error) {
+                console.error('맞춤형 면접 질문 생성 실패:', error);
+                showError('interviewResult', '면접 질문 생성에 실패했습니다. 다시 시도해주세요.');
+            }
+        }
+
+        // 새로운 플로우: 회사 추천 받기
+        async function getCompanyRecommendations() {
+            const preferredJob = document.getElementById('preferredJobInput').value.trim();
+            const companySize = document.getElementById('companySizeSelect').value;
+            const industry = document.getElementById('industryInput').value.trim();
+            const additionalSkills = document.getElementById('additionalSkillsInput').value.trim();
+
+            showLoading('interviewResult', '사용자 프로필과 추가 조건을 바탕으로 적합한 회사들을 추천받고 있습니다...');
+            updateApiCallCount();
+
+            try {
+                const response = await fetch(`${API_BASE}/api/company-recommendations`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: 1,
+                        additional_preferences: {
+                            preferred_job: preferredJob,
+                            company_size: companySize,
+                            industry: industry,
+                            additional_skills: additionalSkills ? additionalSkills.split(',').map(s => s.trim()) : []
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.success && data.companies && data.companies.length > 0) {
+                    displayRecommendedCompaniesForSelection(data.companies);
+                } else {
+                    showSampleCompanyRecommendations();
+                }
+
+            } catch (error) {
+                console.error('회사 추천 실패:', error);
+                showSampleCompanyRecommendations();
+            }
+        }
+
+        // 추천 회사 목록 표시 (선택 가능)
+        function displayRecommendedCompaniesForSelection(companies) {
+            let html = `
+                <div style="background: #f7fafc; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <h3 style="color: #2d3748; margin-bottom: 15px;">
+                        추천 회사 목록
+                    </h3>
+                    <p style="color: #718096; margin-bottom: 20px;">
+                        AI가 추천한 적합한 회사들입니다. 면접을 준비하고 싶은 회사를 선택해주세요.
+                    </p>
+
+                    <div style="max-height: 400px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; background: white;">
+            `;
+
+            companies.forEach((company, index) => {
+                html += `
+                    <div class="company-option" style="padding: 15px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 10px; cursor: pointer; transition: all 0.3s ease;"
+                         onclick="selectCompanyForInterview('${company.name}', '${company.position || '개발자'}', '${company.description || ''}')"
+                         onmouseover="this.style.backgroundColor='#f0f9ff'; this.style.borderColor='#0ea5e9'"
+                         onmouseout="this.style.backgroundColor='white'; this.style.borderColor='#e2e8f0'">
+                        <div style="display: flex; justify-content: between; align-items: start;">
+                            <div style="flex: 1;">
+                                <h4 style="color: #1e40af; margin: 0 0 8px 0; font-size: 18px; font-weight: 600;">
+                                    ${company.name}
+                                </h4>
+                                <p style="color: #374151; margin: 0 0 8px 0; line-height: 1.5;">
+                                    ${company.description || '종합 IT 서비스 기업'}
+                                </p>
+                                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                    ${company.industry ? `<span style="background: #dbeafe; color: #1e40af; padding: 4px 8px; border-radius: 12px; font-size: 12px;">${company.industry}</span>` : ''}
+                                    ${company.size ? `<span style="background: #f3e8ff; color: #7c3aed; padding: 4px 8px; border-radius: 12px; font-size: 12px;">${company.size}</span>` : ''}
+                                    ${company.location ? `<span style="background: #ecfdf5; color: #059669; padding: 4px 8px; border-radius: 12px; font-size: 12px;">${company.location}</span>` : ''}
+                                </div>
+                            </div>
+                            <div style="color: #6b7280; font-size: 14px; margin-left: 15px;">
+                                클릭하여 선택 →
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `
+                    </div>
+
+                    <div style="margin-top: 15px; padding: 15px; background: #fffbeb; border: 1px solid #f59e0b; border-radius: 8px;">
+                        <small style="color: #92400e;">
+                            <strong>사용법:</strong> 위의 회사 중 하나를 클릭하면 해당 회사에 대한 맞춤형 면접 질문 5개를 생성합니다.<br>
+                            다른 조건으로 다시 검색하고 싶다면 "뒤로 가기" 버튼을 클릭하세요.
+                        </small>
+                    </div>
+
+                    <button onclick="displayRecommendedCompanies()"
+                            style="width: 100%; padding: 12px; background: #6b7280; color: white; border: none;
+                                   border-radius: 8px; font-size: 14px; cursor: pointer; margin-top: 15px;">
+                        ← 뒤로 가기 (조건 다시 입력)
+                    </button>
+                </div>
+            `;
+
+            document.getElementById('interviewResult').innerHTML = html;
+        }
+
+        // 샘플 회사 추천 표시
+        function showSampleCompanyRecommendations() {
+            const sampleCompanies = [
+                {
+                    name: "네이버",
+                    description: "국내 최대 포털 및 IT 서비스 기업",
+                    industry: "IT/소프트웨어",
+                    size: "대기업",
+                    location: "경기 성남"
+                },
+                {
+                    name: "카카오",
+                    description: "모바일 플랫폼 및 메신저 서비스 기업",
+                    industry: "IT/소프트웨어",
+                    size: "대기업",
+                    location: "제주"
+                },
+                {
+                    name: "토스",
+                    description: "모바일 금융 서비스 핀테크 기업",
+                    industry: "핀테크",
+                    size: "중견기업",
+                    location: "서울 강남"
+                },
+                {
+                    name: "배달의민족",
+                    description: "국내 1위 음식 배달 플랫폼",
+                    industry: "플랫폼/O2O",
+                    size: "중견기업",
+                    location: "서울 송파"
+                },
+                {
+                    name: "쿠팡",
+                    description: "이커머스 및 물류 서비스 기업",
+                    industry: "이커머스",
+                    size: "대기업",
+                    location: "서울 송파"
+                }
+            ];
+
+            displayRecommendedCompaniesForSelection(sampleCompanies);
+        }
+
+        // 선택된 회사로 면접 질문 생성
+        async function selectCompanyForInterview(companyName, position, description) {
+            showLoading('interviewResult', `${companyName}의 ${position} 포지션에 대한 맞춤형 면접 질문을 생성하고 있습니다...`);
+            updateApiCallCount();
+
+            try {
+                const response = await fetch(`${API_BASE}/api/interview-questions`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: 1,
+                        custom_company: companyName,
+                        custom_position: position,
+                        company_description: description
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.success && data.questions) {
+                    displayInterviewQuestions(data);
+                } else {
+                    showCustomSampleQuestions(position, companyName);
+                }
+
+            } catch (error) {
+                console.error('면접 질문 생성 실패:', error);
+                showCustomSampleQuestions(position, companyName);
+            }
+        }
+
+
+        // 페이지 로드 시 자동 초기화
+        window.addEventListener('load', () => {
+            console.log('CommitJob AI 데모 시스템 로드 완료');
+
+            // 자동으로 데모 데이터 설정 시도
+            setTimeout(async () => {
+                try {
+                    await setupDemoData();
+                } catch (error) {
+                    console.log('자동 데모 데이터 설정 실패, 수동으로 설정하세요.');
+                }
+            }, 1000);
+        });
+
+        // 필터 변경시 자동 재추천
+        document.getElementById('jobTypeFilter').addEventListener('change', () => {
+            if (Object.keys(jobsData).length > 0) {
+                getJobRecommendations();
+            }
+        });
+    </script>
+</body>
+</html>

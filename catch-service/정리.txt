@@ -1,0 +1,57 @@
+catch_scraper.py의 모든 기능을 설명드리겠습니다:
+핵심 클래스: CatchScraper
+1. 초기화 및 로그인
+init_driver(): Chrome 드라이버 초기화 (headless 모드)
+login(): CATCH 사이트 로그인
+get_current_status(): 현재 상태 확인
+2. 페이지 네비게이션
+navigate_to_recruit_page(): 채용공고 페이지로 이동
+filter_it_jobs(): IT개발 공고 필터링
+filter_bigdata_ai(): 빅데이터·AI 공고 필터링
+3. 공고 추출 기능
+extract_job_list(): 모든 페이지 공고 추출 (페이지네이션 지원)
+extract_first_page_jobs(): 첫 페이지만 최대 10개 공고 추출
+extract_company_jobs(): 특정 기업 공고만 검색 (모든 페이지)
+4. 상세 정보 추출
+extract_job_detail(): 공고 상세 정보 추출
+회사명, 제목, 경력, 학력, 지역
+지원 URL (홈페이지 지원 버튼 클릭)
+전체 HTML 내용 (iframe 내부)
+search_company(): 기업 검색
+extract_company_detail(): 기업 상세 정보 추출
+기본 정보 (업종, 규모, 주소, 사원수 등)
+추천 키워드, 연봉 정보
+현직자 리뷰 (평점, 좋은점, 아쉬운점, 작성일, 좋아요)
+Flask API 엔드포인트
+기본 API
+POST /api/init: 스크래퍼 초기화
+POST /api/login: 로그인
+GET /api/status: 현재 상태 확인
+POST /api/recruit: 채용공고 페이지 이동
+필터링 API
+POST /api/filter-it: IT개발 공고 필터링
+POST /api/filter-bigdata-ai: 빅데이터·AI 공고 필터링
+공고 추출 API
+GET /api/extract-jobs: IT개발 공고 전체 추출
+GET /api/extract-first-page-jobs: 첫 페이지 공고만 추출
+GET /api/homepage-jobs: 홈페이지용 (IT개발 10개 + 빅데이터·AI 10개)
+GET /api/extract-all-jobs: 전체 수집 (IT개발 전체 + 빅데이터·AI 전체)
+검색 및 상세 API
+POST /api/search-company: 특정 기업 공고 검색
+POST /api/job-detail: 공고 상세 정보 추출
+POST /api/search-company-info: 기업 검색 + 상세 정보 추출
+주요 특징
+안정성
+페이지 변경 감지: _is_page_changed() 메서드로 실제 페이지 로딩 확인
+다중 선택자: _find_element_with_fallbacks()로 요소 찾기 실패 방지
+대기 시간 최적화: time.sleep() + WebDriverWait 조합
+데이터 완성도
+공고 정보: 제목, 회사, 직무정보, 조건, 등록일, URL
+기업 정보: 15개 필드 (기업명, 업종, 규모, 주소, 사원수, 매출액, 대표자, 개업일, 기업형태, 신용등급, 태그, 추천키워드, 연봉정보)
+현직자 리뷰: 직원상태, 정보, 평점, 좋은점, 아쉬운점, 작성일, 좋아요
+사용 시나리오
+홈페이지: /api/homepage-jobs → IT개발 10개 + 빅데이터·AI 10개
+공고 상세: /api/job-detail → 지원 URL + 전체 HTML 내용
+기업 검색: /api/search-company → 특정 기업 공고만
+기업 정보: /api/search-company-info → 기업 상세 + 현직자 리뷰
+대량 수집: /api/extract-all-jobs → 모든 공고 순차 수집

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/cmmnnie/Dev/test/캡스톤/backend/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

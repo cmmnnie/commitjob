@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그인 처리 중...</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="callback-container">
+            <!-- 로딩 스피너 -->
+            <div class="spinner-large"></div>
+
+            <!-- 상태 메시지 -->
+            <h2 id="callbackStatus">로그인 처리 중...</h2>
+            <p id="callbackMessage">잠시만 기다려주세요</p>
+
+            <!-- 진행 상태 표시 -->
+            <div class="progress-steps">
+                <div class="step active" id="step1">
+                    <div class="step-number">1</div>
+                    <div class="step-label">인증 확인</div>
+                </div>
+                <div class="step" id="step2">
+                    <div class="step-number">2</div>
+                    <div class="step-label">사용자 정보 조회</div>
+                </div>
+                <div class="step" id="step3">
+                    <div class="step-number">3</div>
+                    <div class="step-label">로그인 완료</div>
+                </div>
+            </div>
+
+            <!-- 디버그 정보 (개발 환경에서만 표시) -->
+            <div id="debugInfo" class="debug-info hidden">
+                <h3>디버그 정보</h3>
+                <pre id="debugContent"></pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- 콜백 처리 로직 -->
+    <script>
+        // 백엔드 URL 직접 정의 (config.js 의존성 제거)
+        const BACKEND_URL = 'http://localhost:4001';
+        // 진행 단계 업데이트 함수
+        function updateStep(stepNumber, active = true) {
+            const step = document.getElementById(`step${stepNumber}`);
+            if (step) {
+                if (active) {
+                    step.classList.add('active');
+                } else {
+                    step.classList.remove('active');
+                }
+            }
+        }
+
+        // 상태 메시지 업데이트
+        function updateStatus(status, message) {
+            document.getElementById('callbackStatus').textContent = status;
+            document.getElementById('callbackMessage').textContent = message;
+        }
+
+        // 디버그 정보 표시
+        function showDebug(data) {
+            const debugInfo = document.getElementById('debugInfo');
+            const debugContent = document.getElementById('debugContent');
+            debugContent.textContent = JSON.stringify(data, null, 2);
+            debugInfo.classList.remove('hidden');
+        }
+
+        // 메인 콜백 처리 함수
+        async function handleCallback() {
+            try {
+                console.log('[CALLBACK] 콜백 처리 시작');
+                console.log('[CALLBACK] Current URL:', window.location.href);
+
+                // URL 파라미터 확인
+                const params = new URLSearchParams(window.location.search);
+                const ok = params.get('ok');
+                const error = params.get('error');
+
+                // 디버그 정보 수집
+                const debugData = {
+                    url: window.location.href,
+                    ok: ok,
+                    error: error,
+                    timestamp: new Date().toISOString()
+                };
+
+                console.log('[CALLBACK] URL 파라미터:', debugData);
+
+                // 에러 체크
+                if (error) {
+                    console.error('[CALLBACK] 에러 파라미터 발견:', error);
+                    updateStatus('로그인 실패', error);
+                    updateStep(1, false);
+
+                    setTimeout(() => {
+                        window.location.href = window.location.origin + '/kakao-login-app/index.html?error=login_failed';
+                    }, 2000);
+                    return;
+                }
+
+                // ok 파라미터 체크
+                if (ok === '1') {
+                    console.log('[CALLBACK] 로그인 성공 (ok=1)');
+
+                    // Step 1 완료
+                    updateStep(1, true);
+                    updateStatus('인증 성공', '사용자 정보를 확인하는 중...');
+
+                    // 잠시 대기 (시각적 효과)
+                    await new Promise(resolve => setTimeout(resolve, 500));
+
+                    // Step 2 시작
+                    updateStep(2, true);
+
+                    // 사용자 정보 확인 (JWT 쿠키가 자동으로 전송됨)
+                    console.log('[CALLBACK] 사용자 정보 요청 중...');
+
+                    const response = await fetch(`${BACKEND_URL}/api/me`, {
+                        method: 'GET',
+                        credentials: 'include', // 쿠키 전송 필수
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    console.log('[CALLBACK] 사용자 정보 응답 상태:', response.status);
+                    console.log('[CALLBACK] 현재 쿠키:', document.cookie);
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log('[CALLBACK] 사용자 정보:', data);
+
+                        debugData.user = data.user;
+
+                        if (data.user) {
+                            // Step 2 완료
+                            updateStep(2, true);
+                            updateStatus('정보 확인 완료', `환영합니다, ${data.user.name}님!`);
+
+                            // 잠시 대기
+                            await new Promise(resolve => setTimeout(resolve, 500));
+
+                            // Step 3 완료
+                            updateStep(3, true);
+                            updateStatus('로그인 완료', '메인 페이지로 이동합니다...');
+
+                            // 디버그 정보 표시 (개발 환경)
+                            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                                showDebug(debugData);
+                            }
+
+                            // 1초 후 메인 페이지로 이동
+                            setTimeout(() => {
+                                // 절대 URL로 리다이렉트
+                                window.location.href = window.location.origin + '/kakao-login-app/index.html';
+                            }, 1000);
+
+                        } else {
+                            console.error('[CALLBACK] 사용자 정보 없음');
+                            updateStep(2, false);
+                            updateStatus('로그인 실패', '사용자 정보를 찾을 수 없습니다');
+
+                            setTimeout(() => {
+                                window.location.href = './index.html?error=login_failed';
+                            }, 2000);
+                        }
+                    } else {
+                        console.error('[CALLBACK] 사용자 정보 요청 실패:', response.status);
+                        updateStep(2, false);
+                        updateStatus('정보 조회 실패', '사용자 정보를 가져올 수 없습니다');
+
+                        const errorText = await response.text();
+                        console.error('[CALLBACK] 에러 응답:', errorText);
+                        console.error('[CALLBACK] 쿠키 확인:', document.cookie);
+                        console.error('[CALLBACK] BACKEND_URL:', BACKEND_URL);
+
+                        setTimeout(() => {
+                            window.location.href = window.location.origin + '/kakao-login-app/index.html?error=login_failed';
+                        }, 2000);
+                    }
+
+                } else if (ok === '0') {
+                    // 로그인 실패
+                    console.error('[CALLBACK] 로그인 실패 (ok=0)');
+                    updateStep(1, false);
+                    updateStatus('로그인 실패', '인증에 실패했습니다');
+
+                    setTimeout(() => {
+                        window.location.href = window.location.origin + '/kakao-login-app/index.html?error=login_failed';
+                    }, 2000);
+
+                } else {
+                    // ok 파라미터가 없거나 잘못된 값
+                    console.error('[CALLBACK] 잘못된 콜백 파라미터:', ok);
+                    updateStep(1, false);
+                    updateStatus('잘못된 요청', 'ok 파라미터가 없거나 잘못되었습니다');
+
+                    setTimeout(() => {
+                        window.location.href = window.location.origin + '/kakao-login-app/index.html?error=login_failed';
+                    }, 2000);
+                }
+
+            } catch (error) {
+                console.error('[CALLBACK] 처리 중 오류 발생:', error);
+                updateStep(1, false);
+                updateStatus('오류 발생', error.message);
+
+                setTimeout(() => {
+                    window.location.href = window.location.origin + '/kakao-login-app/index.html?error=login_failed';
+                }, 2000);
+            }
+        }
+
+        // 페이지 로드 시 콜백 처리 시작
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('[CALLBACK] 페이지 로드 완료, 콜백 처리 시작');
+            handleCallback();
+        });
+    </script>
+</body>
+</html>

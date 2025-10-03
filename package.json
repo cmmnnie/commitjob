@@ -1,0 +1,28 @@
+{
+  "name": "commitjob-backend-monorepo",
+  "version": "1.0.0",
+  "description": "CommitJob Backend - 졸업작품 맞춤형 채용 플랫폼",
+  "scripts": {
+    "start": "cd backend && npm start",
+    "build": "cd backend && npm install",
+    "install:all": "cd backend && npm install",
+    "postinstall": "cd backend && npm install"
+  },
+  "keywords": [
+    "job-recommendation",
+    "interview-questions",
+    "social-login",
+    "chatgpt",
+    "graduation-project"
+  ],
+  "author": "Capstone Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cmmnnie/commitjob-backend.git"
+  }
+}
