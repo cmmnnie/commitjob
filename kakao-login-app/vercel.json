@@ -1,8 +1,10 @@
 {
   "version": 2,
-  "name": "kakao-login-app",
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/$1" }
+  "builds": [
+    {
+      "src": "**",
+      "use": "@vercel/static"
+    }
   ],
   "headers": [
     {
