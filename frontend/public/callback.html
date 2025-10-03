@@ -83,7 +83,14 @@
 
                 console.log('[CALLBACK] ok parameter:', ok);
                 console.log('[CALLBACK] token received:', !!token);
+                console.log('[CALLBACK] token length:', token ? token.length : 0);
                 console.log('[CALLBACK] Current URL:', window.location.href);
+
+                // 디버그 정보 항상 표시
+                debugEl.innerHTML = `<strong>URL:</strong> ${window.location.href}<br>` +
+                                   `<strong>ok:</strong> ${ok}<br>` +
+                                   `<strong>token:</strong> ${token ? 'exists (length: ' + token.length + ')' : 'missing'}`;
+                debugEl.style.display = 'block';
 
                 if (ok === '1' && token) {
                     statusEl.textContent = '로그인 성공!';
@@ -94,6 +101,9 @@
                     console.log('[CALLBACK] Token saved to localStorage');
 
                     // 사용자 정보 확인
+                    console.log('[CALLBACK] Fetching user info from:', `${BACKEND_URL}/api/me`);
+                    console.log('[CALLBACK] Authorization header:', `Bearer ${token.substring(0, 20)}...`);
+
                     const response = await fetch(`${BACKEND_URL}/api/me`, {
                         credentials: 'include',
                         headers: {
@@ -103,6 +113,7 @@
                     });
 
                     console.log('[CALLBACK] /api/me response status:', response.status);
+                    console.log('[CALLBACK] /api/me response headers:', [...response.headers.entries()]);
 
                     if (response.ok) {
                         const data = await response.json();
