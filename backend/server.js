@@ -479,11 +479,11 @@ app.get("/auth/google/callback", async (req, res) => {
 
     const isProd = process.env.NODE_ENV === "production";
 
-    // 쿠키 설정 (127.0.0.1과 localhost 모두 지원)
+    // 쿠키 설정 (크로스 오리진 지원)
     const cookieOptions = {
       httpOnly: true,
-      secure: isProd,
-      sameSite: isProd ? "none" : "lax", // 프로덕션에서는 크로스 도메인 허용
+      secure: isProd, // 프로덕션(HTTPS)에서는 true, 로컬(HTTP)에서는 false
+      sameSite: "none", // 크로스 오리진 쿠키 전송 허용
       maxAge: 7 * 24 * 60 * 60 * 1000,
       path: "/",
     };
@@ -492,7 +492,8 @@ app.get("/auth/google/callback", async (req, res) => {
 
     console.log('[GOOGLE-CALLBACK] 쿠키 설정 완료:', { httpOnly: true, sameSite: cookieOptions.sameSite });
 
-    res.redirect(`${origin}/callback.html?ok=1`);
+    // JWT를 URL 파라미터로 전달하여 프론트엔드에서 쿠키 설정
+    res.redirect(`${origin}/callback.html?ok=1&token=${encodeURIComponent(appJwt)}`);
   } catch (e) {
     console.error(e.response?.data || e);
     res.redirect(`${fallback}/callback.html?ok=0`);
@@ -643,23 +644,21 @@ app.get("/auth/kakao/callback", async (req, res) => {
 
     const isProd = process.env.NODE_ENV === "production";
 
-    // 쿠키 설정 (127.0.0.1과 localhost 모두 지원)
+    // 쿠키 설정 (크로스 오리진 지원)
     const cookieOptions = {
       httpOnly: true,
-      secure: isProd,
-      sameSite: isProd ? "none" : "lax", // 프로덕션에서는 크로스 도메인 허용
+      secure: isProd, // 프로덕션(HTTPS)에서는 true, 로컬(HTTP)에서는 false
+      sameSite: "none", // 크로스 오리진 쿠키 전송 허용
       maxAge: 7 * 24 * 60 * 60 * 1000,
       path: "/",
     };
-
-    // 로컬 개발 환경에서는 domain 설정 제거 (127.0.0.1과 localhost 호환)
-    // 프로덕션에서는 domain 설정 필요
 
     res.cookie("app_session", appJwt, cookieOptions);
 
     console.log('[KAKAO-CALLBACK] 쿠키 설정 완료:', { httpOnly: true, sameSite: cookieOptions.sameSite });
 
-    const redirectUrl = `${origin}/callback.html?ok=1`;
+    // JWT를 URL 파라미터로 전달하여 프론트엔드에서 쿠키 설정
+    const redirectUrl = `${origin}/callback.html?ok=1&token=${encodeURIComponent(appJwt)}`;
     console.log('[KAKAO-CALLBACK] Success! Redirecting to:', redirectUrl);
     res.redirect(redirectUrl);
   } catch (e) {
@@ -728,11 +727,19 @@ app.get("/auth/kakao/callback", async (req, res) => {
  */
 app.get("/api/me", async (req, res) => {
   try {
-    const cookie = req.cookies?.app_session;
-    if (!cookie) return res.status(401).json({ user: null });
+    // 쿠키 또는 Authorization 헤더에서 토큰 가져오기
+    let token = req.cookies?.app_session;
+
+    // Authorization 헤더 확인
+    const authHeader = req.headers.authorization;
+    if (!token && authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7); // "Bearer " 제거
+    }
+
+    if (!token) return res.status(401).json({ user: null });
 
     const { payload } = await jose.jwtVerify(
-      cookie,
+      token,
       new TextEncoder().encode(process.env.JWT_SECRET)
     );
 

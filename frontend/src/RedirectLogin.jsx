@@ -20,9 +20,25 @@ function RedirectLogin() {
         setStatus('로그인 성공! 사용자 정보를 확인하는 중...');
 
         try {
-          // 사용자 정보 확인 (JWT 쿠키가 자동으로 전송됨)
-          const response = await fetch('http://localhost:4001/api/me', {
-            credentials: 'include', // 쿠키 전송 필수!
+          const token = localStorage.getItem('app_session');
+
+          if (!token) {
+            console.error('[CALLBACK] No token in localStorage');
+            setStatus('로그인 정보가 없습니다.');
+            setTimeout(() => navigate('/login'), 2000);
+            return;
+          }
+
+          const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://localhost:4001'
+            : 'https://commitjob-backend.up.railway.app';
+
+          // 사용자 정보 확인
+          const response = await fetch(`${BACKEND_URL}/api/me`, {
+            credentials: 'include',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
           });
 
           console.log('[CALLBACK] /api/me response status:', response.status);
@@ -41,17 +57,20 @@ function RedirectLogin() {
             } else {
               console.error('[CALLBACK] No user in response');
               setStatus('사용자 정보를 찾을 수 없습니다.');
+              localStorage.removeItem('app_session');
               setTimeout(() => navigate('/login'), 2000);
             }
           } else {
             console.error('[CALLBACK] /api/me failed:', response.status);
             setStatus('사용자 정보 조회 실패');
+            localStorage.removeItem('app_session');
             setTimeout(() => navigate('/login'), 2000);
           }
         } catch (error) {
           console.error('[CALLBACK] Error fetching user info:', error);
           setStatus('사용자 정보 조회 중 오류 발생');
-          setTimeout(() => navigate('/'), 2000);
+          localStorage.removeItem('app_session');
+          setTimeout(() => navigate('/login'), 2000);
         }
       } else {
         // 로그인 실패

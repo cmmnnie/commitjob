@@ -10,8 +10,24 @@ function HomePage() {
     // 로그인 상태 확인
     const checkAuth = async () => {
       try {
-        const response = await fetch('http://localhost:4001/api/me', {
+        const token = localStorage.getItem('app_session');
+
+        if (!token) {
+          console.log('[HOME] No token found');
+          navigate('/login');
+          setLoading(false);
+          return;
+        }
+
+        const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+          ? 'http://localhost:4001'
+          : 'https://commitjob-backend.up.railway.app';
+
+        const response = await fetch(`${BACKEND_URL}/api/me`, {
           credentials: 'include',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
         });
 
         if (response.ok) {
@@ -20,11 +36,12 @@ function HomePage() {
           setUser(data.user);
         } else {
           console.log('[HOME] Not logged in');
-          // 로그인되지 않았으면 로그인 페이지로 이동
+          localStorage.removeItem('app_session');
           navigate('/login');
         }
       } catch (error) {
         console.error('[HOME] Auth check error:', error);
+        localStorage.removeItem('app_session');
         navigate('/login');
       } finally {
         setLoading(false);
@@ -36,14 +53,21 @@ function HomePage() {
 
   const handleLogout = async () => {
     try {
-      await fetch('http://localhost:4001/api/logout', {
+      const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://localhost:4001'
+        : 'https://commitjob-backend.up.railway.app';
+
+      await fetch(`${BACKEND_URL}/api/logout`, {
         method: 'POST',
         credentials: 'include',
       });
       console.log('[HOME] Logged out');
+      localStorage.removeItem('app_session');
       navigate('/login');
     } catch (error) {
       console.error('[HOME] Logout error:', error);
+      localStorage.removeItem('app_session');
+      navigate('/login');
     }
   };
 
