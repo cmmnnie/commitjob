@@ -483,14 +483,14 @@ app.get("/auth/google/callback", async (req, res) => {
     const cookieOptions = {
       httpOnly: true,
       secure: isProd,
-      sameSite: "lax",
+      sameSite: isProd ? "none" : "lax", // 프로덕션에서는 크로스 도메인 허용
       maxAge: 7 * 24 * 60 * 60 * 1000,
       path: "/",
     };
 
     res.cookie("app_session", appJwt, cookieOptions);
 
-    console.log('[GOOGLE-CALLBACK] 쿠키 설정 완료:', { httpOnly: true, sameSite: 'lax' });
+    console.log('[GOOGLE-CALLBACK] 쿠키 설정 완료:', { httpOnly: true, sameSite: cookieOptions.sameSite });
 
     res.redirect(`${origin}/callback.html?ok=1`);
   } catch (e) {
@@ -647,7 +647,7 @@ app.get("/auth/kakao/callback", async (req, res) => {
     const cookieOptions = {
       httpOnly: true,
       secure: isProd,
-      sameSite: "lax",
+      sameSite: isProd ? "none" : "lax", // 프로덕션에서는 크로스 도메인 허용
       maxAge: 7 * 24 * 60 * 60 * 1000,
       path: "/",
     };
@@ -657,7 +657,7 @@ app.get("/auth/kakao/callback", async (req, res) => {
 
     res.cookie("app_session", appJwt, cookieOptions);
 
-    console.log('[KAKAO-CALLBACK] 쿠키 설정 완료:', { httpOnly: true, sameSite: 'lax' });
+    console.log('[KAKAO-CALLBACK] 쿠키 설정 완료:', { httpOnly: true, sameSite: cookieOptions.sameSite });
 
     const redirectUrl = `${origin}/callback.html?ok=1`;
     console.log('[KAKAO-CALLBACK] Success! Redirecting to:', redirectUrl);
