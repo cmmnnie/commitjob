@@ -128,12 +128,22 @@ const App = {
                 this.showLoading('로그인 상태를 확인하는 중...');
             }
 
+            // localStorage에서 토큰 가져오기
+            const token = localStorage.getItem('app_session');
+
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+
+            // 토큰이 있으면 Authorization 헤더 추가
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
             const response = await fetch(`${CONFIG.BACKEND_URL}${CONFIG.API.USER_INFO}`, {
                 method: 'GET',
-                credentials: 'include', // 쿠키 전송 필수
-                headers: {
-                    'Content-Type': 'application/json'
-                }
+                credentials: 'include',
+                headers: headers
             });
 
             console.log('[APP] 사용자 정보 응답 상태:', response.status);
@@ -214,6 +224,11 @@ const App = {
 
             if (response.ok) {
                 console.log('[APP] 로그아웃 성공');
+
+                // localStorage에서 토큰 삭제
+                localStorage.removeItem('app_session');
+                console.log('[APP] localStorage 토큰 삭제 완료');
+
                 this.currentUser = null;
                 this.showLoginSection();
                 this.showStatus('로그아웃되었습니다', 'success');
