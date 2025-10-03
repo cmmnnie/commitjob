@@ -131,14 +131,21 @@ const App = {
             // localStorage에서 토큰 가져오기
             const token = localStorage.getItem('app_session');
 
-            const headers = {
-                'Content-Type': 'application/json'
-            };
-
-            // 토큰이 있으면 Authorization 헤더 추가
-            if (token) {
-                headers['Authorization'] = `Bearer ${token}`;
+            // 토큰이 없으면 로그인 화면 표시
+            if (!token) {
+                console.log('[APP] 토큰 없음 - 로그인 필요');
+                this.currentUser = null;
+                this.showLoginSection();
+                if (showMessage) {
+                    this.showStatus('로그인이 필요합니다', 'warning');
+                }
+                return;
             }
+
+            const headers = {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            };
 
             const response = await fetch(`${CONFIG.BACKEND_URL}${CONFIG.API.USER_INFO}`, {
                 method: 'GET',
@@ -238,7 +245,11 @@ const App = {
 
         } catch (error) {
             console.error('[APP] 로그아웃 오류:', error);
-            this.showStatus(`로그아웃 실패: ${error.message}`, 'error');
+            // 에러가 발생해도 로컬 토큰은 삭제
+            localStorage.removeItem('app_session');
+            this.currentUser = null;
+            this.showLoginSection();
+            this.showStatus('로그아웃되었습니다', 'warning');
         } finally {
             this.hideLoading();
         }
@@ -300,10 +311,11 @@ const App = {
             userProvider.textContent = `로그인 방식: ${providerText}`;
         }
 
-        // 사용자 ID
+        // 사용자 ID (이메일 앞부분을 아이디로 사용)
         const userId = document.getElementById('userId');
         if (userId) {
-            userId.textContent = user.id || '-';
+            const username = user.email ? user.email.split('@')[0] : user.name || '-';
+            userId.textContent = username;
         }
 
         // 가입일
