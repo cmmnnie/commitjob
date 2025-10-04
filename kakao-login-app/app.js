@@ -342,16 +342,30 @@ const App = {
             userProfileImage.alt = user.name;
         }
 
-        // 이름
+        // 이름 마스킹
         const userName = document.getElementById('userName');
         if (userName) {
-            userName.textContent = user.name || '-';
+            const name = user.name || '-';
+            let maskedName = name;
+
+            if (name !== '-' && name.length > 0) {
+                if (name.length === 2) {
+                    // 길이 2: 마지막 자리만 *
+                    maskedName = name[0] + '*';
+                } else if (name.length >= 3) {
+                    // 길이 3 이상: 첫째와 마지막만 표기, 가운데는 *
+                    const middle = '*'.repeat(name.length - 2);
+                    maskedName = name[0] + middle + name[name.length - 1];
+                }
+            }
+
+            userName.textContent = maskedName;
         }
 
-        // 이메일
+        // 이메일 숨김
         const userEmail = document.getElementById('userEmail');
         if (userEmail) {
-            userEmail.textContent = user.email || '-';
+            userEmail.style.display = 'none';
         }
 
         // 제공자
@@ -361,11 +375,17 @@ const App = {
             userProvider.textContent = `로그인 방식: ${providerText}`;
         }
 
-        // 사용자 ID (이메일 앞부분을 아이디로 사용)
+        // 사용자 ID 마스킹 (앞 3자리만 표시)
         const userId = document.getElementById('userId');
         if (userId) {
             const username = user.email ? user.email.split('@')[0] : user.name || '-';
-            userId.textContent = username;
+            let maskedId = username;
+
+            if (username !== '-' && username.length > 3) {
+                maskedId = username.substring(0, 3) + '*'.repeat(username.length - 3);
+            }
+
+            userId.textContent = maskedId;
         }
 
         // 가입일 (UTC를 한국 시간으로 변환)
