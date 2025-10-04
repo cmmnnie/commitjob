@@ -231,7 +231,8 @@ const pool = mysql.createPool({
   user: process.env.DB_USER,
   password: process.env.DB_PASS,
   database: process.env.DB_NAME,
-  connectionLimit: 10
+  connectionLimit: 10,
+  timezone: '+09:00' // 한국 시간 (KST)
 });
 
 // 코딩 테스트 라우터에서 pool 접근 가능하도록 설정
