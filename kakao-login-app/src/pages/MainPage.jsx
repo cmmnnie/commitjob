@@ -104,10 +104,10 @@ export default function MainPage() {
 
             const origin = CONFIG.APP_ORIGIN;
 
-            // 항상 prompt=select_account를 사용하여 계정 선택 강제
-            let loginUrl = `${CONFIG.BACKEND_URL}${CONFIG.API.KAKAO_LOGIN_URL}?origin=${encodeURIComponent(origin)}&prompt=select_account`;
+            // 항상 prompt=login을 사용하여 재인증 강제
+            let loginUrl = `${CONFIG.BACKEND_URL}${CONFIG.API.KAKAO_LOGIN_URL}?origin=${encodeURIComponent(origin)}&prompt=login`;
 
-            console.log('[APP] 계정 선택 강제 모드 (prompt=select_account)');
+            console.log('[APP] 재인증 강제 모드 (prompt=login)');
 
             const response = await fetch(loginUrl, {
                 method: 'GET',
