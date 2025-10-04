@@ -131,6 +131,8 @@ const App = {
             // localStorage에서 토큰 가져오기
             const token = localStorage.getItem('app_session');
 
+            console.log('[APP] localStorage 토큰 체크:', token ? `존재 (길이: ${token.length})` : '없음');
+
             // 토큰이 없으면 로그인 화면 표시
             if (!token) {
                 console.log('[APP] 토큰 없음 - 로그인 필요');
@@ -143,7 +145,7 @@ const App = {
                 return;
             }
 
-            console.log('[APP] 토큰 확인됨, 사용자 정보 요청 중...');
+            console.log('[APP] 토큰 확인됨, 사용자 정보 요청 중...', token.substring(0, 20) + '...');
 
             const headers = {
                 'Content-Type': 'application/json',
