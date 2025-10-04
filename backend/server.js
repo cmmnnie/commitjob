@@ -558,6 +558,12 @@ app.get("/auth/kakao/login-url", (req, res) => {
     state, // 이 state 값을 카카오 인가 URL에 포함
     scope: "profile_nickname profile_image account_email",
   });
+
+  // prompt 파라미터가 전달되면 추가 (로그아웃 후 재로그인 강제)
+  if (req.query.prompt) {
+    params.set('prompt', req.query.prompt);
+  }
+
   const url = `https://kauth.kakao.com/oauth/authorize?${params.toString()}`;
 
   console.log('[KAKAO-LOGIN-URL] Generated URL:', url);

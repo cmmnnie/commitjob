@@ -90,17 +90,24 @@ const App = {
             const origin = CONFIG.APP_ORIGIN;
             console.log('[APP] Origin:', origin);
 
+            // 로그아웃 후 재로그인인지 확인
+            const forceLogin = sessionStorage.getItem('force_kakao_login');
+            let loginUrl = `${CONFIG.BACKEND_URL}${CONFIG.API.KAKAO_LOGIN_URL}?origin=${encodeURIComponent(origin)}`;
+
+            if (forceLogin === 'true') {
+                loginUrl += '&prompt=login';
+                sessionStorage.removeItem('force_kakao_login');
+                console.log('[APP] 강제 재로그인 모드 (prompt=login)');
+            }
+
             // 백엔드에서 카카오 인증 URL 받기
-            const response = await fetch(
-                `${CONFIG.BACKEND_URL}${CONFIG.API.KAKAO_LOGIN_URL}?origin=${encodeURIComponent(origin)}`,
-                {
-                    method: 'GET',
-                    credentials: 'include',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
+            const response = await fetch(loginUrl, {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json'
                 }
-            );
+            });
 
             console.log('[APP] 응답 상태:', response.status);
 
@@ -237,9 +244,12 @@ const App = {
         try {
             this.showLoading('로그아웃 처리 중...');
 
-            // 카카오 로그아웃 먼저 수행
+            // 카카오 로그아웃 수행
             if (window.Kakao && window.Kakao.Auth) {
                 try {
+                    // 로그아웃 후 재로그인 플래그 설정
+                    sessionStorage.setItem('force_kakao_login', 'true');
+
                     await new Promise((resolve) => {
                         window.Kakao.Auth.logout(() => {
                             console.log('[APP] 카카오 세션 로그아웃 완료');
