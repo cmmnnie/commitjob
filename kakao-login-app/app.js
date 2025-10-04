@@ -368,16 +368,17 @@ const App = {
             userId.textContent = username;
         }
 
-        // 가입일
+        // 가입일 (UTC를 한국 시간으로 변환)
         const userCreatedAt = document.getElementById('userCreatedAt');
         if (userCreatedAt && user.created_at) {
-            const date = new Date(user.created_at);
-            userCreatedAt.textContent = date.toLocaleDateString('ko-KR', {
+            const date = new Date(user.created_at + 'Z'); // UTC로 명시
+            userCreatedAt.textContent = date.toLocaleString('ko-KR', {
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric',
                 hour: '2-digit',
-                minute: '2-digit'
+                minute: '2-digit',
+                timeZone: 'Asia/Seoul'
             });
         }
     },
