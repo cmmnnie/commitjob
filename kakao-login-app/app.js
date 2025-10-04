@@ -15,6 +15,12 @@ const App = {
     init() {
         console.log('[APP] 앱 초기화 시작');
 
+        // Kakao SDK 초기화
+        if (window.Kakao && !window.Kakao.isInitialized()) {
+            window.Kakao.init(CONFIG.KAKAO_JS_KEY);
+            console.log('[APP] Kakao SDK 초기화 완료');
+        }
+
         // 로그아웃 직후인지 확인
         if (sessionStorage.getItem('just_logged_out') === 'true') {
             console.log('[APP] 로그아웃 직후 감지 - localStorage 강제 삭제');
