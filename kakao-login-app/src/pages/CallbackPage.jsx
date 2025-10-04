@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CONFIG } from '../config';
-import '../styles/callback.css';
 
 export default function CallbackPage() {
     const navigate = useNavigate();
@@ -115,15 +114,57 @@ export default function CallbackPage() {
     };
 
     return (
-        <div className="callback-container">
-            <div className="spinner"></div>
-            <h2>{status}</h2>
-            <p>{message}</p>
-            {showDebug && (
-                <div className="debug">
-                    <pre>{debugInfo}</pre>
-                </div>
-            )}
+        <div style={{
+            margin: 0,
+            padding: 0,
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '100vh'
+        }}>
+            <div style={{
+                background: 'white',
+                padding: '40px',
+                borderRadius: '12px',
+                boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
+                textAlign: 'center',
+                maxWidth: '400px',
+                width: '90%'
+            }}>
+                <div style={{
+                    border: '4px solid #f3f3f3',
+                    borderTop: '4px solid #667eea',
+                    borderRadius: '50%',
+                    width: '50px',
+                    height: '50px',
+                    animation: 'spin 1s linear infinite',
+                    margin: '0 auto 20px'
+                }}></div>
+                <h2 style={{ margin: '0 0 10px', color: '#333' }}>{status}</h2>
+                <p style={{ color: '#666', margin: 0 }}>{message}</p>
+                {showDebug && (
+                    <div style={{
+                        marginTop: '20px',
+                        padding: '10px',
+                        background: '#f5f5f5',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        color: '#666',
+                        textAlign: 'left',
+                        wordBreak: 'break-all'
+                    }}>
+                        <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{debugInfo}</pre>
+                    </div>
+                )}
+            </div>
+            <style>{`
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            `}</style>
         </div>
     );
 }

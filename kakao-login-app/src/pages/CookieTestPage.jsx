@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import '../styles/test.css';
+import { CONFIG } from '../config';
 
-const BACKEND_URL = 'http://localhost:4001';
+const BACKEND_URL = CONFIG.BACKEND_URL;
 
 export default function CookieTestPage() {
     const [setCookieResult, setSetCookieResult] = useState('');
@@ -100,37 +100,124 @@ export default function CookieTestPage() {
     };
 
     return (
-        <div className="test-page">
-            <h1>쿠키 전송 테스트</h1>
+        <div style={{
+            fontFamily: 'monospace',
+            padding: '20px',
+            background: '#f5f5f5',
+            minHeight: '100vh'
+        }}>
+            <h1 style={{ marginBottom: '20px' }}>쿠키 전송 테스트</h1>
 
-            <div className="test-box">
+            <div style={{
+                background: 'white',
+                padding: '20px',
+                margin: '10px 0',
+                borderRadius: '5px',
+                borderLeft: '4px solid #667eea'
+            }}>
                 <h3>현재 상태</h3>
                 <p><strong>프론트엔드 URL:</strong> {window.location.origin}</p>
                 <p><strong>백엔드 URL:</strong> {BACKEND_URL}</p>
             </div>
 
-            <div className="test-box">
+            <div style={{
+                background: 'white',
+                padding: '20px',
+                margin: '10px 0',
+                borderRadius: '5px',
+                borderLeft: '4px solid #667eea'
+            }}>
                 <h3>테스트 1: 쿠키 설정</h3>
-                <button onClick={handleSetCookie}>백엔드에서 쿠키 설정</button>
-                <pre>{setCookieResult}</pre>
+                <button onClick={handleSetCookie} style={{
+                    background: '#667eea',
+                    color: 'white',
+                    border: 'none',
+                    padding: '10px 20px',
+                    borderRadius: '5px',
+                    cursor: 'pointer',
+                    margin: '5px'
+                }}>백엔드에서 쿠키 설정</button>
+                <pre style={{
+                    background: '#f9fafb',
+                    padding: '10px',
+                    borderRadius: '3px',
+                    overflowX: 'auto'
+                }}>{setCookieResult}</pre>
             </div>
 
-            <div className="test-box">
+            <div style={{
+                background: 'white',
+                padding: '20px',
+                margin: '10px 0',
+                borderRadius: '5px',
+                borderLeft: '4px solid #667eea'
+            }}>
                 <h3>테스트 2: 쿠키 확인</h3>
-                <button onClick={handleCheckCookie}>백엔드에서 쿠키 읽기</button>
-                <pre>{checkCookieResult}</pre>
+                <button onClick={handleCheckCookie} style={{
+                    background: '#667eea',
+                    color: 'white',
+                    border: 'none',
+                    padding: '10px 20px',
+                    borderRadius: '5px',
+                    cursor: 'pointer',
+                    margin: '5px'
+                }}>백엔드에서 쿠키 읽기</button>
+                <pre style={{
+                    background: '#f9fafb',
+                    padding: '10px',
+                    borderRadius: '3px',
+                    overflowX: 'auto'
+                }}>{checkCookieResult}</pre>
             </div>
 
-            <div className="test-box">
+            <div style={{
+                background: 'white',
+                padding: '20px',
+                margin: '10px 0',
+                borderRadius: '5px',
+                borderLeft: '4px solid #667eea'
+            }}>
                 <h3>테스트 3: /api/me 호출</h3>
-                <button onClick={handleTestApiMe}>사용자 정보 API 호출</button>
-                <pre>{apiMeResult}</pre>
+                <button onClick={handleTestApiMe} style={{
+                    background: '#667eea',
+                    color: 'white',
+                    border: 'none',
+                    padding: '10px 20px',
+                    borderRadius: '5px',
+                    cursor: 'pointer',
+                    margin: '5px'
+                }}>사용자 정보 API 호출</button>
+                <pre style={{
+                    background: '#f9fafb',
+                    padding: '10px',
+                    borderRadius: '3px',
+                    overflowX: 'auto'
+                }}>{apiMeResult}</pre>
             </div>
 
-            <div className="test-box">
+            <div style={{
+                background: 'white',
+                padding: '20px',
+                margin: '10px 0',
+                borderRadius: '5px',
+                borderLeft: '4px solid #667eea'
+            }}>
                 <h3>브라우저 쿠키 (JavaScript로 볼 수 있는 것만)</h3>
-                <button onClick={handleShowBrowserCookies}>브라우저 쿠키 보기</button>
-                <pre>{browserCookies}</pre>
+                <button onClick={handleShowBrowserCookies} style={{
+                    background: '#667eea',
+                    color: 'white',
+                    border: 'none',
+                    padding: '10px 20px',
+                    borderRadius: '5px',
+                    cursor: 'pointer',
+                    margin: '5px'
+                }}>브라우저 쿠키 보기</button>
+                <pre style={{
+                    background: '#f9fafb',
+                    padding: '10px',
+                    borderRadius: '3px',
+                    overflowX: 'auto'
+                }}>{browserCookies}</pre>
                 <p><em>참고: httpOnly 쿠키는 JavaScript로 볼 수 없습니다 (보안상 정상)</em></p>
             </div>
         </div>

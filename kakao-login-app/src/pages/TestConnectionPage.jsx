@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import '../styles/test.css';
+import { CONFIG } from '../config';
 
-const BACKEND_URL = 'http://localhost:4001';
+const BACKEND_URL = CONFIG.BACKEND_URL;
 
 export default function TestConnectionPage() {
     const [envInfo, setEnvInfo] = useState('');
@@ -130,28 +130,78 @@ export default function TestConnectionPage() {
         }
     };
 
+    const buttonStyle = {
+        background: '#667eea',
+        color: 'white',
+        border: 'none',
+        padding: '10px 20px',
+        borderRadius: '5px',
+        cursor: 'pointer',
+        margin: '5px'
+    };
+
+    const testBoxStyle = {
+        background: 'white',
+        padding: '20px',
+        margin: '10px 0',
+        borderRadius: '5px',
+        borderLeft: testClass === 'success' ? '4px solid #22c55e' : testClass === 'error' ? '4px solid #ef4444' : '4px solid #667eea'
+    };
+
     return (
-        <div className="test-page">
-            <h1>카카오 로그인 앱 - 백엔드 연결 테스트</h1>
+        <div style={{
+            fontFamily: 'monospace',
+            padding: '20px',
+            background: '#f5f5f5',
+            minHeight: '100vh'
+        }}>
+            <h1 style={{ marginBottom: '20px' }}>카카오 로그인 앱 - 백엔드 연결 테스트</h1>
 
-            <div className="test-box">
+            <div style={{
+                background: 'white',
+                padding: '20px',
+                margin: '10px 0',
+                borderRadius: '5px',
+                borderLeft: '4px solid #667eea'
+            }}>
                 <h3>1. 현재 환경</h3>
-                <pre>{envInfo}</pre>
+                <pre style={{
+                    background: '#f9fafb',
+                    padding: '10px',
+                    borderRadius: '3px',
+                    overflowX: 'auto'
+                }}>{envInfo}</pre>
             </div>
 
-            <div className={`test-box ${testClass}`}>
+            <div style={testBoxStyle}>
                 <h3>2. 백엔드 연결 테스트</h3>
-                <button onClick={testBackend}>백엔드 연결 테스트</button>
-                <button onClick={testCORS}>CORS 설정 확인</button>
-                <button onClick={testLoginURL}>카카오 로그인 URL 요청</button>
-                <pre>{testResult}</pre>
+                <button onClick={testBackend} style={buttonStyle}>백엔드 연결 테스트</button>
+                <button onClick={testCORS} style={buttonStyle}>CORS 설정 확인</button>
+                <button onClick={testLoginURL} style={buttonStyle}>카카오 로그인 URL 요청</button>
+                <pre style={{
+                    background: '#f9fafb',
+                    padding: '10px',
+                    borderRadius: '3px',
+                    overflowX: 'auto'
+                }}>{testResult}</pre>
             </div>
 
-            <div className="test-box">
+            <div style={{
+                background: 'white',
+                padding: '20px',
+                margin: '10px 0',
+                borderRadius: '5px',
+                borderLeft: '4px solid #667eea'
+            }}>
                 <h3>3. 권장 실행 방법</h3>
                 <p>file:// 프로토콜로 실행하면 CORS 오류가 발생합니다.</p>
                 <p><strong>다음 중 하나를 사용하세요:</strong></p>
-                <pre>{`# 방법 1: Vite (권장)
+                <pre style={{
+                    background: '#f9fafb',
+                    padding: '10px',
+                    borderRadius: '3px',
+                    overflowX: 'auto'
+                }}>{`# 방법 1: Vite (권장)
 npm run dev
 
 # 방법 2: http-server
