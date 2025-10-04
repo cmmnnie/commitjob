@@ -16,11 +16,12 @@ export default function MainPage() {
             console.log('[APP] Kakao SDK 초기화 완료');
         }
 
-        // 로그아웃 직후인지 확인
-        if (sessionStorage.getItem('just_logged_out') === 'true') {
-            console.log('[APP] 로그아웃 직후 감지 - localStorage 강제 삭제');
+        // 로그아웃 직후인지 확인 (localStorage만 삭제, 플래그는 유지)
+        const justLoggedOut = sessionStorage.getItem('just_logged_out');
+        if (justLoggedOut === 'true') {
+            console.log('[APP] 로그아웃 직후 감지 - localStorage만 삭제');
             localStorage.clear();
-            sessionStorage.removeItem('just_logged_out');
+            // just_logged_out 플래그는 다음 로그인 시 사용하므로 제거하지 않음
         }
 
         // 로그인 상태 확인
@@ -110,13 +111,14 @@ export default function MainPage() {
             setLoadingMessage('카카오 로그인 URL을 가져오는 중...');
 
             const origin = CONFIG.APP_ORIGIN;
-            const forceLogin = sessionStorage.getItem('force_kakao_login');
+            const justLoggedOut = sessionStorage.getItem('just_logged_out');
             let loginUrl = `${CONFIG.BACKEND_URL}${CONFIG.API.KAKAO_LOGIN_URL}?origin=${encodeURIComponent(origin)}`;
 
-            if (forceLogin === 'true') {
+            // 로그아웃 직후라면 카카오 계정 선택 강제
+            if (justLoggedOut === 'true') {
                 loginUrl += '&prompt=login';
-                sessionStorage.removeItem('force_kakao_login');
-                console.log('[APP] 강제 재로그인 모드 (prompt=login)');
+                sessionStorage.removeItem('just_logged_out');
+                console.log('[APP] 로그아웃 직후 - 계정 선택 강제 (prompt=login)');
             }
 
             const response = await fetch(loginUrl, {
@@ -158,9 +160,9 @@ export default function MainPage() {
             setIsLoading(true);
             setLoadingMessage('로그아웃 처리 중...');
 
+            // 카카오 SDK 로그아웃
             if (window.Kakao && window.Kakao.Auth) {
                 try {
-                    sessionStorage.setItem('force_kakao_login', 'true');
                     await new Promise((resolve) => {
                         window.Kakao.Auth.logout(() => {
                             console.log('[APP] 카카오 세션 로그아웃 완료');
@@ -172,6 +174,7 @@ export default function MainPage() {
                 }
             }
 
+            // 백엔드 로그아웃
             const response = await fetch(`${CONFIG.BACKEND_URL}${CONFIG.API.LOGOUT}`, {
                 method: 'POST',
                 credentials: 'include',
@@ -183,7 +186,11 @@ export default function MainPage() {
             if (response.ok) {
                 console.log('[APP] 로그아웃 성공');
                 localStorage.clear();
+                sessionStorage.clear(); // 모든 세션 데이터 삭제
+
+                // 로그아웃 완료 플래그 설정 (다음 로그인 시 계정 선택 강제)
                 sessionStorage.setItem('just_logged_out', 'true');
+
                 setCurrentUser(null);
                 window.location.href = window.location.origin + window.location.pathname;
             } else {
@@ -192,6 +199,7 @@ export default function MainPage() {
         } catch (error) {
             console.error('[APP] 로그아웃 오류:', error);
             localStorage.clear();
+            sessionStorage.clear();
             sessionStorage.setItem('just_logged_out', 'true');
             setCurrentUser(null);
             window.location.href = window.location.origin + window.location.pathname;
