@@ -4,225 +4,158 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>로그인 처리 중...</title>
-    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        h2 {
+            margin: 0 0 10px;
+            color: #333;
+        }
+        p {
+            color: #666;
+            margin: 0;
+        }
+        .debug {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #666;
+            text-align: left;
+            word-break: break-all;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
-        <div class="callback-container">
-            <!-- 로딩 스피너 -->
-            <div class="spinner-large"></div>
-
-            <!-- 상태 메시지 -->
-            <h2 id="callbackStatus">로그인 처리 중...</h2>
-            <p id="callbackMessage">잠시만 기다려주세요</p>
-
-            <!-- 진행 상태 표시 -->
-            <div class="progress-steps">
-                <div class="step active" id="step1">
-                    <div class="step-number">1</div>
-                    <div class="step-label">인증 확인</div>
-                </div>
-                <div class="step" id="step2">
-                    <div class="step-number">2</div>
-                    <div class="step-label">사용자 정보 조회</div>
-                </div>
-                <div class="step" id="step3">
-                    <div class="step-number">3</div>
-                    <div class="step-label">로그인 완료</div>
-                </div>
-            </div>
-
-            <!-- 디버그 정보 (개발 환경에서만 표시) -->
-            <div id="debugInfo" class="debug-info hidden">
-                <h3>디버그 정보</h3>
-                <pre id="debugContent"></pre>
-            </div>
-        </div>
+        <div class="spinner"></div>
+        <h2 id="status">로그인 처리 중...</h2>
+        <p id="message">잠시만 기다려주세요</p>
+        <div id="debug" class="debug" style="display: none;"></div>
     </div>
 
-    <!-- 콜백 처리 로직 -->
     <script>
-        // 백엔드 URL 환경별 자동 감지
+        // 환경별 백엔드 URL 자동 감지
         const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
             ? 'http://localhost:4001'
             : 'https://commitjob-backend.up.railway.app';
-        // 진행 단계 업데이트 함수
-        function updateStep(stepNumber, active = true) {
-            const step = document.getElementById(`step${stepNumber}`);
-            if (step) {
-                if (active) {
-                    step.classList.add('active');
-                } else {
-                    step.classList.remove('active');
-                }
-            }
-        }
 
-        // 상태 메시지 업데이트
-        function updateStatus(status, message) {
-            document.getElementById('callbackStatus').textContent = status;
-            document.getElementById('callbackMessage').textContent = message;
-        }
-
-        // 디버그 정보 표시
-        function showDebug(data) {
-            const debugInfo = document.getElementById('debugInfo');
-            const debugContent = document.getElementById('debugContent');
-            debugContent.textContent = JSON.stringify(data, null, 2);
-            debugInfo.classList.remove('hidden');
-        }
-
-        // 메인 콜백 처리 함수
         async function handleCallback() {
-            try {
-                console.log('[CALLBACK] 콜백 처리 시작');
-                console.log('[CALLBACK] Current URL:', window.location.href);
+            const statusEl = document.getElementById('status');
+            const messageEl = document.getElementById('message');
+            const debugEl = document.getElementById('debug');
 
-                // URL 파라미터 확인
+            try {
                 const params = new URLSearchParams(window.location.search);
                 const ok = params.get('ok');
-                const error = params.get('error');
+                const token = params.get('token');
 
-                // 디버그 정보 수집
-                const debugData = {
-                    url: window.location.href,
-                    ok: ok,
-                    error: error,
-                    timestamp: new Date().toISOString()
-                };
+                console.log('[CALLBACK] ok parameter:', ok);
+                console.log('[CALLBACK] token received:', !!token);
+                console.log('[CALLBACK] token length:', token ? token.length : 0);
+                console.log('[CALLBACK] Current URL:', window.location.href);
 
-                console.log('[CALLBACK] URL 파라미터:', debugData);
+                // 디버그 정보 항상 표시
+                debugEl.innerHTML = `<strong>URL:</strong> ${window.location.href}<br>` +
+                                   `<strong>ok:</strong> ${ok}<br>` +
+                                   `<strong>token:</strong> ${token ? 'exists (length: ' + token.length + ')' : 'missing'}`;
+                debugEl.style.display = 'block';
 
-                // 에러 체크
-                if (error) {
-                    console.error('[CALLBACK] 에러 파라미터 발견:', error);
-                    updateStatus('로그인 실패', error);
-                    updateStep(1, false);
+                if (ok === '1' && token) {
+                    statusEl.textContent = '로그인 성공!';
+                    messageEl.textContent = '사용자 정보를 확인하는 중...';
 
-                    setTimeout(() => {
-                        window.location.href = window.location.origin + '/index.html?error=login_failed';
-                    }, 2000);
-                    return;
-                }
+                    // JWT 토큰을 localStorage에 저장
+                    localStorage.setItem('app_session', token);
+                    console.log('[CALLBACK] Token saved to localStorage');
 
-                // ok 파라미터 체크
-                if (ok === '1') {
-                    console.log('[CALLBACK] 로그인 성공 (ok=1)');
-
-                    // Step 1 완료
-                    updateStep(1, true);
-                    updateStatus('인증 성공', '사용자 정보를 확인하는 중...');
-
-                    // 잠시 대기 (시각적 효과)
-                    await new Promise(resolve => setTimeout(resolve, 500));
-
-                    // Step 2 시작
-                    updateStep(2, true);
-
-                    // 사용자 정보 확인 (JWT 쿠키가 자동으로 전송됨)
-                    console.log('[CALLBACK] 사용자 정보 요청 중...');
+                    // 사용자 정보 확인
+                    console.log('[CALLBACK] Fetching user info from:', `${BACKEND_URL}/api/me`);
+                    console.log('[CALLBACK] Authorization header:', `Bearer ${token.substring(0, 20)}...`);
 
                     const response = await fetch(`${BACKEND_URL}/api/me`, {
-                        method: 'GET',
-                        credentials: 'include', // 쿠키 전송 필수
+                        credentials: 'include',
                         headers: {
-                            'Content-Type': 'application/json'
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
                         }
                     });
 
-                    console.log('[CALLBACK] 사용자 정보 응답 상태:', response.status);
-                    console.log('[CALLBACK] 현재 쿠키:', document.cookie);
+                    console.log('[CALLBACK] /api/me response status:', response.status);
+                    console.log('[CALLBACK] /api/me response headers:', [...response.headers.entries()]);
 
                     if (response.ok) {
                         const data = await response.json();
-                        console.log('[CALLBACK] 사용자 정보:', data);
-
-                        debugData.user = data.user;
+                        console.log('[CALLBACK] User data:', data);
 
                         if (data.user) {
-                            // Step 2 완료
-                            updateStep(2, true);
-                            updateStatus('정보 확인 완료', `환영합니다, ${data.user.name}님!`);
+                            statusEl.textContent = `환영합니다, ${data.user.name}님!`;
+                            messageEl.textContent = '메인 페이지로 이동합니다...';
 
-                            // 잠시 대기
-                            await new Promise(resolve => setTimeout(resolve, 500));
-
-                            // Step 3 완료
-                            updateStep(3, true);
-                            updateStatus('로그인 완료', '메인 페이지로 이동합니다...');
-
-                            // 디버그 정보 표시 (개발 환경)
-                            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                                showDebug(debugData);
-                            }
-
-                            // 1초 후 메인 페이지로 이동
                             setTimeout(() => {
-                                // 절대 URL로 리다이렉트
-                                window.location.href = window.location.origin + '/index.html';
+                                window.location.href = '/';
                             }, 1000);
-
                         } else {
-                            console.error('[CALLBACK] 사용자 정보 없음');
-                            updateStep(2, false);
-                            updateStatus('로그인 실패', '사용자 정보를 찾을 수 없습니다');
-
-                            setTimeout(() => {
-                                window.location.href = './index.html?error=login_failed';
-                            }, 2000);
+                            throw new Error('사용자 정보를 찾을 수 없습니다');
                         }
                     } else {
-                        console.error('[CALLBACK] 사용자 정보 요청 실패:', response.status);
-                        updateStep(2, false);
-                        updateStatus('정보 조회 실패', '사용자 정보를 가져올 수 없습니다');
-
                         const errorText = await response.text();
-                        console.error('[CALLBACK] 에러 응답:', errorText);
-                        console.error('[CALLBACK] 쿠키 확인:', document.cookie);
-                        console.error('[CALLBACK] BACKEND_URL:', BACKEND_URL);
-
-                        setTimeout(() => {
-                            window.location.href = window.location.origin + '/index.html?error=login_failed';
-                        }, 2000);
+                        console.error('[CALLBACK] Error response:', errorText);
+                        debugEl.innerHTML = `<strong>Error:</strong> ${response.status}<br>` +
+                                           `<strong>Token:</strong> ${token ? 'exists' : 'missing'}<br>` +
+                                           `<strong>Response:</strong> ${errorText}`;
+                        debugEl.style.display = 'block';
+                        throw new Error('사용자 정보 조회 실패');
                     }
-
-                } else if (ok === '0') {
-                    // 로그인 실패
-                    console.error('[CALLBACK] 로그인 실패 (ok=0)');
-                    updateStep(1, false);
-                    updateStatus('로그인 실패', '인증에 실패했습니다');
-
-                    setTimeout(() => {
-                        window.location.href = window.location.origin + '/index.html?error=login_failed';
-                    }, 2000);
-
                 } else {
-                    // ok 파라미터가 없거나 잘못된 값
-                    console.error('[CALLBACK] 잘못된 콜백 파라미터:', ok);
-                    updateStep(1, false);
-                    updateStatus('잘못된 요청', 'ok 파라미터가 없거나 잘못되었습니다');
-
-                    setTimeout(() => {
-                        window.location.href = window.location.origin + '/index.html?error=login_failed';
-                    }, 2000);
+                    throw new Error('로그인에 실패했습니다');
                 }
-
             } catch (error) {
-                console.error('[CALLBACK] 처리 중 오류 발생:', error);
-                updateStep(1, false);
-                updateStatus('오류 발생', error.message);
+                console.error('[CALLBACK] Error:', error);
+                statusEl.textContent = '로그인 실패';
+                messageEl.textContent = error.message;
+                debugEl.textContent = error.stack;
+                debugEl.style.display = 'block';
 
                 setTimeout(() => {
-                    window.location.href = window.location.origin + '/index.html?error=login_failed';
-                }, 2000);
+                    window.location.href = '/login';
+                }, 3000);
             }
         }
 
-        // 페이지 로드 시 콜백 처리 시작
-        window.addEventListener('DOMContentLoaded', () => {
-            console.log('[CALLBACK] 페이지 로드 완료, 콜백 처리 시작');
-            handleCallback();
-        });
+        // 페이지 로드 시 실행
+        handleCallback();
     </script>
 </body>
 </html>

@@ -137,10 +137,13 @@ const App = {
                 this.currentUser = null;
                 this.showLoginSection();
                 if (showMessage) {
+                    this.hideLoading();
                     this.showStatus('로그인이 필요합니다', 'warning');
                 }
                 return;
             }
+
+            console.log('[APP] 토큰 확인됨, 사용자 정보 요청 중...');
 
             const headers = {
                 'Content-Type': 'application/json',
