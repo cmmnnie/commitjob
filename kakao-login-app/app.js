@@ -371,14 +371,18 @@ const App = {
         // 가입일 (UTC를 한국 시간으로 변환)
         const userCreatedAt = document.getElementById('userCreatedAt');
         if (userCreatedAt && user.created_at) {
-            const date = new Date(user.created_at);
-            userCreatedAt.textContent = date.toLocaleString('ko-KR', {
+            // UTC 시간을 파싱
+            const utcDate = new Date(user.created_at);
+            // 한국 시간으로 변환 (UTC + 9시간)
+            const kstDate = new Date(utcDate.getTime() + (9 * 60 * 60 * 1000));
+
+            // 한국 시간으로 포맷
+            userCreatedAt.textContent = kstDate.toLocaleString('ko-KR', {
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric',
                 hour: '2-digit',
-                minute: '2-digit',
-                timeZone: 'Asia/Seoul'
+                minute: '2-digit'
             });
         }
     },
