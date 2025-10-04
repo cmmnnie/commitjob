@@ -86,11 +86,13 @@
                 console.log('[CALLBACK] token length:', token ? token.length : 0);
                 console.log('[CALLBACK] Current URL:', window.location.href);
 
-                // 디버그 정보 항상 표시
-                debugEl.innerHTML = `<strong>URL:</strong> ${window.location.href}<br>` +
-                                   `<strong>ok:</strong> ${ok}<br>` +
-                                   `<strong>token:</strong> ${token ? 'exists (length: ' + token.length + ')' : 'missing'}`;
-                debugEl.style.display = 'block';
+                // 디버그 정보는 개발 환경에서만 표시
+                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                    debugEl.innerHTML = `<strong>URL:</strong> ${window.location.href}<br>` +
+                                       `<strong>ok:</strong> ${ok}<br>` +
+                                       `<strong>token:</strong> ${token ? 'exists (length: ' + token.length + ')' : 'missing'}`;
+                    debugEl.style.display = 'block';
+                }
 
                 if (ok === '1' && token) {
                     statusEl.textContent = '로그인 성공!';
@@ -132,10 +134,14 @@
                     } else {
                         const errorText = await response.text();
                         console.error('[CALLBACK] Error response:', errorText);
-                        debugEl.innerHTML = `<strong>Error:</strong> ${response.status}<br>` +
-                                           `<strong>Token:</strong> ${token ? 'exists' : 'missing'}<br>` +
-                                           `<strong>Response:</strong> ${errorText}`;
-                        debugEl.style.display = 'block';
+
+                        // 디버그 정보는 개발 환경에서만 표시
+                        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                            debugEl.innerHTML = `<strong>Error:</strong> ${response.status}<br>` +
+                                               `<strong>Token:</strong> ${token ? 'exists' : 'missing'}<br>` +
+                                               `<strong>Response:</strong> ${errorText}`;
+                            debugEl.style.display = 'block';
+                        }
                         throw new Error('사용자 정보 조회 실패');
                     }
                 } else {
@@ -145,8 +151,12 @@
                 console.error('[CALLBACK] Error:', error);
                 statusEl.textContent = '로그인 실패';
                 messageEl.textContent = error.message;
-                debugEl.textContent = error.stack;
-                debugEl.style.display = 'block';
+
+                // 디버그 정보는 개발 환경에서만 표시
+                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                    debugEl.textContent = error.stack;
+                    debugEl.style.display = 'block';
+                }
 
                 setTimeout(() => {
                     window.location.href = '/login';

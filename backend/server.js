@@ -727,13 +727,15 @@ app.get("/auth/kakao/callback", async (req, res) => {
  */
 app.get("/api/me", async (req, res) => {
   try {
-    // 쿠키 또는 Authorization 헤더에서 토큰 가져오기
-    let token = req.cookies?.app_session;
+    let token = null;
 
-    // Authorization 헤더 확인
+    // Authorization 헤더를 우선 확인 (localStorage 토큰 우선)
     const authHeader = req.headers.authorization;
-    if (!token && authHeader && authHeader.startsWith('Bearer ')) {
+    if (authHeader && authHeader.startsWith('Bearer ')) {
       token = authHeader.substring(7); // "Bearer " 제거
+    } else {
+      // Authorization 헤더가 없으면 쿠키 확인 (하위 호환성)
+      token = req.cookies?.app_session;
     }
 
     if (!token) return res.status(401).json({ user: null });
