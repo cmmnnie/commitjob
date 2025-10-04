@@ -1,0 +1,616 @@
+/**
+ * 카카오 로그인 앱 스타일시트
+ * 카카오 디자인 가이드라인 기반
+ */
+
+/* ========== 전역 스타일 ========== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.container {
+    width: 100%;
+    max-width: 500px;
+    position: relative;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* ========== 로그인 카드 ========== */
+.login-card,
+.user-card {
+    background: white;
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ========== 로고 섹션 ========== */
+.logo-section {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.logo-section h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #667eea;
+    margin-bottom: 10px;
+}
+
+.logo-section p {
+    color: #666;
+    font-size: 1rem;
+}
+
+/* ========== 로그인 설명 ========== */
+.login-description {
+    text-align: center;
+    margin-bottom: 30px;
+    color: #666;
+    font-size: 0.95rem;
+}
+
+/* ========== 카카오 로그인 버튼 ========== */
+.kakao-login-btn {
+    width: 100%;
+    padding: 16px;
+    background-color: #FEE500;
+    color: #000000;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(254, 229, 0, 0.3);
+}
+
+.kakao-login-btn:hover {
+    background-color: #FDD835;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(254, 229, 0, 0.4);
+}
+
+.kakao-login-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(254, 229, 0, 0.3);
+}
+
+.kakao-icon {
+    width: 24px;
+    height: 24px;
+}
+
+/* ========== 구분선 ========== */
+.divider {
+    text-align: center;
+    margin: 30px 0;
+    position: relative;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 40%;
+    height: 1px;
+    background-color: #e0e0e0;
+}
+
+.divider::before {
+    left: 0;
+}
+
+.divider::after {
+    right: 0;
+}
+
+.divider span {
+    background: white;
+    padding: 0 15px;
+    color: #999;
+    font-size: 0.9rem;
+}
+
+/* ========== 테스트 버튼 ========== */
+.test-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.btn-secondary {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-secondary:active {
+    transform: translateY(0);
+}
+
+/* ========== 상태 메시지 ========== */
+.status-message {
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    text-align: center;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.status-success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.status-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.status-warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
+}
+
+.status-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+/* ========== 개발 정보 ========== */
+.dev-info {
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 10px;
+    font-size: 0.85rem;
+    color: #666;
+    text-align: center;
+}
+
+.dev-info p {
+    margin: 5px 0;
+}
+
+/* ========== 사용자 카드 ========== */
+.user-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.user-header h2 {
+    font-size: 2rem;
+    color: #333;
+}
+
+/* ========== 사용자 프로필 ========== */
+.user-profile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    border-radius: 15px;
+}
+
+.profile-image-wrapper {
+    margin-bottom: 20px;
+}
+
+.profile-image {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 5px solid white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    object-fit: cover;
+}
+
+.profile-info {
+    text-align: center;
+}
+
+.user-name {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.user-email {
+    font-size: 1rem;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.user-provider {
+    font-size: 0.9rem;
+    color: #999;
+    font-style: italic;
+}
+
+/* ========== 사용자 상세 정보 ========== */
+.user-details {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 30px;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.detail-item:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    font-weight: 600;
+    color: #666;
+}
+
+.detail-value {
+    color: #333;
+}
+
+/* ========== 액션 버튼들 ========== */
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.btn-logout {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-logout:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(245, 87, 108, 0.4);
+}
+
+.btn-logout:active {
+    transform: translateY(0);
+}
+
+/* ========== 모달 ========== */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    animation: scaleIn 0.3s ease-out;
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.modal-content h3 {
+    font-size: 1.5rem;
+    color: #333;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.modal-content p {
+    color: #666;
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.modal-buttons button {
+    flex: 1;
+}
+
+/* ========== 로딩 오버레이 ========== */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.loading-overlay p {
+    color: white;
+    font-size: 1.1rem;
+    margin-top: 20px;
+}
+
+/* ========== 스피너 ========== */
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.spinner-large {
+    width: 80px;
+    height: 80px;
+    border: 6px solid rgba(102, 126, 234, 0.3);
+    border-top-color: #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 30px;
+}
+
+/* ========== 콜백 컨테이너 ========== */
+.callback-container {
+    background: white;
+    border-radius: 20px;
+    padding: 60px 40px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    animation: fadeIn 0.5s ease-in-out;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.callback-container h2 {
+    font-size: 1.8rem;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.callback-container p {
+    color: #666;
+    font-size: 1rem;
+    margin-bottom: 40px;
+}
+
+/* ========== 진행 단계 ========== */
+.progress-steps {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 400px;
+    margin: 40px 0;
+    position: relative;
+}
+
+.progress-steps::before {
+    content: '';
+    position: absolute;
+    top: 25px;
+    left: 25px;
+    right: 25px;
+    height: 2px;
+    background: #e0e0e0;
+    z-index: 0;
+}
+
+.step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+}
+
+.step-number {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #e0e0e0;
+    color: #999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+    transition: all 0.3s ease;
+}
+
+.step.active .step-number {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.step-label {
+    font-size: 0.85rem;
+    color: #999;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.step.active .step-label {
+    color: #667eea;
+    font-weight: 600;
+}
+
+/* ========== 디버그 정보 ========== */
+.debug-info {
+    margin-top: 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    border: 1px solid #e0e0e0;
+    text-align: left;
+    max-width: 100%;
+    overflow: auto;
+}
+
+.debug-info h3 {
+    font-size: 1rem;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.debug-info pre {
+    font-size: 0.85rem;
+    color: #333;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+/* ========== 반응형 디자인 ========== */
+@media (max-width: 600px) {
+    body {
+        padding: 10px;
+    }
+
+    .login-card,
+    .user-card {
+        padding: 30px 20px;
+    }
+
+    .logo-section h1 {
+        font-size: 2rem;
+    }
+
+    .user-header h2 {
+        font-size: 1.5rem;
+    }
+
+    .progress-steps {
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .progress-steps::before {
+        display: none;
+    }
+
+    .callback-container {
+        padding: 40px 20px;
+    }
+}
+
+/* ========== 애니메이션 ========== */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.pulse {
+    animation: pulse 1.5s ease-in-out infinite;
+}
