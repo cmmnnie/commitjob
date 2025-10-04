@@ -16,14 +16,6 @@ export default function MainPage() {
             console.log('[APP] Kakao SDK 초기화 완료');
         }
 
-        // 로그아웃 직후인지 확인 (localStorage만 삭제, 플래그는 유지)
-        const justLoggedOut = sessionStorage.getItem('just_logged_out');
-        if (justLoggedOut === 'true') {
-            console.log('[APP] 로그아웃 직후 감지 - localStorage만 삭제');
-            localStorage.clear();
-            // just_logged_out 플래그는 다음 로그인 시 사용하므로 제거하지 않음
-        }
-
         // 로그인 상태 확인
         checkLoginStatus();
 
@@ -111,15 +103,11 @@ export default function MainPage() {
             setLoadingMessage('카카오 로그인 URL을 가져오는 중...');
 
             const origin = CONFIG.APP_ORIGIN;
-            const justLoggedOut = sessionStorage.getItem('just_logged_out');
-            let loginUrl = `${CONFIG.BACKEND_URL}${CONFIG.API.KAKAO_LOGIN_URL}?origin=${encodeURIComponent(origin)}`;
 
-            // 로그아웃 직후라면 카카오 계정 선택 강제
-            if (justLoggedOut === 'true') {
-                loginUrl += '&prompt=login';
-                sessionStorage.removeItem('just_logged_out');
-                console.log('[APP] 로그아웃 직후 - 계정 선택 강제 (prompt=login)');
-            }
+            // 항상 prompt=select_account를 사용하여 계정 선택 강제
+            let loginUrl = `${CONFIG.BACKEND_URL}${CONFIG.API.KAKAO_LOGIN_URL}?origin=${encodeURIComponent(origin)}&prompt=select_account`;
+
+            console.log('[APP] 계정 선택 강제 모드 (prompt=select_account)');
 
             const response = await fetch(loginUrl, {
                 method: 'GET',
@@ -160,8 +148,8 @@ export default function MainPage() {
             setIsLoading(true);
             setLoadingMessage('로그아웃 처리 중...');
 
-            // 백엔드 로그아웃 먼저 수행
-            const response = await fetch(`${CONFIG.BACKEND_URL}${CONFIG.API.LOGOUT}`, {
+            // 백엔드 로그아웃 수행
+            await fetch(`${CONFIG.BACKEND_URL}${CONFIG.API.LOGOUT}`, {
                 method: 'POST',
                 credentials: 'include',
                 headers: {
@@ -169,32 +157,21 @@ export default function MainPage() {
                 }
             });
 
-            console.log('[APP] 백엔드 로그아웃 응답:', response.status);
-
             // 로컬 데이터 완전 삭제
             localStorage.clear();
             sessionStorage.clear();
 
-            // 로그아웃 플래그 설정
-            sessionStorage.setItem('just_logged_out', 'true');
+            console.log('[APP] 로그아웃 완료, 메인 페이지로 이동');
+            setCurrentUser(null);
 
-            // 카카오 로그아웃 페이지로 리다이렉트하여 완전히 로그아웃
-            // 이렇게 하면 카카오 세션도 완전히 제거됨
-            const kakaoLogoutUrl = 'https://kauth.kakao.com/oauth/logout?client_id=' +
-                CONFIG.KAKAO_JS_KEY +
-                '&logout_redirect_uri=' +
-                encodeURIComponent(window.location.origin);
-
-            console.log('[APP] 카카오 로그아웃 URL로 리다이렉트:', kakaoLogoutUrl);
-            window.location.href = kakaoLogoutUrl;
+            // 페이지 새로고침
+            window.location.href = window.location.origin + window.location.pathname;
 
         } catch (error) {
             console.error('[APP] 로그아웃 오류:', error);
             localStorage.clear();
             sessionStorage.clear();
-            sessionStorage.setItem('just_logged_out', 'true');
-
-            // 에러가 발생해도 로컬 페이지로 리다이렉트
+            setCurrentUser(null);
             window.location.href = window.location.origin + window.location.pathname;
         }
     };
