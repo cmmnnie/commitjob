@@ -354,33 +354,36 @@ app.use(cors(corsOptions));
 // --- DB 기반 사용자 관리 함수들 ---
 async function findOrCreateUser(providerKey, email, name, picture, provider) {
   try {
-    // 기존 사용자 찾기
+    // 이메일로 기존 사용자 찾기
     const [existingUsers] = await pool.execute(
-      'SELECT * FROM users WHERE provider_key = ?',
-      [providerKey]
+      'SELECT * FROM users WHERE email = ?',
+      [email]
     );
 
     if (existingUsers.length > 0) {
-      // 기존 사용자 정보 업데이트
+      // 재로그인 - 기존 사용자 정보 업데이트
       const user = existingUsers[0];
       await pool.execute(
-        'UPDATE users SET email = ?, name = ?, picture = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-        [email, name, picture, user.id]
+        'UPDATE users SET provider_key = ?, name = ?, picture = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        [providerKey, name, picture, user.id]
       );
-      return { ...user, email, name, picture };
+      console.log('[DB] 재로그인 - 사용자 정보 업데이트:', email);
+      return { ...user, provider_key: providerKey, name, picture, isNewUser: false };
     } else {
-      // 새 사용자 생성
+      // 최초 로그인 - 새 사용자 생성
       const [result] = await pool.execute(
         'INSERT INTO users (provider_key, email, name, picture, provider) VALUES (?, ?, ?, ?, ?)',
         [providerKey, email, name, picture, provider]
       );
+      console.log('[DB] 최초 로그인 - 새 사용자 생성:', email);
       return {
         id: result.insertId,
         provider_key: providerKey,
         email,
         name,
         picture,
-        provider
+        provider,
+        isNewUser: true
       };
     }
   } catch (error) {
