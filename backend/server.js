@@ -662,7 +662,7 @@ app.get("/auth/kakao/callback", async (req, res) => {
     console.log('[KAKAO-CALLBACK] 기존 쿠키 삭제, JWT를 URL 파라미터로 전달 (localStorage 사용)');
 
     // JWT를 URL 파라미터로 전달하여 프론트엔드에서 localStorage에 저장
-    const redirectUrl = `${origin}/callback.html?ok=1&token=${encodeURIComponent(appJwt)}`;
+    const redirectUrl = `${origin}/callback?ok=1&token=${encodeURIComponent(appJwt)}`;
     console.log('[KAKAO-CALLBACK] Success! Redirecting to:', redirectUrl);
     res.redirect(redirectUrl);
   } catch (e) {
@@ -671,7 +671,7 @@ app.get("/auth/kakao/callback", async (req, res) => {
       data: e.response?.data,
       status: e.response?.status,
     });
-    const redirectUrl = `${fallback}/callback.html?ok=0`;
+    const redirectUrl = `${fallback}/callback?ok=0`;
     console.log('[KAKAO-CALLBACK] Failed! Redirecting to:', redirectUrl);
     res.redirect(redirectUrl);
   }
