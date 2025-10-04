@@ -122,7 +122,20 @@
                         console.log('[CALLBACK] User data:', data);
 
                         if (data.user) {
-                            statusEl.textContent = `환영합니다, ${data.user.name}님!`;
+                            // 이름 마스킹
+                            const name = data.user.name || '사용자';
+                            let maskedName = name;
+
+                            if (name !== '사용자' && name.length > 0) {
+                                if (name.length === 2) {
+                                    maskedName = name[0] + '*';
+                                } else if (name.length >= 3) {
+                                    const middle = '*'.repeat(name.length - 2);
+                                    maskedName = name[0] + middle + name[name.length - 1];
+                                }
+                            }
+
+                            statusEl.textContent = `환영합니다, ${maskedName}님!`;
                             messageEl.textContent = '메인 페이지로 이동합니다...';
 
                             setTimeout(() => {
