@@ -240,8 +240,10 @@ const App = {
                 console.log('[APP] localStorage 토큰 삭제 완료');
 
                 this.currentUser = null;
-                this.showLoginSection();
-                this.showStatus('로그아웃되었습니다', 'success');
+
+                // 페이지 새로고침하여 모든 상태 초기화
+                console.log('[APP] 페이지 새로고침으로 로그아웃 완료');
+                window.location.reload();
             } else {
                 throw new Error('로그아웃 요청 실패');
             }
@@ -251,8 +253,10 @@ const App = {
             // 에러가 발생해도 로컬 토큰은 삭제
             localStorage.removeItem('app_session');
             this.currentUser = null;
-            this.showLoginSection();
-            this.showStatus('로그아웃되었습니다', 'warning');
+
+            // 페이지 새로고침하여 모든 상태 초기화
+            console.log('[APP] 에러 발생했지만 페이지 새로고침으로 로그아웃 완료');
+            window.location.reload();
         } finally {
             this.hideLoading();
         }

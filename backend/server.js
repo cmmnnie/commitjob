@@ -825,14 +825,16 @@ app.get("/api/userprofile", async (req, res) => {
 app.post("/api/logout", (req, res) => {
   const isProd = process.env.NODE_ENV === "production";
 
-  // 쿠키 삭제 시 설정할 때와 동일한 옵션 사용
-  res.clearCookie("app_session", {
+  // 쿠키를 만료시켜서 삭제 (clearCookie 대신 expires 사용)
+  res.cookie("app_session", "", {
     path: "/",
     httpOnly: true,
     secure: isProd,
-    sameSite: "none"
+    sameSite: "none",
+    expires: new Date(0) // 1970년으로 설정하여 즉시 만료
   });
 
+  console.log('[LOGOUT] Cookie expired and removed');
   res.json({ ok: true });
 });
 
