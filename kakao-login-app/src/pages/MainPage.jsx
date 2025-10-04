@@ -17,7 +17,10 @@ export default function MainPage() {
         }
 
         // 로그인 상태 확인
-        checkLoginStatus();
+        const checkStatus = async () => {
+            await checkLoginStatus();
+        };
+        checkStatus();
 
         // URL 파라미터 확인 (에러 메시지 등)
         const urlParams = new URLSearchParams(window.location.search);
@@ -65,20 +68,29 @@ export default function MainPage() {
 
             if (response.ok) {
                 const data = await response.json();
-                console.log('[APP] 사용자 정보:', data);
+                console.log('[APP] 사용자 정보 응답:', data);
+                console.log('[APP] data.user 존재 여부:', !!data.user);
 
                 if (data.user) {
+                    console.log('[APP] 사용자 프로필 설정:', {
+                        name: data.user.name,
+                        email: data.user.email,
+                        provider: data.user.provider
+                    });
                     setCurrentUser(data.user);
                     if (showMessage) {
                         showStatus('로그인 상태입니다', 'success');
                     }
                 } else {
+                    console.warn('[APP] 응답에 user 객체 없음:', data);
                     setCurrentUser(null);
                     if (showMessage) {
                         showStatus('로그인이 필요합니다', 'warning');
                     }
                 }
             } else {
+                const errorText = await response.text();
+                console.error('[APP] /api/me 요청 실패:', response.status, errorText);
                 setCurrentUser(null);
                 if (showMessage) {
                     showStatus('로그인이 필요합니다', 'warning');
