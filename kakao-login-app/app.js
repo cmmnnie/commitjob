@@ -239,11 +239,21 @@ const App = {
                 localStorage.removeItem('app_session');
                 console.log('[APP] localStorage 토큰 삭제 완료');
 
+                // 삭제 확인
+                const remainingToken = localStorage.getItem('app_session');
+                console.log('[APP] 삭제 후 토큰 확인:', remainingToken === null ? 'null (정상)' : 'still exists (오류)');
+
                 this.currentUser = null;
 
-                // 페이지 새로고침하여 모든 상태 초기화
-                console.log('[APP] 페이지 새로고침으로 로그아웃 완료');
-                window.location.reload();
+                // 로그인 화면 표시 후 새로고침 (localStorage 삭제 완료 보장)
+                this.showLoginSection();
+                this.showStatus('로그아웃되었습니다', 'success');
+
+                // 약간의 지연 후 새로고침 (localStorage 변경사항 반영 대기)
+                setTimeout(() => {
+                    console.log('[APP] 페이지 새로고침 시작');
+                    window.location.reload();
+                }, 100);
             } else {
                 throw new Error('로그아웃 요청 실패');
             }
@@ -253,12 +263,15 @@ const App = {
             // 에러가 발생해도 로컬 토큰은 삭제
             localStorage.removeItem('app_session');
             this.currentUser = null;
+            this.showLoginSection();
 
-            // 페이지 새로고침하여 모든 상태 초기화
-            console.log('[APP] 에러 발생했지만 페이지 새로고침으로 로그아웃 완료');
-            window.location.reload();
+            // 약간의 지연 후 새로고침
+            setTimeout(() => {
+                console.log('[APP] 에러 발생했지만 페이지 새로고침');
+                window.location.reload();
+            }, 100);
         } finally {
-            this.hideLoading();
+            // finally는 reload 전에 실행되므로 여기서 hideLoading 호출하지 않음
         }
     },
 
