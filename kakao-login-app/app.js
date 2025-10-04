@@ -231,6 +231,20 @@ const App = {
         try {
             this.showLoading('로그아웃 처리 중...');
 
+            // 카카오 로그아웃 먼저 수행
+            if (window.Kakao && window.Kakao.Auth) {
+                try {
+                    await new Promise((resolve) => {
+                        window.Kakao.Auth.logout(() => {
+                            console.log('[APP] 카카오 세션 로그아웃 완료');
+                            resolve();
+                        });
+                    });
+                } catch (kakaoError) {
+                    console.error('[APP] 카카오 로그아웃 오류:', kakaoError);
+                }
+            }
+
             const response = await fetch(`${CONFIG.BACKEND_URL}${CONFIG.API.LOGOUT}`, {
                 method: 'POST',
                 credentials: 'include',
