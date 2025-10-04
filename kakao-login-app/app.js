@@ -15,6 +15,13 @@ const App = {
     init() {
         console.log('[APP] 앱 초기화 시작');
 
+        // 로그아웃 직후인지 확인
+        if (sessionStorage.getItem('just_logged_out') === 'true') {
+            console.log('[APP] 로그아웃 직후 감지 - localStorage 강제 삭제');
+            localStorage.clear();
+            sessionStorage.removeItem('just_logged_out');
+        }
+
         // 이벤트 리스너 등록
         this.attachEventListeners();
 
@@ -237,41 +244,32 @@ const App = {
             if (response.ok) {
                 console.log('[APP] 로그아웃 성공');
 
-                // localStorage에서 토큰 삭제
-                localStorage.removeItem('app_session');
-                console.log('[APP] localStorage 토큰 삭제 완료');
+                // localStorage 완전 초기화
+                localStorage.clear();
+                console.log('[APP] localStorage 전체 삭제 완료');
 
-                // 삭제 확인
-                const remainingToken = localStorage.getItem('app_session');
-                console.log('[APP] 삭제 후 토큰 확인:', remainingToken === null ? 'null (정상)' : 'still exists (오류)');
+                // 로그아웃 플래그 설정 (새로고침 후 확인용)
+                sessionStorage.setItem('just_logged_out', 'true');
 
                 this.currentUser = null;
 
-                // 로그인 화면 표시 후 새로고침 (localStorage 삭제 완료 보장)
-                this.showLoginSection();
-                this.showStatus('로그아웃되었습니다', 'success');
-
-                // 약간의 지연 후 새로고침 (localStorage 변경사항 반영 대기)
-                setTimeout(() => {
-                    console.log('[APP] 페이지 새로고침 시작');
-                    window.location.reload();
-                }, 100);
+                // 페이지 새로고침 (sessionStorage는 유지됨)
+                console.log('[APP] 로그아웃 완료, 페이지 새로고침');
+                window.location.href = window.location.origin + window.location.pathname;
             } else {
                 throw new Error('로그아웃 요청 실패');
             }
 
         } catch (error) {
             console.error('[APP] 로그아웃 오류:', error);
-            // 에러가 발생해도 로컬 토큰은 삭제
-            localStorage.removeItem('app_session');
+            // 에러가 발생해도 localStorage 완전 삭제
+            localStorage.clear();
+            sessionStorage.setItem('just_logged_out', 'true');
             this.currentUser = null;
-            this.showLoginSection();
 
-            // 약간의 지연 후 새로고침
-            setTimeout(() => {
-                console.log('[APP] 에러 발생했지만 페이지 새로고침');
-                window.location.reload();
-            }, 100);
+            // 페이지 새로고침
+            console.log('[APP] 에러 발생했지만 로그아웃 처리');
+            window.location.href = window.location.origin + window.location.pathname;
         } finally {
             // finally는 reload 전에 실행되므로 여기서 hideLoading 호출하지 않음
         }
