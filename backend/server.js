@@ -477,22 +477,10 @@ app.get("/auth/google/callback", async (req, res) => {
       .setExpirationTime("7d")
       .sign(new TextEncoder().encode(process.env.JWT_SECRET));
 
-    const isProd = process.env.NODE_ENV === "production";
+    // 쿠키는 설정하지 않음 (localStorage만 사용)
+    console.log('[GOOGLE-CALLBACK] JWT를 URL 파라미터로 전달 (쿠키 미사용)');
 
-    // 쿠키 설정 (크로스 오리진 지원)
-    const cookieOptions = {
-      httpOnly: true,
-      secure: isProd, // 프로덕션(HTTPS)에서는 true, 로컬(HTTP)에서는 false
-      sameSite: "none", // 크로스 오리진 쿠키 전송 허용
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      path: "/",
-    };
-
-    res.cookie("app_session", appJwt, cookieOptions);
-
-    console.log('[GOOGLE-CALLBACK] 쿠키 설정 완료:', { httpOnly: true, sameSite: cookieOptions.sameSite });
-
-    // JWT를 URL 파라미터로 전달하여 프론트엔드에서 쿠키 설정
+    // JWT를 URL 파라미터로 전달하여 프론트엔드에서 localStorage에 저장
     res.redirect(`${origin}/callback.html?ok=1&token=${encodeURIComponent(appJwt)}`);
   } catch (e) {
     console.error(e.response?.data || e);
@@ -642,22 +630,10 @@ app.get("/auth/kakao/callback", async (req, res) => {
       .setExpirationTime("7d")
       .sign(new TextEncoder().encode(process.env.JWT_SECRET));
 
-    const isProd = process.env.NODE_ENV === "production";
+    // 쿠키는 설정하지 않음 (localStorage만 사용)
+    console.log('[KAKAO-CALLBACK] JWT를 URL 파라미터로 전달 (쿠키 미사용)');
 
-    // 쿠키 설정 (크로스 오리진 지원)
-    const cookieOptions = {
-      httpOnly: true,
-      secure: isProd, // 프로덕션(HTTPS)에서는 true, 로컬(HTTP)에서는 false
-      sameSite: "none", // 크로스 오리진 쿠키 전송 허용
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      path: "/",
-    };
-
-    res.cookie("app_session", appJwt, cookieOptions);
-
-    console.log('[KAKAO-CALLBACK] 쿠키 설정 완료:', { httpOnly: true, sameSite: cookieOptions.sameSite });
-
-    // JWT를 URL 파라미터로 전달하여 프론트엔드에서 쿠키 설정
+    // JWT를 URL 파라미터로 전달하여 프론트엔드에서 localStorage에 저장
     const redirectUrl = `${origin}/callback.html?ok=1&token=${encodeURIComponent(appJwt)}`;
     console.log('[KAKAO-CALLBACK] Success! Redirecting to:', redirectUrl);
     res.redirect(redirectUrl);
@@ -727,17 +703,13 @@ app.get("/auth/kakao/callback", async (req, res) => {
  */
 app.get("/api/me", async (req, res) => {
   try {
-    let token = null;
-
-    // Authorization 헤더를 우선 확인 (localStorage 토큰 우선)
+    // Authorization 헤더에서만 토큰 가져오기 (쿠키 미사용)
     const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      token = authHeader.substring(7); // "Bearer " 제거
-    } else {
-      // Authorization 헤더가 없으면 쿠키 확인 (하위 호환성)
-      token = req.cookies?.app_session;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ user: null });
     }
 
+    const token = authHeader.substring(7); // "Bearer " 제거
     if (!token) return res.status(401).json({ user: null });
 
     const { payload } = await jose.jwtVerify(
@@ -825,18 +797,9 @@ app.get("/api/userprofile", async (req, res) => {
 });
 
 app.post("/api/logout", (req, res) => {
-  const isProd = process.env.NODE_ENV === "production";
-
-  // 쿠키를 만료시켜서 삭제 (clearCookie 대신 expires 사용)
-  res.cookie("app_session", "", {
-    path: "/",
-    httpOnly: true,
-    secure: isProd,
-    sameSite: "none",
-    expires: new Date(0) // 1970년으로 설정하여 즉시 만료
-  });
-
-  console.log('[LOGOUT] Cookie expired and removed');
+  // localStorage 기반 인증이므로 서버 측에서 할 일 없음
+  // 클라이언트에서 localStorage.removeItem('app_session')으로 처리
+  console.log('[LOGOUT] Logout request received (localStorage-based auth)');
   res.json({ ok: true });
 });
 
