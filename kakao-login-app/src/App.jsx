@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Navigation from './components/Navigation';
 import MainPage from './pages/MainPage';
 import CallbackPage from './pages/CallbackPage';
 import CookieTestPage from './pages/CookieTestPage';
@@ -8,6 +9,7 @@ import TestConnectionPage from './pages/TestConnectionPage';
 function App() {
     return (
         <Router>
+            <Navigation />
             <Routes>
                 <Route path="/" element={<MainPage />} />
                 <Route path="/callback" element={<CallbackPage />} />
