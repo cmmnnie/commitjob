@@ -152,6 +152,7 @@ export default function TestConnectionPage() {
         <div style={{
             fontFamily: 'monospace',
             padding: '20px',
+            paddingBottom: '80px',
             background: '#f5f5f5',
             minHeight: '100vh'
         }}>
