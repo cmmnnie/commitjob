@@ -552,14 +552,19 @@ app.get("/auth/kakao/login-url", (req, res) => {
     });
   }
 
-  const state = crypto.randomUUID();
-  stateStore.set(state, origin); // 생성된 state와 프론트엔드의 origin을 연결하여 저장
+  // state에 origin을 인코딩하여 서버 재시작 시에도 유지
+  const stateData = {
+    uuid: crypto.randomUUID(),
+    origin: origin,
+    timestamp: Date.now()
+  };
+  const state = Buffer.from(JSON.stringify(stateData)).toString('base64');
 
   const params = new URLSearchParams({
     client_id: process.env.KAKAO_REST_API_KEY,
     redirect_uri: process.env.KAKAO_REDIRECT_URI,
     response_type: "code",
-    state, // 이 state 값을 카카오 인가 URL에 포함
+    state, // origin이 포함된 state 값
     scope: "profile_nickname profile_image account_email",
   });
 
@@ -589,9 +594,22 @@ app.get("/auth/kakao/callback", async (req, res) => {
   try {
     const { code, state } = req.query;
 
-    const origin = stateStore.get(state);
-    console.log('[KAKAO-CALLBACK] Retrieved origin from state:', origin);
-    stateStore.delete(state);
+    // state를 디코딩하여 origin 추출
+    let origin;
+    try {
+      const stateData = JSON.parse(Buffer.from(state, 'base64').toString());
+      origin = stateData.origin;
+      console.log('[KAKAO-CALLBACK] Decoded origin from state:', origin);
+      console.log('[KAKAO-CALLBACK] State timestamp:', new Date(stateData.timestamp).toISOString());
+    } catch (decodeError) {
+      console.error('[KAKAO-CALLBACK] Failed to decode state:', decodeError);
+      // 이전 방식 호환성 체크 (stateStore)
+      origin = stateStore.get(state);
+      if (origin) {
+        console.log('[KAKAO-CALLBACK] Retrieved origin from legacy stateStore:', origin);
+        stateStore.delete(state);
+      }
+    }
 
     if (!origin) {
       console.error('[KAKAO-CALLBACK] INVALID_STATE - origin not found for state:', state);
