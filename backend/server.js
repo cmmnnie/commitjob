@@ -1098,6 +1098,8 @@ app.get('/api/profile', async (req, res) => {
       return res.status(400).json({ error: { code: "MISSING_USER_ID", message: "user_id is required" } });
     }
 
+    console.log(`[API] /api/profile - 사용자 ID ${user_id} 프로필 조회 시작`);
+
     // users 테이블과 user_profiles 테이블을 JOIN하여 조회
     const [results] = await pool.execute(
       `SELECT
@@ -1107,6 +1109,8 @@ app.get('/api/profile', async (req, res) => {
         u.picture,
         u.provider,
         u.created_at as user_created_at,
+        up.id as profile_id,
+        up.user_id as profile_user_id,
         up.preferred_jobs,
         up.experience,
         up.preferred_regions,
@@ -1121,13 +1125,21 @@ app.get('/api/profile', async (req, res) => {
       [user_id]
     );
 
+    console.log(`[API] /api/profile - JOIN 결과:`, {
+      조회결과수: results.length,
+      users테이블_id: results[0]?.user_id,
+      user_profiles테이블_user_id: results[0]?.profile_user_id,
+      프로필존재여부: !!results[0]?.profile_id
+    });
+
     if (results.length === 0) {
+      console.log(`[API] /api/profile - 사용자 ID ${user_id} 없음`);
       return res.status(404).json({ error: { code: "USER_NOT_FOUND", message: "User not found" } });
     }
 
     const data = results[0];
 
-    res.status(200).json({
+    const response = {
       user: {
         id: data.user_id,
         email: data.email,
@@ -1136,7 +1148,8 @@ app.get('/api/profile', async (req, res) => {
         provider: data.provider,
         created_at: data.user_created_at
       },
-      profile: data.preferred_jobs ? {
+      profile: data.profile_id ? {
+        user_id: data.profile_user_id,
         jobs: data.preferred_jobs,
         careers: data.experience,
         regions: data.preferred_regions ? JSON.parse(data.preferred_regions)[0] : null,
@@ -1146,7 +1159,15 @@ app.get('/api/profile', async (req, res) => {
         created_at: data.profile_created_at,
         updated_at: data.profile_updated_at
       } : null
+    };
+
+    console.log(`[API] /api/profile - 응답 전송:`, {
+      사용자이름: response.user.name,
+      프로필존재: !!response.profile,
+      조인성공: response.user.id === response.profile?.user_id
     });
+
+    res.status(200).json(response);
   } catch (e) {
     console.error('[API] /api/profile error:', e);
     res.status(400).json({ error: { code: e.message || "BAD_INPUT", message: "profile get failed" } });
