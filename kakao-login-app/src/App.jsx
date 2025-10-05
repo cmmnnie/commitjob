@@ -6,6 +6,7 @@ import CallbackPage from './pages/CallbackPage';
 import AIRecommendationPage from './pages/AIRecommendationPage';
 import JobsPage from './pages/JobsPage';
 import ResumePage from './pages/ResumePage';
+import MenuPage from './pages/MenuPage';
 import CookieTestPage from './pages/CookieTestPage';
 import SimpleTestPage from './pages/SimpleTestPage';
 import TestConnectionPage from './pages/TestConnectionPage';
@@ -20,6 +21,7 @@ function App() {
                 <Route path="/ai-recommendation" element={<AIRecommendationPage />} />
                 <Route path="/jobs" element={<JobsPage />} />
                 <Route path="/resume" element={<ResumePage />} />
+                <Route path="/menu" element={<MenuPage />} />
                 <Route path="/cookie-test" element={<CookieTestPage />} />
                 <Route path="/simple-test" element={<SimpleTestPage />} />
                 <Route path="/test-connection" element={<TestConnectionPage />} />
