@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { CONFIG } from '../config';
 import '../styles/main.css';
@@ -11,41 +11,14 @@ export default function MainPage() {
     const [statusMessage, setStatusMessage] = useState({ text: '', type: '' });
     const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-    useEffect(() => {
-        // Kakao SDK 초기화
-        if (window.Kakao && !window.Kakao.isInitialized()) {
-            window.Kakao.init(CONFIG.KAKAO_JS_KEY);
-            console.log('[APP] Kakao SDK 초기화 완료');
-        }
-
-        // 로그인 콜백에서 왔으면 즉시 사용자 정보 설정
-        if (location.state?.fromLogin && location.state?.user) {
-            console.log('[APP] Login callback detected, setting user immediately');
-            setCurrentUser(location.state.user);
-            setIsLoading(false);
-            // state 초기화 (뒤로가기 시 재실행 방지)
-            window.history.replaceState({}, document.title);
-            return;
-        }
-
-        // 로그인 상태 확인
-        const checkStatus = async () => {
-            await checkLoginStatus();
-        };
-        checkStatus();
-
-        // URL 파라미터 확인 (에러 메시지 등)
-        const urlParams = new URLSearchParams(window.location.search);
-        const error = urlParams.get('error');
-
-        if (error === 'login_failed') {
-            showStatus('로그인에 실패했습니다. 다시 시도해주세요.', 'error');
-        } else if (error === 'login_cancelled') {
-            showStatus('로그인이 취소되었습니다.', 'warning');
-        }
+    const showStatus = useCallback((text, type = 'info') => {
+        setStatusMessage({ text, type });
+        setTimeout(() => {
+            setStatusMessage({ text: '', type: '' });
+        }, 3000);
     }, []);
 
-    const checkLoginStatus = async (showMessage = false) => {
+    const checkLoginStatus = useCallback(async (showMessage = false) => {
         console.log('[APP] 로그인 상태 확인');
 
         try {
@@ -117,7 +90,37 @@ export default function MainPage() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [showStatus]);
+
+    useEffect(() => {
+        // Kakao SDK 초기화
+        if (window.Kakao && !window.Kakao.isInitialized()) {
+            window.Kakao.init(CONFIG.KAKAO_JS_KEY);
+            console.log('[APP] Kakao SDK 초기화 완료');
+        }
+
+        // 로그인 콜백에서 왔으면 즉시 사용자 정보 설정
+        if (location.state?.fromLogin && location.state?.user) {
+            console.log('[APP] Login callback detected, setting user immediately');
+            setCurrentUser(location.state.user);
+            setIsLoading(false);
+            // state 초기화 (뒤로가기 시 재실행 방지)
+            window.history.replaceState({}, document.title);
+            return;
+        }
+
+        checkLoginStatus();
+
+        // URL 파라미터 확인 (에러 메시지 등)
+        const urlParams = new URLSearchParams(window.location.search);
+        const error = urlParams.get('error');
+
+        if (error === 'login_failed') {
+            showStatus('로그인에 실패했습니다. 다시 시도해주세요.', 'error');
+        } else if (error === 'login_cancelled') {
+            showStatus('로그인이 취소되었습니다.', 'warning');
+        }
+    }, [location.state, checkLoginStatus, showStatus]);
 
     const handleKakaoLogin = async () => {
         console.log('[APP] 카카오 로그인 시작');
@@ -198,13 +201,6 @@ export default function MainPage() {
             setCurrentUser(null);
             window.location.href = window.location.origin + window.location.pathname;
         }
-    };
-
-    const showStatus = (text, type = 'info') => {
-        setStatusMessage({ text, type });
-        setTimeout(() => {
-            setStatusMessage({ text: '', type: '' });
-        }, 3000);
     };
 
     const maskName = (name) => {
