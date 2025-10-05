@@ -1,6 +1,6 @@
 {
   "name": "kakao-login-app",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "순수 자바스크립트로 작성된 카카오 소셜 로그인 웹 애플리케이션입니다.",
   "main": "app.js",
   "type": "module",
