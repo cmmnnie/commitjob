@@ -1,12 +1,66 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { CONFIG } from '../config';
 
 export default function Header() {
     const location = useLocation();
+    const navigate = useNavigate();
+    const [currentUser, setCurrentUser] = useState(null);
 
     // 콜백 페이지에서는 헤더 숨기기
     if (location.pathname === '/callback') {
         return null;
     }
+
+    useEffect(() => {
+        checkLoginStatus();
+    }, [location]);
+
+    const checkLoginStatus = async () => {
+        try {
+            const token = localStorage.getItem('app_session');
+            if (!token) {
+                setCurrentUser(null);
+                return;
+            }
+
+            const response = await fetch(`${CONFIG.BACKEND_URL}${CONFIG.API.USER_INFO}`, {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.user) {
+                    setCurrentUser(data.user);
+                }
+            } else {
+                setCurrentUser(null);
+            }
+        } catch (error) {
+            console.error('[HEADER] 로그인 상태 확인 오류:', error);
+            setCurrentUser(null);
+        }
+    };
+
+    const handleProfileClick = () => {
+        if (currentUser) {
+            // 이미 홈 페이지에 있으면 페이지 새로고침
+            if (location.pathname === '/') {
+                window.location.reload();
+            } else {
+                // 다른 페이지에 있으면 홈으로 이동
+                navigate('/');
+            }
+        } else {
+            // 로그인 안되어 있으면 홈으로 이동 (로그인 화면)
+            navigate('/');
+        }
+    };
 
     const headerStyle = {
         position: 'sticky',
@@ -25,27 +79,73 @@ export default function Header() {
         padding: '12px 20px',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'space-between'
     };
 
     const logoStyle = {
         color: '#667eea',
-        fontSize: '1.3rem',
+        fontSize: '1.2rem',
         fontWeight: '700',
         textDecoration: 'none',
         display: 'flex',
         alignItems: 'center',
-        gap: '8px',
+        gap: '6px',
         transition: 'all 0.3s ease'
+    };
+
+    const profileButtonStyle = {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        padding: '6px 12px',
+        background: currentUser ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : '#f0f0f0',
+        color: currentUser ? 'white' : '#666',
+        border: 'none',
+        borderRadius: '20px',
+        fontSize: '0.85rem',
+        fontWeight: '600',
+        cursor: 'pointer',
+        transition: 'all 0.3s ease',
+        boxShadow: currentUser ? '0 2px 8px rgba(102, 126, 234, 0.3)' : 'none'
+    };
+
+    const profileImageStyle = {
+        width: '24px',
+        height: '24px',
+        borderRadius: '50%',
+        border: '2px solid white',
+        objectFit: 'cover'
     };
 
     return (
         <header style={headerStyle}>
             <div style={containerStyle}>
                 <Link to="/" style={logoStyle}>
-                    <span style={{ fontSize: '1.5rem' }}>🎯</span>
+                    <span style={{ fontSize: '1.4rem' }}>🎯</span>
                     <span>CommitJob</span>
                 </Link>
+
+                <button onClick={handleProfileClick} style={profileButtonStyle}>
+                    {currentUser ? (
+                        <>
+                            {currentUser.picture ? (
+                                <img
+                                    src={currentUser.picture}
+                                    alt="Profile"
+                                    style={profileImageStyle}
+                                />
+                            ) : (
+                                <span>👤</span>
+                            )}
+                            <span style={{ fontSize: '0.8rem' }}>프로필</span>
+                        </>
+                    ) : (
+                        <>
+                            <span>👤</span>
+                            <span>로그인</span>
+                        </>
+                    )}
+                </button>
             </div>
         </header>
     );
