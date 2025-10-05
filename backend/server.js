@@ -1170,17 +1170,6 @@ app.get('/api/profile', async (req, res) => {
 
     const data = results[0];
 
-    // JSON 파싱 헬퍼 함수
-    const safeJsonParse = (jsonString, defaultValue = null) => {
-      if (!jsonString) return defaultValue;
-      try {
-        return JSON.parse(jsonString);
-      } catch (e) {
-        console.error('[API] JSON parse error:', e, 'Data:', jsonString);
-        return defaultValue;
-      }
-    };
-
     const response = {
       user: {
         id: data.user_id,
@@ -1194,8 +1183,8 @@ app.get('/api/profile', async (req, res) => {
         user_id: data.profile_user_id,
         preferred_jobs: data.preferred_jobs,
         experience: data.experience,
-        preferred_regions: safeJsonParse(data.preferred_regions, []), // 전체 배열 반환
-        skills: safeJsonParse(data.skills, []),
+        preferred_regions: data.preferred_regions || [], // MySQL2가 이미 JSON을 배열로 파싱
+        skills: data.skills || [], // MySQL2가 이미 JSON을 배열로 파싱
         expected_salary: data.expected_salary,
         resume_path: data.resume_path,
         created_at: data.profile_created_at,
