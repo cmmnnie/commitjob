@@ -55,6 +55,7 @@ export default function ResumePage() {
 
             if (response.ok) {
                 const data = await response.json();
+                console.log('[RESUME] 프로필 데이터:', data);
                 setUserProfile(data);
             } else if (response.status === 404) {
                 console.log('[RESUME] 프로필 없음');
@@ -63,6 +64,11 @@ export default function ResumePage() {
         } catch (error) {
             console.error('[RESUME] 프로필 조회 오류:', error);
         }
+    };
+
+    const formatSalary = (salary) => {
+        if (!salary) return '-';
+        return `${Number(salary).toLocaleString('ko-KR')}만원`;
     };
 
     if (isLoading) {
@@ -76,7 +82,7 @@ export default function ResumePage() {
                 alignItems: 'center',
                 justifyContent: 'center'
             }}>
-                <div style={{ color: 'white', fontSize: '1.1rem' }}>로딩 중...</div>
+                <div className="spinner"></div>
             </div>
         );
     }
@@ -121,84 +127,163 @@ export default function ResumePage() {
                 maxWidth: '500px',
                 margin: '0 auto'
             }}>
-                <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                {/* 헤더 */}
+                <div style={{
+                    textAlign: 'center',
+                    marginBottom: '20px',
+                    paddingBottom: '15px',
+                    borderBottom: '2px solid #f0f0f0'
+                }}>
                     <div style={{ fontSize: '2.5rem', marginBottom: '8px' }}>📄</div>
                     <h1 style={{
                         fontSize: '1.6rem',
                         color: '#667eea',
-                        marginBottom: '8px',
-                        fontWeight: '700'
-                    }}>내 이력서</h1>
+                        marginBottom: '5px',
+                        fontWeight: '700',
+                        fontFamily: "'Quicksand', sans-serif"
+                    }}>나의 이력서</h1>
+                    <p style={{ fontSize: '0.85rem', color: '#999' }}>
+                        {currentUser.name}님의 프로필
+                    </p>
                 </div>
 
                 {userProfile ? (
                     <>
+                        {/* 기본 정보 섹션 */}
                         <div style={{
                             background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
                             borderRadius: '15px',
-                            padding: '20px',
-                            marginBottom: '15px'
+                            padding: '18px',
+                            marginBottom: '12px'
                         }}>
-                            <h3 style={{
-                                fontSize: '1.1rem',
-                                color: '#333',
-                                marginBottom: '12px',
-                                fontWeight: '600'
-                            }}>기본 정보</h3>
-
-                            <div style={{ marginBottom: '10px' }}>
-                                <span style={{
-                                    display: 'inline-block',
-                                    width: '90px',
-                                    color: '#666',
-                                    fontSize: '0.9rem',
-                                    fontWeight: '600'
-                                }}>희망직무:</span>
-                                <span style={{ color: '#333', fontSize: '0.9rem' }}>
-                                    {userProfile.jobs || '-'}
-                                </span>
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                marginBottom: '12px'
+                            }}>
+                                <span style={{ fontSize: '1.2rem' }}>💼</span>
+                                <h3 style={{
+                                    fontSize: '1.05rem',
+                                    color: '#333',
+                                    fontWeight: '600',
+                                    margin: 0
+                                }}>기본 정보</h3>
                             </div>
 
-                            <div style={{ marginBottom: '10px' }}>
-                                <span style={{
-                                    display: 'inline-block',
-                                    width: '90px',
-                                    color: '#666',
-                                    fontSize: '0.9rem',
-                                    fontWeight: '600'
-                                }}>경력:</span>
-                                <span style={{ color: '#333', fontSize: '0.9rem' }}>
-                                    {userProfile.careers || '-'}
-                                </span>
-                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <div style={{
+                                    display: 'flex',
+                                    padding: '8px',
+                                    background: 'rgba(255,255,255,0.7)',
+                                    borderRadius: '8px'
+                                }}>
+                                    <span style={{
+                                        width: '90px',
+                                        color: '#666',
+                                        fontSize: '0.85rem',
+                                        fontWeight: '600',
+                                        flexShrink: 0
+                                    }}>희망직무</span>
+                                    <span style={{
+                                        color: '#333',
+                                        fontSize: '0.85rem',
+                                        fontWeight: '500'
+                                    }}>
+                                        {userProfile.jobs || '-'}
+                                    </span>
+                                </div>
 
-                            <div style={{ marginBottom: '10px' }}>
-                                <span style={{
-                                    display: 'inline-block',
-                                    width: '90px',
-                                    color: '#666',
-                                    fontSize: '0.9rem',
-                                    fontWeight: '600'
-                                }}>희망지역:</span>
-                                <span style={{ color: '#333', fontSize: '0.9rem' }}>
-                                    {userProfile.regions || '-'}
-                                </span>
+                                <div style={{
+                                    display: 'flex',
+                                    padding: '8px',
+                                    background: 'rgba(255,255,255,0.7)',
+                                    borderRadius: '8px'
+                                }}>
+                                    <span style={{
+                                        width: '90px',
+                                        color: '#666',
+                                        fontSize: '0.85rem',
+                                        fontWeight: '600',
+                                        flexShrink: 0
+                                    }}>경력</span>
+                                    <span style={{
+                                        color: '#333',
+                                        fontSize: '0.85rem',
+                                        fontWeight: '500'
+                                    }}>
+                                        {userProfile.careers || '-'}
+                                    </span>
+                                </div>
+
+                                <div style={{
+                                    display: 'flex',
+                                    padding: '8px',
+                                    background: 'rgba(255,255,255,0.7)',
+                                    borderRadius: '8px'
+                                }}>
+                                    <span style={{
+                                        width: '90px',
+                                        color: '#666',
+                                        fontSize: '0.85rem',
+                                        fontWeight: '600',
+                                        flexShrink: 0
+                                    }}>희망지역</span>
+                                    <span style={{
+                                        color: '#333',
+                                        fontSize: '0.85rem',
+                                        fontWeight: '500'
+                                    }}>
+                                        {userProfile.regions || '-'}
+                                    </span>
+                                </div>
+
+                                <div style={{
+                                    display: 'flex',
+                                    padding: '8px',
+                                    background: 'rgba(255,255,255,0.7)',
+                                    borderRadius: '8px'
+                                }}>
+                                    <span style={{
+                                        width: '90px',
+                                        color: '#666',
+                                        fontSize: '0.85rem',
+                                        fontWeight: '600',
+                                        flexShrink: 0
+                                    }}>희망연봉</span>
+                                    <span style={{
+                                        color: '#333',
+                                        fontSize: '0.85rem',
+                                        fontWeight: '500'
+                                    }}>
+                                        {formatSalary(userProfile.expected_salary)}
+                                    </span>
+                                </div>
                             </div>
                         </div>
 
+                        {/* 기술 스택 섹션 */}
                         {userProfile.skills && userProfile.skills.length > 0 && (
                             <div style={{
                                 background: '#f8f9fa',
-                                borderRadius: '10px',
+                                borderRadius: '12px',
                                 padding: '15px',
-                                marginBottom: '15px'
+                                marginBottom: '12px'
                             }}>
-                                <h3 style={{
-                                    fontSize: '1rem',
-                                    color: '#333',
-                                    marginBottom: '10px',
-                                    fontWeight: '600'
-                                }}>기술 스택</h3>
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    marginBottom: '10px'
+                                }}>
+                                    <span style={{ fontSize: '1.2rem' }}>⚡</span>
+                                    <h3 style={{
+                                        fontSize: '1rem',
+                                        color: '#333',
+                                        fontWeight: '600',
+                                        margin: 0
+                                    }}>보유 기술</h3>
+                                </div>
                                 <div style={{
                                     display: 'flex',
                                     flexWrap: 'wrap',
@@ -208,10 +293,11 @@ export default function ResumePage() {
                                         <span key={index} style={{
                                             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                                             color: 'white',
-                                            padding: '4px 10px',
+                                            padding: '5px 12px',
                                             borderRadius: '15px',
                                             fontSize: '0.8rem',
-                                            fontWeight: '500'
+                                            fontWeight: '500',
+                                            boxShadow: '0 2px 4px rgba(102, 126, 234, 0.3)'
                                         }}>
                                             {skill}
                                         </span>
@@ -220,39 +306,86 @@ export default function ResumePage() {
                             </div>
                         )}
 
-                        {userProfile.resume_path && (
+                        {/* 이력서 파일 섹션 */}
+                        <div style={{
+                            background: userProfile.resume_path ? '#e8f5e9' : '#fff3e0',
+                            borderRadius: '12px',
+                            padding: '15px',
+                            marginBottom: '12px',
+                            border: `1px solid ${userProfile.resume_path ? '#a5d6a7' : '#ffcc80'}`
+                        }}>
                             <div style={{
-                                background: '#e8f5e9',
-                                borderRadius: '10px',
-                                padding: '15px',
-                                marginBottom: '15px',
-                                border: '1px solid #a5d6a7'
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px'
                             }}>
-                                <div style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px'
-                                }}>
-                                    <span style={{ fontSize: '1.2rem' }}>📎</span>
-                                    <span style={{
-                                        color: '#2e7d32',
+                                <span style={{ fontSize: '1.2rem' }}>
+                                    {userProfile.resume_path ? '📎' : '📝'}
+                                </span>
+                                <div style={{ flex: 1 }}>
+                                    <div style={{
+                                        color: userProfile.resume_path ? '#2e7d32' : '#f57c00',
                                         fontSize: '0.9rem',
-                                        fontWeight: '500'
+                                        fontWeight: '600',
+                                        marginBottom: '2px'
                                     }}>
-                                        이력서 파일 등록됨
-                                    </span>
+                                        {userProfile.resume_path ? '이력서 파일 등록됨' : '이력서 파일 미등록'}
+                                    </div>
+                                    {!userProfile.resume_path && (
+                                        <div style={{
+                                            color: '#f57c00',
+                                            fontSize: '0.75rem'
+                                        }}>
+                                            이력서를 등록하면 더 정확한 추천을 받을 수 있습니다
+                                        </div>
+                                    )}
                                 </div>
                             </div>
-                        )}
+                        </div>
 
+                        {/* 정보 수정 안내 */}
                         <div style={{
-                            fontSize: '0.8rem',
+                            background: '#e3f2fd',
+                            borderRadius: '10px',
+                            padding: '12px',
+                            marginBottom: '12px',
+                            border: '1px solid #90caf9'
+                        }}>
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'flex-start',
+                                gap: '8px'
+                            }}>
+                                <span style={{ fontSize: '1rem' }}>💡</span>
+                                <p style={{
+                                    margin: 0,
+                                    fontSize: '0.8rem',
+                                    color: '#1565c0',
+                                    lineHeight: '1.4'
+                                }}>
+                                    프로필 정보는 AI 추천과 면접 질문 생성에 활용됩니다
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* 하단 메타 정보 */}
+                        <div style={{
+                            fontSize: '0.75rem',
                             color: '#999',
                             textAlign: 'center',
-                            marginTop: '15px'
+                            paddingTop: '12px',
+                            borderTop: '1px solid #f0f0f0'
                         }}>
                             {userProfile.updated_at && (
-                                <p>마지막 수정: {new Date(userProfile.updated_at).toLocaleString('ko-KR')}</p>
+                                <p style={{ margin: 0 }}>
+                                    마지막 수정: {new Date(userProfile.updated_at).toLocaleString('ko-KR', {
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    })}
+                                </p>
                             )}
                         </div>
                     </>
@@ -260,20 +393,50 @@ export default function ResumePage() {
                     <div style={{
                         background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
                         borderRadius: '15px',
-                        padding: '25px',
+                        padding: '30px',
                         textAlign: 'center'
                     }}>
+                        <div style={{ fontSize: '3rem', marginBottom: '15px' }}>📝</div>
                         <p style={{
-                            fontSize: '1rem',
+                            fontSize: '1.1rem',
                             color: '#333',
                             marginBottom: '10px',
                             fontWeight: '600'
                         }}>
-                            📝 등록된 이력서가 없습니다
+                            등록된 이력서가 없습니다
                         </p>
-                        <p style={{ fontSize: '0.85rem', color: '#666', lineHeight: '1.5' }}>
-                            이력서 등록 기능이 준비 중입니다
+                        <p style={{
+                            fontSize: '0.85rem',
+                            color: '#666',
+                            lineHeight: '1.6',
+                            marginBottom: '15px'
+                        }}>
+                            이력서를 등록하면<br />
+                            맞춤형 채용공고 추천과 면접 질문을 받을 수 있습니다
                         </p>
+                        <div style={{
+                            background: 'rgba(255,255,255,0.7)',
+                            borderRadius: '10px',
+                            padding: '15px',
+                            fontSize: '0.8rem',
+                            color: '#666',
+                            textAlign: 'left'
+                        }}>
+                            <p style={{ fontWeight: '600', marginBottom: '8px', color: '#333' }}>
+                                📋 등록 가능한 정보
+                            </p>
+                            <ul style={{
+                                paddingLeft: '20px',
+                                lineHeight: '1.6',
+                                margin: 0
+                            }}>
+                                <li>희망직무 및 경력</li>
+                                <li>희망근무지역</li>
+                                <li>보유 기술스택</li>
+                                <li>희망연봉</li>
+                                <li>이력서 파일</li>
+                            </ul>
+                        </div>
                     </div>
                 )}
             </div>
