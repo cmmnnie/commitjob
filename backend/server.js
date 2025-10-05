@@ -5055,6 +5055,78 @@ app.get('/api/test-endpoint', (req, res) => {
   res.json({ message: 'Endpoint registered successfully!' });
 });
 
+// ==== Jobs API (채용공고) ====
+// 카테고리별 채용공고 조회 (최신순, limit 지원)
+app.get('/api/jobs/:category', async (req, res) => {
+  const { category } = req.params;
+  const limit = parseInt(req.query.limit) || null;
+
+  try {
+    let query = 'SELECT * FROM jobs WHERE category = ? ORDER BY scraped_at DESC';
+    const params = [category];
+
+    if (limit) {
+      query += ' LIMIT ?';
+      params.push(limit);
+    }
+
+    pool.query(query, params, (err, results) => {
+      if (err) {
+        console.error('[ERROR] Failed to fetch jobs:', err);
+        return res.status(500).json({ error: 'Failed to fetch jobs' });
+      }
+
+      // JSON 문자열을 파싱
+      const jobs = results.map(job => ({
+        ...job,
+        job_info: job.job_info ? JSON.parse(job.job_info) : [],
+        conditions: job.conditions ? JSON.parse(job.conditions) : [],
+        registration_info: job.registration_info ? JSON.parse(job.registration_info) : []
+      }));
+
+      res.json({ success: true, jobs, total: jobs.length });
+    });
+  } catch (error) {
+    console.error('[ERROR] Jobs API error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 전체 채용공고 조회
+app.get('/api/jobs', async (req, res) => {
+  const limit = parseInt(req.query.limit) || null;
+
+  try {
+    let query = 'SELECT * FROM jobs ORDER BY scraped_at DESC';
+    const params = [];
+
+    if (limit) {
+      query += ' LIMIT ?';
+      params.push(limit);
+    }
+
+    pool.query(query, params, (err, results) => {
+      if (err) {
+        console.error('[ERROR] Failed to fetch all jobs:', err);
+        return res.status(500).json({ error: 'Failed to fetch jobs' });
+      }
+
+      // JSON 문자열을 파싱
+      const jobs = results.map(job => ({
+        ...job,
+        job_info: job.job_info ? JSON.parse(job.job_info) : [],
+        conditions: job.conditions ? JSON.parse(job.conditions) : [],
+        registration_info: job.registration_info ? JSON.parse(job.registration_info) : []
+      }));
+
+      res.json({ success: true, jobs, total: jobs.length });
+    });
+  } catch (error) {
+    console.error('[ERROR] Jobs API error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // ==== 404 핸들러 (마지막) ====
 app.use((req, res) => {
   res.status(404).json({ error: 'Not Found', path: req.originalUrl });
