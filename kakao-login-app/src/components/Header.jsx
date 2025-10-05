@@ -13,39 +13,39 @@ export default function Header() {
     }
 
     useEffect(() => {
+        const checkLoginStatus = async () => {
+            try {
+                const token = localStorage.getItem('app_session');
+                if (!token) {
+                    setCurrentUser(null);
+                    return;
+                }
+
+                const response = await fetch(`${CONFIG.BACKEND_URL}${CONFIG.API.USER_INFO}`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.user) {
+                        setCurrentUser(data.user);
+                    }
+                } else {
+                    setCurrentUser(null);
+                }
+            } catch (error) {
+                console.error('[HEADER] 로그인 상태 확인 오류:', error);
+                setCurrentUser(null);
+            }
+        };
+
         checkLoginStatus();
     }, [location]);
-
-    const checkLoginStatus = async () => {
-        try {
-            const token = localStorage.getItem('app_session');
-            if (!token) {
-                setCurrentUser(null);
-                return;
-            }
-
-            const response = await fetch(`${CONFIG.BACKEND_URL}${CONFIG.API.USER_INFO}`, {
-                method: 'GET',
-                credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                if (data.user) {
-                    setCurrentUser(data.user);
-                }
-            } else {
-                setCurrentUser(null);
-            }
-        } catch (error) {
-            console.error('[HEADER] 로그인 상태 확인 오류:', error);
-            setCurrentUser(null);
-        }
-    };
 
     const handleProfileClick = () => {
         // 항상 홈으로 이동 (로그인 또는 프로필 화면)
