@@ -106,7 +106,8 @@ export default function MainPage() {
             console.log('[APP] Login callback detected, setting user immediately');
             hasHandledLogin.current = true;
             setCurrentUser(location.state.user);
-            setIsLoading(false);
+            // 다음 렌더 사이클에 로딩 종료 (currentUser 업데이트 후)
+            setTimeout(() => setIsLoading(false), 0);
             return;
         }
 
