@@ -7,11 +7,44 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4001
 export default function AIJobsPage() {
     const navigate = useNavigate();
     const [jobs, setJobs] = useState([]);
+    const [displayedJobs, setDisplayedJobs] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [offset, setOffset] = useState(0);
+    const ITEMS_PER_PAGE = 2;
 
     useEffect(() => {
         fetchJobs();
     }, []);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            const scrollHeight = document.documentElement.scrollHeight;
+            const scrollTop = document.documentElement.scrollTop;
+            const clientHeight = document.documentElement.clientHeight;
+
+            if (scrollTop + clientHeight >= scrollHeight - 100 && !loadingMore) {
+                loadMoreJobs();
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [offset, jobs, loadingMore]);
+
+    const isExpired = (job) => {
+        if (!job.registration_info || job.registration_info.length === 0) return false;
+
+        const dateStr = job.registration_info[0];
+        const match = dateStr.match(/~(\d+)\.(\d+)/);
+        if (!match) return false;
+
+        const [, month, day] = match;
+        const currentYear = new Date().getFullYear();
+        const deadlineDate = new Date(currentYear, parseInt(month) - 1, parseInt(day), 23, 59, 59);
+
+        return new Date() > deadlineDate;
+    };
 
     const fetchJobs = async () => {
         try {
@@ -22,13 +55,36 @@ export default function AIJobsPage() {
             );
 
             if (response.data.success) {
-                setJobs(response.data.jobs);
+                // 만료되지 않은 공고만 필터링하고 최신순 정렬
+                const activeJobs = response.data.jobs
+                    .filter(job => !isExpired(job))
+                    .sort((a, b) => new Date(b.scraped_at) - new Date(a.scraped_at));
+
+                setJobs(activeJobs);
+                setDisplayedJobs(activeJobs.slice(0, ITEMS_PER_PAGE));
+                setOffset(ITEMS_PER_PAGE);
             }
         } catch (error) {
             console.error('Failed to fetch AI jobs:', error);
         } finally {
             setLoading(false);
         }
+    };
+
+    const loadMoreJobs = () => {
+        if (offset >= jobs.length) return;
+
+        setLoadingMore(true);
+        setTimeout(() => {
+            const newJobs = jobs.slice(offset, offset + ITEMS_PER_PAGE);
+            setDisplayedJobs(prev => [...prev, ...newJobs]);
+            setOffset(prev => prev + ITEMS_PER_PAGE);
+            setLoadingMore(false);
+        }, 500);
+    };
+
+    const handleJobClick = (job) => {
+        navigate(`/jobs/detail/${job.id}`, { state: { job } });
     };
 
     const JobCard = ({ job }) => (
@@ -49,7 +105,40 @@ export default function AIJobsPage() {
             e.currentTarget.style.boxShadow = 'none';
             e.currentTarget.style.transform = 'translateY(0)';
         }}
-        onClick={() => window.open(job.url, '_blank')}>
+        onClick={() => handleJobClick(job)}>
+            {/* 정사각형 이미지 */}
+            <div style={{
+                width: '100%',
+                paddingBottom: '100%',
+                position: 'relative',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                marginBottom: '16px',
+                borderRadius: '12px 12px 0 0',
+                overflow: 'hidden'
+            }}>
+                <div style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    color: 'white',
+                    fontSize: '3.5rem',
+                    textAlign: 'center',
+                    width: '80%'
+                }}>
+                    📊
+                    <div style={{
+                        fontSize: '1rem',
+                        marginTop: '12px',
+                        fontWeight: '600',
+                        lineHeight: '1.3',
+                        wordBreak: 'keep-all'
+                    }}>
+                        {job.company}
+                    </div>
+                </div>
+            </div>
+
             <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -270,29 +359,54 @@ export default function AIJobsPage() {
                     </div>
                 </div>
 
-                {/* 컨텐츠 영역 */}
+                {/* 컨텐츠 영역 - 2개씩 그리드 */}
                 <div style={{
-                    background: 'white',
-                    borderRadius: '16px',
-                    padding: '40px',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                    maxHeight: '600px',
-                    overflowY: 'auto'
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, 1fr)',
+                    gap: '20px'
                 }}>
-                    {jobs.length > 0 ? (
-                        jobs.map((job) => (
+                    {displayedJobs.length > 0 ? (
+                        displayedJobs.map((job) => (
                             <JobCard key={job.id} job={job} />
                         ))
                     ) : (
                         <div style={{
-                            textAlign: 'center',
+                            gridColumn: '1 / -1',
+                            background: 'white',
+                            borderRadius: '16px',
                             padding: '40px',
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                            textAlign: 'center',
                             color: '#999'
                         }}>
                             채용공고가 없습니다.
                         </div>
                     )}
                 </div>
+
+                {/* 로딩 인디케이터 */}
+                {loadingMore && (
+                    <div style={{
+                        textAlign: 'center',
+                        padding: '20px',
+                        color: '#667eea',
+                        fontSize: '1rem'
+                    }}>
+                        로딩 중...
+                    </div>
+                )}
+
+                {/* 끝 메시지 */}
+                {!loadingMore && displayedJobs.length >= jobs.length && jobs.length > 0 && (
+                    <div style={{
+                        textAlign: 'center',
+                        padding: '20px',
+                        color: '#999',
+                        fontSize: '0.9rem'
+                    }}>
+                        모든 채용공고를 확인했습니다.
+                    </div>
+                )}
             </div>
         </div>
     );

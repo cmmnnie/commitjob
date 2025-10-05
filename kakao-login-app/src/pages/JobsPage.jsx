@@ -17,14 +17,16 @@ export default function JobsPage() {
         try {
             setLoading(true);
 
-            // BIGDATA_AI 카테고리 조회 (limit=5)
+            // BIGDATA_AI 카테고리 조회 (limit=4, 2x2 그리드용)
             const bigdataResponse = await axios.get(
-                `${API_BASE_URL}/api/jobs/BIGDATA_AI?limit=5`,
+                `${API_BASE_URL}/api/jobs/BIGDATA_AI?limit=4`,
                 { withCredentials: true }
             );
 
             if (bigdataResponse.data.success) {
-                setBigdataJobs(bigdataResponse.data.jobs);
+                // 만료되지 않은 채용공고만 필터링
+                const activeJobs = bigdataResponse.data.jobs.filter(job => !isExpired(job));
+                setBigdataJobs(activeJobs);
             }
         } catch (error) {
             console.error('Failed to fetch jobs:', error);
@@ -33,143 +35,111 @@ export default function JobsPage() {
         }
     };
 
+    const isExpired = (job) => {
+        if (!job.registration_info || job.registration_info.length === 0) return false;
+
+        const dateStr = job.registration_info[0];
+        const match = dateStr.match(/~(\d+)\.(\d+)/);
+        if (!match) return false;
+
+        const [, month, day] = match;
+        const currentYear = new Date().getFullYear();
+        const deadlineDate = new Date(currentYear, parseInt(month) - 1, parseInt(day), 23, 59, 59);
+
+        return new Date() > deadlineDate;
+    };
+
     const handleViewAll = () => {
         navigate('/jobs/ai');
+    };
+
+    const handleJobClick = (job) => {
+        navigate(`/jobs/detail/${job.id}`, { state: { job } });
     };
 
     const JobCard = ({ job }) => (
         <div style={{
             background: 'white',
-            borderRadius: '12px',
-            padding: '20px',
-            marginBottom: '12px',
+            borderRadius: '16px',
             border: '1px solid #e0e0e0',
-            transition: 'all 0.2s',
-            cursor: 'pointer'
+            overflow: 'hidden',
+            transition: 'all 0.3s',
+            cursor: 'pointer',
+            display: 'flex',
+            flexDirection: 'column'
         }}
         onMouseEnter={(e) => {
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
-            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.12)';
+            e.currentTarget.style.transform = 'translateY(-4px)';
         }}
         onMouseLeave={(e) => {
             e.currentTarget.style.boxShadow = 'none';
             e.currentTarget.style.transform = 'translateY(0)';
         }}
-        onClick={() => window.open(job.url, '_blank')}>
+        onClick={() => handleJobClick(job)}>
+            {/* 정사각형 이미지 */}
             <div style={{
+                width: '100%',
+                paddingBottom: '100%',
+                position: 'relative',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                 display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-start',
-                marginBottom: '12px'
+                alignItems: 'center',
+                justifyContent: 'center'
             }}>
-                <div style={{ flex: 1 }}>
-                    <h3 style={{
-                        fontSize: '1.1rem',
-                        fontWeight: '600',
-                        color: '#333',
-                        marginBottom: '8px',
-                        lineHeight: '1.4'
-                    }}>{job.title}</h3>
-                    <p style={{
-                        fontSize: '0.95rem',
-                        color: '#666',
-                        fontWeight: '500',
-                        marginBottom: '8px'
-                    }}>
-                        <span style={{ fontSize: '1.1rem', marginRight: '6px' }}>🏢</span>
-                        {job.company}
-                    </p>
-                </div>
-                <span style={{
-                    background: job.category === 'BIGDATA_AI' ? '#e3f2fd' : '#f3e5f5',
-                    color: job.category === 'BIGDATA_AI' ? '#1976d2' : '#7b1fa2',
-                    padding: '4px 12px',
-                    borderRadius: '16px',
-                    fontSize: '0.8rem',
-                    fontWeight: '500',
-                    flexShrink: 0,
-                    marginLeft: '12px'
+                <div style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    color: 'white',
+                    fontSize: '3rem',
+                    textAlign: 'center',
+                    width: '80%'
                 }}>
-                    {job.category === 'BIGDATA_AI' ? '빅데이터/AI' : 'IT개발'}
-                </span>
-            </div>
-
-            {/* 직무 정보 */}
-            {job.job_info && job.job_info.length > 0 && (
-                <div style={{ marginBottom: '12px' }}>
+                    📊
                     <div style={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: '6px'
+                        fontSize: '0.9rem',
+                        marginTop: '10px',
+                        fontWeight: '600',
+                        lineHeight: '1.3',
+                        wordBreak: 'keep-all'
                     }}>
-                        {job.job_info.slice(0, 3).map((info, index) => (
-                            <span key={index} style={{
-                                background: '#f5f5f5',
-                                color: '#555',
-                                padding: '4px 10px',
-                                borderRadius: '8px',
-                                fontSize: '0.85rem'
-                            }}>
-                                {info}
-                            </span>
-                        ))}
-                        {job.job_info.length > 3 && (
-                            <span style={{
-                                color: '#999',
-                                fontSize: '0.85rem',
-                                padding: '4px 10px'
-                            }}>
-                                +{job.job_info.length - 3}
-                            </span>
-                        )}
+                        {job.company}
                     </div>
                 </div>
-            )}
+            </div>
 
-            {/* 조건 */}
-            {job.conditions && job.conditions.length > 0 && (
-                <div style={{
+            {/* 제목 및 회사명 */}
+            <div style={{ padding: '20px' }}>
+                <h3 style={{
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    color: '#333',
+                    marginBottom: '8px',
+                    lineHeight: '1.4',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    minHeight: '2.8em'
+                }}>{job.title}</h3>
+                <p style={{
+                    fontSize: '0.9rem',
+                    color: '#666',
+                    fontWeight: '500',
                     display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '8px',
-                    marginBottom: '12px'
+                    alignItems: 'center',
+                    gap: '6px'
                 }}>
-                    {job.conditions.map((condition, index) => (
-                        <span key={index} style={{
-                            color: '#666',
-                            fontSize: '0.85rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px'
-                        }}>
-                            <span style={{ color: '#999' }}>•</span>
-                            {condition}
-                        </span>
-                    ))}
-                </div>
-            )}
-
-            {/* 등록 정보 */}
-            {job.registration_info && job.registration_info.length > 0 && (
-                <div style={{
-                    display: 'flex',
-                    gap: '12px',
-                    paddingTop: '12px',
-                    borderTop: '1px solid #f0f0f0'
-                }}>
-                    {job.registration_info.map((info, index) => (
-                        <span key={index} style={{
-                            color: info.includes('D-') ? '#d32f2f' : '#999',
-                            fontSize: '0.85rem',
-                            fontWeight: info.includes('D-') ? '600' : '400'
-                        }}>
-                            {info}
-                        </span>
-                    ))}
-                </div>
-            )}
+                    <span style={{ fontSize: '1rem' }}>🏢</span>
+                    {job.company}
+                </p>
+            </div>
         </div>
     );
+
 
 
     if (loading) {
@@ -296,7 +266,7 @@ export default function JobsPage() {
                                     fontWeight: '400',
                                     marginLeft: '8px'
                                 }}>
-                                    (5건)
+                                    ({bigdataJobs.length}건)
                                 </span>
                             </h2>
                             <button
@@ -324,13 +294,19 @@ export default function JobsPage() {
                             </button>
                         </div>
 
-                        <div>
+                        {/* 2x2 그리드 레이아웃 */}
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(2, 1fr)',
+                            gap: '20px'
+                        }}>
                             {bigdataJobs.length > 0 ? (
                                 bigdataJobs.map((job) => (
                                     <JobCard key={job.id} job={job} />
                                 ))
                             ) : (
                                 <div style={{
+                                    gridColumn: '1 / -1',
                                     textAlign: 'center',
                                     padding: '40px',
                                     color: '#999'
