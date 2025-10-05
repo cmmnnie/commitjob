@@ -48,18 +48,8 @@ export default function Header() {
     };
 
     const handleProfileClick = () => {
-        if (currentUser) {
-            // 이미 홈 페이지에 있으면 페이지 새로고침
-            if (location.pathname === '/') {
-                window.location.reload();
-            } else {
-                // 다른 페이지에 있으면 홈으로 이동
-                navigate('/');
-            }
-        } else {
-            // 로그인 안되어 있으면 홈으로 이동 (로그인 화면)
-            navigate('/');
-        }
+        // 항상 홈으로 이동 (로그인 또는 프로필 화면)
+        navigate('/');
     };
 
     const headerStyle = {
@@ -121,7 +111,6 @@ export default function Header() {
         <header style={headerStyle}>
             <div style={containerStyle}>
                 <Link to="/" style={logoStyle}>
-                    <span style={{ fontSize: '1.4rem' }}>🎯</span>
                     <span>CommitJob</span>
                 </Link>
 

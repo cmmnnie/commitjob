@@ -4,8 +4,8 @@ import '../styles/main.css';
 
 export default function MainPage() {
     const [currentUser, setCurrentUser] = useState(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const [loadingMessage, setLoadingMessage] = useState('처리 중...');
+    const [isLoading, setIsLoading] = useState(true); // 초기 로딩 상태를 true로 설정
+    const [loadingMessage, setLoadingMessage] = useState('로그인 상태 확인 중...');
     const [statusMessage, setStatusMessage] = useState({ text: '', type: '' });
     const [showLogoutModal, setShowLogoutModal] = useState(false);
 
