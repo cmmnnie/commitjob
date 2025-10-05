@@ -77,34 +77,6 @@ export default function MenuPage() {
                         <div style={menuDescStyle}>나만의 이력서를 작성하고 관리하세요</div>
                     </Link>
                 </div>
-
-                <div>
-                    <h2 style={{
-                        color: 'white',
-                        fontSize: '1rem',
-                        fontWeight: '600',
-                        marginBottom: '15px',
-                        opacity: 0.9
-                    }}>개발자 도구</h2>
-
-                    <Link to="/cookie-test" style={menuItemStyle}>
-                        <span style={menuIconStyle}>🍪</span>
-                        <div style={menuTitleStyle}>쿠키 테스트</div>
-                        <div style={menuDescStyle}>쿠키 전송 및 세션 관리 테스트</div>
-                    </Link>
-
-                    <Link to="/simple-test" style={menuItemStyle}>
-                        <span style={menuIconStyle}>🔬</span>
-                        <div style={menuTitleStyle}>간단 테스트</div>
-                        <div style={menuDescStyle}>백엔드 연결 상태 확인</div>
-                    </Link>
-
-                    <Link to="/test-connection" style={menuItemStyle}>
-                        <span style={menuIconStyle}>🔌</span>
-                        <div style={menuTitleStyle}>연결 테스트</div>
-                        <div style={menuDescStyle}>상세 백엔드 연결 및 CORS 테스트</div>
-                    </Link>
-                </div>
             </div>
         </div>
     );

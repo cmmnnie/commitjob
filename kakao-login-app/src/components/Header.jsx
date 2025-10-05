@@ -78,15 +78,15 @@ export default function Header() {
 
     const logoStyle = {
         color: '#667eea',
-        fontSize: '1.3rem',
-        fontWeight: '700',
-        fontFamily: "'Poppins', sans-serif",
+        fontSize: '1.35rem',
+        fontWeight: '600',
+        fontFamily: "'Montserrat', sans-serif",
         textDecoration: 'none',
         display: 'flex',
         alignItems: 'center',
         gap: '6px',
         transition: 'all 0.3s ease',
-        letterSpacing: '-0.5px'
+        letterSpacing: '0.5px'
     };
 
     const profileButtonStyle = {
