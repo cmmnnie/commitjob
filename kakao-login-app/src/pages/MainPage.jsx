@@ -43,14 +43,21 @@ export default function MainPage() {
                 return;
             }
 
+            // 타임아웃 설정 (10초)
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
+
             const response = await fetch(`${CONFIG.BACKEND_URL}${CONFIG.API.USER_INFO}`, {
                 method: 'GET',
                 credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
-                }
+                },
+                signal: controller.signal
             });
+
+            clearTimeout(timeoutId);
 
             console.log('[APP] 사용자 정보 응답 상태:', response.status);
 
