@@ -38,16 +38,16 @@ export default function Navigation() {
         flexDirection: 'column',
         alignItems: 'center',
         gap: '4px',
-        padding: '8px 16px',
-        fontSize: '0.75rem',
+        padding: '8px 12px',
+        fontSize: '0.7rem',
         fontWeight: isActive ? '600' : '500',
         transition: 'all 0.3s ease',
         borderRadius: '8px',
-        minWidth: '70px'
+        minWidth: '60px'
     });
 
     const iconStyle = (isActive) => ({
-        fontSize: '1.5rem',
+        fontSize: '1.4rem',
         marginBottom: '2px'
     });
 
@@ -65,20 +65,29 @@ export default function Navigation() {
                 </li>
                 <li>
                     <Link
-                        to="/cookie-test"
-                        style={linkStyle(location.pathname === '/cookie-test')}
+                        to="/ai-recommendation"
+                        style={linkStyle(location.pathname === '/ai-recommendation')}
                     >
-                        <span style={iconStyle(location.pathname === '/cookie-test')}>🍪</span>
-                        <span>쿠키 테스트</span>
+                        <span style={iconStyle(location.pathname === '/ai-recommendation')}>🤖</span>
+                        <span>AI추천</span>
                     </Link>
                 </li>
                 <li>
                     <Link
-                        to="/test-connection"
-                        style={linkStyle(location.pathname === '/test-connection')}
+                        to="/jobs"
+                        style={linkStyle(location.pathname === '/jobs')}
                     >
-                        <span style={iconStyle(location.pathname === '/test-connection')}>🔌</span>
-                        <span>연결 테스트</span>
+                        <span style={iconStyle(location.pathname === '/jobs')}>💼</span>
+                        <span>채용공고</span>
+                    </Link>
+                </li>
+                <li>
+                    <Link
+                        to="/resume"
+                        style={linkStyle(location.pathname === '/resume')}
+                    >
+                        <span style={iconStyle(location.pathname === '/resume')}>📄</span>
+                        <span>이력서</span>
                     </Link>
                 </li>
             </ul>
