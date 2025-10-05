@@ -56,9 +56,13 @@ export default function ResumePage() {
             if (response.ok) {
                 const data = await response.json();
                 console.log('[RESUME] 프로필 데이터:', data);
-                setUserProfile(data);
+                // 새로운 API 응답 구조: { user: {...}, profile: {...} }
+                if (data.user) {
+                    setCurrentUser(data.user); // user 정보 업데이트
+                }
+                setUserProfile(data.profile); // profile 정보 설정
             } else if (response.status === 404) {
-                console.log('[RESUME] 프로필 없음');
+                console.log('[RESUME] 사용자 또는 프로필 없음');
                 setUserProfile(null);
             }
         } catch (error) {
