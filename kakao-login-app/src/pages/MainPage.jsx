@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { CONFIG } from '../config';
 import '../styles/main.css';
 
 export default function MainPage() {
+    const location = useLocation();
     const [currentUser, setCurrentUser] = useState(null);
     const [isLoading, setIsLoading] = useState(true); // 초기 로딩 상태를 true로 설정
     const [loadingMessage, setLoadingMessage] = useState('로그인 상태 확인 중...');
@@ -14,6 +16,16 @@ export default function MainPage() {
         if (window.Kakao && !window.Kakao.isInitialized()) {
             window.Kakao.init(CONFIG.KAKAO_JS_KEY);
             console.log('[APP] Kakao SDK 초기화 완료');
+        }
+
+        // 로그인 콜백에서 왔으면 즉시 사용자 정보 설정
+        if (location.state?.fromLogin && location.state?.user) {
+            console.log('[APP] Login callback detected, setting user immediately');
+            setCurrentUser(location.state.user);
+            setIsLoading(false);
+            // state 초기화 (뒤로가기 시 재실행 방지)
+            window.history.replaceState({}, document.title);
+            return;
         }
 
         // 로그인 상태 확인

@@ -76,7 +76,10 @@ export default function CallbackPage() {
                         setMessage('메인 페이지로 이동합니다...');
 
                         setTimeout(() => {
-                            navigate('/');
+                            navigate('/', {
+                                replace: true,
+                                state: { fromLogin: true, user: data.user }
+                            });
                         }, 1000);
                     } else {
                         throw new Error('사용자 정보를 찾을 수 없습니다');
