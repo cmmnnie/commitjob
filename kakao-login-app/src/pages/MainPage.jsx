@@ -245,7 +245,9 @@ export default function MainPage() {
                 <div id="loginSection" className="section">
                     <div className="login-card">
                         <div className="logo-section">
-                            <h1>CommitJob</h1>
+                            <h1>
+                                <span style={{ color: '#ec4899' }}>C</span>ommit<span style={{ color: '#ec4899' }}>J</span>ob
+                            </h1>
                             <p>AI 채용 추천 플랫폼</p>
                         </div>
 

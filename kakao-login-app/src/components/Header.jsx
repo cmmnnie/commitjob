@@ -115,7 +115,9 @@ export default function Header() {
         <header style={headerStyle}>
             <div style={containerStyle}>
                 <Link to="/" style={logoStyle}>
-                    <span>CommitJob</span>
+                    <span>
+                        <span style={{ color: '#ec4899' }}>C</span>ommit<span style={{ color: '#ec4899' }}>J</span>ob
+                    </span>
                 </Link>
 
                 <button onClick={handleProfileClick} style={profileButtonStyle}>

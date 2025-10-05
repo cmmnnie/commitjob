@@ -59,12 +59,6 @@ export default function MenuPage() {
                         opacity: 0.9
                     }}>메인 기능</h2>
 
-                    <Link to="/" style={menuItemStyle}>
-                        <span style={menuIconStyle}>🏠</span>
-                        <div style={menuTitleStyle}>홈</div>
-                        <div style={menuDescStyle}>로그인 및 프로필 확인</div>
-                    </Link>
-
                     <Link to="/ai-recommendation" style={menuItemStyle}>
                         <span style={menuIconStyle}>🤖</span>
                         <div style={menuTitleStyle}>AI 맞춤 추천</div>
