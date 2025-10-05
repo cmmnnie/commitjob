@@ -420,8 +420,13 @@ app.get("/auth/google", (req, res) => {
   if (!origin || !allowedOrigins.includes(origin)) {
     return res.status(400).send("Bad origin");
   }
-  const state = crypto.randomUUID();
-  stateStore.set(state, origin);
+
+  // state를 base64로 인코딩하여 origin 정보 포함
+  const stateData = {
+    origin: origin,
+    timestamp: Date.now()
+  };
+  const state = Buffer.from(JSON.stringify(stateData)).toString('base64');
 
   const params = new URLSearchParams({
     client_id: process.env.GOOGLE_CLIENT_ID,
@@ -442,8 +447,17 @@ app.get("/auth/google/callback", async (req, res) => {
   try {
     const { code, state } = req.query;
 
-    const origin = stateStore.get(state);
-    stateStore.delete(state);
+    // state를 디코딩하여 origin 추출
+    let origin;
+    try {
+      const stateData = JSON.parse(Buffer.from(state, 'base64').toString());
+      origin = stateData.origin;
+      console.log('[GOOGLE-CALLBACK] Decoded origin from state:', origin);
+    } catch (decodeError) {
+      console.error('[GOOGLE-CALLBACK] Failed to decode state:', decodeError);
+      return res.status(403).json({ error: "INVALID_STATE" });
+    }
+
     if (!origin) return res.status(403).json({ error: "INVALID_STATE" });
 
     const tokenRes = await axios.post(
@@ -511,8 +525,14 @@ app.get("/auth/kakao", (req, res) => {
     console.error('[KAKAO-AUTH] Bad origin:', origin);
     return res.status(400).send("Bad origin");
   }
-  const state = crypto.randomUUID();
-  stateStore.set(state, origin);
+
+  // state를 base64로 인코딩하여 origin 정보 포함
+  const stateData = {
+    origin: origin,
+    timestamp: Date.now()
+  };
+  const state = Buffer.from(JSON.stringify(stateData)).toString('base64');
+  console.log('[KAKAO-AUTH] Generated state with embedded origin');
 
   const params = new URLSearchParams({
     client_id: process.env.KAKAO_REST_API_KEY,
