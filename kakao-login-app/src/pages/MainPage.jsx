@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { CONFIG } from '../config';
 import '../styles/main.css';
@@ -6,10 +6,11 @@ import '../styles/main.css';
 export default function MainPage() {
     const location = useLocation();
     const [currentUser, setCurrentUser] = useState(null);
-    const [isLoading, setIsLoading] = useState(true); // 초기 로딩 상태를 true로 설정
+    const [isLoading, setIsLoading] = useState(true);
     const [loadingMessage, setLoadingMessage] = useState('로그인 상태 확인 중...');
     const [statusMessage, setStatusMessage] = useState({ text: '', type: '' });
     const [showLogoutModal, setShowLogoutModal] = useState(false);
+    const hasHandledLogin = useRef(false);
 
     const showStatus = useCallback((text, type = 'info') => {
         setStatusMessage({ text, type });
@@ -37,6 +38,7 @@ export default function MainPage() {
                     setIsLoading(false);
                     showStatus('로그인이 필요합니다', 'warning');
                 }
+                setIsLoading(false);
                 return;
             }
 
@@ -99,17 +101,19 @@ export default function MainPage() {
             console.log('[APP] Kakao SDK 초기화 완료');
         }
 
-        // 로그인 콜백에서 왔으면 즉시 사용자 정보 설정
-        if (location.state?.fromLogin && location.state?.user) {
+        // 로그인 콜백에서 왔으면 즉시 사용자 정보 설정 (한 번만)
+        if (location.state?.fromLogin && location.state?.user && !hasHandledLogin.current) {
             console.log('[APP] Login callback detected, setting user immediately');
+            hasHandledLogin.current = true;
             setCurrentUser(location.state.user);
             setIsLoading(false);
-            // state 초기화 (뒤로가기 시 재실행 방지)
-            window.history.replaceState({}, document.title);
             return;
         }
 
-        checkLoginStatus();
+        // 로그인 콜백에서 온 경우가 아니면 로그인 상태 확인
+        if (!hasHandledLogin.current) {
+            checkLoginStatus();
+        }
 
         // URL 파라미터 확인 (에러 메시지 등)
         const urlParams = new URLSearchParams(window.location.search);
