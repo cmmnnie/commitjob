@@ -124,7 +124,8 @@ export default function MainPage() {
         } else if (error === 'login_cancelled') {
             showStatus('로그인이 취소되었습니다.', 'warning');
         }
-    }, [location.state, checkLoginStatus, showStatus]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const handleKakaoLogin = async () => {
         console.log('[APP] 카카오 로그인 시작');
