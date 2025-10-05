@@ -73,10 +73,9 @@ export default function CallbackPage() {
                         setMessage('메인 페이지로 이동합니다...');
 
                         setTimeout(() => {
-                            navigate('/', {
-                                replace: true,
-                                state: { fromLogin: true, user: data.user }
-                            });
+                            // 토큰이 이미 localStorage에 저장되어 있으므로
+                            // MainPage에서 자동으로 로그인 상태를 확인함
+                            window.location.href = '/';
                         }, 1000);
                     } else {
                         throw new Error('사용자 정보를 찾을 수 없습니다');
