@@ -245,7 +245,7 @@ export default function MainPage() {
                 <div id="loginSection" className="section">
                     <div className="login-card">
                         <div className="logo-section">
-                            <h1 style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: '600', letterSpacing: '1px' }}>
+                            <h1 style={{ fontFamily: "'Quicksand', sans-serif", fontWeight: '600', letterSpacing: '-0.5px' }}>
                                 <span style={{ color: '#ec4899' }}>C</span>ommit<span style={{ color: '#ec4899' }}>J</span>ob
                             </h1>
                             <p>AI 채용 추천 플랫폼</p>
