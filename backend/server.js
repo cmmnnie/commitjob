@@ -1115,6 +1115,7 @@ app.get('/api/profile', async (req, res) => {
       careers: profile.experience,
       regions: profile.preferred_regions ? JSON.parse(profile.preferred_regions)[0] : null,
       skills: profile.skills ? JSON.parse(profile.skills) : null,
+      expected_salary: profile.expected_salary,
       resume_path: profile.resume_path,
       created_at: profile.created_at,
       updated_at: profile.updated_at
