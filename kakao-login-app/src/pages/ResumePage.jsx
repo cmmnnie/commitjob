@@ -331,27 +331,27 @@ export default function ResumePage() {
                         </div>
 
                         {/* 기술 스택 섹션 */}
-                        {userProfile.skills && userProfile.skills.length > 0 && (
+                        <div style={{
+                            background: '#f8f9fa',
+                            borderRadius: '12px',
+                            padding: '15px',
+                            marginBottom: '12px'
+                        }}>
                             <div style={{
-                                background: '#f8f9fa',
-                                borderRadius: '12px',
-                                padding: '15px',
-                                marginBottom: '12px'
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                marginBottom: userProfile.skills && userProfile.skills.length > 0 ? '10px' : '0'
                             }}>
-                                <div style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    marginBottom: '10px'
-                                }}>
-                                    <span style={{ fontSize: '1.2rem' }}>⚡</span>
-                                    <h3 style={{
-                                        fontSize: '1rem',
-                                        color: '#333',
-                                        fontWeight: '600',
-                                        margin: 0
-                                    }}>보유 기술</h3>
-                                </div>
+                                <span style={{ fontSize: '1.2rem' }}>⚡</span>
+                                <h3 style={{
+                                    fontSize: '1rem',
+                                    color: '#333',
+                                    fontWeight: '600',
+                                    margin: 0
+                                }}>보유 기술</h3>
+                            </div>
+                            {userProfile.skills && userProfile.skills.length > 0 ? (
                                 <div style={{
                                     display: 'flex',
                                     flexWrap: 'wrap',
@@ -374,8 +374,14 @@ export default function ResumePage() {
                                         </span>
                                     ))}
                                 </div>
-                            </div>
-                        )}
+                            ) : (
+                                <span style={{
+                                    color: '#333',
+                                    fontSize: '0.85rem',
+                                    fontWeight: '500'
+                                }}>-</span>
+                            )}
+                        </div>
 
                         {/* 이력서 파일 섹션 */}
                         <div style={{
@@ -439,26 +445,6 @@ export default function ResumePage() {
                             </div>
                         </div>
 
-                        {/* 하단 메타 정보 */}
-                        <div style={{
-                            fontSize: '0.75rem',
-                            color: '#999',
-                            textAlign: 'center',
-                            paddingTop: '12px',
-                            borderTop: '1px solid #f0f0f0'
-                        }}>
-                            {userProfile.updated_at && (
-                                <p style={{ margin: 0 }}>
-                                    마지막 수정: {new Date(userProfile.updated_at).toLocaleString('ko-KR', {
-                                        year: 'numeric',
-                                        month: 'long',
-                                        day: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                    })}
-                                </p>
-                            )}
-                        </div>
                     </>
                 ) : (
                     <>
