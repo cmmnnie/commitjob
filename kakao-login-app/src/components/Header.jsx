@@ -48,7 +48,11 @@ export default function Header() {
     }, [location.pathname]);
 
     const handleProfileClick = () => {
-        // 항상 홈으로 이동 (로그인 또는 프로필 화면)
+        // 이미 홈 페이지에 있으면 아무것도 하지 않음 (깜빡임 방지)
+        if (location.pathname === '/') {
+            return;
+        }
+        // 다른 페이지에 있을 때만 홈으로 이동
         navigate('/');
     };
 
