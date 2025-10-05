@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { CONFIG } from '../config';
 import '../styles/main.css';
 
@@ -10,14 +10,14 @@ export default function MainPage() {
     const [statusMessage, setStatusMessage] = useState({ text: '', type: '' });
     const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-    const showStatus = useCallback((text, type = 'info') => {
+    const showStatus = (text, type = 'info') => {
         setStatusMessage({ text, type });
         setTimeout(() => {
             setStatusMessage({ text: '', type: '' });
         }, 3000);
-    }, []);
+    };
 
-    const checkLoginStatus = useCallback(async (showMessage = false) => {
+    const checkLoginStatus = async (showMessage = false) => {
         console.log('[APP] 로그인 상태 확인');
 
         try {
@@ -92,7 +92,7 @@ export default function MainPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [showStatus]);
+    };
 
     useEffect(() => {
         // Kakao SDK 초기화
@@ -231,7 +231,10 @@ export default function MainPage() {
 
     return (
         <div className="container">
-            {!currentUser ? (
+            {isLoading ? (
+                // 로딩 중일 때는 아무것도 표시하지 않음 (로딩 오버레이만 표시)
+                null
+            ) : !currentUser ? (
                 <div id="loginSection" className="section">
                     <div className="login-card">
                         <div className="logo-section">
