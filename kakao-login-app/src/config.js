@@ -13,7 +13,7 @@ export const CONFIG = {
     // 현재 앱의 origin (프론트엔드 URL로 고정)
     APP_ORIGIN: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
         ? window.location.origin  // 로컬에서는 현재 origin 사용
-        : 'https://commitjob-frontend.vercel.app',  // Vercel 프론트엔드 URL
+        : 'https://commitjob.site',  // 프론트엔드 URL
 
     // 로그인 성공 후 리다이렉트 경로
     LOGIN_SUCCESS_REDIRECT: '/',
