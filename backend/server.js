@@ -1047,6 +1047,86 @@ app.post("/session/start", (req, res) => {
 /**
  * @swagger
  * /api/profile:
+ *   get:
+ *     summary: 사용자 프로필 조회
+ *     tags: [User]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: user_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 사용자 ID
+ *     responses:
+ *       200:
+ *         description: 프로필 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user_id:
+ *                   type: integer
+ *                 jobs:
+ *                   type: string
+ *                 careers:
+ *                   type: string
+ *                 regions:
+ *                   type: string
+ *                 skills:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                 resume_path:
+ *                   type: string
+ *                 created_at:
+ *                   type: string
+ *                 updated_at:
+ *                   type: string
+ *       404:
+ *         description: 프로필을 찾을 수 없음
+ *       400:
+ *         description: 잘못된 요청
+ */
+app.get('/api/profile', async (req, res) => {
+  try {
+    const { user_id } = req.query;
+
+    if (!user_id) {
+      return res.status(400).json({ error: { code: "MISSING_USER_ID", message: "user_id is required" } });
+    }
+
+    const [profiles] = await pool.execute(
+      'SELECT * FROM user_profiles WHERE user_id = ?',
+      [user_id]
+    );
+
+    if (profiles.length === 0) {
+      return res.status(404).json({ error: { code: "PROFILE_NOT_FOUND", message: "Profile not found" } });
+    }
+
+    const profile = profiles[0];
+
+    res.status(200).json({
+      user_id: profile.user_id,
+      jobs: profile.preferred_jobs,
+      careers: profile.experience,
+      regions: profile.preferred_regions ? JSON.parse(profile.preferred_regions)[0] : null,
+      skills: profile.skills ? JSON.parse(profile.skills) : null,
+      resume_path: profile.resume_path,
+      created_at: profile.created_at,
+      updated_at: profile.updated_at
+    });
+  } catch (e) {
+    res.status(400).json({ error: { code: e.message || "BAD_INPUT", message: "profile get failed" } });
+  }
+});
+
+/**
+ * @swagger
+ * /api/profile:
  *   post:
  *     summary: 사용자 프로필 정보 저장/업데이트
  *     description: 사용자의 프로필 정보를 저장하거나 업데이트합니다. 이력서 파일 업로드도 함께 처리할 수 있습니다.
