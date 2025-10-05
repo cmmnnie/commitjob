@@ -260,25 +260,44 @@ export default function ResumePage() {
                                 </div>
 
                                 <div style={{
-                                    display: 'flex',
                                     padding: '8px',
                                     background: 'rgba(255,255,255,0.7)',
                                     borderRadius: '8px'
                                 }}>
-                                    <span style={{
+                                    <div style={{
                                         width: '90px',
                                         color: '#666',
                                         fontSize: '0.85rem',
                                         fontWeight: '600',
-                                        flexShrink: 0
-                                    }}>희망지역</span>
-                                    <span style={{
-                                        color: '#333',
-                                        fontSize: '0.85rem',
-                                        fontWeight: '500'
-                                    }}>
-                                        {userProfile.regions || '-'}
-                                    </span>
+                                        marginBottom: userProfile.regions && userProfile.regions.length > 0 ? '6px' : '0'
+                                    }}>희망지역</div>
+                                    {userProfile.regions && userProfile.regions.length > 0 ? (
+                                        <div style={{
+                                            display: 'flex',
+                                            flexWrap: 'wrap',
+                                            gap: '5px'
+                                        }}>
+                                            {userProfile.regions.map((region, index) => (
+                                                <span key={index} style={{
+                                                    background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                                                    color: 'white',
+                                                    padding: '4px 10px',
+                                                    borderRadius: '12px',
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: '500',
+                                                    boxShadow: '0 2px 4px rgba(79, 172, 254, 0.3)'
+                                                }}>
+                                                    📍 {region}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <span style={{
+                                            color: '#333',
+                                            fontSize: '0.85rem',
+                                            fontWeight: '500'
+                                        }}>-</span>
+                                    )}
                                 </div>
 
                                 <div style={{
@@ -340,9 +359,12 @@ export default function ResumePage() {
                                             borderRadius: '15px',
                                             fontSize: '0.8rem',
                                             fontWeight: '500',
-                                            boxShadow: '0 2px 4px rgba(102, 126, 234, 0.3)'
+                                            boxShadow: '0 2px 4px rgba(102, 126, 234, 0.3)',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '4px'
                                         }}>
-                                            {skill}
+                                            💻 {skill}
                                         </span>
                                     ))}
                                 </div>
