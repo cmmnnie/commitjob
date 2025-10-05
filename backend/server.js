@@ -1161,9 +1161,9 @@ app.get('/api/profile', async (req, res) => {
       },
       profile: data.profile_id ? {
         user_id: data.profile_user_id,
-        jobs: data.preferred_jobs,
-        careers: data.experience,
-        regions: safeJsonParse(data.preferred_regions, []), // 전체 배열 반환
+        preferred_jobs: data.preferred_jobs,
+        experience: data.experience,
+        preferred_regions: safeJsonParse(data.preferred_regions, []), // 전체 배열 반환
         skills: safeJsonParse(data.skills, []),
         expected_salary: data.expected_salary,
         resume_path: data.resume_path,
