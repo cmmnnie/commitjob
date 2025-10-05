@@ -1,0 +1,40 @@
+#서버실행#
+python catch_scraper.py
+
+#테스트#
+$BASE = "http://localhost:3000/api"
+chcp 65001 > $null; $OutputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+
+#초기화#
+Invoke-RestMethod -Method Post -Uri "$BASE/init"
+
+#로그인#
+Invoke-RestMethod -Method Post -Uri "$BASE/login" -Body (@{ username="test0137"; password="#test0808" } | ConvertTo-Json) -ContentType "application/json"
+
+#홈페이지용#
+Invoke-RestMethod -Method Post -Uri "$BASE/db/refresh/homepage"
+$h = Invoke-RestMethod -Method Get -Uri "$BASE/db/homepage"
+$h.results.total_unique_jobs
+$h.results.unique_jobs | ConvertTo-Json -Depth 50 | Out-String -Width 100000 | Out-Host -Paging
+
+#전체공고#
+Invoke-RestMethod -Method Post -Uri "$BASE/db/refresh/all"
+$all = Invoke-RestMethod -Method Get -Uri "$BASE/extract-all-jobs"
+$all.results.total_unique_jobs
+$all.results.unique_jobs | ConvertTo-Json -Depth 50 | Out-String -Width 100000 | Out-Host -Paging
+
+#특정기업공고#
+$c = Invoke-RestMethod -Method Get -Uri "$BASE/db/company-jobs?company_name=카카오"
+$c.results.total_unique_jobs
+$c.results.unique_jobs | ConvertTo-Json -Depth 50 | Out-String -Width 100000 | Out-Host -Paging
+
+#개별공고상세정보#
+$jobUrl = $c.results.unique_jobs[0].url
+$d = Invoke-RestMethod -Method Post -Uri "$BASE/job-detail" -Body (@{ job_url=$jobUrl } | ConvertTo-Json) -ContentType "application/json; charset=utf-8"
+$FormatEnumerationLimit = -1
+($d | ConvertTo-Json -Depth 100) | Out-String -Width 100000 | Out-Host -Paging
+
+#기업정보전체출력#
+$info = Invoke-RestMethod -Method Post -Uri "$BASE/search-company-info" -Body (@{ company_name="카카오" } | ConvertTo-Json) -ContentType "application/json; charset=utf-8"
+$FormatEnumerationLimit = -1
+($info | ConvertTo-Json -Depth 100) | Out-String -Width 100000 | Out-Host -Paging
