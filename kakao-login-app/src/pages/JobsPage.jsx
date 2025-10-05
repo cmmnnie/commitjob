@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4001';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ||
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://localhost:4001'
+        : 'https://commitjob-backend.up.railway.app');
 
 export default function JobsPage() {
     const navigate = useNavigate();
