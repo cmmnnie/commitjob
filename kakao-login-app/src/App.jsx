@@ -5,6 +5,7 @@ import MainPage from './pages/MainPage';
 import CallbackPage from './pages/CallbackPage';
 import AIRecommendationPage from './pages/AIRecommendationPage';
 import JobsPage from './pages/JobsPage';
+import AIJobsPage from './pages/AIJobsPage';
 import ResumePage from './pages/ResumePage';
 import MenuPage from './pages/MenuPage';
 import CookieTestPage from './pages/CookieTestPage';
@@ -20,6 +21,7 @@ function App() {
                 <Route path="/callback" element={<CallbackPage />} />
                 <Route path="/ai-recommendation" element={<AIRecommendationPage />} />
                 <Route path="/jobs" element={<JobsPage />} />
+                <Route path="/jobs/ai" element={<AIJobsPage />} />
                 <Route path="/resume" element={<ResumePage />} />
                 <Route path="/menu" element={<MenuPage />} />
                 <Route path="/cookie-test" element={<CookieTestPage />} />

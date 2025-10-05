@@ -4,9 +4,9 @@ import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4001';
 
-export default function JobsPage() {
+export default function AIJobsPage() {
     const navigate = useNavigate();
-    const [bigdataJobs, setBigdataJobs] = useState([]);
+    const [jobs, setJobs] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -16,25 +16,19 @@ export default function JobsPage() {
     const fetchJobs = async () => {
         try {
             setLoading(true);
-
-            // BIGDATA_AI 카테고리 조회 (limit=5)
-            const bigdataResponse = await axios.get(
-                `${API_BASE_URL}/api/jobs/BIGDATA_AI?limit=5`,
+            const response = await axios.get(
+                `${API_BASE_URL}/api/jobs/BIGDATA_AI`,
                 { withCredentials: true }
             );
 
-            if (bigdataResponse.data.success) {
-                setBigdataJobs(bigdataResponse.data.jobs);
+            if (response.data.success) {
+                setJobs(response.data.jobs);
             }
         } catch (error) {
-            console.error('Failed to fetch jobs:', error);
+            console.error('Failed to fetch AI jobs:', error);
         } finally {
             setLoading(false);
         }
-    };
-
-    const handleViewAll = () => {
-        navigate('/jobs/ai');
     };
 
     const JobCard = ({ job }) => (
@@ -81,8 +75,8 @@ export default function JobsPage() {
                     </p>
                 </div>
                 <span style={{
-                    background: job.category === 'BIGDATA_AI' ? '#e3f2fd' : '#f3e5f5',
-                    color: job.category === 'BIGDATA_AI' ? '#1976d2' : '#7b1fa2',
+                    background: '#e3f2fd',
+                    color: '#1976d2',
                     padding: '4px 12px',
                     borderRadius: '16px',
                     fontSize: '0.8rem',
@@ -90,7 +84,7 @@ export default function JobsPage() {
                     flexShrink: 0,
                     marginLeft: '12px'
                 }}>
-                    {job.category === 'BIGDATA_AI' ? '빅데이터/AI' : 'IT개발'}
+                    빅데이터/AI
                 </span>
             </div>
 
@@ -171,7 +165,6 @@ export default function JobsPage() {
         </div>
     );
 
-
     if (loading) {
         return (
             <div style={{
@@ -192,7 +185,7 @@ export default function JobsPage() {
                         color: '#666',
                         textAlign: 'center'
                     }}>
-                        채용공고를 불러오는 중...
+                        AI 채용공고를 불러오는 중...
                     </div>
                 </div>
             </div>
@@ -228,19 +221,31 @@ export default function JobsPage() {
                                 fontSize: '2rem',
                                 fontWeight: '700',
                                 color: '#333',
-                                marginBottom: '8px'
+                                marginBottom: '8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '12px'
                             }}>
-                                채용공고
+                                <span style={{ fontSize: '2rem' }}>📊</span>
+                                BIGDATA/AI 채용공고
+                                <span style={{
+                                    fontSize: '1.2rem',
+                                    color: '#1976d2',
+                                    fontWeight: '600',
+                                    marginLeft: '8px'
+                                }}>
+                                    ({jobs.length}건)
+                                </span>
                             </h1>
                             <p style={{
                                 fontSize: '1rem',
                                 color: '#666'
                             }}>
-                                최신 IT 및 빅데이터/AI 분야 채용정보를 확인하세요
+                                최신 빅데이터/AI 분야 채용정보를 확인하세요
                             </p>
                         </div>
                         <button
-                            onClick={() => navigate('/main')}
+                            onClick={() => navigate('/jobs')}
                             style={{
                                 background: 'transparent',
                                 border: '2px solid #667eea',
@@ -260,7 +265,7 @@ export default function JobsPage() {
                                 e.currentTarget.style.background = 'transparent';
                                 e.currentTarget.style.color = '#667eea';
                             }}>
-                            메인으로
+                            뒤로가기
                         </button>
                     </div>
                 </div>
@@ -270,76 +275,23 @@ export default function JobsPage() {
                     background: 'white',
                     borderRadius: '16px',
                     padding: '40px',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                    maxHeight: '600px',
+                    overflowY: 'auto'
                 }}>
-                    {/* BIGDATA_AI 섹션 */}
-                    <div style={{ marginBottom: '40px' }}>
+                    {jobs.length > 0 ? (
+                        jobs.map((job) => (
+                            <JobCard key={job.id} job={job} />
+                        ))
+                    ) : (
                         <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            marginBottom: '20px'
+                            textAlign: 'center',
+                            padding: '40px',
+                            color: '#999'
                         }}>
-                            <h2 style={{
-                                fontSize: '1.5rem',
-                                fontWeight: '700',
-                                color: '#333',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px'
-                            }}>
-                                <span style={{ fontSize: '1.8rem' }}>📊</span>
-                                BIGDATA/AI
-                                <span style={{
-                                    fontSize: '0.9rem',
-                                    color: '#999',
-                                    fontWeight: '400',
-                                    marginLeft: '8px'
-                                }}>
-                                    (5건)
-                                </span>
-                            </h2>
-                            <button
-                                onClick={handleViewAll}
-                                style={{
-                                    background: '#1976d2',
-                                    color: 'white',
-                                    border: 'none',
-                                    padding: '8px 20px',
-                                    borderRadius: '20px',
-                                    fontSize: '0.9rem',
-                                    fontWeight: '600',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.opacity = '0.9';
-                                    e.currentTarget.style.transform = 'scale(1.05)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.opacity = '1';
-                                    e.currentTarget.style.transform = 'scale(1)';
-                                }}>
-                                전체보기
-                            </button>
+                            채용공고가 없습니다.
                         </div>
-
-                        <div>
-                            {bigdataJobs.length > 0 ? (
-                                bigdataJobs.map((job) => (
-                                    <JobCard key={job.id} job={job} />
-                                ))
-                            ) : (
-                                <div style={{
-                                    textAlign: 'center',
-                                    padding: '40px',
-                                    color: '#999'
-                                }}>
-                                    채용공고가 없습니다.
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                    )}
                 </div>
             </div>
         </div>
