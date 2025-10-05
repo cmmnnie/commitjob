@@ -45,7 +45,7 @@ export default function Header() {
         };
 
         checkLoginStatus();
-    }, [location]);
+    }, [location.pathname]);
 
     const handleProfileClick = () => {
         // 항상 홈으로 이동 (로그인 또는 프로필 화면)
