@@ -55,14 +55,36 @@ export default function ResumePage() {
 
             if (response.ok) {
                 const data = await response.json();
-                console.log('[RESUME] 프로필 데이터:', data);
+                console.log('='.repeat(60));
+                console.log('[RESUME] ✅ JOIN 조회 성공!');
+                console.log('[RESUME] 📊 users 테이블 데이터:', {
+                    id: data.user?.id,
+                    name: data.user?.name,
+                    email: data.user?.email,
+                    provider: data.user?.provider
+                });
+                console.log('[RESUME] 📊 user_profiles 테이블 데이터:', {
+                    user_id: data.profile?.user_id,
+                    jobs: data.profile?.jobs,
+                    careers: data.profile?.careers,
+                    regions: data.profile?.regions,
+                    skills: data.profile?.skills,
+                    expected_salary: data.profile?.expected_salary
+                });
+                console.log('[RESUME] 🔗 JOIN 확인:', {
+                    'users.id': data.user?.id,
+                    'user_profiles.user_id': data.profile?.user_id,
+                    'JOIN 성공': data.user?.id === data.profile?.user_id
+                });
+                console.log('='.repeat(60));
+
                 // 새로운 API 응답 구조: { user: {...}, profile: {...} }
                 if (data.user) {
                     setCurrentUser(data.user); // user 정보 업데이트
                 }
                 setUserProfile(data.profile); // profile 정보 설정
             } else if (response.status === 404) {
-                console.log('[RESUME] 사용자 또는 프로필 없음');
+                console.log('[RESUME] ❌ 사용자 또는 프로필 없음');
                 setUserProfile(null);
             }
         } catch (error) {
@@ -386,6 +408,31 @@ export default function ResumePage() {
                                 }}>
                                     프로필 정보는 AI 추천과 면접 질문 생성에 활용됩니다
                                 </p>
+                            </div>
+                        </div>
+
+                        {/* JOIN 정보 표시 */}
+                        <div style={{
+                            background: '#f1f8e9',
+                            borderRadius: '10px',
+                            padding: '12px',
+                            marginBottom: '12px',
+                            border: '1px solid #aed581',
+                            fontSize: '0.75rem'
+                        }}>
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                marginBottom: '6px'
+                            }}>
+                                <span>🔗</span>
+                                <strong style={{ color: '#558b2f' }}>데이터베이스 JOIN 정보</strong>
+                            </div>
+                            <div style={{ color: '#689f38', lineHeight: '1.5' }}>
+                                <div>• users 테이블 ID: {currentUser.id}</div>
+                                <div>• user_profiles 테이블 user_id: {userProfile.user_id}</div>
+                                <div>• JOIN 상태: {currentUser.id === userProfile.user_id ? '✅ 성공' : '❌ 불일치'}</div>
                             </div>
                         </div>
 
