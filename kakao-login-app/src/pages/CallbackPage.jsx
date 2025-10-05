@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CONFIG } from '../config';
 
@@ -9,7 +9,8 @@ export default function CallbackPage() {
     const [debugInfo, setDebugInfo] = useState('');
     const [showDebug, setShowDebug] = useState(false);
 
-    const handleCallback = useCallback(async () => {
+    useEffect(() => {
+        const handleCallback = async () => {
         try {
             const params = new URLSearchParams(window.location.search);
             const ok = params.get('ok');
@@ -110,11 +111,11 @@ export default function CallbackPage() {
                 navigate('/');
             }, 3000);
         }
-    }, [navigate]);
+        };
 
-    useEffect(() => {
         handleCallback();
-    }, [handleCallback]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     return (
         <div style={{
