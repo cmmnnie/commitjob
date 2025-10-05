@@ -276,12 +276,6 @@ export default function MainPage() {
                             </div>
                         )}
                     </div>
-
-                    <div className="dev-info">
-                        <p>개발 환경</p>
-                        <p>앱 Origin: {CONFIG.APP_ORIGIN}</p>
-                        <p>백엔드: {CONFIG.BACKEND_URL}</p>
-                    </div>
                 </div>
             ) : (
                 <div id="userSection" className="section">
