@@ -1139,6 +1139,17 @@ app.get('/api/profile', async (req, res) => {
 
     const data = results[0];
 
+    // JSON 파싱 헬퍼 함수
+    const safeJsonParse = (jsonString, defaultValue = null) => {
+      if (!jsonString) return defaultValue;
+      try {
+        return JSON.parse(jsonString);
+      } catch (e) {
+        console.error('[API] JSON parse error:', e, 'Data:', jsonString);
+        return defaultValue;
+      }
+    };
+
     const response = {
       user: {
         id: data.user_id,
@@ -1152,8 +1163,8 @@ app.get('/api/profile', async (req, res) => {
         user_id: data.profile_user_id,
         jobs: data.preferred_jobs,
         careers: data.experience,
-        regions: data.preferred_regions ? JSON.parse(data.preferred_regions)[0] : null,
-        skills: data.skills ? JSON.parse(data.skills) : null,
+        regions: safeJsonParse(data.preferred_regions, [])[0] || null,
+        skills: safeJsonParse(data.skills, []),
         expected_salary: data.expected_salary,
         resume_path: data.resume_path,
         created_at: data.profile_created_at,
@@ -1164,7 +1175,7 @@ app.get('/api/profile', async (req, res) => {
     console.log(`[API] /api/profile - 응답 전송:`, {
       사용자이름: response.user.name,
       프로필존재: !!response.profile,
-      조인성공: response.user.id === response.profile?.user_id
+      조인성공: response.profile ? (response.user.id === response.profile.user_id) : 'N/A'
     });
 
     res.status(200).json(response);
