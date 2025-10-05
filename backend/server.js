@@ -445,12 +445,18 @@ app.get("/auth/google", (req, res) => {
 app.get("/auth/google/callback", async (req, res) => {
   const fallback = allowedOrigins[0] || "http://localhost:5173";
   try {
-    const { code, state } = req.query;
+    const { code } = req.query;
+    let { state } = req.query;
 
     // state를 디코딩하여 origin 추출
     let origin;
     try {
-      const stateData = JSON.parse(Buffer.from(state, 'base64').toString());
+      // URL 디코딩이 필요한 경우 처리
+      const decodedState = decodeURIComponent(state);
+      console.log('[GOOGLE-CALLBACK] Raw state:', state);
+      console.log('[GOOGLE-CALLBACK] Decoded state:', decodedState);
+
+      const stateData = JSON.parse(Buffer.from(decodedState, 'base64').toString());
       origin = stateData.origin;
       console.log('[GOOGLE-CALLBACK] Decoded origin from state:', origin);
     } catch (decodeError) {
@@ -611,12 +617,18 @@ app.get("/auth/kakao/callback", async (req, res) => {
   console.log('[KAKAO-CALLBACK] Query params:', req.query);
 
   try {
-    const { code, state } = req.query;
+    const { code } = req.query;
+    let { state } = req.query;
 
     // state를 디코딩하여 origin 추출
     let origin;
     try {
-      const stateData = JSON.parse(Buffer.from(state, 'base64').toString());
+      // URL 디코딩이 필요한 경우 처리
+      const decodedState = decodeURIComponent(state);
+      console.log('[KAKAO-CALLBACK] Raw state:', state);
+      console.log('[KAKAO-CALLBACK] Decoded state:', decodedState);
+
+      const stateData = JSON.parse(Buffer.from(decodedState, 'base64').toString());
       origin = stateData.origin;
       console.log('[KAKAO-CALLBACK] Decoded origin from state:', origin);
       console.log('[KAKAO-CALLBACK] State timestamp:', new Date(stateData.timestamp).toISOString());
