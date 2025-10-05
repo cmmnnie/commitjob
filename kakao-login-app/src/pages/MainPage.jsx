@@ -4,7 +4,8 @@ import '../styles/main.css';
 
 export default function MainPage() {
     const [currentUser, setCurrentUser] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
+    // 토큰이 이미 있으면 로딩 없이 시작 (깜빡임 방지)
+    const [isLoading, setIsLoading] = useState(!localStorage.getItem('app_session'));
     const [loadingMessage, setLoadingMessage] = useState('로그인 상태 확인 중...');
     const [statusMessage, setStatusMessage] = useState({ text: '', type: '' });
     const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -31,7 +32,10 @@ export default function MainPage() {
             if (!token) {
                 console.log('[APP] 토큰 없음 - 로그인 필요');
                 setCurrentUser(null);
-                setIsLoading(false);
+                // 토큰이 없으면 로딩 상태를 명시적으로 false로
+                if (isLoading) {
+                    setIsLoading(false);
+                }
                 if (showMessage) {
                     showStatus('로그인이 필요합니다', 'warning');
                 }
