@@ -1098,29 +1098,57 @@ app.get('/api/profile', async (req, res) => {
       return res.status(400).json({ error: { code: "MISSING_USER_ID", message: "user_id is required" } });
     }
 
-    const [profiles] = await pool.execute(
-      'SELECT * FROM user_profiles WHERE user_id = ?',
+    // users 테이블과 user_profiles 테이블을 JOIN하여 조회
+    const [results] = await pool.execute(
+      `SELECT
+        u.id as user_id,
+        u.email,
+        u.name,
+        u.picture,
+        u.provider,
+        u.created_at as user_created_at,
+        up.preferred_jobs,
+        up.experience,
+        up.preferred_regions,
+        up.skills,
+        up.expected_salary,
+        up.resume_path,
+        up.created_at as profile_created_at,
+        up.updated_at as profile_updated_at
+      FROM users u
+      LEFT JOIN user_profiles up ON u.id = up.user_id
+      WHERE u.id = ?`,
       [user_id]
     );
 
-    if (profiles.length === 0) {
-      return res.status(404).json({ error: { code: "PROFILE_NOT_FOUND", message: "Profile not found" } });
+    if (results.length === 0) {
+      return res.status(404).json({ error: { code: "USER_NOT_FOUND", message: "User not found" } });
     }
 
-    const profile = profiles[0];
+    const data = results[0];
 
     res.status(200).json({
-      user_id: profile.user_id,
-      jobs: profile.preferred_jobs,
-      careers: profile.experience,
-      regions: profile.preferred_regions ? JSON.parse(profile.preferred_regions)[0] : null,
-      skills: profile.skills ? JSON.parse(profile.skills) : null,
-      expected_salary: profile.expected_salary,
-      resume_path: profile.resume_path,
-      created_at: profile.created_at,
-      updated_at: profile.updated_at
+      user: {
+        id: data.user_id,
+        email: data.email,
+        name: data.name,
+        picture: data.picture,
+        provider: data.provider,
+        created_at: data.user_created_at
+      },
+      profile: data.preferred_jobs ? {
+        jobs: data.preferred_jobs,
+        careers: data.experience,
+        regions: data.preferred_regions ? JSON.parse(data.preferred_regions)[0] : null,
+        skills: data.skills ? JSON.parse(data.skills) : null,
+        expected_salary: data.expected_salary,
+        resume_path: data.resume_path,
+        created_at: data.profile_created_at,
+        updated_at: data.profile_updated_at
+      } : null
     });
   } catch (e) {
+    console.error('[API] /api/profile error:', e);
     res.status(400).json({ error: { code: e.message || "BAD_INPUT", message: "profile get failed" } });
   }
 });
