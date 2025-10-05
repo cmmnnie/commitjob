@@ -574,7 +574,6 @@ app.get("/auth/kakao/login-url", (req, res) => {
 
   // state에 origin을 인코딩하여 서버 재시작 시에도 유지
   const stateData = {
-    uuid: crypto.randomUUID(),
     origin: origin,
     timestamp: Date.now()
   };
