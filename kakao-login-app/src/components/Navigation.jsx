@@ -25,7 +25,7 @@ export default function Navigation() {
         alignItems: 'center',
         listStyle: 'none',
         margin: 0,
-        padding: '8px 0',
+        padding: '4px 0',
         maxWidth: '600px',
         marginLeft: 'auto',
         marginRight: 'auto'
@@ -37,19 +37,19 @@ export default function Navigation() {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: '4px',
-        padding: '8px 12px',
-        fontSize: '0.7rem',
+        gap: '2px',
+        padding: '6px 8px',
+        fontSize: '0.65rem',
         fontWeight: isActive ? '600' : '500',
         transition: 'all 0.3s ease',
         borderRadius: '8px',
-        minWidth: '70px',
+        minWidth: '65px',
         flex: 1
     });
 
     const iconStyle = (isActive) => ({
-        fontSize: '1.4rem',
-        marginBottom: '2px'
+        fontSize: '1.3rem',
+        marginBottom: '1px'
     });
 
     return (
