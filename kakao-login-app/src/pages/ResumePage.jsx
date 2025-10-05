@@ -65,9 +65,9 @@ export default function ResumePage() {
                 });
                 console.log('[RESUME] 📊 user_profiles 테이블 데이터:', {
                     user_id: data.profile?.user_id,
-                    jobs: data.profile?.jobs,
-                    careers: data.profile?.careers,
-                    regions: data.profile?.regions,
+                    preferred_jobs: data.profile?.preferred_jobs,
+                    experience: data.profile?.experience,
+                    preferred_regions: data.profile?.preferred_regions,
                     skills: data.profile?.skills,
                     expected_salary: data.profile?.expected_salary
                 });
@@ -239,7 +239,7 @@ export default function ResumePage() {
                                         fontSize: '0.85rem',
                                         fontWeight: '500'
                                     }}>
-                                        {userProfile.jobs || '-'}
+                                        {userProfile.preferred_jobs || '-'}
                                     </span>
                                 </div>
 
@@ -261,7 +261,7 @@ export default function ResumePage() {
                                         fontSize: '0.85rem',
                                         fontWeight: '500'
                                     }}>
-                                        {userProfile.careers || '-'}
+                                        {userProfile.experience || '-'}
                                     </span>
                                 </div>
 
@@ -271,39 +271,48 @@ export default function ResumePage() {
                                     borderRadius: '8px'
                                 }}>
                                     <div style={{
-                                        width: '90px',
-                                        color: '#666',
-                                        fontSize: '0.85rem',
-                                        fontWeight: '600',
-                                        marginBottom: userProfile.regions && userProfile.regions.length > 0 ? '6px' : '0'
-                                    }}>희망지역</div>
-                                    {userProfile.regions && userProfile.regions.length > 0 ? (
-                                        <div style={{
-                                            display: 'flex',
-                                            flexWrap: 'wrap',
-                                            gap: '5px'
-                                        }}>
-                                            {userProfile.regions.map((region, index) => (
-                                                <span key={index} style={{
-                                                    background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-                                                    color: 'white',
-                                                    padding: '4px 10px',
-                                                    borderRadius: '12px',
-                                                    fontSize: '0.75rem',
-                                                    fontWeight: '500',
-                                                    boxShadow: '0 2px 4px rgba(79, 172, 254, 0.3)'
-                                                }}>
-                                                    📍 {region}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    ) : (
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px'
+                                    }}>
                                         <span style={{
-                                            color: '#333',
+                                            width: '90px',
+                                            color: '#666',
                                             fontSize: '0.85rem',
-                                            fontWeight: '500'
-                                        }}>-</span>
-                                    )}
+                                            fontWeight: '600',
+                                            flexShrink: 0
+                                        }}>선호지역</span>
+                                        {userProfile.preferred_regions && userProfile.preferred_regions.length > 0 ? (
+                                            <div style={{
+                                                display: 'flex',
+                                                flexWrap: 'wrap',
+                                                gap: '6px'
+                                            }}>
+                                                {userProfile.preferred_regions.map((region, index) => (
+                                                    <span key={index} style={{
+                                                        background: '#e3f2fd',
+                                                        color: '#1976d2',
+                                                        padding: '4px 12px',
+                                                        borderRadius: '16px',
+                                                        fontSize: '0.8rem',
+                                                        fontWeight: '500',
+                                                        border: '1px solid #90caf9',
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: '4px'
+                                                    }}>
+                                                        ✓ {region}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <span style={{
+                                                color: '#333',
+                                                fontSize: '0.85rem',
+                                                fontWeight: '500'
+                                            }}>-</span>
+                                        )}
+                                    </div>
                                 </div>
 
                                 <div style={{
@@ -340,47 +349,48 @@ export default function ResumePage() {
                             <div style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '8px',
-                                marginBottom: userProfile.skills && userProfile.skills.length > 0 ? '10px' : '0'
+                                gap: '8px'
                             }}>
                                 <span style={{ fontSize: '1.2rem' }}>⚡</span>
                                 <h3 style={{
                                     fontSize: '1rem',
                                     color: '#333',
                                     fontWeight: '600',
-                                    margin: 0
-                                }}>보유 기술</h3>
+                                    margin: 0,
+                                    width: '90px',
+                                    flexShrink: 0
+                                }}>기술스택</h3>
+                                {userProfile.skills && userProfile.skills.length > 0 ? (
+                                    <div style={{
+                                        display: 'flex',
+                                        flexWrap: 'wrap',
+                                        gap: '6px'
+                                    }}>
+                                        {userProfile.skills.map((skill, index) => (
+                                            <span key={index} style={{
+                                                background: '#f3e5f5',
+                                                color: '#7b1fa2',
+                                                padding: '4px 12px',
+                                                borderRadius: '16px',
+                                                fontSize: '0.8rem',
+                                                fontWeight: '500',
+                                                border: '1px solid #ce93d8',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '4px'
+                                            }}>
+                                                ✓ {skill}
+                                            </span>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <span style={{
+                                        color: '#333',
+                                        fontSize: '0.85rem',
+                                        fontWeight: '500'
+                                    }}>-</span>
+                                )}
                             </div>
-                            {userProfile.skills && userProfile.skills.length > 0 ? (
-                                <div style={{
-                                    display: 'flex',
-                                    flexWrap: 'wrap',
-                                    gap: '6px'
-                                }}>
-                                    {userProfile.skills.map((skill, index) => (
-                                        <span key={index} style={{
-                                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                            color: 'white',
-                                            padding: '5px 12px',
-                                            borderRadius: '15px',
-                                            fontSize: '0.8rem',
-                                            fontWeight: '500',
-                                            boxShadow: '0 2px 4px rgba(102, 126, 234, 0.3)',
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            gap: '4px'
-                                        }}>
-                                            💻 {skill}
-                                        </span>
-                                    ))}
-                                </div>
-                            ) : (
-                                <span style={{
-                                    color: '#333',
-                                    fontSize: '0.85rem',
-                                    fontWeight: '500'
-                                }}>-</span>
-                            )}
                         </div>
 
                         {/* 이력서 파일 섹션 */}
