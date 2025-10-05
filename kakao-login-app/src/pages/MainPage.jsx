@@ -1,14 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { CONFIG } from '../config';
 import '../styles/main.css';
 
 export default function MainPage() {
     const [currentUser, setCurrentUser] = useState(null);
-    // 토큰이 이미 있으면 로딩 없이 시작 (깜빡임 방지)
-    const [isLoading, setIsLoading] = useState(!localStorage.getItem('app_session'));
+    // 토큰이 있으면 로딩 상태로 시작 (로그인 화면 깜빡임 방지)
+    const [isLoading, setIsLoading] = useState(!!localStorage.getItem('app_session'));
     const [loadingMessage, setLoadingMessage] = useState('로그인 상태 확인 중...');
     const [statusMessage, setStatusMessage] = useState({ text: '', type: '' });
     const [showLogoutModal, setShowLogoutModal] = useState(false);
+    const hasCheckedLogin = useRef(false);
 
     const showStatus = (text, type = 'info') => {
         setStatusMessage({ text, type });
@@ -95,6 +96,12 @@ export default function MainPage() {
     };
 
     useEffect(() => {
+        // 중복 실행 방지
+        if (hasCheckedLogin.current) {
+            return;
+        }
+        hasCheckedLogin.current = true;
+
         // Kakao SDK 초기화
         if (window.Kakao && !window.Kakao.isInitialized()) {
             window.Kakao.init(CONFIG.KAKAO_JS_KEY);
