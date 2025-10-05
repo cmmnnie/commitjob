@@ -97,6 +97,18 @@ export default function ResumePage() {
         return `${Number(salary).toLocaleString('ko-KR')}만원`;
     };
 
+    const maskName = (name) => {
+        if (!name || name === '-') return name;
+        if (name.length === 1) return name;
+        if (name.length === 2) {
+            return name[0] + '*';
+        } else if (name.length >= 3) {
+            const middle = '*'.repeat(name.length - 2);
+            return name[0] + middle + name[name.length - 1];
+        }
+        return name;
+    };
+
     if (isLoading) {
         return (
             <div style={{
@@ -181,13 +193,7 @@ export default function ResumePage() {
                         marginBottom: '5px',
                         fontWeight: '700',
                         fontFamily: "'Quicksand', sans-serif"
-                    }}>{currentUser.name}님의 이력서</h1>
-                    <p style={{ fontSize: '0.8rem', color: '#999', marginBottom: '3px' }}>
-                        {currentUser.email}
-                    </p>
-                    <p style={{ fontSize: '0.75rem', color: '#aaa' }}>
-                        {currentUser.provider === 'kakao' ? '카카오 계정' : currentUser.provider}으로 로그인
-                    </p>
+                    }}>{maskName(currentUser.name)}님의 이력서</h1>
                 </div>
 
                 {userProfile ? (
@@ -430,31 +436,6 @@ export default function ResumePage() {
                                 }}>
                                     프로필 정보는 AI 추천과 면접 질문 생성에 활용됩니다
                                 </p>
-                            </div>
-                        </div>
-
-                        {/* JOIN 정보 표시 */}
-                        <div style={{
-                            background: '#f1f8e9',
-                            borderRadius: '10px',
-                            padding: '12px',
-                            marginBottom: '12px',
-                            border: '1px solid #aed581',
-                            fontSize: '0.75rem'
-                        }}>
-                            <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                                marginBottom: '6px'
-                            }}>
-                                <span>🔗</span>
-                                <strong style={{ color: '#558b2f' }}>데이터베이스 JOIN 정보</strong>
-                            </div>
-                            <div style={{ color: '#689f38', lineHeight: '1.5' }}>
-                                <div>• users 테이블 ID: {currentUser.id}</div>
-                                <div>• user_profiles 테이블 user_id: {userProfile.user_id}</div>
-                                <div>• JOIN 상태: {currentUser.id === userProfile.user_id ? '✅ 성공' : '❌ 불일치'}</div>
                             </div>
                         </div>
 
