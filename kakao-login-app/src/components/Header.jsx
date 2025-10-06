@@ -48,18 +48,10 @@ export default function Header() {
     }, [location.pathname]);
 
     const handleProfileClick = () => {
-        if (currentUser) {
-            // 로그인된 경우: 홈 페이지로 이동하면서 프로필 모달 표시
-            if (location.pathname === '/') {
-                // 이미 홈 페이지에 있으면 URL 파라미터로 프로필 모달 열기
-                navigate('/?showProfile=true');
-            } else {
-                // 다른 페이지에 있으면 홈으로 이동하면서 프로필 모달 열기
-                navigate('/?showProfile=true');
-            }
-        } else {
-            // 로그인되지 않은 경우: 홈 페이지로 이동하면서 로그인 모달 표시
-            navigate('/?showLogin=true');
+        // 프로필 버튼 클릭 시 메인 페이지(/)로 이동
+        // 메인 페이지에서 로그인 여부에 따라 프로필 또는 로그인 화면 표시
+        if (location.pathname !== '/') {
+            navigate('/');
         }
     };
 

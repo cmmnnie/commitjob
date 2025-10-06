@@ -18,7 +18,6 @@ export default function MainPage() {
     const [bigdataJobs, setBigdataJobs] = useState([]);
     const [itJobs, setItJobs] = useState([]);
     const [showLoginModal, setShowLoginModal] = useState(false);
-    const [showProfileModal, setShowProfileModal] = useState(false);
     const hasCheckedLogin = useRef(false);
 
     const showStatus = (text, type = 'info') => {
@@ -189,16 +188,9 @@ export default function MainPage() {
     useEffect(() => {
         const urlParams = new URLSearchParams(location.search);
         const showLogin = urlParams.get('showLogin');
-        const showProfile = urlParams.get('showProfile');
 
         if (showLogin === 'true' && !currentUser) {
             setShowLoginModal(true);
-            // URL에서 파라미터 제거
-            window.history.replaceState({}, '', window.location.pathname);
-        }
-
-        if (showProfile === 'true' && currentUser) {
-            setShowProfileModal(true);
             // URL에서 파라미터 제거
             window.history.replaceState({}, '', window.location.pathname);
         }
@@ -479,6 +471,211 @@ export default function MainPage() {
                         </div>
                     </div>
 
+                    {/* 로그인된 사용자 프로필 정보 */}
+                    {currentUser && (
+                        <div style={{
+                            background: 'white',
+                            borderRadius: '16px',
+                            padding: '30px',
+                            marginBottom: '20px',
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                        }}>
+                            <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+                                <h2 style={{ fontSize: '1.8rem', fontWeight: '700', marginBottom: '10px' }}>
+                                    환영합니다!
+                                </h2>
+                            </div>
+
+                            <div style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                marginBottom: '30px'
+                            }}>
+                                <div style={{
+                                    width: '100px',
+                                    height: '100px',
+                                    borderRadius: '50%',
+                                    overflow: 'hidden',
+                                    marginBottom: '20px',
+                                    border: '3px solid #667eea',
+                                    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+                                }}>
+                                    <img
+                                        src={currentUser.picture || ''}
+                                        alt={currentUser.name}
+                                        style={{
+                                            width: '100%',
+                                            height: '100%',
+                                            objectFit: 'cover'
+                                        }}
+                                    />
+                                </div>
+                                <h3 style={{
+                                    fontSize: '1.5rem',
+                                    fontWeight: '600',
+                                    color: '#333',
+                                    marginBottom: '8px'
+                                }}>
+                                    {maskName(currentUser.name || '-')}
+                                </h3>
+                                <p style={{
+                                    fontSize: '0.9rem',
+                                    color: '#999',
+                                    background: '#f5f5f5',
+                                    padding: '6px 12px',
+                                    borderRadius: '12px'
+                                }}>
+                                    로그인 방식: {currentUser.provider === 'kakao' ? '카카오 로그인' : currentUser.provider}
+                                </p>
+                            </div>
+
+                            <div style={{
+                                background: '#f8f9fa',
+                                borderRadius: '12px',
+                                padding: '20px',
+                                marginBottom: '20px'
+                            }}>
+                                <div style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    marginBottom: '15px',
+                                    paddingBottom: '15px',
+                                    borderBottom: '1px solid #e0e0e0'
+                                }}>
+                                    <span style={{ color: '#666', fontSize: '0.9rem' }}>사용자 ID:</span>
+                                    <span style={{ color: '#333', fontWeight: '600' }}>
+                                        {maskId(currentUser.email, currentUser.name)}
+                                    </span>
+                                </div>
+                                <div style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center'
+                                }}>
+                                    <span style={{ color: '#666', fontSize: '0.9rem' }}>가입일:</span>
+                                    <span style={{ color: '#333', fontWeight: '600', fontSize: '0.9rem' }}>
+                                        {formatDate(currentUser.created_at)}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div style={{
+                                display: 'flex',
+                                gap: '10px'
+                            }}>
+                                <button
+                                    onClick={() => checkLoginStatus(true)}
+                                    style={{
+                                        flex: 1,
+                                        background: 'transparent',
+                                        color: '#667eea',
+                                        border: '2px solid #667eea',
+                                        padding: '12px 24px',
+                                        borderRadius: '8px',
+                                        fontSize: '0.95rem',
+                                        fontWeight: '600',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.background = '#667eea';
+                                        e.currentTarget.style.color = 'white';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = 'transparent';
+                                        e.currentTarget.style.color = '#667eea';
+                                    }}>
+                                    정보 새로고침
+                                </button>
+                                <button
+                                    onClick={() => setShowLogoutModal(true)}
+                                    style={{
+                                        flex: 1,
+                                        background: '#d32f2f',
+                                        color: 'white',
+                                        border: 'none',
+                                        padding: '12px 24px',
+                                        borderRadius: '8px',
+                                        fontSize: '0.95rem',
+                                        fontWeight: '600',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.background = '#c62828';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = '#d32f2f';
+                                    }}>
+                                    로그아웃
+                                </button>
+                            </div>
+
+                            {showLogoutModal && (
+                                <div style={{
+                                    position: 'fixed',
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                    background: 'rgba(0, 0, 0, 0.5)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    zIndex: 3000
+                                }}
+                                onClick={() => setShowLogoutModal(false)}>
+                                    <div style={{
+                                        background: 'white',
+                                        borderRadius: '16px',
+                                        padding: '30px',
+                                        maxWidth: '350px',
+                                        width: '90%',
+                                        boxShadow: '0 10px 40px rgba(0,0,0,0.3)'
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}>
+                                        <h3 style={{ marginBottom: '15px', fontSize: '1.3rem' }}>로그아웃 하시겠습니까?</h3>
+                                        <p style={{ color: '#666', marginBottom: '25px' }}>로그아웃하면 다시 로그인해야 합니다.</p>
+                                        <div style={{ display: 'flex', gap: '10px' }}>
+                                            <button
+                                                onClick={handleLogout}
+                                                style={{
+                                                    flex: 1,
+                                                    background: '#d32f2f',
+                                                    color: 'white',
+                                                    border: 'none',
+                                                    padding: '12px',
+                                                    borderRadius: '8px',
+                                                    fontSize: '0.95rem',
+                                                    fontWeight: '600',
+                                                    cursor: 'pointer'
+                                                }}>
+                                                확인
+                                            </button>
+                                            <button
+                                                onClick={() => setShowLogoutModal(false)}
+                                                style={{
+                                                    flex: 1,
+                                                    background: 'transparent',
+                                                    color: '#666',
+                                                    border: '2px solid #e0e0e0',
+                                                    padding: '12px',
+                                                    borderRadius: '8px',
+                                                    fontSize: '0.95rem',
+                                                    fontWeight: '600',
+                                                    cursor: 'pointer'
+                                                }}>
+                                                취소
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     {/* 컨텐츠 영역 */}
                     <div style={{
                         background: 'white',
@@ -618,228 +815,6 @@ export default function MainPage() {
                                     {itJobs.map((job) => (
                                         <JobCard key={job.id} job={job} />
                                     ))}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            {/* 프로필 모달 */}
-            {showProfileModal && currentUser && (
-                <div style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background: 'rgba(0, 0, 0, 0.5)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 2000
-                }}
-                onClick={() => setShowProfileModal(false)}>
-                    <div style={{
-                        background: 'white',
-                        borderRadius: '16px',
-                        padding: '40px',
-                        maxWidth: '450px',
-                        width: '90%',
-                        boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
-                    }}
-                    onClick={(e) => e.stopPropagation()}>
-                        <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-                            <h2 style={{ fontSize: '1.8rem', fontWeight: '700', marginBottom: '10px' }}>
-                                프로필
-                            </h2>
-                        </div>
-
-                        <div style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            marginBottom: '30px'
-                        }}>
-                            <div style={{
-                                width: '100px',
-                                height: '100px',
-                                borderRadius: '50%',
-                                overflow: 'hidden',
-                                marginBottom: '20px',
-                                border: '3px solid #667eea',
-                                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
-                            }}>
-                                <img
-                                    src={currentUser.picture || ''}
-                                    alt={currentUser.name}
-                                    style={{
-                                        width: '100%',
-                                        height: '100%',
-                                        objectFit: 'cover'
-                                    }}
-                                />
-                            </div>
-                            <h3 style={{
-                                fontSize: '1.5rem',
-                                fontWeight: '600',
-                                color: '#333',
-                                marginBottom: '8px'
-                            }}>
-                                {maskName(currentUser.name || '-')}
-                            </h3>
-                            <p style={{
-                                fontSize: '0.9rem',
-                                color: '#999',
-                                background: '#f5f5f5',
-                                padding: '6px 12px',
-                                borderRadius: '12px'
-                            }}>
-                                {currentUser.provider === 'kakao' ? '카카오 로그인' : currentUser.provider}
-                            </p>
-                        </div>
-
-                        <div style={{
-                            background: '#f8f9fa',
-                            borderRadius: '12px',
-                            padding: '20px',
-                            marginBottom: '20px'
-                        }}>
-                            <div style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                marginBottom: '15px',
-                                paddingBottom: '15px',
-                                borderBottom: '1px solid #e0e0e0'
-                            }}>
-                                <span style={{ color: '#666', fontSize: '0.9rem' }}>사용자 ID</span>
-                                <span style={{ color: '#333', fontWeight: '600' }}>
-                                    {maskId(currentUser.email, currentUser.name)}
-                                </span>
-                            </div>
-                            <div style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center'
-                            }}>
-                                <span style={{ color: '#666', fontSize: '0.9rem' }}>가입일</span>
-                                <span style={{ color: '#333', fontWeight: '600', fontSize: '0.85rem' }}>
-                                    {formatDate(currentUser.created_at)}
-                                </span>
-                            </div>
-                        </div>
-
-                        <div style={{
-                            display: 'flex',
-                            gap: '10px'
-                        }}>
-                            <button
-                                onClick={() => {
-                                    setShowProfileModal(false);
-                                    setShowLogoutModal(true);
-                                }}
-                                style={{
-                                    flex: 1,
-                                    background: '#d32f2f',
-                                    color: 'white',
-                                    border: 'none',
-                                    padding: '12px 24px',
-                                    borderRadius: '8px',
-                                    fontSize: '0.95rem',
-                                    fontWeight: '600',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.background = '#c62828';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.background = '#d32f2f';
-                                }}>
-                                로그아웃
-                            </button>
-                            <button
-                                onClick={() => setShowProfileModal(false)}
-                                style={{
-                                    flex: 1,
-                                    background: 'transparent',
-                                    color: '#666',
-                                    border: '2px solid #e0e0e0',
-                                    padding: '12px 24px',
-                                    borderRadius: '8px',
-                                    fontSize: '0.95rem',
-                                    fontWeight: '600',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.background = '#f5f5f5';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.background = 'transparent';
-                                }}>
-                                닫기
-                            </button>
-                        </div>
-
-                        {showLogoutModal && (
-                            <div style={{
-                                position: 'fixed',
-                                top: 0,
-                                left: 0,
-                                right: 0,
-                                bottom: 0,
-                                background: 'rgba(0, 0, 0, 0.7)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                zIndex: 3000
-                            }}
-                            onClick={() => setShowLogoutModal(false)}>
-                                <div style={{
-                                    background: 'white',
-                                    borderRadius: '16px',
-                                    padding: '30px',
-                                    maxWidth: '350px',
-                                    width: '90%',
-                                    boxShadow: '0 10px 40px rgba(0,0,0,0.3)'
-                                }}
-                                onClick={(e) => e.stopPropagation()}>
-                                    <h3 style={{ marginBottom: '15px', fontSize: '1.3rem' }}>로그아웃 하시겠습니까?</h3>
-                                    <p style={{ color: '#666', marginBottom: '25px' }}>로그아웃하면 다시 로그인해야 합니다.</p>
-                                    <div style={{ display: 'flex', gap: '10px' }}>
-                                        <button
-                                            onClick={handleLogout}
-                                            style={{
-                                                flex: 1,
-                                                background: '#d32f2f',
-                                                color: 'white',
-                                                border: 'none',
-                                                padding: '12px',
-                                                borderRadius: '8px',
-                                                fontSize: '0.95rem',
-                                                fontWeight: '600',
-                                                cursor: 'pointer'
-                                            }}>
-                                            확인
-                                        </button>
-                                        <button
-                                            onClick={() => setShowLogoutModal(false)}
-                                            style={{
-                                                flex: 1,
-                                                background: 'transparent',
-                                                color: '#666',
-                                                border: '2px solid #e0e0e0',
-                                                padding: '12px',
-                                                borderRadius: '8px',
-                                                fontSize: '0.95rem',
-                                                fontWeight: '600',
-                                                cursor: 'pointer'
-                                            }}>
-                                            취소
-                                        </button>
-                                    </div>
                                 </div>
                             </div>
                         )}
