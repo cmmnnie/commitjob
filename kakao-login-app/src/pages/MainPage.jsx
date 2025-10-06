@@ -1,14 +1,21 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { CONFIG } from '../config';
 import '../styles/main.css';
 
+const API_BASE_URL = CONFIG.BACKEND_URL;
+
 export default function MainPage() {
+    const navigate = useNavigate();
     const [currentUser, setCurrentUser] = useState(null);
     // 토큰이 있으면 로딩 상태로 시작 (로그인 화면 깜빡임 방지)
     const [isLoading, setIsLoading] = useState(!!localStorage.getItem('app_session'));
     const [loadingMessage, setLoadingMessage] = useState('로그인 상태 확인 중...');
     const [statusMessage, setStatusMessage] = useState({ text: '', type: '' });
     const [showLogoutModal, setShowLogoutModal] = useState(false);
+    const [bigdataJobs, setBigdataJobs] = useState([]);
+    const [itJobs, setItJobs] = useState([]);
     const hasCheckedLogin = useRef(false);
 
     const showStatus = (text, type = 'info') => {
@@ -102,6 +109,40 @@ export default function MainPage() {
         }
     };
 
+    const fetchJobs = async () => {
+        try {
+            console.log('[MAIN] Fetching latest jobs');
+
+            // BIGDATA_AI 및 IT 카테고리 병렬 조회
+            const [bigdataResponse, itResponse] = await Promise.all([
+                axios.get(`${API_BASE_URL}/api/jobs/BIGDATA_AI?limit=6`, {
+                    withCredentials: true,
+                    timeout: 10000
+                }).catch(err => {
+                    console.error('[MAIN] BIGDATA_AI fetch error:', err);
+                    return null;
+                }),
+                axios.get(`${API_BASE_URL}/api/jobs/IT?limit=6`, {
+                    withCredentials: true,
+                    timeout: 10000
+                }).catch(err => {
+                    console.error('[MAIN] IT fetch error:', err);
+                    return null;
+                })
+            ]);
+
+            if (bigdataResponse?.data?.success) {
+                setBigdataJobs(bigdataResponse.data.jobs.slice(0, 6));
+            }
+
+            if (itResponse?.data?.success) {
+                setItJobs(itResponse.data.jobs.slice(0, 6));
+            }
+        } catch (error) {
+            console.error('[MAIN] Failed to fetch jobs:', error);
+        }
+    };
+
     useEffect(() => {
         // 중복 실행 방지
         if (hasCheckedLogin.current) {
@@ -117,6 +158,9 @@ export default function MainPage() {
 
         // 항상 localStorage 토큰을 확인하여 로그인 상태 체크
         checkLoginStatus();
+
+        // 채용공고 가져오기
+        fetchJobs();
 
         // URL 파라미터 확인 (에러 메시지 등)
         const urlParams = new URLSearchParams(window.location.search);
@@ -357,6 +401,178 @@ export default function MainPage() {
                                         <button onClick={() => setShowLogoutModal(false)} className="btn-secondary">취소</button>
                                     </div>
                                 </div>
+                            </div>
+                        )}
+
+                        {/* 최신 채용공고 섹션 */}
+                        {(bigdataJobs.length > 0 || itJobs.length > 0) && (
+                            <div style={{ marginTop: '40px' }}>
+                                <h2 style={{
+                                    fontSize: '1.5rem',
+                                    fontWeight: '700',
+                                    marginBottom: '20px',
+                                    color: '#333'
+                                }}>
+                                    🔥 최신 채용공고
+                                </h2>
+
+                                {/* BIGDATA/AI */}
+                                {bigdataJobs.length > 0 && (
+                                    <div style={{ marginBottom: '30px' }}>
+                                        <div style={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            marginBottom: '15px'
+                                        }}>
+                                            <h3 style={{ fontSize: '1.2rem', fontWeight: '600', color: '#555' }}>
+                                                📊 BIGDATA/AI
+                                            </h3>
+                                            <button
+                                                onClick={() => navigate('/jobs')}
+                                                style={{
+                                                    background: '#667eea',
+                                                    color: 'white',
+                                                    border: 'none',
+                                                    padding: '6px 16px',
+                                                    borderRadius: '16px',
+                                                    fontSize: '0.85rem',
+                                                    cursor: 'pointer'
+                                                }}
+                                            >
+                                                더보기
+                                            </button>
+                                        </div>
+                                        <div style={{
+                                            display: 'grid',
+                                            gridTemplateColumns: 'repeat(3, 1fr)',
+                                            gap: '15px'
+                                        }}>
+                                            {bigdataJobs.slice(0, 6).map(job => (
+                                                <div
+                                                    key={job.id}
+                                                    onClick={() => navigate(`/jobs/detail/${job.id}`, { state: { job } })}
+                                                    style={{
+                                                        background: 'white',
+                                                        border: '1px solid #e0e0e0',
+                                                        borderRadius: '12px',
+                                                        padding: '15px',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+                                                        e.currentTarget.style.transform = 'translateY(-2px)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.boxShadow = 'none';
+                                                        e.currentTarget.style.transform = 'translateY(0)';
+                                                    }}
+                                                >
+                                                    <h4 style={{
+                                                        fontSize: '0.95rem',
+                                                        fontWeight: '600',
+                                                        marginBottom: '8px',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        whiteSpace: 'nowrap',
+                                                        color: '#333'
+                                                    }}>
+                                                        {job.title}
+                                                    </h4>
+                                                    <p style={{
+                                                        fontSize: '0.85rem',
+                                                        color: '#666',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        whiteSpace: 'nowrap'
+                                                    }}>
+                                                        🏢 {job.company}
+                                                    </p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* IT */}
+                                {itJobs.length > 0 && (
+                                    <div>
+                                        <div style={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            marginBottom: '15px'
+                                        }}>
+                                            <h3 style={{ fontSize: '1.2rem', fontWeight: '600', color: '#555' }}>
+                                                💻 IT
+                                            </h3>
+                                            <button
+                                                onClick={() => navigate('/jobs')}
+                                                style={{
+                                                    background: '#667eea',
+                                                    color: 'white',
+                                                    border: 'none',
+                                                    padding: '6px 16px',
+                                                    borderRadius: '16px',
+                                                    fontSize: '0.85rem',
+                                                    cursor: 'pointer'
+                                                }}
+                                            >
+                                                더보기
+                                            </button>
+                                        </div>
+                                        <div style={{
+                                            display: 'grid',
+                                            gridTemplateColumns: 'repeat(3, 1fr)',
+                                            gap: '15px'
+                                        }}>
+                                            {itJobs.slice(0, 6).map(job => (
+                                                <div
+                                                    key={job.id}
+                                                    onClick={() => navigate(`/jobs/detail/${job.id}`, { state: { job } })}
+                                                    style={{
+                                                        background: 'white',
+                                                        border: '1px solid #e0e0e0',
+                                                        borderRadius: '12px',
+                                                        padding: '15px',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+                                                        e.currentTarget.style.transform = 'translateY(-2px)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.boxShadow = 'none';
+                                                        e.currentTarget.style.transform = 'translateY(0)';
+                                                    }}
+                                                >
+                                                    <h4 style={{
+                                                        fontSize: '0.95rem',
+                                                        fontWeight: '600',
+                                                        marginBottom: '8px',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        whiteSpace: 'nowrap',
+                                                        color: '#333'
+                                                    }}>
+                                                        {job.title}
+                                                    </h4>
+                                                    <p style={{
+                                                        fontSize: '0.85rem',
+                                                        color: '#666',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        whiteSpace: 'nowrap'
+                                                    }}>
+                                                        🏢 {job.company}
+                                                    </p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
