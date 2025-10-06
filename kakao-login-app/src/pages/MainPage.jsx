@@ -305,229 +305,316 @@ export default function MainPage() {
         });
     };
 
-    return (
-        <div className="container">
-            {isLoading ? (
-                // 로딩 중일 때는 아무것도 표시하지 않음 (로딩 오버레이만 표시)
-                null
-            ) : (
-                <>
+    const JobCard = ({ job }) => (
+        <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            border: '1px solid #e0e0e0',
+            overflow: 'hidden',
+            transition: 'all 0.3s',
+            cursor: 'pointer',
+            display: 'flex',
+            flexDirection: 'column'
+        }}
+        onMouseEnter={(e) => {
+            e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.12)';
+            e.currentTarget.style.transform = 'translateY(-4px)';
+        }}
+        onMouseLeave={(e) => {
+            e.currentTarget.style.boxShadow = 'none';
+            e.currentTarget.style.transform = 'translateY(0)';
+        }}
+        onClick={() => navigate(`/jobs/detail/${job.id}`, { state: { job } })}>
+            {/* 이미지 영역 */}
+            <div style={{
+                width: '100%',
+                paddingBottom: '60%',
+                position: 'relative',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+            }}>
+                <div style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    color: 'white',
+                    fontSize: '2.5rem',
+                    textAlign: 'center',
+                    width: '80%'
+                }}>
+                    📊
+                    <div style={{
+                        fontSize: '0.85rem',
+                        marginTop: '8px',
+                        fontWeight: '600',
+                        lineHeight: '1.3',
+                        wordBreak: 'keep-all'
+                    }}>
+                        {job.company}
+                    </div>
+                </div>
+            </div>
 
-                    {/* 최신 채용공고 섹션 - 메인 화면 */}
-                    {(bigdataJobs.length > 0 || itJobs.length > 0) ? (
-                        <div className="section">
-                            <div className="user-card">
+            {/* 제목 및 회사명 */}
+            <div style={{ padding: '20px' }}>
+                <h3 style={{
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    color: '#333',
+                    marginBottom: '8px',
+                    lineHeight: '1.4',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    minHeight: '2.8em'
+                }}>{job.title}</h3>
+                <p style={{
+                    fontSize: '0.9rem',
+                    color: '#666',
+                    fontWeight: '500',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                }}>
+                    <span style={{ fontSize: '1rem' }}>🏢</span>
+                    {job.company}
+                </p>
+            </div>
+        </div>
+    );
+
+    return (
+        <div style={{
+            minHeight: 'calc(100vh - 60px)',
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            padding: '20px 20px',
+            paddingBottom: '80px'
+        }}>
+            {isLoading ? (
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minHeight: '60vh'
+                }}>
+                    <div style={{
+                        background: 'white',
+                        padding: '40px',
+                        borderRadius: '16px',
+                        boxShadow: '0 10px 40px rgba(0,0,0,0.1)'
+                    }}>
+                        <div className="spinner"></div>
+                        <p style={{ marginTop: '20px', color: '#666' }}>로딩 중...</p>
+                    </div>
+                </div>
+            ) : (
+                <div style={{
+                    maxWidth: '1000px',
+                    margin: '0 auto'
+                }}>
+                    {/* 헤더 */}
+                    <div style={{
+                        background: 'white',
+                        borderRadius: '16px',
+                        padding: '20px',
+                        marginBottom: '20px',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                    }}>
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                        }}>
+                            <div>
+                                <h1 style={{
+                                    fontSize: '2rem',
+                                    fontWeight: '700',
+                                    color: '#333',
+                                    marginBottom: '8px'
+                                }}>
+                                    채용공고
+                                </h1>
+                                <p style={{
+                                    fontSize: '1rem',
+                                    color: '#666'
+                                }}>
+                                    최신 IT 및 빅데이터/AI 분야 채용정보를 확인하세요
+                                </p>
+                            </div>
+                            {!currentUser && (
+                                <button
+                                    onClick={handleKakaoLogin}
+                                    style={{
+                                        background: '#FEE500',
+                                        border: 'none',
+                                        color: '#000000',
+                                        padding: '10px 24px',
+                                        borderRadius: '24px',
+                                        fontSize: '1rem',
+                                        fontWeight: '600',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.opacity = '0.9';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.opacity = '1';
+                                    }}>
+                                    카카오 로그인
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* 컨텐츠 영역 */}
+                    <div style={{
+                        background: 'white',
+                        borderRadius: '16px',
+                        padding: '20px',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                    }}>
+                        {/* BIGDATA_AI 섹션 */}
+                        {bigdataJobs.length > 0 && (
+                            <div style={{ marginBottom: '0px' }}>
                                 <div style={{
                                     display: 'flex',
                                     justifyContent: 'space-between',
                                     alignItems: 'center',
-                                    marginBottom: '20px'
+                                    marginBottom: '15px'
                                 }}>
                                     <h2 style={{
                                         fontSize: '1.5rem',
                                         fontWeight: '700',
                                         color: '#333',
-                                        margin: 0
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px'
                                     }}>
-                                        🔥 최신 채용공고
+                                        <span style={{ fontSize: '1.8rem' }}>📊</span>
+                                        BIGDATA/AI
+                                        <span style={{
+                                            fontSize: '0.9rem',
+                                            color: '#999',
+                                            fontWeight: '400',
+                                            marginLeft: '8px'
+                                        }}>
+                                            ({bigdataJobs.length}건)
+                                        </span>
                                     </h2>
-                                    {!currentUser && (
-                                        <button
-                                            onClick={handleKakaoLogin}
-                                            style={{
-                                                background: '#FEE500',
-                                                color: '#000000',
-                                                border: 'none',
-                                                padding: '8px 20px',
-                                                borderRadius: '8px',
-                                                fontSize: '0.9rem',
-                                                fontWeight: '600',
-                                                cursor: 'pointer',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '6px'
-                                            }}
-                                        >
-                                            <span>카카오 로그인</span>
-                                        </button>
-                                    )}
+                                    <button
+                                        onClick={() => navigate('/jobs/ai')}
+                                        style={{
+                                            background: '#1976d2',
+                                            color: 'white',
+                                            border: 'none',
+                                            padding: '8px 20px',
+                                            borderRadius: '20px',
+                                            fontSize: '0.9rem',
+                                            fontWeight: '600',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.opacity = '0.9';
+                                            e.currentTarget.style.transform = 'scale(1.05)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.opacity = '1';
+                                            e.currentTarget.style.transform = 'scale(1)';
+                                        }}>
+                                        전체보기
+                                    </button>
                                 </div>
 
-                                {/* BIGDATA/AI */}
-                                {bigdataJobs.length > 0 && (
-                                    <div style={{ marginBottom: '30px' }}>
-                                        <div style={{
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'center',
-                                            marginBottom: '15px'
-                                        }}>
-                                            <h3 style={{ fontSize: '1.2rem', fontWeight: '600', color: '#555' }}>
-                                                📊 BIGDATA/AI
-                                            </h3>
-                                            <button
-                                                onClick={() => navigate('/jobs')}
-                                                style={{
-                                                    background: '#667eea',
-                                                    color: 'white',
-                                                    border: 'none',
-                                                    padding: '6px 16px',
-                                                    borderRadius: '16px',
-                                                    fontSize: '0.85rem',
-                                                    cursor: 'pointer'
-                                                }}
-                                            >
-                                                더보기
-                                            </button>
-                                        </div>
-                                        <div style={{
-                                            display: 'grid',
-                                            gridTemplateColumns: 'repeat(3, 1fr)',
-                                            gap: '15px'
-                                        }}>
-                                            {bigdataJobs.slice(0, 6).map(job => (
-                                                <div
-                                                    key={job.id}
-                                                    onClick={() => navigate(`/jobs/detail/${job.id}`, { state: { job } })}
-                                                    style={{
-                                                        background: 'white',
-                                                        border: '1px solid #e0e0e0',
-                                                        borderRadius: '12px',
-                                                        padding: '15px',
-                                                        cursor: 'pointer',
-                                                        transition: 'all 0.2s'
-                                                    }}
-                                                    onMouseEnter={(e) => {
-                                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
-                                                        e.currentTarget.style.transform = 'translateY(-2px)';
-                                                    }}
-                                                    onMouseLeave={(e) => {
-                                                        e.currentTarget.style.boxShadow = 'none';
-                                                        e.currentTarget.style.transform = 'translateY(0)';
-                                                    }}
-                                                >
-                                                    <h4 style={{
-                                                        fontSize: '0.95rem',
-                                                        fontWeight: '600',
-                                                        marginBottom: '8px',
-                                                        overflow: 'hidden',
-                                                        textOverflow: 'ellipsis',
-                                                        whiteSpace: 'nowrap',
-                                                        color: '#333'
-                                                    }}>
-                                                        {job.title}
-                                                    </h4>
-                                                    <p style={{
-                                                        fontSize: '0.85rem',
-                                                        color: '#666',
-                                                        overflow: 'hidden',
-                                                        textOverflow: 'ellipsis',
-                                                        whiteSpace: 'nowrap'
-                                                    }}>
-                                                        🏢 {job.company}
-                                                    </p>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* IT */}
-                                {itJobs.length > 0 && (
-                                    <div>
-                                        <div style={{
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'center',
-                                            marginBottom: '15px'
-                                        }}>
-                                            <h3 style={{ fontSize: '1.2rem', fontWeight: '600', color: '#555' }}>
-                                                💻 IT
-                                            </h3>
-                                            <button
-                                                onClick={() => navigate('/jobs')}
-                                                style={{
-                                                    background: '#667eea',
-                                                    color: 'white',
-                                                    border: 'none',
-                                                    padding: '6px 16px',
-                                                    borderRadius: '16px',
-                                                    fontSize: '0.85rem',
-                                                    cursor: 'pointer'
-                                                }}
-                                            >
-                                                더보기
-                                            </button>
-                                        </div>
-                                        <div style={{
-                                            display: 'grid',
-                                            gridTemplateColumns: 'repeat(3, 1fr)',
-                                            gap: '15px'
-                                        }}>
-                                            {itJobs.slice(0, 6).map(job => (
-                                                <div
-                                                    key={job.id}
-                                                    onClick={() => navigate(`/jobs/detail/${job.id}`, { state: { job } })}
-                                                    style={{
-                                                        background: 'white',
-                                                        border: '1px solid #e0e0e0',
-                                                        borderRadius: '12px',
-                                                        padding: '15px',
-                                                        cursor: 'pointer',
-                                                        transition: 'all 0.2s'
-                                                    }}
-                                                    onMouseEnter={(e) => {
-                                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
-                                                        e.currentTarget.style.transform = 'translateY(-2px)';
-                                                    }}
-                                                    onMouseLeave={(e) => {
-                                                        e.currentTarget.style.boxShadow = 'none';
-                                                        e.currentTarget.style.transform = 'translateY(0)';
-                                                    }}
-                                                >
-                                                    <h4 style={{
-                                                        fontSize: '0.95rem',
-                                                        fontWeight: '600',
-                                                        marginBottom: '8px',
-                                                        overflow: 'hidden',
-                                                        textOverflow: 'ellipsis',
-                                                        whiteSpace: 'nowrap',
-                                                        color: '#333'
-                                                    }}>
-                                                        {job.title}
-                                                    </h4>
-                                                    <p style={{
-                                                        fontSize: '0.85rem',
-                                                        color: '#666',
-                                                        overflow: 'hidden',
-                                                        textOverflow: 'ellipsis',
-                                                        whiteSpace: 'nowrap'
-                                                    }}>
-                                                        🏢 {job.company}
-                                                    </p>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
+                                {/* 1x3 그리드 레이아웃 */}
+                                <div style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(3, 1fr)',
+                                    gap: '20px',
+                                    maxWidth: '1200px',
+                                    margin: '0 auto'
+                                }}>
+                                    {bigdataJobs.map((job) => (
+                                        <JobCard key={job.id} job={job} />
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    ) : (
-                        <div className="section">
-                            <div className="user-card" style={{ textAlign: 'center', padding: '60px 20px' }}>
-                                <div style={{ fontSize: '3rem', marginBottom: '20px' }}>📋</div>
-                                <h2 style={{ color: '#666', marginBottom: '10px' }}>채용공고를 불러오는 중...</h2>
-                                <p style={{ color: '#999' }}>잠시만 기다려주세요</p>
-                            </div>
-                        </div>
-                    )}
-                </>
-            )}
+                        )}
 
-            {isLoading && (
-                <div className="loading-overlay">
-                    <div className="spinner"></div>
-                    <p>{loadingMessage}</p>
+                        {/* IT 섹션 */}
+                        {itJobs.length > 0 && (
+                            <div style={{ marginBottom: '0px', marginTop: '40px' }}>
+                                <div style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    marginBottom: '15px'
+                                }}>
+                                    <h2 style={{
+                                        fontSize: '1.5rem',
+                                        fontWeight: '700',
+                                        color: '#333',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px'
+                                    }}>
+                                        <span style={{ fontSize: '1.8rem' }}>💻</span>
+                                        IT
+                                        <span style={{
+                                            fontSize: '0.9rem',
+                                            color: '#999',
+                                            fontWeight: '400',
+                                            marginLeft: '8px'
+                                        }}>
+                                            ({itJobs.length}건)
+                                        </span>
+                                    </h2>
+                                    <button
+                                        onClick={() => navigate('/jobs/it')}
+                                        style={{
+                                            background: '#1976d2',
+                                            color: 'white',
+                                            border: 'none',
+                                            padding: '8px 20px',
+                                            borderRadius: '20px',
+                                            fontSize: '0.9rem',
+                                            fontWeight: '600',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.opacity = '0.9';
+                                            e.currentTarget.style.transform = 'scale(1.05)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.opacity = '1';
+                                            e.currentTarget.style.transform = 'scale(1)';
+                                        }}>
+                                        전체보기
+                                    </button>
+                                </div>
+
+                                {/* 1x3 그리드 레이아웃 */}
+                                <div style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(3, 1fr)',
+                                    gap: '20px',
+                                    maxWidth: '1200px',
+                                    margin: '0 auto'
+                                }}>
+                                    {itJobs.map((job) => (
+                                        <JobCard key={job.id} job={job} />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
         </div>
