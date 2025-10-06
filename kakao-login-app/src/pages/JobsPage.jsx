@@ -22,11 +22,11 @@ export default function JobsPage() {
             setLoading(true);
             setError(null);
 
-            console.log('[JOBS] Fetching job with id=1');
+            console.log('[JOBS] Fetching 6 jobs from BIGDATA_AI category');
 
-            // id=1인 채용공고 조회
+            // BIGDATA_AI 카테고리 6개 조회
             const bigdataResponse = await axios.get(
-                `${API_BASE_URL}/api/job/1`,
+                `${API_BASE_URL}/api/jobs/BIGDATA_AI?limit=6`,
                 {
                     withCredentials: true,
                     timeout: 10000  // 10초 타임아웃
@@ -35,9 +35,28 @@ export default function JobsPage() {
 
             console.log('[JOBS] Response:', bigdataResponse.data);
 
-            if (bigdataResponse.data.success && bigdataResponse.data.job) {
-                // 단일 job 객체를 배열로 변환
-                setBigdataJobs([bigdataResponse.data.job]);
+            if (bigdataResponse.data.success) {
+                // 만료되지 않은 채용공고만 필터링하고 마감일 최근순으로 정렬
+                const activeJobs = bigdataResponse.data.jobs
+                    .filter(job => !isExpired(job))
+                    .sort((a, b) => {
+                        // registration_info에서 마감일 추출
+                        const getDeadline = (job) => {
+                            if (!job.registration_info || job.registration_info.length === 0) return new Date(0);
+                            const dateStr = job.registration_info[0];
+                            const match = dateStr.match(/~(\d+)\.(\d+)/);
+                            if (!match) return new Date(0);
+                            const [, month, day] = match;
+                            const currentYear = new Date().getFullYear();
+                            return new Date(currentYear, parseInt(month) - 1, parseInt(day), 23, 59, 59);
+                        };
+
+                        // 마감일이 가장 최근인 것부터 (내림차순)
+                        return getDeadline(b) - getDeadline(a);
+                    })
+                    .slice(0, 6); // 최대 6개만
+
+                setBigdataJobs(activeJobs);
             }
         } catch (error) {
             console.error('[JOBS] Failed to fetch jobs:', error);
@@ -355,15 +374,19 @@ export default function JobsPage() {
                             </button>
                         </div>
 
-                        {/* 단일 카드 표시 */}
+                        {/* 3x2 그리드 레이아웃 */}
                         <div style={{
-                            maxWidth: '600px',
-                            margin: '0 auto'
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(3, 1fr)',
+                            gap: '20px'
                         }}>
                             {bigdataJobs.length > 0 ? (
-                                <JobCard job={bigdataJobs[0]} />
+                                bigdataJobs.map((job) => (
+                                    <JobCard key={job.id} job={job} />
+                                ))
                             ) : (
                                 <div style={{
+                                    gridColumn: '1 / -1',
                                     textAlign: 'center',
                                     padding: '40px',
                                     color: '#999'
