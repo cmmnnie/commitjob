@@ -36,23 +36,12 @@ export default function JobsPage() {
             console.log('[JOBS] Response:', bigdataResponse.data);
 
             if (bigdataResponse.data.success) {
-                // 만료되지 않은 채용공고만 필터링하고 마감일 최근순으로 정렬
+                // 만료되지 않은 채용공고만 필터링하고 scraped_at 최신순으로 정렬
                 const activeJobs = bigdataResponse.data.jobs
                     .filter(job => !isExpired(job))
                     .sort((a, b) => {
-                        // registration_info에서 마감일 추출
-                        const getDeadline = (job) => {
-                            if (!job.registration_info || job.registration_info.length === 0) return new Date(0);
-                            const dateStr = job.registration_info[0];
-                            const match = dateStr.match(/~(\d+)\.(\d+)/);
-                            if (!match) return new Date(0);
-                            const [, month, day] = match;
-                            const currentYear = new Date().getFullYear();
-                            return new Date(currentYear, parseInt(month) - 1, parseInt(day), 23, 59, 59);
-                        };
-
-                        // 마감일이 가장 최근인 것부터 (내림차순)
-                        return getDeadline(b) - getDeadline(a);
+                        // scraped_at 기준 최신순 정렬 (내림차순)
+                        return new Date(b.scraped_at) - new Date(a.scraped_at);
                     })
                     .slice(0, 6); // 최대 6개만
 
