@@ -5068,6 +5068,15 @@ app.get('/api/jobs/:category', async (req, res) => {
   try {
     console.log(`[JOBS-API] Fetching ${category} jobs, limit: ${limit}`);
 
+    // DB 연결 테스트
+    try {
+      await pool.query('SELECT 1');
+      console.log(`[JOBS-API] DB connection OK`);
+    } catch (dbError) {
+      console.error('[JOBS-API] DB connection failed:', dbError.message);
+      throw new Error('Database connection failed');
+    }
+
     let query = 'SELECT * FROM jobs WHERE category = ? ORDER BY scraped_at DESC';
     const params = [category];
 
@@ -5076,6 +5085,7 @@ app.get('/api/jobs/:category', async (req, res) => {
       params.push(limit);
     }
 
+    console.log(`[JOBS-API] Executing query: ${query}, params:`, params);
     const [results] = await pool.execute(query, params);
     console.log(`[JOBS-API] Query completed in ${Date.now() - startTime}ms, found ${results.length} jobs`);
 
@@ -5103,8 +5113,15 @@ app.get('/api/jobs/:category', async (req, res) => {
     res.json({ success: true, jobs, total: jobs.length });
   } catch (error) {
     console.error('[ERROR] Jobs API error:', error);
+    console.error('[ERROR] Error name:', error.name);
+    console.error('[ERROR] Error message:', error.message);
     console.error('[ERROR] Stack trace:', error.stack);
-    res.status(500).json({ error: 'Internal server error', message: error.message });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message,
+      details: error.code || 'Unknown error'
+    });
   }
 });
 
