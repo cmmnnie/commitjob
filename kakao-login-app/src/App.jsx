@@ -20,6 +20,7 @@ function App() {
             <Routes>
                 <Route path="/" element={<MainPage />} />
                 <Route path="/callback" element={<CallbackPage />} />
+                <Route path="/auth/kakao/callback" element={<CallbackPage />} />
                 <Route path="/ai-recommendation" element={<AIRecommendationPage />} />
                 <Route path="/jobs" element={<JobsPage />} />
                 <Route path="/jobs/ai" element={<AIJobsPage />} />
