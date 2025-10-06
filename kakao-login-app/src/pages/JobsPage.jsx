@@ -22,10 +22,10 @@ export default function JobsPage() {
             setLoading(true);
             setError(null);
 
-            console.log('[JOBS] Fetching jobs with id 1, 2, 3');
+            console.log('[JOBS] Fetching jobs with id 1, 2, 3, 4, 5, 6');
 
-            // id 1, 2, 3 채용공고 조회
-            const jobIds = [1, 2, 3];
+            // id 1, 2, 3, 4, 5, 6 채용공고 조회
+            const jobIds = [1, 2, 3, 4, 5, 6];
             const jobPromises = jobIds.map(id =>
                 axios.get(`${API_BASE_URL}/api/job/${id}`, {
                     withCredentials: true,
