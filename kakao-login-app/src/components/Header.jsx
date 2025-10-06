@@ -47,55 +47,13 @@ export default function Header() {
         checkLoginStatus();
     }, [location.pathname]);
 
-    const handleProfileClick = async () => {
+    const handleProfileClick = () => {
         if (currentUser) {
-            // 로그인된 경우: 메인 페이지로 이동하여 프로필 표시
-            if (location.pathname !== '/') {
-                navigate('/');
-            }
+            // 로그인된 경우: 프로필 화면 표시
+            navigate('/?view=profile');
         } else {
-            // 로그인되지 않은 경우: 카카오 로그인 시작
-            console.log('[HEADER] 카카오 로그인 시작');
-
-            try {
-                const origin = window.location.origin;
-                const loginUrl = `${CONFIG.BACKEND_URL}${CONFIG.API.KAKAO_LOGIN_URL}?origin=${encodeURIComponent(origin)}&prompt=login`;
-
-                console.log('[HEADER] Request URL:', loginUrl);
-
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 20000);
-
-                const response = await fetch(loginUrl, {
-                    method: 'GET',
-                    credentials: 'include',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    signal: controller.signal
-                });
-
-                clearTimeout(timeoutId);
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error('[HEADER] Error response:', errorText);
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-
-                const data = await response.json();
-                console.log('[HEADER] Response data:', data);
-
-                if (data.url) {
-                    console.log('[HEADER] 카카오 인증 페이지로 이동:', data.url);
-                    window.location.href = data.url;
-                } else {
-                    throw new Error('로그인 URL을 받지 못했습니다');
-                }
-            } catch (error) {
-                console.error('[HEADER] 카카오 로그인 오류:', error);
-                alert('로그인 실패: ' + error.message);
-            }
+            // 로그인되지 않은 경우: 로그인 화면 표시
+            navigate('/?view=login');
         }
     };
 

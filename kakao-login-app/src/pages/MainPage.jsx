@@ -17,6 +17,7 @@ export default function MainPage() {
     const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [bigdataJobs, setBigdataJobs] = useState([]);
     const [itJobs, setItJobs] = useState([]);
+    const [currentView, setCurrentView] = useState('jobs'); // 'jobs', 'login', 'profile'
     const hasCheckedLogin = useRef(false);
 
     const showStatus = (text, type = 'info') => {
@@ -166,14 +167,102 @@ export default function MainPage() {
         // URL 파라미터 확인 (에러 메시지 등)
         const urlParams = new URLSearchParams(window.location.search);
         const error = urlParams.get('error');
+        const view = urlParams.get('view');
 
         if (error === 'login_failed') {
             showStatus('로그인에 실패했습니다. 다시 시도해주세요.', 'error');
         } else if (error === 'login_cancelled') {
             showStatus('로그인이 취소되었습니다.', 'warning');
         }
+
+        // URL 파라미터로 뷰 설정
+        if (view === 'login') {
+            setCurrentView('login');
+            window.history.replaceState({}, '', window.location.pathname);
+        } else if (view === 'profile') {
+            setCurrentView('profile');
+            window.history.replaceState({}, '', window.location.pathname);
+        }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    // URL 파라미터 변경 감지
+    useEffect(() => {
+        const urlParams = new URLSearchParams(location.search);
+        const view = urlParams.get('view');
+
+        if (view === 'login') {
+            setCurrentView('login');
+            window.history.replaceState({}, '', window.location.pathname);
+        } else if (view === 'profile') {
+            setCurrentView('profile');
+            window.history.replaceState({}, '', window.location.pathname);
+        }
+    }, [location.search]);
+
+    // 로그인 상태 변경 감지
+    useEffect(() => {
+        if (currentUser && currentView === 'login') {
+            // 로그인 성공 시 메인 화면으로
+            setCurrentView('jobs');
+        }
+    }, [currentUser, currentView]);
+
+    const handleKakaoLogin = async () => {
+        console.log('[APP] 카카오 로그인 시작');
+
+        try {
+            setIsLoading(true);
+            setLoadingMessage('카카오 로그인 URL을 가져오는 중...');
+
+            const origin = window.location.origin;
+            let loginUrl = `${CONFIG.BACKEND_URL}${CONFIG.API.KAKAO_LOGIN_URL}?origin=${encodeURIComponent(origin)}&prompt=login`;
+
+            console.log('[APP] Request URL:', loginUrl);
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 20000);
+
+            const response = await fetch(loginUrl, {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('[APP] Error response:', errorText);
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            console.log('[APP] Response data:', data);
+
+            if (data.url) {
+                console.log('[APP] 카카오 인증 페이지로 이동:', data.url);
+                showStatus('카카오 로그인 페이지로 이동합니다...', 'success');
+
+                setTimeout(() => {
+                    window.location.href = data.url;
+                }, 500);
+            } else {
+                throw new Error('로그인 URL을 받지 못했습니다');
+            }
+        } catch (error) {
+            console.error('[APP] 카카오 로그인 오류:', error);
+            if (error.name === 'AbortError') {
+                showStatus('로그인 요청 시간 초과 - 백엔드 서버를 확인해주세요', 'error');
+            } else {
+                showStatus(`로그인 실패: ${error.message}`, 'error');
+            }
+            setIsLoading(false);
+        }
+    };
 
     const handleLogout = async () => {
         console.log('[APP] 로그아웃 시작');
@@ -196,8 +285,9 @@ export default function MainPage() {
             localStorage.clear();
             sessionStorage.clear();
 
-            console.log('[APP] 로그아웃 완료, 메인 페이지로 이동');
+            console.log('[APP] 로그아웃 완료, 메인 화면으로 이동');
             setCurrentUser(null);
+            setCurrentView('jobs');
 
             // 페이지 새로고침
             window.location.href = window.location.origin + window.location.pathname;
@@ -387,14 +477,112 @@ export default function MainPage() {
                         </div>
                     </div>
 
-                    {/* 로그인된 사용자 프로필 정보 */}
-                    {currentUser && (
+                    {/* 로그인 화면 */}
+                    {currentView === 'login' && (
                         <div style={{
                             background: 'white',
                             borderRadius: '16px',
-                            padding: '30px',
-                            marginBottom: '20px',
-                            boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                            padding: '60px 40px',
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                            maxWidth: '500px',
+                            margin: '0 auto'
+                        }}>
+                            <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+                                <h2 style={{
+                                    fontFamily: "'Quicksand', sans-serif",
+                                    fontWeight: '600',
+                                    fontSize: '2.5rem',
+                                    marginBottom: '15px',
+                                    letterSpacing: '-0.5px'
+                                }}>
+                                    <span style={{ color: '#ec4899' }}>C</span>ommit<span style={{ color: '#ec4899' }}>J</span>ob
+                                </h2>
+                                <p style={{ color: '#666', fontSize: '1.1rem', marginBottom: '10px' }}>AI 채용 추천 플랫폼</p>
+                                <p style={{ color: '#999', fontSize: '0.95rem' }}>카카오 계정으로 간편하게 로그인하세요</p>
+                            </div>
+
+                            <button
+                                onClick={handleKakaoLogin}
+                                style={{
+                                    width: '100%',
+                                    background: '#FEE500',
+                                    color: '#000000',
+                                    border: 'none',
+                                    padding: '18px 24px',
+                                    borderRadius: '12px',
+                                    fontSize: '1.1rem',
+                                    fontWeight: '600',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '12px',
+                                    transition: 'all 0.2s',
+                                    marginBottom: '20px',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                                }}>
+                                <span style={{ fontSize: '1.5rem' }}>💬</span>
+                                <span>카카오로 로그인</span>
+                            </button>
+
+                            <button
+                                onClick={() => setCurrentView('jobs')}
+                                style={{
+                                    width: '100%',
+                                    background: 'transparent',
+                                    color: '#666',
+                                    border: '2px solid #e0e0e0',
+                                    padding: '14px 24px',
+                                    borderRadius: '12px',
+                                    fontSize: '1rem',
+                                    fontWeight: '600',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.background = '#f5f5f5';
+                                    e.currentTarget.style.borderColor = '#ccc';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = 'transparent';
+                                    e.currentTarget.style.borderColor = '#e0e0e0';
+                                }}>
+                                채용공고 보기
+                            </button>
+
+                            {statusMessage.text && (
+                                <div style={{
+                                    marginTop: '25px',
+                                    padding: '15px',
+                                    borderRadius: '8px',
+                                    background: statusMessage.type === 'error' ? '#ffebee' : statusMessage.type === 'success' ? '#e8f5e9' : '#fff3e0',
+                                    color: statusMessage.type === 'error' ? '#c62828' : statusMessage.type === 'success' ? '#2e7d32' : '#ef6c00',
+                                    fontSize: '0.95rem',
+                                    textAlign: 'center'
+                                }}>
+                                    {statusMessage.text}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* 프로필 화면 */}
+                    {currentView === 'profile' && currentUser && (
+                        <div style={{
+                            background: 'white',
+                            borderRadius: '16px',
+                            padding: '40px',
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                            maxWidth: '600px',
+                            margin: '0 auto'
                         }}>
                             <div style={{ textAlign: 'center', marginBottom: '30px' }}>
                                 <h2 style={{ fontSize: '1.8rem', fontWeight: '700', marginBottom: '10px' }}>
@@ -478,19 +666,20 @@ export default function MainPage() {
                             </div>
 
                             <div style={{
-                                display: 'flex',
-                                gap: '10px'
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(3, 1fr)',
+                                gap: '10px',
+                                marginBottom: '15px'
                             }}>
                                 <button
                                     onClick={() => checkLoginStatus(true)}
                                     style={{
-                                        flex: 1,
                                         background: 'transparent',
                                         color: '#667eea',
                                         border: '2px solid #667eea',
-                                        padding: '12px 24px',
+                                        padding: '12px 16px',
                                         borderRadius: '8px',
-                                        fontSize: '0.95rem',
+                                        fontSize: '0.9rem',
                                         fontWeight: '600',
                                         cursor: 'pointer',
                                         transition: 'all 0.2s'
@@ -503,18 +692,40 @@ export default function MainPage() {
                                         e.currentTarget.style.background = 'transparent';
                                         e.currentTarget.style.color = '#667eea';
                                     }}>
-                                    정보 새로고침
+                                    새로고침
+                                </button>
+                                <button
+                                    onClick={() => setCurrentView('jobs')}
+                                    style={{
+                                        background: 'transparent',
+                                        color: '#1976d2',
+                                        border: '2px solid #1976d2',
+                                        padding: '12px 16px',
+                                        borderRadius: '8px',
+                                        fontSize: '0.9rem',
+                                        fontWeight: '600',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.background = '#1976d2';
+                                        e.currentTarget.style.color = 'white';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = 'transparent';
+                                        e.currentTarget.style.color = '#1976d2';
+                                    }}>
+                                    채용공고
                                 </button>
                                 <button
                                     onClick={() => setShowLogoutModal(true)}
                                     style={{
-                                        flex: 1,
                                         background: '#d32f2f',
                                         color: 'white',
                                         border: 'none',
-                                        padding: '12px 24px',
+                                        padding: '12px 16px',
                                         borderRadius: '8px',
-                                        fontSize: '0.95rem',
+                                        fontSize: '0.9rem',
                                         fontWeight: '600',
                                         cursor: 'pointer',
                                         transition: 'all 0.2s'
@@ -592,15 +803,16 @@ export default function MainPage() {
                         </div>
                     )}
 
-                    {/* 컨텐츠 영역 */}
-                    <div style={{
-                        background: 'white',
-                        borderRadius: '16px',
-                        padding: '20px',
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
-                    }}>
-                        {/* BIGDATA_AI 섹션 */}
-                        {bigdataJobs.length > 0 && (
+                    {/* 채용공고 화면 */}
+                    {currentView === 'jobs' && (
+                        <div style={{
+                            background: 'white',
+                            borderRadius: '16px',
+                            padding: '20px',
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                        }}>
+                            {/* BIGDATA_AI 섹션 */}
+                            {bigdataJobs.length > 0 && (
                             <div style={{ marginBottom: '0px' }}>
                                 <div style={{
                                     display: 'flex',
@@ -733,8 +945,9 @@ export default function MainPage() {
                                     ))}
                                 </div>
                             </div>
-                        )}
-                    </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             )}
 
