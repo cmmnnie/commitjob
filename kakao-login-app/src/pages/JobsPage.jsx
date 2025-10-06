@@ -22,11 +22,11 @@ export default function JobsPage() {
             setLoading(true);
             setError(null);
 
-            console.log('[JOBS] Fetching 6 jobs from BIGDATA_AI category');
+            console.log('[JOBS] Fetching 3 jobs from BIGDATA_AI category');
 
-            // BIGDATA_AI 카테고리 6개 조회
+            // BIGDATA_AI 카테고리 3개 조회
             const bigdataResponse = await axios.get(
-                `${API_BASE_URL}/api/jobs/BIGDATA_AI?limit=6`,
+                `${API_BASE_URL}/api/jobs/BIGDATA_AI?limit=3`,
                 {
                     withCredentials: true,
                     timeout: 10000  // 10초 타임아웃
@@ -36,14 +36,11 @@ export default function JobsPage() {
             console.log('[JOBS] Response:', bigdataResponse.data);
 
             if (bigdataResponse.data.success) {
-                // 만료되지 않은 채용공고만 필터링하고 scraped_at 최신순으로 정렬
+                // 만료되지 않은 채용공고만 필터링하고 id 내림차순으로 정렬
                 const activeJobs = bigdataResponse.data.jobs
                     .filter(job => !isExpired(job))
-                    .sort((a, b) => {
-                        // scraped_at 기준 최신순 정렬 (내림차순)
-                        return new Date(b.scraped_at) - new Date(a.scraped_at);
-                    })
-                    .slice(0, 6); // 최대 6개만
+                    .sort((a, b) => b.id - a.id) // id 내림차순
+                    .slice(0, 3); // 최대 3개만
 
                 setBigdataJobs(activeJobs);
             }
@@ -363,11 +360,13 @@ export default function JobsPage() {
                             </button>
                         </div>
 
-                        {/* 3x2 그리드 레이아웃 */}
+                        {/* 1x3 그리드 레이아웃 */}
                         <div style={{
                             display: 'grid',
                             gridTemplateColumns: 'repeat(3, 1fr)',
-                            gap: '20px'
+                            gap: '20px',
+                            maxWidth: '1200px',
+                            margin: '0 auto'
                         }}>
                             {bigdataJobs.length > 0 ? (
                                 bigdataJobs.map((job) => (
