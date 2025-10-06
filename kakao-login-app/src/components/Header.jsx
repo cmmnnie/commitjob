@@ -49,20 +49,17 @@ export default function Header() {
 
     const handleProfileClick = () => {
         if (currentUser) {
-            // 로그인된 경우: 홈 페이지로 이동
+            // 로그인된 경우: 홈 페이지로 이동하면서 프로필 모달 표시
             if (location.pathname === '/') {
-                return; // 이미 홈 페이지에 있으면 아무것도 하지 않음
+                // 이미 홈 페이지에 있으면 URL 파라미터로 프로필 모달 열기
+                navigate('/?showProfile=true');
+            } else {
+                // 다른 페이지에 있으면 홈으로 이동하면서 프로필 모달 열기
+                navigate('/?showProfile=true');
             }
-            navigate('/');
         } else {
             // 로그인되지 않은 경우: 홈 페이지로 이동하면서 로그인 모달 표시
-            if (location.pathname === '/') {
-                // 이미 홈 페이지에 있으면 URL 파라미터로 모달 열기
-                navigate('/?showLogin=true');
-            } else {
-                // 다른 페이지에 있으면 홈으로 이동하면서 모달 열기
-                navigate('/?showLogin=true');
-            }
+            navigate('/?showLogin=true');
         }
     };
 
