@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { CONFIG } from '../config';
 import '../styles/main.css';
@@ -8,6 +8,7 @@ const API_BASE_URL = CONFIG.BACKEND_URL;
 
 export default function MainPage() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [currentUser, setCurrentUser] = useState(null);
     // 토큰이 있으면 로딩 상태로 시작 (로그인 화면 깜빡임 방지)
     const [isLoading, setIsLoading] = useState(!!localStorage.getItem('app_session'));
@@ -16,6 +17,7 @@ export default function MainPage() {
     const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [bigdataJobs, setBigdataJobs] = useState([]);
     const [itJobs, setItJobs] = useState([]);
+    const [showLoginModal, setShowLoginModal] = useState(false);
     const hasCheckedLogin = useRef(false);
 
     const showStatus = (text, type = 'info') => {
@@ -165,14 +167,34 @@ export default function MainPage() {
         // URL 파라미터 확인 (에러 메시지 등)
         const urlParams = new URLSearchParams(window.location.search);
         const error = urlParams.get('error');
+        const showLogin = urlParams.get('showLogin');
 
         if (error === 'login_failed') {
             showStatus('로그인에 실패했습니다. 다시 시도해주세요.', 'error');
         } else if (error === 'login_cancelled') {
             showStatus('로그인이 취소되었습니다.', 'warning');
         }
+
+        // URL 파라미터로 로그인 모달 표시 요청이 있으면 모달 열기
+        if (showLogin === 'true' && !currentUser) {
+            setShowLoginModal(true);
+            // URL에서 파라미터 제거
+            window.history.replaceState({}, '', window.location.pathname);
+        }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    // URL 파라미터 변경 감지
+    useEffect(() => {
+        const urlParams = new URLSearchParams(location.search);
+        const showLogin = urlParams.get('showLogin');
+
+        if (showLogin === 'true' && !currentUser) {
+            setShowLoginModal(true);
+            // URL에서 파라미터 제거
+            window.history.replaceState({}, '', window.location.pathname);
+        }
+    }, [location.search, currentUser]);
 
     const handleKakaoLogin = async () => {
         console.log('[APP] 카카오 로그인 시작');
@@ -446,29 +468,6 @@ export default function MainPage() {
                                     최신 IT 및 빅데이터/AI 분야 채용정보를 확인하세요
                                 </p>
                             </div>
-                            {!currentUser && (
-                                <button
-                                    onClick={handleKakaoLogin}
-                                    style={{
-                                        background: '#FEE500',
-                                        border: 'none',
-                                        color: '#000000',
-                                        padding: '10px 24px',
-                                        borderRadius: '24px',
-                                        fontSize: '1rem',
-                                        fontWeight: '600',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s'
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.opacity = '0.9';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.opacity = '1';
-                                    }}>
-                                    카카오 로그인
-                                </button>
-                            )}
                         </div>
                     </div>
 
@@ -612,6 +611,118 @@ export default function MainPage() {
                                         <JobCard key={job.id} job={job} />
                                     ))}
                                 </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* 로그인 모달 */}
+            {showLoginModal && !currentUser && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0, 0, 0, 0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 2000
+                }}
+                onClick={() => setShowLoginModal(false)}>
+                    <div style={{
+                        background: 'white',
+                        borderRadius: '16px',
+                        padding: '40px',
+                        maxWidth: '400px',
+                        width: '90%',
+                        boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
+                    }}
+                    onClick={(e) => e.stopPropagation()}>
+                        <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+                            <h2 style={{
+                                fontFamily: "'Quicksand', sans-serif",
+                                fontWeight: '600',
+                                fontSize: '2rem',
+                                marginBottom: '10px',
+                                letterSpacing: '-0.5px'
+                            }}>
+                                <span style={{ color: '#ec4899' }}>C</span>ommit<span style={{ color: '#ec4899' }}>J</span>ob
+                            </h2>
+                            <p style={{ color: '#666', fontSize: '0.95rem' }}>AI 채용 추천 플랫폼</p>
+                        </div>
+
+                        <div style={{ marginBottom: '20px' }}>
+                            <p style={{ textAlign: 'center', color: '#666', marginBottom: '20px' }}>
+                                카카오 계정으로 간편하게 로그인하세요
+                            </p>
+                        </div>
+
+                        <button
+                            onClick={handleKakaoLogin}
+                            style={{
+                                width: '100%',
+                                background: '#FEE500',
+                                color: '#000000',
+                                border: 'none',
+                                padding: '14px 24px',
+                                borderRadius: '8px',
+                                fontSize: '1rem',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '10px',
+                                transition: 'all 0.2s',
+                                marginBottom: '15px'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.opacity = '0.9';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.opacity = '1';
+                            }}>
+                            <span style={{ fontSize: '1.2rem' }}>💬</span>
+                            <span>카카오로 로그인</span>
+                        </button>
+
+                        <button
+                            onClick={() => setShowLoginModal(false)}
+                            style={{
+                                width: '100%',
+                                background: 'transparent',
+                                color: '#666',
+                                border: '2px solid #e0e0e0',
+                                padding: '12px 24px',
+                                borderRadius: '8px',
+                                fontSize: '0.9rem',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.background = '#f5f5f5';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.background = 'transparent';
+                            }}>
+                            닫기
+                        </button>
+
+                        {statusMessage.text && (
+                            <div style={{
+                                marginTop: '20px',
+                                padding: '12px',
+                                borderRadius: '8px',
+                                background: statusMessage.type === 'error' ? '#ffebee' : statusMessage.type === 'success' ? '#e8f5e9' : '#fff3e0',
+                                color: statusMessage.type === 'error' ? '#c62828' : statusMessage.type === 'success' ? '#2e7d32' : '#ef6c00',
+                                fontSize: '0.9rem',
+                                textAlign: 'center'
+                            }}>
+                                {statusMessage.text}
                             </div>
                         )}
                     </div>
