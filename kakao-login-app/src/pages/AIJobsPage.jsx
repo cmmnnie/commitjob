@@ -15,7 +15,7 @@ export default function AIJobsPage() {
     const [loadingMore, setLoadingMore] = useState(false);
     const [error, setError] = useState(null);
     const [offset, setOffset] = useState(0);
-    const ITEMS_PER_PAGE = 2;
+    const ITEMS_PER_PAGE = 9; // 3x3 그리드 (한 번에 9개씩)
 
     useEffect(() => {
         fetchJobs();
@@ -89,12 +89,11 @@ export default function AIJobsPage() {
         if (offset >= jobs.length) return;
 
         setLoadingMore(true);
-        setTimeout(() => {
-            const newJobs = jobs.slice(offset, offset + ITEMS_PER_PAGE);
-            setDisplayedJobs(prev => [...prev, ...newJobs]);
-            setOffset(prev => prev + ITEMS_PER_PAGE);
-            setLoadingMore(false);
-        }, 500);
+        // 딜레이 제거 - 즉시 로딩
+        const newJobs = jobs.slice(offset, offset + ITEMS_PER_PAGE);
+        setDisplayedJobs(prev => [...prev, ...newJobs]);
+        setOffset(prev => prev + ITEMS_PER_PAGE);
+        setLoadingMore(false);
     };
 
     const handleJobClick = (job) => {
