@@ -167,21 +167,11 @@ export default function MainPage() {
         // URL 파라미터 확인 (에러 메시지 등)
         const urlParams = new URLSearchParams(window.location.search);
         const error = urlParams.get('error');
-        const view = urlParams.get('view');
 
         if (error === 'login_failed') {
             showStatus('로그인에 실패했습니다. 다시 시도해주세요.', 'error');
         } else if (error === 'login_cancelled') {
             showStatus('로그인이 취소되었습니다.', 'warning');
-        }
-
-        // URL 파라미터로 뷰 설정
-        if (view === 'login') {
-            setCurrentView('login');
-            window.history.replaceState({}, '', window.location.pathname);
-        } else if (view === 'profile') {
-            setCurrentView('profile');
-            window.history.replaceState({}, '', window.location.pathname);
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -193,10 +183,14 @@ export default function MainPage() {
 
         if (view === 'login') {
             setCurrentView('login');
-            window.history.replaceState({}, '', window.location.pathname);
+            // URL에서 파라미터 제거
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, '', newUrl);
         } else if (view === 'profile') {
             setCurrentView('profile');
-            window.history.replaceState({}, '', window.location.pathname);
+            // URL에서 파라미터 제거
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, '', newUrl);
         }
     }, [location.search]);
 
