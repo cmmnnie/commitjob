@@ -232,7 +232,10 @@ const pool = mysql.createPool({
   password: process.env.DB_PASS,
   database: process.env.DB_NAME,
   connectionLimit: 10,
-  timezone: '+09:00' // 한국 시간 (KST)
+  timezone: '+09:00', // 한국 시간 (KST)
+  connectTimeout: 10000, // 10초 연결 타임아웃
+  waitForConnections: true,
+  queueLimit: 0
 });
 
 // 코딩 테스트 라우터에서 pool 접근 가능하도록 설정
@@ -5060,8 +5063,11 @@ app.get('/api/test-endpoint', (req, res) => {
 app.get('/api/jobs/:category', async (req, res) => {
   const { category } = req.params;
   const limit = parseInt(req.query.limit) || null;
+  const startTime = Date.now();
 
   try {
+    console.log(`[JOBS-API] Fetching ${category} jobs, limit: ${limit}`);
+
     let query = 'SELECT * FROM jobs WHERE category = ? ORDER BY scraped_at DESC';
     const params = [category];
 
@@ -5070,25 +5076,35 @@ app.get('/api/jobs/:category', async (req, res) => {
       params.push(limit);
     }
 
-    pool.query(query, params, (err, results) => {
-      if (err) {
-        console.error('[ERROR] Failed to fetch jobs:', err);
-        return res.status(500).json({ error: 'Failed to fetch jobs' });
+    const [results] = await pool.execute(query, params);
+    console.log(`[JOBS-API] Query completed in ${Date.now() - startTime}ms, found ${results.length} jobs`);
+
+    // JSON 문자열을 파싱 (안전하게)
+    const jobs = results.map(job => {
+      try {
+        return {
+          ...job,
+          job_info: job.job_info ? JSON.parse(job.job_info) : [],
+          conditions: job.conditions ? JSON.parse(job.conditions) : [],
+          registration_info: job.registration_info ? JSON.parse(job.registration_info) : []
+        };
+      } catch (parseError) {
+        console.error(`[JOBS-API] JSON parse error for job ${job.id}:`, parseError);
+        return {
+          ...job,
+          job_info: [],
+          conditions: [],
+          registration_info: []
+        };
       }
-
-      // JSON 문자열을 파싱
-      const jobs = results.map(job => ({
-        ...job,
-        job_info: job.job_info ? JSON.parse(job.job_info) : [],
-        conditions: job.conditions ? JSON.parse(job.conditions) : [],
-        registration_info: job.registration_info ? JSON.parse(job.registration_info) : []
-      }));
-
-      res.json({ success: true, jobs, total: jobs.length });
     });
+
+    console.log(`[JOBS-API] Response ready in ${Date.now() - startTime}ms`);
+    res.json({ success: true, jobs, total: jobs.length });
   } catch (error) {
     console.error('[ERROR] Jobs API error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('[ERROR] Stack trace:', error.stack);
+    res.status(500).json({ error: 'Internal server error', message: error.message });
   }
 });
 
@@ -5105,22 +5121,20 @@ app.get('/api/jobs', async (req, res) => {
       params.push(limit);
     }
 
-    pool.query(query, params, (err, results) => {
-      if (err) {
-        console.error('[ERROR] Failed to fetch all jobs:', err);
-        return res.status(500).json({ error: 'Failed to fetch jobs' });
-      }
+    console.log(`[JOBS-API] Fetching all jobs, limit: ${limit}`);
 
-      // JSON 문자열을 파싱
-      const jobs = results.map(job => ({
-        ...job,
-        job_info: job.job_info ? JSON.parse(job.job_info) : [],
-        conditions: job.conditions ? JSON.parse(job.conditions) : [],
-        registration_info: job.registration_info ? JSON.parse(job.registration_info) : []
-      }));
+    const [results] = await pool.execute(query, params);
+    console.log(`[JOBS-API] Found ${results.length} jobs`);
 
-      res.json({ success: true, jobs, total: jobs.length });
-    });
+    // JSON 문자열을 파싱
+    const jobs = results.map(job => ({
+      ...job,
+      job_info: job.job_info ? JSON.parse(job.job_info) : [],
+      conditions: job.conditions ? JSON.parse(job.conditions) : [],
+      registration_info: job.registration_info ? JSON.parse(job.registration_info) : []
+    }));
+
+    res.json({ success: true, jobs, total: jobs.length });
   } catch (error) {
     console.error('[ERROR] Jobs API error:', error);
     res.status(500).json({ error: 'Internal server error' });

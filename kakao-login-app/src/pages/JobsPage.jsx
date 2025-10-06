@@ -22,11 +22,11 @@ export default function JobsPage() {
             setLoading(true);
             setError(null);
 
-            console.log('[JOBS] Fetching from:', `${API_BASE_URL}/api/jobs/BIGDATA_AI?limit=4`);
+            console.log('[JOBS] Fetching from:', `${API_BASE_URL}/api/jobs/BIGDATA_AI?limit=1`);
 
-            // BIGDATA_AI 카테고리 조회 (limit=4, 2x2 그리드용)
+            // BIGDATA_AI 카테고리 조회 (limit=1, 단순 표시용)
             const bigdataResponse = await axios.get(
-                `${API_BASE_URL}/api/jobs/BIGDATA_AI?limit=4`,
+                `${API_BASE_URL}/api/jobs/BIGDATA_AI?limit=1`,
                 {
                     withCredentials: true,
                     timeout: 10000  // 10초 타임아웃
@@ -356,19 +356,15 @@ export default function JobsPage() {
                             </button>
                         </div>
 
-                        {/* 2x2 그리드 레이아웃 */}
+                        {/* 단일 카드 표시 */}
                         <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(2, 1fr)',
-                            gap: '20px'
+                            maxWidth: '600px',
+                            margin: '0 auto'
                         }}>
                             {bigdataJobs.length > 0 ? (
-                                bigdataJobs.map((job) => (
-                                    <JobCard key={job.id} job={job} />
-                                ))
+                                <JobCard job={bigdataJobs[0]} />
                             ) : (
                                 <div style={{
-                                    gridColumn: '1 / -1',
                                     textAlign: 'center',
                                     padding: '40px',
                                     color: '#999'
