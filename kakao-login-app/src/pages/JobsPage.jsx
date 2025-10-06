@@ -11,6 +11,7 @@ export default function JobsPage() {
     const navigate = useNavigate();
     const [bigdataJobs, setBigdataJobs] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         fetchJobs();
@@ -19,12 +20,20 @@ export default function JobsPage() {
     const fetchJobs = async () => {
         try {
             setLoading(true);
+            setError(null);
+
+            console.log('[JOBS] Fetching from:', `${API_BASE_URL}/api/jobs/BIGDATA_AI?limit=4`);
 
             // BIGDATA_AI 카테고리 조회 (limit=4, 2x2 그리드용)
             const bigdataResponse = await axios.get(
                 `${API_BASE_URL}/api/jobs/BIGDATA_AI?limit=4`,
-                { withCredentials: true }
+                {
+                    withCredentials: true,
+                    timeout: 10000  // 10초 타임아웃
+                }
             );
+
+            console.log('[JOBS] Response:', bigdataResponse.data);
 
             if (bigdataResponse.data.success) {
                 // 만료되지 않은 채용공고만 필터링
@@ -32,7 +41,8 @@ export default function JobsPage() {
                 setBigdataJobs(activeJobs);
             }
         } catch (error) {
-            console.error('Failed to fetch jobs:', error);
+            console.error('[JOBS] Failed to fetch jobs:', error);
+            setError(error.message || '채용공고를 불러오는데 실패했습니다');
         } finally {
             setLoading(false);
         }
@@ -167,6 +177,55 @@ export default function JobsPage() {
                     }}>
                         채용공고를 불러오는 중...
                     </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div style={{
+                minHeight: '100vh',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+            }}>
+                <div style={{
+                    background: 'white',
+                    padding: '40px',
+                    borderRadius: '16px',
+                    boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
+                    textAlign: 'center'
+                }}>
+                    <div style={{
+                        fontSize: '1.2rem',
+                        color: '#d32f2f',
+                        marginBottom: '20px'
+                    }}>
+                        ⚠️ 오류 발생
+                    </div>
+                    <p style={{ color: '#666', marginBottom: '20px' }}>
+                        {error}
+                    </p>
+                    <p style={{ color: '#999', fontSize: '0.9rem', marginBottom: '20px' }}>
+                        백엔드 서버가 응답하지 않습니다.<br/>
+                        Railway 백엔드를 확인해주세요.
+                    </p>
+                    <button
+                        onClick={() => window.location.reload()}
+                        style={{
+                            background: '#667eea',
+                            color: 'white',
+                            border: 'none',
+                            padding: '10px 24px',
+                            borderRadius: '8px',
+                            fontSize: '1rem',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        다시 시도
+                    </button>
                 </div>
             </div>
         );

@@ -13,6 +13,7 @@ export default function AIJobsPage() {
     const [displayedJobs, setDisplayedJobs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
+    const [error, setError] = useState(null);
     const [offset, setOffset] = useState(0);
     const ITEMS_PER_PAGE = 2;
 
@@ -52,10 +53,19 @@ export default function AIJobsPage() {
     const fetchJobs = async () => {
         try {
             setLoading(true);
+            setError(null);
+
+            console.log('[AI-JOBS] Fetching from:', `${API_BASE_URL}/api/jobs/BIGDATA_AI`);
+
             const response = await axios.get(
                 `${API_BASE_URL}/api/jobs/BIGDATA_AI`,
-                { withCredentials: true }
+                {
+                    withCredentials: true,
+                    timeout: 10000  // 10초 타임아웃
+                }
             );
+
+            console.log('[AI-JOBS] Response:', response.data);
 
             if (response.data.success) {
                 // 만료되지 않은 공고만 필터링하고 최신순 정렬
@@ -68,7 +78,8 @@ export default function AIJobsPage() {
                 setOffset(ITEMS_PER_PAGE);
             }
         } catch (error) {
-            console.error('Failed to fetch AI jobs:', error);
+            console.error('[AI-JOBS] Failed to fetch AI jobs:', error);
+            setError(error.message || 'AI 채용공고를 불러오는데 실패했습니다');
         } finally {
             setLoading(false);
         }
@@ -279,6 +290,70 @@ export default function AIJobsPage() {
                     }}>
                         AI 채용공고를 불러오는 중...
                     </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div style={{
+                minHeight: '100vh',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+            }}>
+                <div style={{
+                    background: 'white',
+                    padding: '40px',
+                    borderRadius: '16px',
+                    boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
+                    textAlign: 'center'
+                }}>
+                    <div style={{
+                        fontSize: '1.2rem',
+                        color: '#d32f2f',
+                        marginBottom: '20px'
+                    }}>
+                        ⚠️ 오류 발생
+                    </div>
+                    <p style={{ color: '#666', marginBottom: '20px' }}>
+                        {error}
+                    </p>
+                    <p style={{ color: '#999', fontSize: '0.9rem', marginBottom: '20px' }}>
+                        백엔드 서버가 응답하지 않습니다.<br/>
+                        Railway 백엔드를 확인해주세요.
+                    </p>
+                    <button
+                        onClick={() => navigate('/jobs')}
+                        style={{
+                            background: '#667eea',
+                            color: 'white',
+                            border: 'none',
+                            padding: '10px 24px',
+                            borderRadius: '8px',
+                            fontSize: '1rem',
+                            cursor: 'pointer',
+                            marginRight: '10px'
+                        }}
+                    >
+                        뒤로가기
+                    </button>
+                    <button
+                        onClick={() => window.location.reload()}
+                        style={{
+                            background: 'transparent',
+                            color: '#667eea',
+                            border: '2px solid #667eea',
+                            padding: '10px 24px',
+                            borderRadius: '8px',
+                            fontSize: '1rem',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        다시 시도
+                    </button>
                 </div>
             </div>
         );
