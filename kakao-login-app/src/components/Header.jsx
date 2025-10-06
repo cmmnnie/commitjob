@@ -50,10 +50,12 @@ export default function Header() {
     const handleProfileClick = () => {
         if (currentUser) {
             // 로그인된 경우: 프로필 화면 표시
-            navigate('/?view=profile');
+            // 현재 위치와 상관없이 항상 네비게이트 (replace 사용)
+            window.location.href = '/?view=profile';
         } else {
             // 로그인되지 않은 경우: 로그인 화면 표시
-            navigate('/?view=login');
+            // 현재 위치와 상관없이 항상 네비게이트 (replace 사용)
+            window.location.href = '/?view=login';
         }
     };
 

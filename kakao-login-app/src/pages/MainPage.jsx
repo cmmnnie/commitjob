@@ -529,31 +529,6 @@ export default function MainPage() {
                                 <span>카카오로 로그인</span>
                             </button>
 
-                            <button
-                                onClick={() => setCurrentView('jobs')}
-                                style={{
-                                    width: '100%',
-                                    background: 'transparent',
-                                    color: '#666',
-                                    border: '2px solid #e0e0e0',
-                                    padding: '14px 24px',
-                                    borderRadius: '12px',
-                                    fontSize: '1rem',
-                                    fontWeight: '600',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.background = '#f5f5f5';
-                                    e.currentTarget.style.borderColor = '#ccc';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.background = 'transparent';
-                                    e.currentTarget.style.borderColor = '#e0e0e0';
-                                }}>
-                                채용공고 보기
-                            </button>
-
                             {statusMessage.text && (
                                 <div style={{
                                     marginTop: '25px',
