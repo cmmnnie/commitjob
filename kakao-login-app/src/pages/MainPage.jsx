@@ -310,42 +310,44 @@ export default function MainPage() {
             {isLoading ? (
                 // 로딩 중일 때는 아무것도 표시하지 않음 (로딩 오버레이만 표시)
                 null
-            ) : !currentUser ? (
-                <div id="loginSection" className="section">
-                    <div className="login-card">
-                        <div className="logo-section">
-                            <h1 style={{ fontFamily: "'Quicksand', sans-serif", fontWeight: '600', letterSpacing: '-0.5px' }}>
-                                <span style={{ color: '#ec4899' }}>C</span>ommit<span style={{ color: '#ec4899' }}>J</span>ob
-                            </h1>
-                            <p>AI 채용 추천 플랫폼</p>
-                        </div>
+            ) : (
+                <>
+                    {!currentUser ? (
+                        <div id="loginSection" className="section">
+                            <div className="login-card">
+                                <div className="logo-section">
+                                    <h1 style={{ fontFamily: "'Quicksand', sans-serif", fontWeight: '600', letterSpacing: '-0.5px' }}>
+                                        <span style={{ color: '#ec4899' }}>C</span>ommit<span style={{ color: '#ec4899' }}>J</span>ob
+                                    </h1>
+                                    <p>AI 채용 추천 플랫폼</p>
+                                </div>
 
-                        <div className="login-description">
-                            <p>카카오 계정으로 간편하게 로그인하세요</p>
-                        </div>
+                                <div className="login-description">
+                                    <p>카카오 계정으로 간편하게 로그인하세요</p>
+                                </div>
 
-                        <button onClick={handleKakaoLogin} className="kakao-login-btn">
-                            <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTIiIGZpbGw9IiMzQzFFMUUiLz4KPHBhdGggZD0iTTEyIDZDOC4xMzQgNiA1IDguNDYyIDUgMTEuNUM1IDEzLjUwNyA2LjQ1IDE1LjIyNCA4LjUgMTYuMTI1TDcuNSAxOS41TDExIDI3LjVMMTQuNSAyNy41TDE4IDI3LjVMMTcuNSAxNi4xMjVDMTkuNTUgMTUuMjI0IDIxIDEzLjUwNyAyMSAxMS41QzIxIDguNDYyIDE3Ljg2NiA2IDEyIDZaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K" alt="카카오" className="kakao-icon" />
-                            <span>카카오로 로그인</span>
-                        </button>
+                                <button onClick={handleKakaoLogin} className="kakao-login-btn">
+                                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTIiIGZpbGw9IiMzQzFFMUUiLz4KPHBhdGggZD0iTTEyIDZDOC4xMzQgNiA1IDguNDYyIDUgMTEuNUM1IDEzLjUwNyA2LjQ1IDE1LjIyNCA4LjUgMTYuMTI1TDcuNSAxOS41TDExIDI3LjVMMTQuNSAyNy41TDE4IDI3LjVMMTcuNSAxNi4xMjVDMTkuNTUgMTUuMjI0IDIxIDEzLjUwNyAyMSAxMS41QzIxIDguNDYyIDE3Ljg2NiA2IDEyIDZaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K" alt="카카오" className="kakao-icon" />
+                                    <span>카카오로 로그인</span>
+                                </button>
 
-                        <div className="divider">
-                            <span>또는</span>
-                        </div>
+                                <div className="divider">
+                                    <span>또는</span>
+                                </div>
 
-                        <div className="test-buttons">
-                            <button onClick={() => checkLoginStatus(true)} className="btn-secondary">
-                                로그인 상태 확인
-                            </button>
-                        </div>
+                                <div className="test-buttons">
+                                    <button onClick={() => checkLoginStatus(true)} className="btn-secondary">
+                                        로그인 상태 확인
+                                    </button>
+                                </div>
 
-                        {statusMessage.text && (
-                            <div className={`status-message status-${statusMessage.type}`}>
-                                {statusMessage.text}
+                                {statusMessage.text && (
+                                    <div className={`status-message status-${statusMessage.type}`}>
+                                        {statusMessage.text}
+                                    </div>
+                                )}
                             </div>
-                        )}
-                    </div>
-                </div>
+                        </div>
             ) : (
                 <div id="userSection" className="section">
                     <div className="user-card">
@@ -404,9 +406,12 @@ export default function MainPage() {
                             </div>
                         )}
 
-                        {/* 최신 채용공고 섹션 */}
-                        {(bigdataJobs.length > 0 || itJobs.length > 0) && (
-                            <div style={{ marginTop: '40px' }}>
+                    )}
+
+                    {/* 최신 채용공고 섹션 - 로그인 여부와 관계없이 표시 */}
+                    {(bigdataJobs.length > 0 || itJobs.length > 0) && (
+                        <div className="section" style={{ marginTop: currentUser ? '0' : '20px' }}>
+                            <div className="user-card">
                                 <h2 style={{
                                     fontSize: '1.5rem',
                                     fontWeight: '700',
@@ -574,9 +579,9 @@ export default function MainPage() {
                                     </div>
                                 )}
                             </div>
-                        )}
-                    </div>
-                </div>
+                        </div>
+                    )}
+                </>
             )}
 
             {isLoading && (
