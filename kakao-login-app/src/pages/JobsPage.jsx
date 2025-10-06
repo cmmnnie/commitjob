@@ -90,10 +90,10 @@ export default function JobsPage() {
             e.currentTarget.style.transform = 'translateY(0)';
         }}
         onClick={() => handleJobClick(job)}>
-            {/* 정사각형 이미지 */}
+            {/* 이미지 영역 (세로 축소) */}
             <div style={{
                 width: '100%',
-                paddingBottom: '100%',
+                paddingBottom: '60%',
                 position: 'relative',
                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                 display: 'flex',
@@ -106,14 +106,14 @@ export default function JobsPage() {
                     left: '50%',
                     transform: 'translate(-50%, -50%)',
                     color: 'white',
-                    fontSize: '3rem',
+                    fontSize: '2.5rem',
                     textAlign: 'center',
                     width: '80%'
                 }}>
                     📊
                     <div style={{
-                        fontSize: '0.9rem',
-                        marginTop: '10px',
+                        fontSize: '0.85rem',
+                        marginTop: '8px',
                         fontWeight: '600',
                         lineHeight: '1.3',
                         wordBreak: 'keep-all'
