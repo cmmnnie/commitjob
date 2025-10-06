@@ -445,37 +445,39 @@ export default function MainPage() {
                     maxWidth: '1000px',
                     margin: '0 auto'
                 }}>
-                    {/* 헤더 */}
-                    <div style={{
-                        background: 'white',
-                        borderRadius: '16px',
-                        padding: '20px',
-                        marginBottom: '20px',
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
-                    }}>
+                    {/* 헤더 - 채용공고 화면에만 표시 */}
+                    {currentView === 'jobs' && (
                         <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center'
+                            background: 'white',
+                            borderRadius: '16px',
+                            padding: '20px',
+                            marginBottom: '20px',
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
                         }}>
-                            <div>
-                                <h1 style={{
-                                    fontSize: '2rem',
-                                    fontWeight: '700',
-                                    color: '#333',
-                                    marginBottom: '8px'
-                                }}>
-                                    채용공고
-                                </h1>
-                                <p style={{
-                                    fontSize: '1rem',
-                                    color: '#666'
-                                }}>
-                                    최신 IT 및 빅데이터/AI 분야 채용정보를 확인하세요
-                                </p>
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center'
+                            }}>
+                                <div>
+                                    <h1 style={{
+                                        fontSize: '2rem',
+                                        fontWeight: '700',
+                                        color: '#333',
+                                        marginBottom: '8px'
+                                    }}>
+                                        채용공고
+                                    </h1>
+                                    <p style={{
+                                        fontSize: '1rem',
+                                        color: '#666'
+                                    }}>
+                                        최신 IT 및 빅데이터/AI 분야 채용정보를 확인하세요
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* 로그인 화면 */}
                     {currentView === 'login' && (
@@ -585,25 +587,31 @@ export default function MainPage() {
                             margin: '0 auto'
                         }}>
                             <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-                                <h2 style={{ fontSize: '1.8rem', fontWeight: '700', marginBottom: '10px' }}>
+                                <h2 style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '10px', color: '#333' }}>
                                     환영합니다!
                                 </h2>
                             </div>
 
+                            {/* 회색 박스 */}
                             <div style={{
+                                background: '#f5f5f5',
+                                borderRadius: '20px',
+                                padding: '40px',
+                                marginBottom: '30px',
                                 display: 'flex',
                                 flexDirection: 'column',
-                                alignItems: 'center',
-                                marginBottom: '30px'
+                                alignItems: 'center'
                             }}>
+                                {/* 원형 프로필 사진 */}
                                 <div style={{
-                                    width: '120px',
-                                    height: '120px',
-                                    borderRadius: '16px',
+                                    width: '140px',
+                                    height: '140px',
+                                    borderRadius: '50%',
                                     overflow: 'hidden',
-                                    marginBottom: '20px',
-                                    background: '#f0f0f0',
-                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                                    marginBottom: '24px',
+                                    background: '#e0e0e0',
+                                    boxShadow: '0 6px 16px rgba(0, 0, 0, 0.12)',
+                                    border: '4px solid white'
                                 }}>
                                     <img
                                         src={currentUser.picture || ''}
@@ -615,83 +623,112 @@ export default function MainPage() {
                                         }}
                                     />
                                 </div>
+
                                 <h3 style={{
-                                    fontSize: '1.5rem',
+                                    fontSize: '1.6rem',
                                     fontWeight: '600',
                                     color: '#333',
-                                    marginBottom: '8px'
+                                    marginBottom: '10px'
                                 }}>
                                     {maskName(currentUser.name || '-')}
                                 </h3>
                                 <p style={{
-                                    fontSize: '0.9rem',
+                                    fontSize: '0.95rem',
                                     color: '#999',
-                                    background: '#f5f5f5',
-                                    padding: '6px 12px',
-                                    borderRadius: '12px'
+                                    background: 'white',
+                                    padding: '8px 16px',
+                                    borderRadius: '20px',
+                                    marginBottom: '24px'
                                 }}>
-                                    로그인 방식: {currentUser.provider === 'kakao' ? '카카오 로그인' : currentUser.provider}
+                                    {currentUser.provider === 'kakao' ? '카카오 로그인' : currentUser.provider}
                                 </p>
-                            </div>
 
-                            <div style={{
-                                background: '#f8f9fa',
-                                borderRadius: '12px',
-                                padding: '20px',
-                                marginBottom: '30px'
-                            }}>
+                                {/* 사용자 정보 */}
                                 <div style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    marginBottom: '15px',
-                                    paddingBottom: '15px',
-                                    borderBottom: '1px solid #e0e0e0'
-                                }}>
-                                    <span style={{ color: '#666', fontSize: '0.9rem' }}>사용자 ID:</span>
-                                    <span style={{ color: '#333', fontWeight: '600' }}>
-                                        {maskId(currentUser.email, currentUser.name)}
-                                    </span>
-                                </div>
-                                <div style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center'
-                                }}>
-                                    <span style={{ color: '#666', fontSize: '0.9rem' }}>가입일:</span>
-                                    <span style={{ color: '#333', fontWeight: '600', fontSize: '0.9rem' }}>
-                                        {formatDate(currentUser.created_at)}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <button
-                                onClick={() => setShowLogoutModal(true)}
-                                style={{
                                     width: '100%',
-                                    background: '#ec4899',
-                                    color: 'white',
-                                    border: 'none',
-                                    padding: '14px 24px',
+                                    background: 'white',
                                     borderRadius: '12px',
-                                    fontSize: '1rem',
-                                    fontWeight: '600',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    boxShadow: '0 2px 8px rgba(236, 72, 153, 0.3)'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.background = '#db2777';
-                                    e.currentTarget.style.transform = 'translateY(-2px)';
-                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(236, 72, 153, 0.4)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.background = '#ec4899';
-                                    e.currentTarget.style.transform = 'translateY(0)';
-                                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(236, 72, 153, 0.3)';
+                                    padding: '20px'
                                 }}>
-                                로그아웃
-                            </button>
+                                    <div style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        marginBottom: '15px',
+                                        paddingBottom: '15px',
+                                        borderBottom: '1px solid #e0e0e0'
+                                    }}>
+                                        <span style={{ color: '#666', fontSize: '0.9rem' }}>사용자 ID</span>
+                                        <span style={{ color: '#333', fontWeight: '600' }}>
+                                            {maskId(currentUser.email, currentUser.name)}
+                                        </span>
+                                    </div>
+                                    <div style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center'
+                                    }}>
+                                        <span style={{ color: '#666', fontSize: '0.9rem' }}>가입일</span>
+                                        <span style={{ color: '#333', fontWeight: '600', fontSize: '0.9rem' }}>
+                                            {formatDate(currentUser.created_at)}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 버튼 영역 */}
+                            <div style={{ display: 'flex', gap: '12px' }}>
+                                <button
+                                    onClick={() => setShowLogoutModal(true)}
+                                    style={{
+                                        flex: 1,
+                                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                        color: 'white',
+                                        border: 'none',
+                                        padding: '14px 24px',
+                                        borderRadius: '12px',
+                                        fontSize: '1rem',
+                                        fontWeight: '600',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.transform = 'translateY(-2px)';
+                                        e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.4)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.transform = 'translateY(0)';
+                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
+                                    }}>
+                                    로그아웃
+                                </button>
+                                <button
+                                    onClick={() => alert('회원탈퇴 기능은 준비 중입니다.')}
+                                    style={{
+                                        flex: 1,
+                                        background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                                        color: 'white',
+                                        border: 'none',
+                                        padding: '14px 24px',
+                                        borderRadius: '12px',
+                                        fontSize: '1rem',
+                                        fontWeight: '600',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        boxShadow: '0 4px 12px rgba(245, 87, 108, 0.3)'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.transform = 'translateY(-2px)';
+                                        e.currentTarget.style.boxShadow = '0 6px 16px rgba(245, 87, 108, 0.4)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.transform = 'translateY(0)';
+                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(245, 87, 108, 0.3)';
+                                    }}>
+                                    회원탈퇴
+                                </button>
+                            </div>
 
                             {showLogoutModal && (
                                 <div style={{
