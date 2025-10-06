@@ -13,21 +13,59 @@ export default function CallbackPage() {
         const handleCallback = async () => {
         try {
             const params = new URLSearchParams(window.location.search);
+
+            // 기존 방식: ok와 token 파라미터
             const ok = params.get('ok');
             const token = params.get('token');
 
+            // 카카오 콜백 방식: code와 state 파라미터
+            const code = params.get('code');
+            const state = params.get('state');
+
             console.log('[CALLBACK] ok parameter:', ok);
             console.log('[CALLBACK] token received:', !!token);
-            console.log('[CALLBACK] token length:', token ? token.length : 0);
+            console.log('[CALLBACK] code received:', !!code);
+            console.log('[CALLBACK] state received:', !!state);
             console.log('[CALLBACK] Current URL:', window.location.href);
 
-            // 디버그 정보는 개발 환경에서만 표시
-            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                const debug = `URL: ${window.location.href}\nok: ${ok}\ntoken: ${token ? 'exists (length: ' + token.length + ')' : 'missing'}`;
-                setDebugInfo(debug);
-                setShowDebug(true);
+            // code가 있으면 백엔드로 보내서 토큰 받기
+            if (code && state) {
+                setStatus('카카오 인증 처리 중...');
+                setMessage('토큰을 받아오는 중입니다...');
+
+                const callbackUrl = `${CONFIG.BACKEND_URL}/auth/kakao/callback${window.location.search}`;
+                console.log('[CALLBACK] Sending to backend:', callbackUrl);
+
+                const response = await fetch(callbackUrl, {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+
+                console.log('[CALLBACK] Backend response status:', response.status);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('[CALLBACK] Backend response:', data);
+
+                    if (data.token) {
+                        // 토큰 저장하고 계속 진행
+                        localStorage.setItem('app_session', data.token);
+                        console.log('[CALLBACK] Token saved to localStorage');
+
+                        setStatus('로그인 성공!');
+                        setMessage('메인 페이지로 이동합니다...');
+
+                        setTimeout(() => {
+                            window.location.href = '/';
+                        }, 1000);
+                        return;
+                    }
+                }
+
+                throw new Error('백엔드에서 토큰을 받지 못했습니다');
             }
 
+            // 기존 방식: 백엔드가 직접 ok와 token을 보냄
             if (ok === '1' && token) {
                 setStatus('로그인 성공!');
                 setMessage('사용자 정보를 확인하는 중...');
