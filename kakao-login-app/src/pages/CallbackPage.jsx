@@ -14,15 +14,33 @@ export default function CallbackPage() {
         try {
             const params = new URLSearchParams(window.location.search);
 
-            // 백엔드가 리다이렉트한 후의 파라미터
+            // 파라미터 확인
             const ok = params.get('ok');
             const token = params.get('token');
+            const code = params.get('code');
+            const state = params.get('state');
 
             console.log('[CALLBACK] ok parameter:', ok);
             console.log('[CALLBACK] token received:', !!token);
+            console.log('[CALLBACK] code received:', !!code);
+            console.log('[CALLBACK] state received:', !!state);
             console.log('[CALLBACK] Current URL:', window.location.href);
 
-            // 백엔드가 ?ok=1&token=xxx 형식으로 리다이렉트
+            // 카카오가 직접 프론트엔드로 리다이렉트한 경우 (code & state)
+            // 백엔드로 전달하여 토큰 교환
+            if (code && state) {
+                setStatus('카카오 인증 처리 중...');
+                setMessage('백엔드로 인증 코드를 전달하는 중...');
+
+                // 백엔드 콜백 URL로 리다이렉트 (서버사이드 처리)
+                const backendCallbackUrl = `${CONFIG.BACKEND_URL}/auth/kakao/callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`;
+                console.log('[CALLBACK] Redirecting to backend:', backendCallbackUrl);
+
+                window.location.href = backendCallbackUrl;
+                return;
+            }
+
+            // 백엔드가 ?ok=1&token=xxx 형식으로 리다이렉트한 경우
             if (ok === '1' && token) {
                 setStatus('로그인 성공!');
                 setMessage('사용자 정보를 확인하는 중...');
