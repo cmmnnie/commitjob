@@ -104,31 +104,32 @@ export default function AIJobsPage() {
     const JobCard = ({ job }) => (
         <div style={{
             background: 'white',
-            borderRadius: '12px',
-            padding: '20px',
-            marginBottom: '12px',
+            borderRadius: '16px',
             border: '1px solid #e0e0e0',
-            transition: 'all 0.2s',
-            cursor: 'pointer'
+            overflow: 'hidden',
+            transition: 'all 0.3s',
+            cursor: 'pointer',
+            display: 'flex',
+            flexDirection: 'column'
         }}
         onMouseEnter={(e) => {
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
-            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.12)';
+            e.currentTarget.style.transform = 'translateY(-4px)';
         }}
         onMouseLeave={(e) => {
             e.currentTarget.style.boxShadow = 'none';
             e.currentTarget.style.transform = 'translateY(0)';
         }}
         onClick={() => handleJobClick(job)}>
-            {/* 정사각형 이미지 */}
+            {/* 이미지 영역 (세로 축소) */}
             <div style={{
                 width: '100%',
-                paddingBottom: '100%',
+                paddingBottom: '60%',
                 position: 'relative',
                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                marginBottom: '16px',
-                borderRadius: '12px 12px 0 0',
-                overflow: 'hidden'
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
             }}>
                 <div style={{
                     position: 'absolute',
@@ -136,14 +137,14 @@ export default function AIJobsPage() {
                     left: '50%',
                     transform: 'translate(-50%, -50%)',
                     color: 'white',
-                    fontSize: '3.5rem',
+                    fontSize: '2.5rem',
                     textAlign: 'center',
                     width: '80%'
                 }}>
                     📊
                     <div style={{
-                        fontSize: '1rem',
-                        marginTop: '12px',
+                        fontSize: '0.85rem',
+                        marginTop: '8px',
                         fontWeight: '600',
                         lineHeight: '1.3',
                         wordBreak: 'keep-all'
@@ -153,118 +154,34 @@ export default function AIJobsPage() {
                 </div>
             </div>
 
-            <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-start',
-                marginBottom: '12px'
-            }}>
-                <div style={{ flex: 1 }}>
-                    <h3 style={{
-                        fontSize: '1.1rem',
-                        fontWeight: '600',
-                        color: '#333',
-                        marginBottom: '8px',
-                        lineHeight: '1.4'
-                    }}>{job.title}</h3>
-                    <p style={{
-                        fontSize: '0.95rem',
-                        color: '#666',
-                        fontWeight: '500',
-                        marginBottom: '8px'
-                    }}>
-                        <span style={{ fontSize: '1.1rem', marginRight: '6px' }}>🏢</span>
-                        {job.company}
-                    </p>
-                </div>
-                <span style={{
-                    background: '#e3f2fd',
-                    color: '#1976d2',
-                    padding: '4px 12px',
-                    borderRadius: '16px',
-                    fontSize: '0.8rem',
+            {/* 제목 및 회사명 */}
+            <div style={{ padding: '20px' }}>
+                <h3 style={{
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    color: '#333',
+                    marginBottom: '8px',
+                    lineHeight: '1.4',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    minHeight: '2.8em'
+                }}>{job.title}</h3>
+                <p style={{
+                    fontSize: '0.9rem',
+                    color: '#666',
                     fontWeight: '500',
-                    flexShrink: 0,
-                    marginLeft: '12px'
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
                 }}>
-                    빅데이터/AI
-                </span>
+                    <span style={{ fontSize: '1rem' }}>🏢</span>
+                    {job.company}
+                </p>
             </div>
 
-            {/* 직무 정보 */}
-            {job.job_info && job.job_info.length > 0 && (
-                <div style={{ marginBottom: '12px' }}>
-                    <div style={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: '6px'
-                    }}>
-                        {job.job_info.slice(0, 3).map((info, index) => (
-                            <span key={index} style={{
-                                background: '#f5f5f5',
-                                color: '#555',
-                                padding: '4px 10px',
-                                borderRadius: '8px',
-                                fontSize: '0.85rem'
-                            }}>
-                                {info}
-                            </span>
-                        ))}
-                        {job.job_info.length > 3 && (
-                            <span style={{
-                                color: '#999',
-                                fontSize: '0.85rem',
-                                padding: '4px 10px'
-                            }}>
-                                +{job.job_info.length - 3}
-                            </span>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            {/* 조건 */}
-            {job.conditions && job.conditions.length > 0 && (
-                <div style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '8px',
-                    marginBottom: '12px'
-                }}>
-                    {job.conditions.map((condition, index) => (
-                        <span key={index} style={{
-                            color: '#666',
-                            fontSize: '0.85rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px'
-                        }}>
-                            <span style={{ color: '#999' }}>•</span>
-                            {condition}
-                        </span>
-                    ))}
-                </div>
-            )}
-
-            {/* 등록 정보 */}
-            {job.registration_info && job.registration_info.length > 0 && (
-                <div style={{
-                    display: 'flex',
-                    gap: '12px',
-                    paddingTop: '12px',
-                    borderTop: '1px solid #f0f0f0'
-                }}>
-                    {job.registration_info.map((info, index) => (
-                        <span key={index} style={{
-                            color: info.includes('D-') ? '#d32f2f' : '#999',
-                            fontSize: '0.85rem',
-                            fontWeight: info.includes('D-') ? '600' : '400'
-                        }}>
-                            {info}
-                        </span>
-                    ))}
-                </div>
-            )}
         </div>
     );
 
@@ -363,8 +280,8 @@ export default function AIJobsPage() {
         <div style={{
             minHeight: 'calc(100vh - 60px)',
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            padding: '40px 20px',
-            paddingBottom: '100px'
+            padding: '20px 20px',
+            paddingBottom: '80px'
         }}>
             <div style={{
                 maxWidth: '1000px',
@@ -374,8 +291,8 @@ export default function AIJobsPage() {
                 <div style={{
                     background: 'white',
                     borderRadius: '16px',
-                    padding: '30px',
-                    marginBottom: '30px',
+                    padding: '20px',
+                    marginBottom: '20px',
                     boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
                 }}>
                     <div style={{
@@ -437,10 +354,10 @@ export default function AIJobsPage() {
                     </div>
                 </div>
 
-                {/* 컨텐츠 영역 - 2개씩 그리드 */}
+                {/* 컨텐츠 영역 - 3개씩 그리드 */}
                 <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(2, 1fr)',
+                    gridTemplateColumns: 'repeat(3, 1fr)',
                     gap: '20px'
                 }}>
                     {displayedJobs.length > 0 ? (
