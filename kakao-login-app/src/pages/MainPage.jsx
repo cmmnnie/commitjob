@@ -143,20 +143,34 @@ export default function MainPage() {
             let loginUrl = `${CONFIG.BACKEND_URL}${CONFIG.API.KAKAO_LOGIN_URL}?origin=${encodeURIComponent(origin)}&prompt=login`;
 
             console.log('[APP] 재인증 강제 모드 (prompt=login)');
+            console.log('[APP] Request URL:', loginUrl);
+            console.log('[APP] Origin:', origin);
+
+            // 타임아웃 추가 (20초)
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 20000);
 
             const response = await fetch(loginUrl, {
                 method: 'GET',
                 credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json'
-                }
+                },
+                signal: controller.signal
             });
 
+            clearTimeout(timeoutId);
+
+            console.log('[APP] Response status:', response.status);
+
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                const errorText = await response.text();
+                console.error('[APP] Error response:', errorText);
+                throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
             }
 
             const data = await response.json();
+            console.log('[APP] Response data:', data);
 
             if (data.url) {
                 console.log('[APP] 카카오 인증 페이지로 이동:', data.url);
@@ -170,7 +184,11 @@ export default function MainPage() {
             }
         } catch (error) {
             console.error('[APP] 카카오 로그인 오류:', error);
-            showStatus(`로그인 실패: ${error.message}`, 'error');
+            if (error.name === 'AbortError') {
+                showStatus('로그인 요청 시간 초과 - 백엔드 서버를 확인해주세요', 'error');
+            } else {
+                showStatus(`로그인 실패: ${error.message}`, 'error');
+            }
             setIsLoading(false);
         }
     };
