@@ -281,7 +281,7 @@ export default function JobsPage() {
                             </p>
                         </div>
                         <button
-                            onClick={() => navigate('/main')}
+                            onClick={() => navigate('/')}
                             style={{
                                 background: 'transparent',
                                 border: '2px solid #667eea',
