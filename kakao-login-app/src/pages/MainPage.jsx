@@ -312,114 +312,46 @@ export default function MainPage() {
                 null
             ) : (
                 <>
-                    {!currentUser ? (
-                        <div id="loginSection" className="section">
-                            <div className="login-card">
-                                <div className="logo-section">
-                                    <h1 style={{ fontFamily: "'Quicksand', sans-serif", fontWeight: '600', letterSpacing: '-0.5px' }}>
-                                        <span style={{ color: '#ec4899' }}>C</span>ommit<span style={{ color: '#ec4899' }}>J</span>ob
-                                    </h1>
-                                    <p>AI 채용 추천 플랫폼</p>
-                                </div>
 
-                                <div className="login-description">
-                                    <p>카카오 계정으로 간편하게 로그인하세요</p>
-                                </div>
-
-                                <button onClick={handleKakaoLogin} className="kakao-login-btn">
-                                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTIiIGZpbGw9IiMzQzFFMUUiLz4KPHBhdGggZD0iTTEyIDZDOC4xMzQgNiA1IDguNDYyIDUgMTEuNUM1IDEzLjUwNyA2LjQ1IDE1LjIyNCA4LjUgMTYuMTI1TDcuNSAxOS41TDExIDI3LjVMMTQuNSAyNy41TDE4IDI3LjVMMTcuNSAxNi4xMjVDMTkuNTUgMTUuMjI0IDIxIDEzLjUwNyAyMSAxMS41QzIxIDguNDYyIDE3Ljg2NiA2IDEyIDZaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K" alt="카카오" className="kakao-icon" />
-                                    <span>카카오로 로그인</span>
-                                </button>
-
-                                <div className="divider">
-                                    <span>또는</span>
-                                </div>
-
-                                <div className="test-buttons">
-                                    <button onClick={() => checkLoginStatus(true)} className="btn-secondary">
-                                        로그인 상태 확인
-                                    </button>
-                                </div>
-
-                                {statusMessage.text && (
-                                    <div className={`status-message status-${statusMessage.type}`}>
-                                        {statusMessage.text}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-            ) : (
-                <div id="userSection" className="section">
-                    <div className="user-card">
-                        <div className="user-header">
-                            <h2>환영합니다!</h2>
-                        </div>
-
-                        <div className="user-profile">
-                            <div className="profile-image-wrapper">
-                                <img
-                                    src={currentUser.picture || ''}
-                                    alt={currentUser.name}
-                                    className="profile-image"
-                                />
-                            </div>
-                            <div className="profile-info">
-                                <h3 className="user-name">{maskName(currentUser.name || '-')}</h3>
-                                <p className="user-provider">
-                                    로그인 방식: {currentUser.provider === 'kakao' ? '카카오 로그인' : currentUser.provider}
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="user-details">
-                            <div className="detail-item">
-                                <span className="detail-label">사용자 ID:</span>
-                                <span className="detail-value">
-                                    {maskId(currentUser.email, currentUser.name)}
-                                </span>
-                            </div>
-                            <div className="detail-item">
-                                <span className="detail-label">가입일:</span>
-                                <span className="detail-value">{formatDate(currentUser.created_at)}</span>
-                            </div>
-                        </div>
-
-                        <div className="action-buttons">
-                            <button onClick={() => checkLoginStatus(true)} className="btn-secondary">
-                                정보 새로고침
-                            </button>
-                            <button onClick={() => setShowLogoutModal(true)} className="btn-logout">
-                                로그아웃
-                            </button>
-                        </div>
-
-                        {showLogoutModal && (
-                            <div className="modal">
-                                <div className="modal-content">
-                                    <h3>로그아웃 하시겠습니까?</h3>
-                                    <p>로그아웃하면 다시 로그인해야 합니다.</p>
-                                    <div className="modal-buttons">
-                                        <button onClick={handleLogout} className="btn-logout">확인</button>
-                                        <button onClick={() => setShowLogoutModal(false)} className="btn-secondary">취소</button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                    )}
-
-                    {/* 최신 채용공고 섹션 - 로그인 여부와 관계없이 표시 */}
-                    {(bigdataJobs.length > 0 || itJobs.length > 0) && (
-                        <div className="section" style={{ marginTop: currentUser ? '0' : '20px' }}>
+                    {/* 최신 채용공고 섹션 - 메인 화면 */}
+                    {(bigdataJobs.length > 0 || itJobs.length > 0) ? (
+                        <div className="section">
                             <div className="user-card">
-                                <h2 style={{
-                                    fontSize: '1.5rem',
-                                    fontWeight: '700',
-                                    marginBottom: '20px',
-                                    color: '#333'
+                                <div style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    marginBottom: '20px'
                                 }}>
-                                    🔥 최신 채용공고
-                                </h2>
+                                    <h2 style={{
+                                        fontSize: '1.5rem',
+                                        fontWeight: '700',
+                                        color: '#333',
+                                        margin: 0
+                                    }}>
+                                        🔥 최신 채용공고
+                                    </h2>
+                                    {!currentUser && (
+                                        <button
+                                            onClick={handleKakaoLogin}
+                                            style={{
+                                                background: '#FEE500',
+                                                color: '#000000',
+                                                border: 'none',
+                                                padding: '8px 20px',
+                                                borderRadius: '8px',
+                                                fontSize: '0.9rem',
+                                                fontWeight: '600',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px'
+                                            }}
+                                        >
+                                            <span>카카오 로그인</span>
+                                        </button>
+                                    )}
+                                </div>
 
                                 {/* BIGDATA/AI */}
                                 {bigdataJobs.length > 0 && (
@@ -578,6 +510,14 @@ export default function MainPage() {
                                         </div>
                                     </div>
                                 )}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="section">
+                            <div className="user-card" style={{ textAlign: 'center', padding: '60px 20px' }}>
+                                <div style={{ fontSize: '3rem', marginBottom: '20px' }}>📋</div>
+                                <h2 style={{ color: '#666', marginBottom: '10px' }}>채용공고를 불러오는 중...</h2>
+                                <p style={{ color: '#999' }}>잠시만 기다려주세요</p>
                             </div>
                         </div>
                     )}
