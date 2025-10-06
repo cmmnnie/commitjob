@@ -10,6 +10,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ||
 export default function JobsPage() {
     const navigate = useNavigate();
     const [bigdataJobs, setBigdataJobs] = useState([]);
+    const [itJobs, setItJobs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -22,23 +23,31 @@ export default function JobsPage() {
             setLoading(true);
             setError(null);
 
-            console.log('[JOBS] Fetching 6 BIGDATA_AI jobs');
+            console.log('[JOBS] Fetching 6 BIGDATA_AI and 6 IT jobs');
 
-            // BIGDATA_AI 카테고리 6개 조회
-            const bigdataResponse = await axios.get(
-                `${API_BASE_URL}/api/jobs/BIGDATA_AI?limit=6`,
-                {
+            // BIGDATA_AI 및 IT 카테고리 병렬 조회
+            const [bigdataResponse, itResponse] = await Promise.all([
+                axios.get(`${API_BASE_URL}/api/jobs/BIGDATA_AI?limit=6`, {
                     withCredentials: true,
-                    timeout: 10000  // 10초 타임아웃
-                }
-            );
+                    timeout: 10000
+                }),
+                axios.get(`${API_BASE_URL}/api/jobs/IT?limit=6`, {
+                    withCredentials: true,
+                    timeout: 10000
+                })
+            ]);
 
-            console.log('[JOBS] Response:', bigdataResponse.data);
+            console.log('[JOBS] BIGDATA_AI Response:', bigdataResponse.data);
+            console.log('[JOBS] IT Response:', itResponse.data);
 
             if (bigdataResponse.data.success) {
-                // 만료되지 않은 채용공고만 필터링
                 const activeJobs = bigdataResponse.data.jobs.filter(job => !isExpired(job));
                 setBigdataJobs(activeJobs);
+            }
+
+            if (itResponse.data.success) {
+                const activeJobs = itResponse.data.jobs.filter(job => !isExpired(job));
+                setItJobs(activeJobs);
             }
         } catch (error) {
             console.error('[JOBS] Failed to fetch jobs:', error);
@@ -366,6 +375,60 @@ export default function JobsPage() {
                         }}>
                             {bigdataJobs.length > 0 ? (
                                 bigdataJobs.map((job) => (
+                                    <JobCard key={job.id} job={job} />
+                                ))
+                            ) : (
+                                <div style={{
+                                    gridColumn: '1 / -1',
+                                    textAlign: 'center',
+                                    padding: '40px',
+                                    color: '#999'
+                                }}>
+                                    채용공고가 없습니다.
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* IT 섹션 */}
+                    <div style={{ marginBottom: '0px', marginTop: '40px' }}>
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: '15px'
+                        }}>
+                            <h2 style={{
+                                fontSize: '1.5rem',
+                                fontWeight: '700',
+                                color: '#333',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px'
+                            }}>
+                                <span style={{ fontSize: '1.8rem' }}>💻</span>
+                                IT
+                                <span style={{
+                                    fontSize: '0.9rem',
+                                    color: '#999',
+                                    fontWeight: '400',
+                                    marginLeft: '8px'
+                                }}>
+                                    ({itJobs.length}건)
+                                </span>
+                            </h2>
+                        </div>
+
+                        {/* 1x3 그리드 레이아웃 */}
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(3, 1fr)',
+                            gap: '20px',
+                            maxWidth: '1200px',
+                            margin: '0 auto'
+                        }}>
+                            {itJobs.length > 0 ? (
+                                itJobs.map((job) => (
                                     <JobCard key={job.id} job={job} />
                                 ))
                             ) : (
