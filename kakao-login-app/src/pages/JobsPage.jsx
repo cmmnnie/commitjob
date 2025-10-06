@@ -417,6 +417,29 @@ export default function JobsPage() {
                                     ({itJobs.length}건)
                                 </span>
                             </h2>
+                            <button
+                                onClick={() => navigate('/jobs/it')}
+                                style={{
+                                    background: '#1976d2',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '8px 20px',
+                                    borderRadius: '20px',
+                                    fontSize: '0.9rem',
+                                    fontWeight: '600',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.opacity = '0.9';
+                                    e.currentTarget.style.transform = 'scale(1.05)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.opacity = '1';
+                                    e.currentTarget.style.transform = 'scale(1)';
+                                }}>
+                                전체보기
+                            </button>
                         </div>
 
                         {/* 1x3 그리드 레이아웃 */}

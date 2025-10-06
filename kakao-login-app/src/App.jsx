@@ -6,6 +6,7 @@ import CallbackPage from './pages/CallbackPage';
 import AIRecommendationPage from './pages/AIRecommendationPage';
 import JobsPage from './pages/JobsPage';
 import AIJobsPage from './pages/AIJobsPage';
+import ITJobsPage from './pages/ITJobsPage';
 import JobDetailPage from './pages/JobDetailPage';
 import ResumePage from './pages/ResumePage';
 import MenuPage from './pages/MenuPage';
@@ -24,6 +25,7 @@ function App() {
                 <Route path="/ai-recommendation" element={<AIRecommendationPage />} />
                 <Route path="/jobs" element={<JobsPage />} />
                 <Route path="/jobs/ai" element={<AIJobsPage />} />
+                <Route path="/jobs/it" element={<ITJobsPage />} />
                 <Route path="/jobs/detail/:id" element={<JobDetailPage />} />
                 <Route path="/resume" element={<ResumePage />} />
                 <Route path="/menu" element={<MenuPage />} />
