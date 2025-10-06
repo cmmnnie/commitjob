@@ -10,10 +10,8 @@ export const CONFIG = {
     // 현재는 백엔드를 통해 로그인하므로 사용하지 않음
     KAKAO_JS_KEY: 'e25fbc640864f7b5a58315285f7e464d',
 
-    // 현재 앱의 origin (프론트엔드 URL로 고정)
-    APP_ORIGIN: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-        ? window.location.origin  // 로컬에서는 현재 origin 사용
-        : 'https://commitjob.site',  // 프론트엔드 URL
+    // 현재 앱의 origin (프론트엔드 URL - 항상 현재 origin 사용)
+    APP_ORIGIN: window.location.origin,  // 현재 접속한 origin 사용 (www 포함/미포함 자동 처리)
 
     // 로그인 성공 후 리다이렉트 경로
     LOGIN_SUCCESS_REDIRECT: '/',
