@@ -22,30 +22,24 @@ export default function JobsPage() {
             setLoading(true);
             setError(null);
 
-            console.log('[JOBS] Fetching jobs with id 1, 2, 3, 4, 5, 6');
+            console.log('[JOBS] Fetching 6 BIGDATA_AI jobs');
 
-            // id 1, 2, 3, 4, 5, 6 채용공고 조회
-            const jobIds = [1, 2, 3, 4, 5, 6];
-            const jobPromises = jobIds.map(id =>
-                axios.get(`${API_BASE_URL}/api/job/${id}`, {
+            // BIGDATA_AI 카테고리 6개 조회
+            const bigdataResponse = await axios.get(
+                `${API_BASE_URL}/api/jobs/BIGDATA_AI?limit=6`,
+                {
                     withCredentials: true,
-                    timeout: 10000
-                }).catch(error => {
-                    console.error(`[JOBS] Failed to fetch job ${id}:`, error);
-                    return null; // 실패 시 null 반환
-                })
+                    timeout: 10000  // 10초 타임아웃
+                }
             );
 
-            const responses = await Promise.all(jobPromises);
-            console.log('[JOBS] Responses:', responses);
+            console.log('[JOBS] Response:', bigdataResponse.data);
 
-            // 성공한 응답만 필터링
-            const jobs = responses
-                .filter(response => response && response.data && response.data.success)
-                .map(response => response.data.job);
-
-            console.log('[JOBS] Fetched jobs:', jobs);
-            setBigdataJobs(jobs);
+            if (bigdataResponse.data.success) {
+                // 만료되지 않은 채용공고만 필터링
+                const activeJobs = bigdataResponse.data.jobs.filter(job => !isExpired(job));
+                setBigdataJobs(activeJobs);
+            }
         } catch (error) {
             console.error('[JOBS] Failed to fetch jobs:', error);
             setError(error.message || '채용공고를 불러오는데 실패했습니다');
