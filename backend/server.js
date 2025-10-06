@@ -5078,15 +5078,13 @@ app.get('/api/jobs/:category', async (req, res) => {
     }
 
     let query = 'SELECT * FROM jobs WHERE category = ? ORDER BY scraped_at DESC';
-    const params = [category];
 
     if (limit && limit > 0) {
-      query += ' LIMIT ?';
-      params.push(limit);
+      query += ` LIMIT ${limit}`;
     }
 
-    console.log(`[JOBS-API] Executing query: ${query}, params:`, params);
-    const [results] = await pool.execute(query, params);
+    console.log(`[JOBS-API] Executing query: ${query}, category:`, category);
+    const [results] = await pool.execute(query, [category]);
     console.log(`[JOBS-API] Query completed in ${Date.now() - startTime}ms, found ${results.length} jobs`);
 
     // JSON 문자열을 파싱 (안전하게)
@@ -5198,16 +5196,14 @@ app.get('/api/jobs', async (req, res) => {
 
   try {
     let query = 'SELECT * FROM jobs ORDER BY scraped_at DESC';
-    const params = [];
 
-    if (limit) {
-      query += ' LIMIT ?';
-      params.push(limit);
+    if (limit && limit > 0) {
+      query += ` LIMIT ${limit}`;
     }
 
-    console.log(`[JOBS-API] Fetching all jobs, limit: ${limit}`);
+    console.log(`[JOBS-API] Fetching all jobs, query: ${query}`);
 
-    const [results] = await pool.execute(query, params);
+    const [results] = await pool.execute(query);
     console.log(`[JOBS-API] Found ${results.length} jobs`);
 
     // JSON 문자열을 파싱
