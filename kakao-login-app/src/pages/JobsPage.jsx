@@ -22,11 +22,11 @@ export default function JobsPage() {
             setLoading(true);
             setError(null);
 
-            console.log('[JOBS] Fetching from:', `${API_BASE_URL}/api/jobs/BIGDATA_AI?limit=1`);
+            console.log('[JOBS] Fetching job with id=1');
 
-            // BIGDATA_AI 카테고리 조회 (limit=1, 단순 표시용)
+            // id=1인 채용공고 조회
             const bigdataResponse = await axios.get(
-                `${API_BASE_URL}/api/jobs/BIGDATA_AI?limit=1`,
+                `${API_BASE_URL}/api/jobs/1`,
                 {
                     withCredentials: true,
                     timeout: 10000  // 10초 타임아웃
@@ -35,10 +35,9 @@ export default function JobsPage() {
 
             console.log('[JOBS] Response:', bigdataResponse.data);
 
-            if (bigdataResponse.data.success) {
-                // 만료되지 않은 채용공고만 필터링
-                const activeJobs = bigdataResponse.data.jobs.filter(job => !isExpired(job));
-                setBigdataJobs(activeJobs);
+            if (bigdataResponse.data.success && bigdataResponse.data.job) {
+                // 단일 job 객체를 배열로 변환
+                setBigdataJobs([bigdataResponse.data.job]);
             }
         } catch (error) {
             console.error('[JOBS] Failed to fetch jobs:', error);

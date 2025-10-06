@@ -5125,6 +5125,73 @@ app.get('/api/jobs/:category', async (req, res) => {
   }
 });
 
+// ID로 특정 채용공고 조회
+app.get('/api/jobs/:id(\\d+)', async (req, res) => {
+  const jobId = parseInt(req.params.id);
+  const startTime = Date.now();
+
+  try {
+    console.log(`[JOBS-API] Fetching job with id: ${jobId}`);
+
+    // DB 연결 테스트
+    try {
+      await pool.query('SELECT 1');
+      console.log(`[JOBS-API] DB connection OK`);
+    } catch (dbError) {
+      console.error('[JOBS-API] DB connection failed:', dbError.message);
+      throw new Error('Database connection failed');
+    }
+
+    const query = 'SELECT * FROM jobs WHERE id = ?';
+    console.log(`[JOBS-API] Executing query: ${query}, id: ${jobId}`);
+
+    const [results] = await pool.execute(query, [jobId]);
+    console.log(`[JOBS-API] Query completed in ${Date.now() - startTime}ms, found ${results.length} job(s)`);
+
+    if (results.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Job not found',
+        message: `Job with id ${jobId} not found`
+      });
+    }
+
+    // JSON 문자열을 파싱 (안전하게)
+    const job = results[0];
+    try {
+      const parsedJob = {
+        ...job,
+        job_info: job.job_info ? JSON.parse(job.job_info) : [],
+        conditions: job.conditions ? JSON.parse(job.conditions) : [],
+        registration_info: job.registration_info ? JSON.parse(job.registration_info) : []
+      };
+
+      console.log(`[JOBS-API] Response ready in ${Date.now() - startTime}ms`);
+      res.json({ success: true, job: parsedJob });
+    } catch (parseError) {
+      console.error(`[JOBS-API] JSON parse error for job ${job.id}:`, parseError);
+      const fallbackJob = {
+        ...job,
+        job_info: [],
+        conditions: [],
+        registration_info: []
+      };
+      res.json({ success: true, job: fallbackJob });
+    }
+  } catch (error) {
+    console.error('[ERROR] Jobs API error:', error);
+    console.error('[ERROR] Error name:', error.name);
+    console.error('[ERROR] Error message:', error.message);
+    console.error('[ERROR] Stack trace:', error.stack);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message,
+      details: error.code || 'Unknown error'
+    });
+  }
+});
+
 // 전체 채용공고 조회
 app.get('/api/jobs', async (req, res) => {
   const limit = parseInt(req.query.limit) || null;
