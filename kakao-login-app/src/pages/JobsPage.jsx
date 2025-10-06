@@ -235,8 +235,8 @@ export default function JobsPage() {
         <div style={{
             minHeight: 'calc(100vh - 60px)',
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            padding: '40px 20px',
-            paddingBottom: '100px'
+            padding: '20px 20px',
+            paddingBottom: '80px'
         }}>
             <div style={{
                 maxWidth: '1000px',
@@ -246,8 +246,8 @@ export default function JobsPage() {
                 <div style={{
                     background: 'white',
                     borderRadius: '16px',
-                    padding: '30px',
-                    marginBottom: '30px',
+                    padding: '20px',
+                    marginBottom: '20px',
                     boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
                 }}>
                     <div style={{
@@ -301,16 +301,16 @@ export default function JobsPage() {
                 <div style={{
                     background: 'white',
                     borderRadius: '16px',
-                    padding: '40px',
+                    padding: '20px',
                     boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
                 }}>
                     {/* BIGDATA_AI 섹션 */}
-                    <div style={{ marginBottom: '40px' }}>
+                    <div style={{ marginBottom: '0px' }}>
                         <div style={{
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center',
-                            marginBottom: '20px'
+                            marginBottom: '15px'
                         }}>
                             <h2 style={{
                                 fontSize: '1.5rem',
