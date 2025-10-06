@@ -26,7 +26,7 @@ export default function JobsPage() {
 
             // id=1인 채용공고 조회
             const bigdataResponse = await axios.get(
-                `${API_BASE_URL}/api/jobs/1`,
+                `${API_BASE_URL}/api/job/1`,
                 {
                     withCredentials: true,
                     timeout: 10000  // 10초 타임아웃

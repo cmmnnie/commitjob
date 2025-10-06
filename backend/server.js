@@ -5126,7 +5126,7 @@ app.get('/api/jobs/:category', async (req, res) => {
 });
 
 // ID로 특정 채용공고 조회
-app.get('/api/jobs/:id(\\d+)', async (req, res) => {
+app.get('/api/job/:id', async (req, res) => {
   const jobId = parseInt(req.params.id);
   const startTime = Date.now();
 
