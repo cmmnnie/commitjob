@@ -597,13 +597,13 @@ export default function MainPage() {
                                 marginBottom: '30px'
                             }}>
                                 <div style={{
-                                    width: '100px',
-                                    height: '100px',
-                                    borderRadius: '50%',
+                                    width: '120px',
+                                    height: '120px',
+                                    borderRadius: '16px',
                                     overflow: 'hidden',
                                     marginBottom: '20px',
-                                    border: '3px solid #667eea',
-                                    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+                                    background: '#f0f0f0',
+                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
                                 }}>
                                     <img
                                         src={currentUser.picture || ''}
@@ -638,7 +638,7 @@ export default function MainPage() {
                                 background: '#f8f9fa',
                                 borderRadius: '12px',
                                 padding: '20px',
-                                marginBottom: '20px'
+                                marginBottom: '30px'
                             }}>
                                 <div style={{
                                     display: 'flex',
@@ -665,80 +665,33 @@ export default function MainPage() {
                                 </div>
                             </div>
 
-                            <div style={{
-                                display: 'grid',
-                                gridTemplateColumns: 'repeat(3, 1fr)',
-                                gap: '10px',
-                                marginBottom: '15px'
-                            }}>
-                                <button
-                                    onClick={() => checkLoginStatus(true)}
-                                    style={{
-                                        background: 'transparent',
-                                        color: '#667eea',
-                                        border: '2px solid #667eea',
-                                        padding: '12px 16px',
-                                        borderRadius: '8px',
-                                        fontSize: '0.9rem',
-                                        fontWeight: '600',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s'
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.background = '#667eea';
-                                        e.currentTarget.style.color = 'white';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.background = 'transparent';
-                                        e.currentTarget.style.color = '#667eea';
-                                    }}>
-                                    새로고침
-                                </button>
-                                <button
-                                    onClick={() => setCurrentView('jobs')}
-                                    style={{
-                                        background: 'transparent',
-                                        color: '#1976d2',
-                                        border: '2px solid #1976d2',
-                                        padding: '12px 16px',
-                                        borderRadius: '8px',
-                                        fontSize: '0.9rem',
-                                        fontWeight: '600',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s'
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.background = '#1976d2';
-                                        e.currentTarget.style.color = 'white';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.background = 'transparent';
-                                        e.currentTarget.style.color = '#1976d2';
-                                    }}>
-                                    채용공고
-                                </button>
-                                <button
-                                    onClick={() => setShowLogoutModal(true)}
-                                    style={{
-                                        background: '#d32f2f',
-                                        color: 'white',
-                                        border: 'none',
-                                        padding: '12px 16px',
-                                        borderRadius: '8px',
-                                        fontSize: '0.9rem',
-                                        fontWeight: '600',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s'
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.background = '#c62828';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.background = '#d32f2f';
-                                    }}>
-                                    로그아웃
-                                </button>
-                            </div>
+                            <button
+                                onClick={() => setShowLogoutModal(true)}
+                                style={{
+                                    width: '100%',
+                                    background: '#ec4899',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '14px 24px',
+                                    borderRadius: '12px',
+                                    fontSize: '1rem',
+                                    fontWeight: '600',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    boxShadow: '0 2px 8px rgba(236, 72, 153, 0.3)'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.background = '#db2777';
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(236, 72, 153, 0.4)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = '#ec4899';
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(236, 72, 153, 0.3)';
+                                }}>
+                                로그아웃
+                            </button>
 
                             {showLogoutModal && (
                                 <div style={{
