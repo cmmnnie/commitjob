@@ -550,13 +550,13 @@ export default function MainPage() {
                         <div style={{
                             background: 'white',
                             borderRadius: '16px',
-                            padding: '40px',
+                            padding: '24px',
                             boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                            maxWidth: '600px',
+                            maxWidth: '450px',
                             margin: '0 auto'
                         }}>
-                            <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-                                <h2 style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '10px', color: '#333' }}>
+                            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                                <h2 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '6px', color: '#333' }}>
                                     환영합니다!
                                 </h2>
                             </div>
@@ -564,23 +564,23 @@ export default function MainPage() {
                             {/* 회색 박스 */}
                             <div style={{
                                 background: '#f5f5f5',
-                                borderRadius: '20px',
-                                padding: '40px',
-                                marginBottom: '30px',
+                                borderRadius: '16px',
+                                padding: '24px',
+                                marginBottom: '20px',
                                 display: 'flex',
                                 flexDirection: 'column',
                                 alignItems: 'center'
                             }}>
                                 {/* 원형 프로필 사진 */}
                                 <div style={{
-                                    width: '140px',
-                                    height: '140px',
+                                    width: '100px',
+                                    height: '100px',
                                     borderRadius: '50%',
                                     overflow: 'hidden',
-                                    marginBottom: '24px',
+                                    marginBottom: '16px',
                                     background: '#e0e0e0',
-                                    boxShadow: '0 6px 16px rgba(0, 0, 0, 0.12)',
-                                    border: '4px solid white'
+                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.12)',
+                                    border: '3px solid white'
                                 }}>
                                     <img
                                         src={currentUser.picture || ''}
@@ -594,20 +594,20 @@ export default function MainPage() {
                                 </div>
 
                                 <h3 style={{
-                                    fontSize: '1.6rem',
+                                    fontSize: '1.3rem',
                                     fontWeight: '600',
                                     color: '#333',
-                                    marginBottom: '10px'
+                                    marginBottom: '8px'
                                 }}>
                                     {maskName(currentUser.name || '-')}
                                 </h3>
                                 <p style={{
-                                    fontSize: '0.95rem',
+                                    fontSize: '0.85rem',
                                     color: '#999',
                                     background: 'white',
-                                    padding: '8px 16px',
-                                    borderRadius: '20px',
-                                    marginBottom: '24px'
+                                    padding: '6px 14px',
+                                    borderRadius: '16px',
+                                    marginBottom: '16px'
                                 }}>
                                     {currentUser.provider === 'kakao' ? '카카오 로그인' : currentUser.provider}
                                 </p>
@@ -616,19 +616,19 @@ export default function MainPage() {
                                 <div style={{
                                     width: '100%',
                                     background: 'white',
-                                    borderRadius: '12px',
-                                    padding: '20px'
+                                    borderRadius: '10px',
+                                    padding: '16px'
                                 }}>
                                     <div style={{
                                         display: 'flex',
                                         justifyContent: 'space-between',
                                         alignItems: 'center',
-                                        marginBottom: '15px',
-                                        paddingBottom: '15px',
+                                        marginBottom: '12px',
+                                        paddingBottom: '12px',
                                         borderBottom: '1px solid #e0e0e0'
                                     }}>
-                                        <span style={{ color: '#666', fontSize: '0.9rem' }}>사용자 ID</span>
-                                        <span style={{ color: '#333', fontWeight: '600' }}>
+                                        <span style={{ color: '#666', fontSize: '0.85rem' }}>사용자 ID</span>
+                                        <span style={{ color: '#333', fontWeight: '600', fontSize: '0.85rem' }}>
                                             {maskId(currentUser.email, currentUser.name)}
                                         </span>
                                     </div>
@@ -637,8 +637,8 @@ export default function MainPage() {
                                         justifyContent: 'space-between',
                                         alignItems: 'center'
                                     }}>
-                                        <span style={{ color: '#666', fontSize: '0.9rem' }}>가입일</span>
-                                        <span style={{ color: '#333', fontWeight: '600', fontSize: '0.9rem' }}>
+                                        <span style={{ color: '#666', fontSize: '0.85rem' }}>가입일</span>
+                                        <span style={{ color: '#333', fontWeight: '600', fontSize: '0.85rem' }}>
                                             {formatDate(currentUser.created_at)}
                                         </span>
                                     </div>
@@ -646,7 +646,7 @@ export default function MainPage() {
                             </div>
 
                             {/* 버튼 영역 */}
-                            <div style={{ display: 'flex', gap: '12px' }}>
+                            <div style={{ display: 'flex', gap: '10px' }}>
                                 <button
                                     onClick={() => setShowLogoutModal(true)}
                                     style={{
@@ -654,21 +654,21 @@ export default function MainPage() {
                                         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                                         color: 'white',
                                         border: 'none',
-                                        padding: '14px 24px',
-                                        borderRadius: '12px',
-                                        fontSize: '1rem',
+                                        padding: '12px 20px',
+                                        borderRadius: '10px',
+                                        fontSize: '0.95rem',
                                         fontWeight: '600',
                                         cursor: 'pointer',
                                         transition: 'all 0.2s',
-                                        boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+                                        boxShadow: '0 3px 10px rgba(102, 126, 234, 0.3)'
                                     }}
                                     onMouseEnter={(e) => {
                                         e.currentTarget.style.transform = 'translateY(-2px)';
-                                        e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.4)';
+                                        e.currentTarget.style.boxShadow = '0 5px 14px rgba(102, 126, 234, 0.4)';
                                     }}
                                     onMouseLeave={(e) => {
                                         e.currentTarget.style.transform = 'translateY(0)';
-                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
+                                        e.currentTarget.style.boxShadow = '0 3px 10px rgba(102, 126, 234, 0.3)';
                                     }}>
                                     로그아웃
                                 </button>
@@ -679,21 +679,21 @@ export default function MainPage() {
                                         background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
                                         color: 'white',
                                         border: 'none',
-                                        padding: '14px 24px',
-                                        borderRadius: '12px',
-                                        fontSize: '1rem',
+                                        padding: '12px 20px',
+                                        borderRadius: '10px',
+                                        fontSize: '0.95rem',
                                         fontWeight: '600',
                                         cursor: 'pointer',
                                         transition: 'all 0.2s',
-                                        boxShadow: '0 4px 12px rgba(245, 87, 108, 0.3)'
+                                        boxShadow: '0 3px 10px rgba(245, 87, 108, 0.3)'
                                     }}
                                     onMouseEnter={(e) => {
                                         e.currentTarget.style.transform = 'translateY(-2px)';
-                                        e.currentTarget.style.boxShadow = '0 6px 16px rgba(245, 87, 108, 0.4)';
+                                        e.currentTarget.style.boxShadow = '0 5px 14px rgba(245, 87, 108, 0.4)';
                                     }}
                                     onMouseLeave={(e) => {
                                         e.currentTarget.style.transform = 'translateY(0)';
-                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(245, 87, 108, 0.3)';
+                                        e.currentTarget.style.boxShadow = '0 3px 10px rgba(245, 87, 108, 0.3)';
                                     }}>
                                     회원탈퇴
                                 </button>
