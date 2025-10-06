@@ -5080,7 +5080,7 @@ app.get('/api/jobs/:category', async (req, res) => {
     let query = 'SELECT * FROM jobs WHERE category = ? ORDER BY scraped_at DESC';
     const params = [category];
 
-    if (limit) {
+    if (limit && limit > 0) {
       query += ' LIMIT ?';
       params.push(limit);
     }
