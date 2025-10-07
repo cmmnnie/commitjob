@@ -4176,6 +4176,7 @@ app.post('/api/interview-questions', async (req, res) => {
       console.error('[INTERVIEW-QUESTIONS] MCP service error:', mcpError.message);
 
       // GPT-5-mini 직접 호출 시도
+      console.log('[INTERVIEW-QUESTIONS] openai 객체 존재 여부:', !!openai);
       if (openai) {
         try {
           console.log('[INTERVIEW-QUESTIONS] GPT-5-mini 직접 호출 시작');
