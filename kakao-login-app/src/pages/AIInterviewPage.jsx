@@ -75,8 +75,11 @@ export default function AIInterviewPage() {
                 },
                 body: JSON.stringify({
                     user_id: currentUser?.id,
-                    company: companyName.trim(),
-                    position: position.trim()
+                    custom_company: companyName.trim(),
+                    custom_position: position.trim(),
+                    user_profile: {
+                        position: position.trim()
+                    }
                 })
             });
 
