@@ -11,6 +11,7 @@ import * as jose from "jose";
 import crypto from "crypto";
 import path from 'path';
 import fs from 'fs';
+import OpenAI from 'openai';
 
 // Removed: Advanced Recommendation Algorithms (replaced with GPT MCP)
 
@@ -30,6 +31,18 @@ function inferJobTypeFromSkills(skills) {
 }
 
 dotenv.config();
+
+// OpenAI 클라이언트 초기화
+let openai = null;
+if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your_openai_api_key_here') {
+  openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+  console.log('✅ OpenAI API 연결됨');
+} else {
+  console.log('⚠️ OpenAI API 키가 설정되지 않았습니다. 기본 매칭 알고리즘을 사용합니다.');
+}
+
 const app = express();
 // ✨ 안전한 포트/호스트 결정
 const PORT = Number(process.env.PORT || 4001);
@@ -1877,7 +1890,18 @@ app.get("/api/main-recommendations", async (req, res) => {
         console.log('[MAIN-RECS] MCP 서비스 미설정 - 기본 추천 알고리즘 사용');
       }
 
-      // MCP 서비스가 실패하거나 없으면 기본 추천 사용
+      // MCP 서비스가 실패하거나 없으면 GPT-4 또는 기본 추천 사용
+      if (rerankedJobs.length === 0 && openai) {
+        try {
+          console.log('[MAIN-RECS] GPT-4 기반 추천 시작');
+          rerankedJobs = await generateGPT4Recommendations(userProfile, allJobs, 10);
+          console.log(`[MAIN-RECS] GPT-4로 ${rerankedJobs.length}개 공고 추천 완료`);
+        } catch (gptError) {
+          console.error('[MAIN-RECS] GPT-4 추천 실패:', gptError.message);
+        }
+      }
+
+      // GPT-4도 실패하면 기본 알고리즘 사용
       if (rerankedJobs.length === 0) {
         console.log('[MAIN-RECS] 기본 추천 알고리즘으로 공고 선택');
         // 프로필 기반 기본 매칭 (스킬 매칭 위주)
@@ -5275,6 +5299,110 @@ app.get('/api/jobs', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+// ==============================================================================
+// GPT-4 기반 추천 함수
+// ==============================================================================
+
+async function generateGPT4Recommendations(userProfile, jobCandidates, limit) {
+  if (!openai) {
+    console.log('[GPT-4] OpenAI API 키가 없습니다');
+    return [];
+  }
+
+  const formatSkills = (skills) => {
+    if (!skills) return '정보 없음';
+    if (typeof skills === 'string') return skills;
+    if (Array.isArray(skills)) return skills.join(', ');
+    return String(skills);
+  };
+
+  const formatArray = (arr) => {
+    if (!arr) return '정보 없음';
+    if (typeof arr === 'string') return arr;
+    if (Array.isArray(arr)) return arr.join(', ');
+    return String(arr);
+  };
+
+  const prompt = `
+당신은 전문 채용 컨설턴트입니다. 다음 사용자 프로필을 바탕으로 채용공고를 추천해주세요.
+
+**사용자 프로필:**
+- 기술 스킬: ${formatSkills(userProfile.skills)}
+- 경력: ${userProfile.experience || '정보 없음'}
+- 선호 지역: ${formatArray(userProfile.preferred_regions)}
+- 희망 직무: ${formatArray(userProfile.jobs)}
+- 희망 연봉: ${userProfile.expected_salary || '정보 없음'}
+
+**채용공고 목록:**
+${jobCandidates.slice(0, 20).map((job, idx) => `
+${idx + 1}. ${job.title} at ${job.company}
+   - 요구 기술: ${formatSkills(job.skills)}
+   - 경력 요건: ${job.experience}
+   - 위치: ${job.location}
+   - 급여: ${job.salary}
+   - Job ID: ${job.id}
+`).join('')}
+
+각 공고에 대해 매칭도를 분석하고, 상위 ${limit}개를 추천해주세요.
+분석 기준: 기술매칭, 경력매칭, 지역매칭, 직무매칭, 급여매칭
+
+응답은 반드시 다음 JSON 형식으로 해주세요:
+[
+  {
+    "job_id": "1",
+    "match_score": 85,
+    "match_reasons": ["구체적인 매칭 이유 1", "구체적인 매칭 이유 2"],
+    "detailed_analysis": "상세한 분석..."
+  }
+]
+`;
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+      max_completion_tokens: 4000,
+      temperature: 0.7
+    });
+
+    const chatGPTResponse = completion.choices[0].message.content;
+    console.log('[GPT-4] 응답 받음');
+
+    // JSON 파싱 시도
+    let recommendations = [];
+    try {
+      const jsonMatch = chatGPTResponse.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        recommendations = JSON.parse(jsonMatch[0]);
+      }
+    } catch (parseError) {
+      console.error('[GPT-4] JSON 파싱 실패');
+      return [];
+    }
+
+    // 원본 job 데이터와 합치기
+    const enrichedRecommendations = recommendations.map(rec => {
+      const originalJob = jobCandidates.find(job => job.id === rec.job_id);
+      if (!originalJob) return null;
+
+      return {
+        ...originalJob,
+        job_id: originalJob.id,
+        match_score: rec.match_score,
+        match_reasons: rec.match_reasons || [],
+        detailed_analysis: rec.detailed_analysis,
+        powered_by: 'GPT-4'
+      };
+    }).filter(job => job !== null);
+
+    return enrichedRecommendations.slice(0, limit);
+
+  } catch (error) {
+    console.error('[GPT-4] API 오류:', error.message);
+    return [];
+  }
+}
 
 // ==== 404 핸들러 (마지막) ====
 app.use((req, res) => {
