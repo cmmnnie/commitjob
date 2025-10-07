@@ -65,6 +65,12 @@ export default function MenuPage() {
                         <div style={menuDescStyle}>당신의 경력과 스킬에 딱 맞는 채용공고를 AI가 추천해드립니다</div>
                     </Link>
 
+                    <Link to="/ai-interview" style={menuItemStyle}>
+                        <span style={menuIconStyle}>🎤</span>
+                        <div style={menuTitleStyle}>AI 면접 준비</div>
+                        <div style={menuDescStyle}>GPT-5-mini가 생성한 맞춤형 면접 질문으로 면접을 준비하세요</div>
+                    </Link>
+
                     <Link to="/jobs" style={menuItemStyle}>
                         <span style={menuIconStyle}>💼</span>
                         <div style={menuTitleStyle}>채용공고</div>
