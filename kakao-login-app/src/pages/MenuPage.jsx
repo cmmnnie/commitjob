@@ -62,7 +62,7 @@ export default function MenuPage() {
                     <Link to="/ai-recommendation" style={menuItemStyle}>
                         <span style={menuIconStyle}>🤖</span>
                         <div style={menuTitleStyle}>AI 맞춤 추천</div>
-                        <div style={menuDescStyle}>당신의 경력과 스킬에 딱 맞는 채용공고를 AI가 추천해드립니다</div>
+                        <div style={menuDescStyle}>GPT-5-mini가 당신의 경력과 스킬에 딱 맞는 채용공고를 추천해드립니다</div>
                     </Link>
 
                     <Link to="/ai-interview" style={menuItemStyle}>
