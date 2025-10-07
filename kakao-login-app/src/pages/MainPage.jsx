@@ -754,55 +754,146 @@ export default function MainPage() {
                                     left: 0,
                                     right: 0,
                                     bottom: 0,
-                                    background: 'rgba(0, 0, 0, 0.5)',
+                                    background: 'rgba(0, 0, 0, 0.6)',
+                                    backdropFilter: 'blur(4px)',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    zIndex: 3000
+                                    zIndex: 3000,
+                                    animation: 'fadeIn 0.2s ease-out'
                                 }}
                                 onClick={() => setShowLogoutModal(false)}>
                                     <div style={{
                                         background: 'white',
-                                        borderRadius: '16px',
-                                        padding: '30px',
-                                        maxWidth: '350px',
+                                        borderRadius: '24px',
+                                        padding: '40px',
+                                        maxWidth: '440px',
                                         width: '90%',
-                                        boxShadow: '0 10px 40px rgba(0,0,0,0.3)'
+                                        boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+                                        animation: 'slideUp 0.3s ease-out',
+                                        position: 'relative',
+                                        overflow: 'hidden'
                                     }}
                                     onClick={(e) => e.stopPropagation()}>
-                                        <h3 style={{ marginBottom: '15px', fontSize: '1.3rem' }}>로그아웃 하시겠습니까?</h3>
-                                        <p style={{ color: '#666', marginBottom: '25px' }}>로그아웃하면 다시 로그인해야 합니다.</p>
-                                        <div style={{ display: 'flex', gap: '10px' }}>
-                                            <button
-                                                onClick={handleLogout}
-                                                style={{
-                                                    flex: 1,
-                                                    background: '#d32f2f',
-                                                    color: 'white',
-                                                    border: 'none',
-                                                    padding: '12px',
-                                                    borderRadius: '8px',
-                                                    fontSize: '0.95rem',
-                                                    fontWeight: '600',
-                                                    cursor: 'pointer'
+                                        {/* 배경 장식 */}
+                                        <div style={{
+                                            position: 'absolute',
+                                            top: '-50px',
+                                            right: '-50px',
+                                            width: '150px',
+                                            height: '150px',
+                                            background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                                            borderRadius: '50%',
+                                            opacity: 0.1,
+                                            filter: 'blur(40px)'
+                                        }}></div>
+
+                                        <div style={{ position: 'relative', zIndex: 1 }}>
+                                            {/* 아이콘 */}
+                                            <div style={{
+                                                width: '80px',
+                                                height: '80px',
+                                                margin: '0 auto 20px',
+                                                background: 'linear-gradient(135deg, #fff5f8 0%, #ffe8f0 100%)',
+                                                borderRadius: '50%',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                border: '3px solid #ffebf0'
+                                            }}>
+                                                <div style={{
+                                                    fontSize: '2.5rem',
+                                                    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))'
+                                                }}>👋</div>
+                                            </div>
+
+                                            {/* 제목 */}
+                                            <h3 style={{
+                                                marginBottom: '16px',
+                                                fontSize: '1.5rem',
+                                                textAlign: 'center',
+                                                background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                                                WebkitBackgroundClip: 'text',
+                                                WebkitTextFillColor: 'transparent',
+                                                fontWeight: '800',
+                                                letterSpacing: '-0.5px'
+                                            }}>로그아웃</h3>
+
+                                            {/* 설명 */}
+                                            <div style={{
+                                                background: '#f8f9fa',
+                                                borderRadius: '16px',
+                                                padding: '20px',
+                                                marginBottom: '28px',
+                                                border: '1px solid #f1f3f5'
+                                            }}>
+                                                <p style={{
+                                                    color: '#495057',
+                                                    fontSize: '1rem',
+                                                    lineHeight: '1.7',
+                                                    margin: 0,
+                                                    textAlign: 'center'
                                                 }}>
-                                                확인
-                                            </button>
-                                            <button
-                                                onClick={() => setShowLogoutModal(false)}
-                                                style={{
-                                                    flex: 1,
-                                                    background: 'transparent',
-                                                    color: '#666',
-                                                    border: '2px solid #e0e0e0',
-                                                    padding: '12px',
-                                                    borderRadius: '8px',
-                                                    fontSize: '0.95rem',
-                                                    fontWeight: '600',
-                                                    cursor: 'pointer'
-                                                }}>
-                                                취소
-                                            </button>
+                                                    로그아웃 하시겠습니까?<br/>
+                                                    <span style={{ color: '#868e96', fontSize: '0.95rem' }}>다시 로그인해야 서비스를 이용할 수 있습니다</span>
+                                                </p>
+                                            </div>
+
+                                            {/* 버튼 */}
+                                            <div style={{ display: 'flex', gap: '12px', flexDirection: 'column' }}>
+                                                <button
+                                                    onClick={handleLogout}
+                                                    style={{
+                                                        background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                                                        color: 'white',
+                                                        border: 'none',
+                                                        padding: '16px',
+                                                        borderRadius: '14px',
+                                                        fontSize: '1rem',
+                                                        fontWeight: '700',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.3s',
+                                                        boxShadow: '0 8px 20px rgba(245, 87, 108, 0.4)',
+                                                        letterSpacing: '-0.3px'
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.transform = 'translateY(-2px)';
+                                                        e.currentTarget.style.boxShadow = '0 12px 28px rgba(245, 87, 108, 0.5)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.transform = 'translateY(0)';
+                                                        e.currentTarget.style.boxShadow = '0 8px 20px rgba(245, 87, 108, 0.4)';
+                                                    }}>
+                                                    확인
+                                                </button>
+                                                <button
+                                                    onClick={() => setShowLogoutModal(false)}
+                                                    style={{
+                                                        background: 'linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%)',
+                                                        color: '#495057',
+                                                        border: 'none',
+                                                        padding: '16px',
+                                                        borderRadius: '14px',
+                                                        fontSize: '1rem',
+                                                        fontWeight: '700',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.3s',
+                                                        boxShadow: '0 4px 12px rgba(108, 117, 125, 0.2)',
+                                                        letterSpacing: '-0.3px'
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.transform = 'translateY(-2px)';
+                                                        e.currentTarget.style.boxShadow = '0 6px 16px rgba(108, 117, 125, 0.3)';
+                                                        e.currentTarget.style.background = 'linear-gradient(135deg, #dee2e6 0%, #ced4da 100%)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.transform = 'translateY(0)';
+                                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(108, 117, 125, 0.2)';
+                                                        e.currentTarget.style.background = 'linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%)';
+                                                    }}>
+                                                    취소
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
