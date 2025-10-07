@@ -1748,30 +1748,51 @@ app.get("/api/main-recommendations", async (req, res) => {
 
       try {
         const [dbJobs] = await pool.execute(
-          `SELECT id, company, title, category, experience, salary, skills, location, url
+          `SELECT id, company, title, category, url, job_info, conditions
            FROM jobs
            WHERE category IN ('BIGDATA_AI', 'IT')
-           ORDER BY created_at DESC
+           ORDER BY scraped_at DESC
            LIMIT 100`
         );
 
         if (dbJobs.length > 0) {
-          allJobs = dbJobs.map(job => ({
-            id: job.id.toString(),
-            title: job.title,
-            company: job.company,
-            location: job.location ? (typeof job.location === 'string' ?
-              (job.location.startsWith('[') ? JSON.parse(job.location) : [job.location])
-              : job.location) : [],
-            experience: job.experience || "경력무관",
-            skills: job.skills ? (typeof job.skills === 'string' ?
-              (job.skills.startsWith('[') ? JSON.parse(job.skills) : job.skills.split(',').map(s => s.trim()))
-              : job.skills) : [],
-            salary: job.salary || "회사내규에 따름",
-            jobType: job.category === 'BIGDATA_AI' ? '빅데이터/AI' : 'IT',
-            source: 'Database',
-            url: job.url || ''
-          }));
+          allJobs = dbJobs.map(job => {
+            // job_info와 conditions를 JSON으로 파싱
+            let jobInfo = [];
+            let conditions = [];
+
+            try {
+              if (job.job_info) {
+                jobInfo = typeof job.job_info === 'string' ? JSON.parse(job.job_info) : job.job_info;
+              }
+            } catch (e) {
+              jobInfo = [];
+            }
+
+            try {
+              if (job.conditions) {
+                conditions = typeof job.conditions === 'string' ? JSON.parse(job.conditions) : job.conditions;
+              }
+            } catch (e) {
+              conditions = [];
+            }
+
+            // conditions에서 경력 정보 추출
+            const experience = conditions.find(c => c.includes('경력') || c.includes('신입')) || "경력무관";
+
+            return {
+              id: job.id.toString(),
+              title: job.title,
+              company: job.company,
+              location: [], // jobs 테이블에는 location 정보가 없음
+              experience: experience,
+              skills: jobInfo, // job_info를 skills로 사용
+              salary: "회사내규에 따름",
+              jobType: job.category === 'BIGDATA_AI' ? '빅데이터/AI' : 'IT',
+              source: 'Database',
+              url: job.url || ''
+            };
+          });
           console.log(`[MAIN-RECS] DB에서 ${allJobs.length}개 공고 가져옴 (IT/빅데이터AI)`);
         } else {
           console.error('[MAIN-RECS] DB에 채용공고가 없습니다');
