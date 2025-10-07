@@ -1761,7 +1761,7 @@ app.get("/api/main-recommendations", async (req, res) => {
 
       try {
         const [dbJobs] = await pool.execute(
-          `SELECT id, company, title, category, url, job_info, conditions
+          `SELECT id, company, title, category, url, job_info, conditions, company_search_key, registration_info
            FROM jobs
            WHERE category IN ('BIGDATA_AI', 'IT')
            ORDER BY scraped_at DESC
@@ -1770,9 +1770,10 @@ app.get("/api/main-recommendations", async (req, res) => {
 
         if (dbJobs.length > 0) {
           allJobs = dbJobs.map(job => {
-            // job_info와 conditions를 JSON으로 파싱
+            // job_info, conditions, registration_info를 JSON으로 파싱
             let jobInfo = [];
             let conditions = [];
+            let registrationInfo = [];
 
             try {
               if (job.job_info) {
@@ -1790,6 +1791,14 @@ app.get("/api/main-recommendations", async (req, res) => {
               conditions = [];
             }
 
+            try {
+              if (job.registration_info) {
+                registrationInfo = typeof job.registration_info === 'string' ? JSON.parse(job.registration_info) : job.registration_info;
+              }
+            } catch (e) {
+              registrationInfo = [];
+            }
+
             // conditions에서 경력 정보 추출
             const experience = conditions.find(c => c.includes('경력') || c.includes('신입')) || "경력무관";
 
@@ -1797,13 +1806,19 @@ app.get("/api/main-recommendations", async (req, res) => {
               id: job.id.toString(),
               title: job.title,
               company: job.company,
+              category: job.category,
+              url: job.url || '',
+              job_info: jobInfo,
+              conditions: conditions,
+              company_search_key: job.company_search_key || '',
+              registration_info: registrationInfo,
+              // AI 추천용 추가 필드
               location: [], // jobs 테이블에는 location 정보가 없음
               experience: experience,
-              skills: jobInfo, // job_info를 skills로 사용
+              skills: jobInfo, // job_info를 skills로도 제공
               salary: "회사내규에 따름",
               jobType: job.category === 'BIGDATA_AI' ? '빅데이터/AI' : 'IT',
-              source: 'Database',
-              url: job.url || ''
+              source: 'Database'
             };
           });
           console.log(`[MAIN-RECS] DB에서 ${allJobs.length}개 공고 가져옴 (IT/빅데이터AI)`);
