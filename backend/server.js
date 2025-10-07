@@ -5363,7 +5363,7 @@ ${idx + 1}. ${job.title} at ${job.company}
       model: 'gpt-5-mini',
       messages: [{ role: 'user', content: prompt }],
       max_completion_tokens: 4000,
-      temperature: 0.7
+      temperature: 1
     });
 
     const chatGPTResponse = completion.choices[0].message.content;
