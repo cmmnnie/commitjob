@@ -66,6 +66,15 @@ export default function Navigation() {
                 </li>
                 <li style={{ flex: 1 }}>
                     <Link
+                        to="/ai-interview"
+                        style={linkStyle(location.pathname === '/ai-interview')}
+                    >
+                        <span style={iconStyle(location.pathname === '/ai-interview')}>🎤</span>
+                        <span>AI면접</span>
+                    </Link>
+                </li>
+                <li style={{ flex: 1 }}>
+                    <Link
                         to="/jobs"
                         style={linkStyle(location.pathname === '/jobs')}
                     >
