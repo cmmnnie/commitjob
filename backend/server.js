@@ -1894,7 +1894,7 @@ app.get("/api/main-recommendations", async (req, res) => {
       if (rerankedJobs.length === 0 && openai) {
         try {
           console.log('[MAIN-RECS] GPT-4 기반 추천 시작');
-          rerankedJobs = await generateGPT4Recommendations(userProfile, allJobs, 10);
+          rerankedJobs = await generateGPT4Recommendations(userProfile, allJobs, 9);
           console.log(`[MAIN-RECS] GPT-4로 ${rerankedJobs.length}개 공고 추천 완료`);
         } catch (gptError) {
           console.error('[MAIN-RECS] GPT-4 추천 실패:', gptError.message);
@@ -1942,10 +1942,10 @@ app.get("/api/main-recommendations", async (req, res) => {
           };
         });
 
-        // 점수순 정렬 후 상위 10개
+        // 점수순 정렬 후 상위 9개
         rerankedJobs = rerankedJobs
           .sort((a, b) => b.match_score - a.match_score)
-          .slice(0, 10);
+          .slice(0, 9);
 
         console.log(`[MAIN-RECS] 기본 알고리즘으로 ${rerankedJobs.length}개 공고 추천 완료`);
       }
