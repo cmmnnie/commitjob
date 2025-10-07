@@ -23,6 +23,7 @@ export const CONFIG = {
     API: {
         KAKAO_LOGIN_URL: '/auth/kakao/login-url',
         USER_INFO: '/api/me',
-        LOGOUT: '/api/logout'
+        LOGOUT: '/api/logout',
+        DELETE_ACCOUNT: '/api/delete-account'
     }
 };

@@ -392,9 +392,47 @@ async function findOrCreateUser(providerKey, email, name, picture, provider) {
         'INSERT INTO users (provider_key, email, name, picture, provider) VALUES (?, ?, ?, ?, ?)',
         [providerKey, email, name, picture, provider]
       );
+      const newUserId = result.insertId;
       console.log('[DB] 최초 로그인 - 새 사용자 생성:', email);
+
+      // 기본 프로필 생성 (백엔드 또는 프론트엔드 개발자 중 랜덤 선택)
+      const profileTemplates = [
+        {
+          type: '백엔드 개발자',
+          skills: ['Java', 'Spring', 'MySQL', 'Node.js', 'AWS'],
+          experience: '신입',
+          preferred_jobs: '백엔드 개발자',
+          preferred_regions: ['서울', '경기'],
+          expected_salary: '3000만원 이상'
+        },
+        {
+          type: '프론트엔드 개발자',
+          skills: ['JavaScript', 'React', 'TypeScript', 'HTML/CSS', 'Vue.js'],
+          experience: '신입',
+          preferred_jobs: '프론트엔드 개발자',
+          preferred_regions: ['서울', '경기'],
+          expected_salary: '3000만원 이상'
+        }
+      ];
+
+      const selectedTemplate = profileTemplates[Math.floor(Math.random() * profileTemplates.length)];
+
+      await pool.execute(
+        `INSERT INTO user_profiles (user_id, skills, experience, preferred_regions, preferred_jobs, expected_salary, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+        [
+          newUserId,
+          JSON.stringify(selectedTemplate.skills),
+          selectedTemplate.experience,
+          JSON.stringify(selectedTemplate.preferred_regions),
+          selectedTemplate.preferred_jobs,
+          selectedTemplate.expected_salary
+        ]
+      );
+      console.log(`[DB] 기본 프로필 생성 완료: ${selectedTemplate.type}`);
+
       return {
-        id: result.insertId,
+        id: newUserId,
         provider_key: providerKey,
         email,
         name,
@@ -894,6 +932,93 @@ app.post("/api/logout", (req, res) => {
   // 클라이언트에서 localStorage.removeItem('app_session')으로 처리
   console.log('[LOGOUT] Logout request received (localStorage-based auth)');
   res.json({ ok: true });
+});
+
+/**
+ * @swagger
+ * /api/delete-account:
+ *   delete:
+ *     summary: 회원 탈퇴
+ *     description: 사용자 계정 및 관련 프로필 정보를 삭제합니다
+ *     tags: [사용자 프로필]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: 회원 탈퇴 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "회원 탈퇴가 완료되었습니다"
+ *       401:
+ *         description: 인증 실패
+ *       500:
+ *         description: 서버 오류
+ */
+app.delete("/api/delete-account", async (req, res) => {
+  try {
+    // JWT 토큰에서 사용자 ID 추출
+    const token = req.headers.authorization?.split(' ')[1] || req.cookies?.app_session;
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        error: '로그인이 필요합니다'
+      });
+    }
+
+    const { payload } = await jose.jwtVerify(
+      token,
+      new TextEncoder().encode(process.env.JWT_SECRET)
+    );
+
+    const userId = payload.uid;
+    console.log(`[DELETE-ACCOUNT] 회원 탈퇴 요청: user_id=${userId}`);
+
+    // user_profiles 삭제 (ON DELETE CASCADE가 설정되어 있지 않은 경우를 대비)
+    await pool.execute('DELETE FROM user_profiles WHERE user_id = ?', [userId]);
+    console.log(`[DELETE-ACCOUNT] user_profiles 삭제 완료: user_id=${userId}`);
+
+    // users 삭제
+    const [result] = await pool.execute('DELETE FROM users WHERE id = ?', [userId]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        error: '사용자를 찾을 수 없습니다'
+      });
+    }
+
+    console.log(`[DELETE-ACCOUNT] users 삭제 완료: user_id=${userId}`);
+
+    // 쿠키 삭제
+    const isProd = process.env.NODE_ENV === "production";
+    res.cookie("app_session", "", {
+      path: "/",
+      httpOnly: true,
+      secure: isProd,
+      sameSite: "none",
+      expires: new Date(0)
+    });
+
+    res.json({
+      success: true,
+      message: '회원 탈퇴가 완료되었습니다'
+    });
+  } catch (error) {
+    console.error('[DELETE-ACCOUNT] Error:', error);
+    res.status(500).json({
+      success: false,
+      error: '회원 탈퇴 처리 중 오류가 발생했습니다'
+    });
+  }
 });
 
 /* ==================== 세션/프로필/인제스트 ==================== */
@@ -4016,10 +4141,11 @@ app.post('/api/interview-questions', async (req, res) => {
     const [userRows] = await pool.execute(userQuery, [user_id]);
     const userProfile = userRows.length > 0 ? userRows[0] : null;
 
+    // 사용자 프로필 데이터 결정 (입력받은 데이터 우선, 없으면 DB에서)
+    let finalUserProfile;
+
     // GPT MCP 서비스를 통한 면접 질문 생성
     try {
-      // 사용자 프로필 데이터 결정 (입력받은 데이터 우선, 없으면 DB에서)
-      let finalUserProfile;
 
       if (user_profile && custom_company) {
         // 사용자가 직접 입력한 프로필 데이터 사용

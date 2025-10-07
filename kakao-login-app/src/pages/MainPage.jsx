@@ -15,6 +15,7 @@ export default function MainPage() {
     const [loadingMessage, setLoadingMessage] = useState('로그인 상태 확인 중...');
     const [statusMessage, setStatusMessage] = useState({ text: '', type: '' });
     const [showLogoutModal, setShowLogoutModal] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [bigdataJobs, setBigdataJobs] = useState([]);
     const [itJobs, setItJobs] = useState([]);
     const [currentView, setCurrentView] = useState('jobs'); // 'jobs', 'login', 'profile'
@@ -255,6 +256,53 @@ export default function MainPage() {
                 showStatus(`로그인 실패: ${error.message}`, 'error');
             }
             setIsLoading(false);
+        }
+    };
+
+    const handleDeleteAccount = async () => {
+        console.log('[APP] 회원 탈퇴 시작');
+        setShowDeleteModal(false);
+
+        try {
+            setIsLoading(true);
+            setLoadingMessage('회원 탈퇴 처리 중...');
+
+            const token = localStorage.getItem('app_session');
+
+            // 백엔드 회원 탈퇴 수행
+            const response = await fetch(`${CONFIG.BACKEND_URL}${CONFIG.API.DELETE_ACCOUNT}`, {
+                method: 'DELETE',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || '회원 탈퇴에 실패했습니다');
+            }
+
+            // 로컬 데이터 완전 삭제
+            localStorage.clear();
+            sessionStorage.clear();
+
+            console.log('[APP] 회원 탈퇴 완료');
+            setCurrentUser(null);
+            setCurrentView('jobs');
+            showStatus('회원 탈퇴가 완료되었습니다', 'success');
+
+            // 페이지 새로고침
+            setTimeout(() => {
+                window.location.href = window.location.origin + window.location.pathname;
+            }, 1500);
+
+        } catch (error) {
+            console.error('[APP] 회원 탈퇴 오류:', error);
+            setIsLoading(false);
+            showStatus(error.message || '회원 탈퇴 중 오류가 발생했습니다', 'error');
         }
     };
 
@@ -673,7 +721,7 @@ export default function MainPage() {
                                     로그아웃
                                 </button>
                                 <button
-                                    onClick={() => alert('회원탈퇴 기능은 준비 중입니다.')}
+                                    onClick={() => setShowDeleteModal(true)}
                                     style={{
                                         flex: 1,
                                         background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
@@ -742,6 +790,72 @@ export default function MainPage() {
                                             </button>
                                             <button
                                                 onClick={() => setShowLogoutModal(false)}
+                                                style={{
+                                                    flex: 1,
+                                                    background: 'transparent',
+                                                    color: '#666',
+                                                    border: '2px solid #e0e0e0',
+                                                    padding: '12px',
+                                                    borderRadius: '8px',
+                                                    fontSize: '0.95rem',
+                                                    fontWeight: '600',
+                                                    cursor: 'pointer'
+                                                }}>
+                                                취소
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {showDeleteModal && (
+                                <div style={{
+                                    position: 'fixed',
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                    background: 'rgba(0, 0, 0, 0.5)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    zIndex: 3000
+                                }}
+                                onClick={() => setShowDeleteModal(false)}>
+                                    <div style={{
+                                        background: 'white',
+                                        borderRadius: '16px',
+                                        padding: '30px',
+                                        maxWidth: '400px',
+                                        width: '90%',
+                                        boxShadow: '0 10px 40px rgba(0,0,0,0.3)'
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}>
+                                        <div style={{ fontSize: '2.5rem', textAlign: 'center', marginBottom: '15px' }}>⚠️</div>
+                                        <h3 style={{ marginBottom: '15px', fontSize: '1.3rem', textAlign: 'center', color: '#d32f2f' }}>회원 탈퇴 확인</h3>
+                                        <p style={{ color: '#666', marginBottom: '20px', lineHeight: '1.6' }}>
+                                            정말로 탈퇴하시겠습니까?<br/>
+                                            <strong>모든 데이터가 영구적으로 삭제</strong>되며,<br/>
+                                            복구할 수 없습니다.
+                                        </p>
+                                        <div style={{ display: 'flex', gap: '10px' }}>
+                                            <button
+                                                onClick={handleDeleteAccount}
+                                                style={{
+                                                    flex: 1,
+                                                    background: '#d32f2f',
+                                                    color: 'white',
+                                                    border: 'none',
+                                                    padding: '12px',
+                                                    borderRadius: '8px',
+                                                    fontSize: '0.95rem',
+                                                    fontWeight: '600',
+                                                    cursor: 'pointer'
+                                                }}>
+                                                탈퇴하기
+                                            </button>
+                                            <button
+                                                onClick={() => setShowDeleteModal(false)}
                                                 style={{
                                                     flex: 1,
                                                     background: 'transparent',
