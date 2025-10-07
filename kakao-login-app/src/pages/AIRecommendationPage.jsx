@@ -9,6 +9,15 @@ export default function AIRecommendationPage() {
     const [recommendations, setRecommendations] = useState(null);
     const [error, setError] = useState(null);
 
+    // 이름 마스킹 함수
+    const maskName = (name) => {
+        if (!name || name.length === 0) return '사용자';
+        if (name.length === 1) return name;
+        if (name.length === 2) return name[0] + '*';
+        // 3글자 이상: 첫 글자 + 중간 * + 마지막 글자
+        return name[0] + '*'.repeat(name.length - 2) + name[name.length - 1];
+    };
+
     useEffect(() => {
         checkLoginAndFetchRecommendations();
     }, []);
@@ -384,7 +393,7 @@ export default function AIRecommendationPage() {
                             fontWeight: '700'
                         }}>AI 맞춤 채용공고</h1>
                         <p style={{ color: '#666', fontSize: '1rem' }}>
-                            {currentUser?.name}님의 프로필을 기반으로 추천된 채용공고입니다
+                            {maskName(currentUser?.name)}님의 프로필을 기반으로 추천된 채용공고입니다
                         </p>
                     </div>
 
