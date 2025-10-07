@@ -1723,7 +1723,17 @@ app.get("/api/main-recommendations", async (req, res) => {
         };
         console.log(`[MAIN-RECS] Found user profile for user ${user_id}:`, userProfile);
       } else {
-        console.log(`[MAIN-RECS] No user profile found for user ${user_id}, using default`);
+        console.log(`[MAIN-RECS] No user profile found for user ${user_id}, using default profile`);
+        // 프로필이 없는 경우 기본 프로필 생성
+        userProfile = {
+          name: "사용자",
+          email: "",
+          skills: ["JavaScript", "Python"],
+          experience: "신입-3년",
+          preferred_regions: ["서울", "경기"],
+          jobs: ["개발자"],
+          expected_salary: "3000-5000만원"
+        };
       }
     } catch (profileError) {
       console.error('[MAIN-RECS] Error fetching user profile:', profileError);
@@ -1733,101 +1743,60 @@ app.get("/api/main-recommendations", async (req, res) => {
     try {
       let allJobs = [];
 
-      // 1단계: Catch 스크래퍼에서 실시간 공고 수집
+      // jobs 테이블에서 공고 가져오기 (스크래퍼 사용 안 함)
+      console.log('[MAIN-RECS] DB에서 채용공고 조회 중...');
+
       try {
-        console.log('[MAIN-RECS] Catch 스크래퍼에서 실시간 공고 수집 중...');
+        const [dbJobs] = await pool.execute(
+          `SELECT id, company, title, category, experience, salary, skills, location, url
+           FROM jobs
+           WHERE category IN ('BIGDATA_AI', 'IT')
+           ORDER BY created_at DESC
+           LIMIT 100`
+        );
 
-        // Catch 스크래퍼 초기화 및 로그인
-        try {
-          await axios.post('http://localhost:3000/api/init', {}, { timeout: 5000 });
-          console.log('[MAIN-RECS] Catch 스크래퍼 초기화 완료');
-        } catch (initErr) {
-          console.log('[MAIN-RECS] Catch 초기화 생략 (이미 초기화됨 또는 타임아웃)');
+        if (dbJobs.length > 0) {
+          allJobs = dbJobs.map(job => ({
+            id: job.id.toString(),
+            title: job.title,
+            company: job.company,
+            location: job.location ? (typeof job.location === 'string' ?
+              (job.location.startsWith('[') ? JSON.parse(job.location) : [job.location])
+              : job.location) : [],
+            experience: job.experience || "경력무관",
+            skills: job.skills ? (typeof job.skills === 'string' ?
+              (job.skills.startsWith('[') ? JSON.parse(job.skills) : job.skills.split(',').map(s => s.trim()))
+              : job.skills) : [],
+            salary: job.salary || "회사내규에 따름",
+            jobType: job.category === 'BIGDATA_AI' ? '빅데이터/AI' : 'IT',
+            source: 'Database',
+            url: job.url || ''
+          }));
+          console.log(`[MAIN-RECS] DB에서 ${allJobs.length}개 공고 가져옴 (IT/빅데이터AI)`);
+        } else {
+          console.error('[MAIN-RECS] DB에 채용공고가 없습니다');
+          return res.status(404).json({
+            error: '채용공고가 없습니다',
+            빅데이터_AI: [],
+            IT: []
+          });
         }
-
-        try {
-          await axios.post('http://localhost:3000/api/login', {
-            username: 'test0137',
-            password: '#test0808'
-          }, { timeout: 60000 }); // 로그인 타임아웃 60초로 증가
-          console.log('[MAIN-RECS] Catch 로그인 완료');
-          // 로그인 후 브라우저가 안정화될 때까지 대기
-          await new Promise(resolve => setTimeout(resolve, 3000));
-        } catch (loginErr) {
-          console.log('[MAIN-RECS] Catch 로그인 생략 (이미 로그인됨 또는 타임아웃)');
-        }
-
-        const catchResponse = await axios.get('http://localhost:3000/api/homepage-jobs', {
-          timeout: 200000 // 200초 타임아웃 (스크래핑 시간 고려)
-        });
-
-        if (catchResponse.data && catchResponse.data.results) {
-          // Catch 3 응답 형식: { results: { it_jobs: [], bigdata_ai_jobs: [] } }
-          const itJobs = catchResponse.data.results.it_jobs || [];
-          const bigdataJobs = catchResponse.data.results.bigdata_ai_jobs || [];
-          const catchJobs = [...itJobs, ...bigdataJobs];
-
-          console.log(`[MAIN-RECS] Catch에서 ${catchJobs.length}개 공고 수집 완료 (IT: ${itJobs.length}, 빅데이터/AI: ${bigdataJobs.length})`);
-
-          if (catchJobs.length > 0) {
-            // Catch 공고를 표준 형식으로 변환
-            allJobs = catchJobs.map((job, index) => {
-              // Catch 응답 구조: conditions, job_info, registration_info는 배열
-              const conditions = job.conditions || [];
-              const jobInfo = job.job_info || [];
-              const registrationInfo = job.registration_info || [];
-
-              // 경력 정보 추출 (conditions 배열에서)
-              const experience = conditions.find(c => c.includes('경력') || c.includes('신입')) || "경력무관";
-
-              // 직무 정보에서 location 추출 시도 (일반적으로 job_info에 없으므로 빈 배열)
-              // 실제로는 공고 상세에서 가져와야 함
-              const location = [];
-
-              // job_info 배열을 skills로 사용 (빅데이터/AI, 네트워크/서버/보안 등)
-              const skills = jobInfo;
-
-              // jobType 결정: bigdata_ai_jobs 배열에 있으면 빅데이터/AI, it_jobs 배열에 있으면 IT
-              const jobType = index < bigdataJobs.length ? '빅데이터/AI' : 'IT';
-
-              return {
-                id: job.job_id || `catch_${Date.now()}_${Math.random()}`,
-                title: job.title,
-                company: job.company,
-                location: location,
-                experience: experience,
-                skills: skills,
-                salary: "회사내규에 따름", // Catch는 연봉 정보를 제공하지 않음
-                jobType: jobType,
-                source: 'Catch 실시간',
-                url: job.url // 공고 URL 추가
-              };
-            });
-          } else {
-            console.warn('[MAIN-RECS] Catch에서 공고 0개 수집됨');
-            return res.status(500).json({
-              error: 'Catch 스크래퍼에서 공고를 가져오지 못했습니다. Catch 서버를 확인하세요.',
-              빅데이터_AI: [],
-              IT: []
-            });
-          }
-        }
-      } catch (catchError) {
-        console.error('[MAIN-RECS] Catch 스크래퍼 호출 실패:', catchError.message);
+      } catch (dbError) {
+        console.error('[MAIN-RECS] DB 조회 실패:', dbError.message);
         return res.status(500).json({
-          error: `Catch 스크래퍼 연결 실패: ${catchError.message}`,
+          error: `DB 조회 실패: ${dbError.message}`,
           빅데이터_AI: [],
           IT: []
         });
       }
 
-      console.log(`[MAIN-RECS] 총 ${allJobs.length}개 공고 준비 완료 (출처: Catch 스크래퍼)`);
+      console.log(`[MAIN-RECS] 총 ${allJobs.length}개 공고 준비 완료 (출처: Database)`);
 
-      // Catch에서 공고를 가져오지 못하면 에러 반환 (DB 폴백 제거)
+      // 공고가 없으면 에러 반환
       if (allJobs.length === 0) {
-        console.error('[MAIN-RECS] Catch 스크래퍼에서 공고를 가져오지 못했습니다');
-        return res.status(500).json({
-          error: 'Catch 스크래퍼에서 공고를 가져오지 못했습니다',
+        console.error('[MAIN-RECS] 공고를 가져오지 못했습니다');
+        return res.status(404).json({
+          error: '공고를 가져오지 못했습니다',
           빅데이터_AI: [],
           IT: []
         });
