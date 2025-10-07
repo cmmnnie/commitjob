@@ -404,7 +404,7 @@ export default function AIRecommendationPage() {
                                 총 {allJobs.length}개의 맞춤 채용공고
                             </p>
                             <p style={{ fontSize: '0.9rem', color: '#666' }}>
-                                GPT-4가 분석한 매칭 이유와 실제 기업 데이터를 확인해보세요
+                                GPT-5-mini가 분석한 매칭 이유와 실제 기업 데이터를 확인해보세요
                             </p>
                         </div>
                     )}
