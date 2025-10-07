@@ -5373,7 +5373,7 @@ ${idx + 1}. ${job.title} at ${job.company}
           content: prompt
         }
       ],
-      max_completion_tokens: 4000,
+      max_completion_tokens: 16000,
       temperature: 1,
       response_format: { type: "json_object" }
     });
