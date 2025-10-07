@@ -840,10 +840,11 @@ export default function MainPage() {
                                             </div>
 
                                             {/* 버튼 */}
-                                            <div style={{ display: 'flex', gap: '12px', flexDirection: 'column' }}>
+                                            <div style={{ display: 'flex', gap: '12px' }}>
                                                 <button
                                                     onClick={handleLogout}
                                                     style={{
+                                                        flex: 1,
                                                         background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
                                                         color: 'white',
                                                         border: 'none',
@@ -869,6 +870,7 @@ export default function MainPage() {
                                                 <button
                                                     onClick={() => setShowLogoutModal(false)}
                                                     style={{
+                                                        flex: 1,
                                                         background: 'linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%)',
                                                         color: '#495057',
                                                         border: 'none',
@@ -1008,10 +1010,11 @@ export default function MainPage() {
                                             </div>
 
                                             {/* 버튼 */}
-                                            <div style={{ display: 'flex', gap: '12px', flexDirection: 'column' }}>
+                                            <div style={{ display: 'flex', gap: '12px' }}>
                                                 <button
                                                     onClick={handleDeleteAccount}
                                                     style={{
+                                                        flex: 1,
                                                         background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
                                                         color: 'white',
                                                         border: 'none',
@@ -1037,6 +1040,7 @@ export default function MainPage() {
                                                 <button
                                                     onClick={() => setShowDeleteModal(false)}
                                                     style={{
+                                                        flex: 1,
                                                         background: 'linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%)',
                                                         color: '#495057',
                                                         border: 'none',
