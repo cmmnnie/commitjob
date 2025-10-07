@@ -59,7 +59,20 @@ export default function AIRecommendationPage() {
 
             setCurrentUser(userData.user);
 
-            // 2. AI 추천 채용공고 가져오기
+            // 2. 캐시된 추천 결과 확인
+            const cacheKey = `ai_recommendations_${userData.user.id}`;
+            const cachedRecommendations = sessionStorage.getItem(cacheKey);
+
+            if (cachedRecommendations) {
+                // 캐시된 데이터가 있으면 사용
+                console.log('[AI 추천] 캐시된 추천 결과 사용');
+                setRecommendations(JSON.parse(cachedRecommendations));
+                setIsLoading(false);
+                return;
+            }
+
+            // 3. AI 추천 채용공고 가져오기 (캐시 없을 때만)
+            console.log('[AI 추천] 새로운 추천 요청');
             const recommendResponse = await fetch(
                 `${CONFIG.BACKEND_URL}/api/main-recommendations?user_id=${userData.user.id}`,
                 {
@@ -77,6 +90,9 @@ export default function AIRecommendationPage() {
             }
 
             const recommendData = await recommendResponse.json();
+
+            // 4. 추천 결과를 sessionStorage에 저장
+            sessionStorage.setItem(cacheKey, JSON.stringify(recommendData));
             setRecommendations(recommendData);
 
         } catch (err) {
@@ -89,6 +105,17 @@ export default function AIRecommendationPage() {
 
     const handleLogin = () => {
         navigate('/?view=login');
+    };
+
+    const handleRefresh = async () => {
+        if (!currentUser) return;
+
+        // 캐시 삭제
+        const cacheKey = `ai_recommendations_${currentUser.id}`;
+        sessionStorage.removeItem(cacheKey);
+
+        // 다시 추천 받기
+        await checkLoginAndFetchRecommendations();
     };
 
     const JobCard = ({ job }) => (
@@ -384,7 +411,7 @@ export default function AIRecommendationPage() {
                     marginBottom: '20px',
                     boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)'
                 }}>
-                    <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                    <div style={{ textAlign: 'center', marginBottom: '20px', position: 'relative' }}>
                         <div style={{ fontSize: '3rem', marginBottom: '10px' }}>🤖</div>
                         <h1 style={{
                             fontSize: '2rem',
@@ -392,9 +419,40 @@ export default function AIRecommendationPage() {
                             marginBottom: '10px',
                             fontWeight: '700'
                         }}>AI 맞춤 채용공고</h1>
-                        <p style={{ color: '#666', fontSize: '1rem' }}>
+                        <p style={{ color: '#666', fontSize: '1rem', marginBottom: '15px' }}>
                             {maskName(currentUser?.name)}님의 프로필을 기반으로 추천된 채용공고입니다
                         </p>
+                        <button
+                            onClick={handleRefresh}
+                            disabled={isLoading}
+                            style={{
+                                background: isLoading
+                                    ? '#cccccc'
+                                    : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                color: 'white',
+                                border: 'none',
+                                padding: '10px 20px',
+                                borderRadius: '10px',
+                                fontSize: '0.9rem',
+                                fontWeight: '600',
+                                cursor: isLoading ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.2s',
+                                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+                            }}
+                            onMouseEnter={(e) => {
+                                if (!isLoading) {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.4)';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (!isLoading) {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
+                                }
+                            }}>
+                            {isLoading ? '새로고침 중...' : '🔄 새로고침'}
+                        </button>
                     </div>
 
                     {allJobs.length > 0 && (
