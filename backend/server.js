@@ -1814,33 +1814,98 @@ app.get("/api/main-recommendations", async (req, res) => {
         console.log(`  ... 외 ${allJobs.length - 10}개 공고`);
       }
 
-      // GPT MCP에 추천 요청
-      const mcpResponse = await axios.post(
-        `${process.env.MCP_RECS_BASE}/tools/rerank_jobs`,
-        {
-          user_profile: userProfile || {
-            skills: [],
-            experience: "신입",
-            preferred_regions: [],
-            jobs: [],
-            expected_salary: ""
-          },
-          job_candidates: allJobs.slice(0, 20).map(job => ({
-            ...job,
-            job_id: job.id || job.job_id  // id를 job_id로 변환
-          })),
-          limit: 10  // 10개의 맞춤형 추천 반환
-        },
-        {
-          timeout: 180000,
-          headers: { 'Content-Type': 'application/json' }
+      // GPT MCP에 추천 요청 (MCP 서비스가 없으면 기본 추천 사용)
+      let rerankedJobs = [];
+
+      if (process.env.MCP_RECS_BASE && process.env.MCP_RECS_BASE !== 'http://localhost:4002') {
+        try {
+          console.log(`[MAIN-RECS] GPT MCP 서비스 호출 중... (${process.env.MCP_RECS_BASE})`);
+          const mcpResponse = await axios.post(
+            `${process.env.MCP_RECS_BASE}/tools/rerank_jobs`,
+            {
+              user_profile: userProfile || {
+                skills: [],
+                experience: "신입",
+                preferred_regions: [],
+                jobs: [],
+                expected_salary: ""
+              },
+              job_candidates: allJobs.slice(0, 20).map(job => ({
+                ...job,
+                job_id: job.id || job.job_id  // id를 job_id로 변환
+              })),
+              limit: 10  // 10개의 맞춤형 추천 반환
+            },
+            {
+              timeout: 30000,  // 30초로 타임아웃 단축
+              headers: { 'Content-Type': 'application/json' }
+            }
+          );
+
+          console.log(`[MAIN-RECS] GPT MCP response received for user ${user_id}`);
+
+          if (mcpResponse.data && mcpResponse.data.success && mcpResponse.data.recommendations) {
+            rerankedJobs = mcpResponse.data.recommendations;
+            console.log(`[MAIN-RECS] GPT reranked ${rerankedJobs.length} jobs`);
+          }
+        } catch (mcpError) {
+          console.error('[MAIN-RECS] MCP 서비스 호출 실패:', mcpError.message);
+          console.log('[MAIN-RECS] 기본 추천 알고리즘 사용');
         }
-      );
+      } else {
+        console.log('[MAIN-RECS] MCP 서비스 미설정 - 기본 추천 알고리즘 사용');
+      }
 
-      console.log(`[MAIN-RECS] GPT MCP response received for user ${user_id}`);
+      // MCP 서비스가 실패하거나 없으면 기본 추천 사용
+      if (rerankedJobs.length === 0) {
+        console.log('[MAIN-RECS] 기본 추천 알고리즘으로 공고 선택');
+        // 프로필 기반 기본 매칭 (스킬 매칭 위주)
+        const userSkills = (userProfile?.skills || []).map(s => s.toLowerCase());
 
-      if (mcpResponse.data && mcpResponse.data.success && mcpResponse.data.recommendations) {
-        const rerankedJobs = mcpResponse.data.recommendations;
+        rerankedJobs = allJobs.map(job => {
+          let matchScore = 50; // 기본 점수
+          const jobSkills = (job.skills || []).map(s => s.toLowerCase());
+
+          // 스킬 매칭 점수
+          const matchingSkills = jobSkills.filter(js =>
+            userSkills.some(us => js.includes(us) || us.includes(js))
+          );
+          matchScore += matchingSkills.length * 10;
+
+          // 경력 매칭
+          if (userProfile?.experience && job.experience) {
+            if (job.experience.includes('신입') && userProfile.experience.includes('신입')) {
+              matchScore += 10;
+            }
+          }
+
+          // 지역 매칭
+          if (userProfile?.preferred_regions && job.location) {
+            const matchingRegions = userProfile.preferred_regions.filter(r =>
+              job.location.some(l => l.includes(r) || r.includes(l))
+            );
+            matchScore += matchingRegions.length * 5;
+          }
+
+          return {
+            ...job,
+            job_id: job.id,
+            match_score: Math.min(matchScore, 95),
+            match_reasons: matchingSkills.length > 0
+              ? [`${matchingSkills.length}개 기술스택 매칭`]
+              : ['기본 추천']
+          };
+        });
+
+        // 점수순 정렬 후 상위 10개
+        rerankedJobs = rerankedJobs
+          .sort((a, b) => b.match_score - a.match_score)
+          .slice(0, 10);
+
+        console.log(`[MAIN-RECS] 기본 알고리즘으로 ${rerankedJobs.length}개 공고 추천 완료`);
+      }
+
+      if (rerankedJobs && rerankedJobs.length > 0) {
 
         console.log(`[MAIN-RECS] GPT reranked ${rerankedJobs.length} jobs for user ${user_id}`);
 
