@@ -1905,18 +1905,18 @@ app.get("/api/main-recommendations", async (req, res) => {
         console.log('[MAIN-RECS] MCP 서비스 미설정 - 기본 추천 알고리즘 사용');
       }
 
-      // MCP 서비스가 실패하거나 없으면 GPT-4 또는 기본 추천 사용
+      // MCP 서비스가 실패하거나 없으면 GPT-5-mini 또는 기본 추천 사용
       if (rerankedJobs.length === 0 && openai) {
         try {
           console.log('[MAIN-RECS] GPT-5-mini 기반 추천 시작');
-          rerankedJobs = await generateGPT4Recommendations(userProfile, allJobs, 9);
+          rerankedJobs = await generateGPT4Recommendations(userProfile, allJobs, 6);
           console.log(`[MAIN-RECS] GPT-5-mini로 ${rerankedJobs.length}개 공고 추천 완료`);
         } catch (gptError) {
-          console.error('[MAIN-RECS] GPT-4 추천 실패:', gptError.message);
+          console.error('[MAIN-RECS] GPT-5-mini 추천 실패:', gptError.message);
         }
       }
 
-      // GPT-4도 실패하면 기본 알고리즘 사용
+      // GPT-5-mini도 실패하면 기본 알고리즘 사용
       if (rerankedJobs.length === 0) {
         console.log('[MAIN-RECS] 기본 추천 알고리즘으로 공고 선택');
         // 프로필 기반 기본 매칭 (스킬 매칭 위주)
@@ -1957,10 +1957,10 @@ app.get("/api/main-recommendations", async (req, res) => {
           };
         });
 
-        // 점수순 정렬 후 상위 9개
+        // 점수순 정렬 후 상위 6개
         rerankedJobs = rerankedJobs
           .sort((a, b) => b.match_score - a.match_score)
-          .slice(0, 9);
+          .slice(0, 6);
 
         console.log(`[MAIN-RECS] 기본 알고리즘으로 ${rerankedJobs.length}개 공고 추천 완료`);
       }
