@@ -4253,61 +4253,62 @@ app.post('/api/interview-questions', async (req, res) => {
           console.error('[INTERVIEW-QUESTIONS] GPT-5-mini 오류:', gptError.message);
         }
       }
-    }
 
-    // GPT-5-mini도 실패 시 폴백 질문 생성
-    const fallbackQuestions = [
-      {
-        id: 1,
-        question: "자기소개를 해주세요.",
-        category: "인성",
-        difficulty: "쉬움"
-      },
-      {
-        id: 2,
-        question: `${jobInfo.company_name}에 지원한 이유는 무엇인가요?`,
-        category: "지원동기",
-        difficulty: "쉬움"
-      },
-      {
-        id: 3,
-        question: `${jobInfo.title} 포지션에서 가장 중요하다고 생각하는 역량은 무엇인가요?`,
-        category: "직무 이해",
-        difficulty: "보통"
-      },
-      {
-        id: 4,
-        question: "최근에 진행한 프로젝트나 학습한 기술에 대해 설명해주세요.",
-        category: "기술 역량",
-        difficulty: "보통"
-      },
-      {
-        id: 5,
-        question: "어려운 문제를 해결한 경험이 있다면 공유해주세요.",
-        category: "문제해결",
-        difficulty: "어려움"
+      // GPT-5-mini도 실패 시 폴백 질문 생성
+      console.log('[INTERVIEW-QUESTIONS] 폴백 질문 생성 시작');
+      const fallbackQuestions = [
+        {
+          id: 1,
+          question: "자기소개를 해주세요.",
+          category: "인성",
+          difficulty: "쉬움"
+        },
+        {
+          id: 2,
+          question: `${jobInfo.company_name}에 지원한 이유는 무엇인가요?`,
+          category: "지원동기",
+          difficulty: "쉬움"
+        },
+        {
+          id: 3,
+          question: `${jobInfo.title} 포지션에서 가장 중요하다고 생각하는 역량은 무엇인가요?`,
+          category: "직무 이해",
+          difficulty: "보통"
+        },
+        {
+          id: 4,
+          question: "최근에 진행한 프로젝트나 학습한 기술에 대해 설명해주세요.",
+          category: "기술 역량",
+          difficulty: "보통"
+        },
+        {
+          id: 5,
+          question: "어려운 문제를 해결한 경험이 있다면 공유해주세요.",
+          category: "문제해결",
+          difficulty: "어려움"
+        }
+      ];
+
+      // 폴백 질문 기록 저장 (job_id가 있을 때만)
+      if (job_id) {
+        const logQuery = `
+          INSERT INTO interview_logs (user_id, job_id, questions, created_at)
+          VALUES (?, ?, ?, NOW())
+        `;
+
+        await pool.execute(logQuery, [user_id, job_id, JSON.stringify(fallbackQuestions)]);
       }
-    ];
 
-    // 폴백 질문 기록 저장 (job_id가 있을 때만)
-    if (job_id) {
-      const logQuery = `
-        INSERT INTO interview_logs (user_id, job_id, questions, created_at)
-        VALUES (?, ?, ?, NOW())
-      `;
-
-      await pool.execute(logQuery, [user_id, job_id, JSON.stringify(fallbackQuestions)]);
+      return res.json({
+        success: true,
+        job_title: jobInfo.title,
+        company: jobInfo.company_name,
+        questions: fallbackQuestions,
+        total_questions: fallbackQuestions.length,
+        powered_by: "Fallback Algorithm",
+        generated_at: new Date().toISOString()
+      });
     }
-
-    res.json({
-      success: true,
-      job_title: jobInfo.title,
-      company: jobInfo.company_name,
-      questions: fallbackQuestions,
-      total_questions: fallbackQuestions.length,
-      powered_by: "Fallback Algorithm",
-      generated_at: new Date().toISOString()
-    });
 
   } catch (error) {
     console.error('[INTERVIEW-QUESTIONS] Error generating questions:', error);
