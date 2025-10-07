@@ -404,77 +404,171 @@ export default function AIRecommendationPage() {
                 margin: '0 auto'
             }}>
                 {/* 헤더 */}
+                {/* 헤더 섹션 */}
                 <div style={{
-                    background: 'white',
-                    borderRadius: '20px',
-                    padding: '30px',
-                    marginBottom: '20px',
-                    boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)'
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    borderRadius: '24px',
+                    padding: '40px 30px',
+                    marginBottom: '24px',
+                    boxShadow: '0 20px 60px rgba(102, 126, 234, 0.3)',
+                    position: 'relative',
+                    overflow: 'hidden'
                 }}>
-                    <div style={{ textAlign: 'center', marginBottom: '20px', position: 'relative' }}>
-                        <div style={{ fontSize: '3rem', marginBottom: '10px' }}>🤖</div>
-                        <h1 style={{
-                            fontSize: '2rem',
-                            color: '#667eea',
-                            marginBottom: '10px',
-                            fontWeight: '700'
-                        }}>AI 맞춤 채용공고</h1>
-                        <p style={{ color: '#666', fontSize: '1rem', marginBottom: '15px' }}>
-                            {maskName(currentUser?.name)}님의 프로필을 기반으로 추천된 채용공고입니다
-                        </p>
-                        <button
-                            onClick={handleRefresh}
-                            disabled={isLoading}
-                            style={{
-                                background: isLoading
-                                    ? '#cccccc'
-                                    : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                color: 'white',
-                                border: 'none',
-                                padding: '10px 20px',
-                                borderRadius: '10px',
-                                fontSize: '0.9rem',
-                                fontWeight: '600',
-                                cursor: isLoading ? 'not-allowed' : 'pointer',
-                                transition: 'all 0.2s',
-                                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
-                            }}
-                            onMouseEnter={(e) => {
-                                if (!isLoading) {
-                                    e.currentTarget.style.transform = 'translateY(-2px)';
-                                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.4)';
-                                }
-                            }}
-                            onMouseLeave={(e) => {
-                                if (!isLoading) {
-                                    e.currentTarget.style.transform = 'translateY(0)';
-                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
-                                }
+                    {/* 배경 장식 요소 */}
+                    <div style={{
+                        position: 'absolute',
+                        top: '-50px',
+                        right: '-50px',
+                        width: '200px',
+                        height: '200px',
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        borderRadius: '50%',
+                        filter: 'blur(40px)'
+                    }}></div>
+                    <div style={{
+                        position: 'absolute',
+                        bottom: '-30px',
+                        left: '-30px',
+                        width: '150px',
+                        height: '150px',
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        borderRadius: '50%',
+                        filter: 'blur(30px)'
+                    }}></div>
+
+                    <div style={{ position: 'relative', zIndex: 1 }}>
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: '20px'
+                        }}>
+                            <div style={{ flex: 1 }}>
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '12px',
+                                    marginBottom: '12px'
+                                }}>
+                                    <div style={{
+                                        fontSize: '2.5rem',
+                                        filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))'
+                                    }}>🤖</div>
+                                    <h1 style={{
+                                        fontSize: '2rem',
+                                        color: 'white',
+                                        margin: 0,
+                                        fontWeight: '800',
+                                        letterSpacing: '-0.5px'
+                                    }}>AI 맞춤 추천</h1>
+                                </div>
+                                <p style={{
+                                    color: 'rgba(255, 255, 255, 0.95)',
+                                    fontSize: '1rem',
+                                    margin: 0,
+                                    fontWeight: '500'
+                                }}>
+                                    <strong>{maskName(currentUser?.name)}님</strong>에게 딱 맞는 채용공고
+                                </p>
+                            </div>
+                            <button
+                                onClick={handleRefresh}
+                                disabled={isLoading}
+                                style={{
+                                    background: 'rgba(255, 255, 255, 0.25)',
+                                    backdropFilter: 'blur(10px)',
+                                    color: 'white',
+                                    border: '2px solid rgba(255, 255, 255, 0.3)',
+                                    padding: '12px 24px',
+                                    borderRadius: '12px',
+                                    fontSize: '0.95rem',
+                                    fontWeight: '600',
+                                    cursor: isLoading ? 'not-allowed' : 'pointer',
+                                    transition: 'all 0.3s',
+                                    opacity: isLoading ? 0.6 : 1,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                                }}
+                                onMouseEnter={(e) => {
+                                    if (!isLoading) {
+                                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.35)';
+                                        e.currentTarget.style.transform = 'translateY(-2px)';
+                                        e.currentTarget.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.2)';
+                                    }
+                                }}
+                                onMouseLeave={(e) => {
+                                    if (!isLoading) {
+                                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
+                                        e.currentTarget.style.transform = 'translateY(0)';
+                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+                                    }
+                                }}>
+                                <span style={{
+                                    fontSize: '1.2rem',
+                                    display: 'inline-block',
+                                    animation: isLoading ? 'spin 1s linear infinite' : 'none'
+                                }}>🔄</span>
+                                <span>{isLoading ? '로딩 중' : '새로고침'}</span>
+                            </button>
+                        </div>
+
+                        {allJobs.length > 0 && (
+                            <div style={{
+                                background: 'rgba(255, 255, 255, 0.2)',
+                                backdropFilter: 'blur(10px)',
+                                borderRadius: '16px',
+                                padding: '20px',
+                                border: '1px solid rgba(255, 255, 255, 0.3)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                gap: '16px'
                             }}>
-                            {isLoading ? '새로고침 중...' : '🔄 새로고침'}
-                        </button>
+                                <div style={{ flex: 1 }}>
+                                    <div style={{
+                                        fontSize: '1.8rem',
+                                        fontWeight: '800',
+                                        color: 'white',
+                                        marginBottom: '4px',
+                                        display: 'flex',
+                                        alignItems: 'baseline',
+                                        gap: '8px'
+                                    }}>
+                                        <span style={{ fontSize: '2.2rem' }}>{allJobs.length}</span>
+                                        <span style={{ fontSize: '1.1rem', fontWeight: '600' }}>개</span>
+                                    </div>
+                                    <p style={{
+                                        color: 'rgba(255, 255, 255, 0.9)',
+                                        fontSize: '0.95rem',
+                                        margin: 0,
+                                        fontWeight: '500'
+                                    }}>
+                                        GPT-5-mini가 분석한 맞춤 채용공고
+                                    </p>
+                                </div>
+                                <div style={{
+                                    background: 'rgba(255, 255, 255, 0.25)',
+                                    padding: '12px 16px',
+                                    borderRadius: '12px',
+                                    border: '1px solid rgba(255, 255, 255, 0.3)'
+                                }}>
+                                    <div style={{
+                                        fontSize: '1.5rem',
+                                        filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))'
+                                    }}>✨</div>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
-                    {allJobs.length > 0 && (
-                        <div style={{
-                            background: 'linear-gradient(135deg, #e6fffa 0%, #e0e7ff 100%)',
-                            borderRadius: '12px',
-                            padding: '20px',
-                            textAlign: 'center'
-                        }}>
-                            <p style={{
-                                fontSize: '1.3rem',
-                                fontWeight: '700',
-                                color: '#333',
-                                marginBottom: '5px'
-                            }}>
-                                총 {allJobs.length}개의 맞춤 채용공고
-                            </p>
-                            <p style={{ fontSize: '0.9rem', color: '#666' }}>
-                                GPT-5-mini가 분석한 매칭 이유와 실제 기업 데이터를 확인해보세요
-                            </p>
-                        </div>
-                    )}
+                    <style>{`
+                        @keyframes spin {
+                            from { transform: rotate(0deg); }
+                            to { transform: rotate(360deg); }
+                        }
+                    `}</style>
                 </div>
 
                 {/* 추천 공고 목록 */}
