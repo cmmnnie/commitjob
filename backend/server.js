@@ -5347,23 +5347,35 @@ ${idx + 1}. ${job.title} at ${job.company}
 각 공고에 대해 매칭도를 분석하고, 상위 ${limit}개를 추천해주세요.
 분석 기준: 기술매칭, 경력매칭, 지역매칭, 직무매칭, 급여매칭
 
-응답은 반드시 다음 JSON 형식으로 해주세요:
-[
-  {
-    "job_id": "1",
-    "match_score": 85,
-    "match_reasons": ["구체적인 매칭 이유 1", "구체적인 매칭 이유 2"],
-    "detailed_analysis": "상세한 분석..."
-  }
-]
+응답은 반드시 다음 JSON 형식으로 해주세요 (JSON object with recommendations array):
+{
+  "recommendations": [
+    {
+      "job_id": "1",
+      "match_score": 85,
+      "match_reasons": ["구체적인 매칭 이유 1", "구체적인 매칭 이유 2"],
+      "detailed_analysis": "상세한 분석..."
+    }
+  ]
+}
 `;
 
   try {
     const completion = await openai.chat.completions.create({
       model: 'gpt-5-mini',
-      messages: [{ role: 'user', content: prompt }],
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a professional job matching AI. Always respond in valid JSON format only. Do not include any explanatory text outside the JSON array.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
       max_completion_tokens: 4000,
-      temperature: 1
+      temperature: 1,
+      response_format: { type: "json_object" }
     });
 
     const chatGPTResponse = completion.choices[0].message.content;
@@ -5372,14 +5384,25 @@ ${idx + 1}. ${job.title} at ${job.company}
     // JSON 파싱 시도
     let recommendations = [];
     try {
-      const jsonMatch = chatGPTResponse.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        recommendations = JSON.parse(jsonMatch[0]);
-        console.log(`[GPT-5] 파싱 성공: ${recommendations.length}개 추천`);
+      // response_format: json_object를 사용하면 객체로 반환됨
+      const parsedResponse = JSON.parse(chatGPTResponse);
+
+      // recommendations 키가 있는지 확인
+      if (parsedResponse.recommendations && Array.isArray(parsedResponse.recommendations)) {
+        recommendations = parsedResponse.recommendations;
+      } else if (Array.isArray(parsedResponse)) {
+        recommendations = parsedResponse;
       } else {
-        console.log('[GPT-5] JSON 배열을 찾을 수 없음');
-        return [];
+        // 배열을 찾아서 추출
+        const jsonMatch = chatGPTResponse.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          recommendations = JSON.parse(jsonMatch[0]);
+        } else {
+          console.log('[GPT-5] JSON 배열을 찾을 수 없음, 원본:', chatGPTResponse);
+          return [];
+        }
       }
+      console.log(`[GPT-5] 파싱 성공: ${recommendations.length}개 추천`);
     } catch (parseError) {
       console.error('[GPT-5] JSON 파싱 실패:', parseError.message);
       return [];
