@@ -1893,9 +1893,9 @@ app.get("/api/main-recommendations", async (req, res) => {
       // MCP 서비스가 실패하거나 없으면 GPT-4 또는 기본 추천 사용
       if (rerankedJobs.length === 0 && openai) {
         try {
-          console.log('[MAIN-RECS] GPT-4 기반 추천 시작');
+          console.log('[MAIN-RECS] GPT-5-mini 기반 추천 시작');
           rerankedJobs = await generateGPT4Recommendations(userProfile, allJobs, 9);
-          console.log(`[MAIN-RECS] GPT-4로 ${rerankedJobs.length}개 공고 추천 완료`);
+          console.log(`[MAIN-RECS] GPT-5-mini로 ${rerankedJobs.length}개 공고 추천 완료`);
         } catch (gptError) {
           console.error('[MAIN-RECS] GPT-4 추천 실패:', gptError.message);
         }
@@ -5367,7 +5367,7 @@ ${idx + 1}. ${job.title} at ${job.company}
     });
 
     const chatGPTResponse = completion.choices[0].message.content;
-    console.log('[GPT-4] 응답 받음');
+    console.log('[GPT-5] 응답 받음:', chatGPTResponse.substring(0, 500));
 
     // JSON 파싱 시도
     let recommendations = [];
@@ -5375,9 +5375,13 @@ ${idx + 1}. ${job.title} at ${job.company}
       const jsonMatch = chatGPTResponse.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
         recommendations = JSON.parse(jsonMatch[0]);
+        console.log(`[GPT-5] 파싱 성공: ${recommendations.length}개 추천`);
+      } else {
+        console.log('[GPT-5] JSON 배열을 찾을 수 없음');
+        return [];
       }
     } catch (parseError) {
-      console.error('[GPT-4] JSON 파싱 실패');
+      console.error('[GPT-5] JSON 파싱 실패:', parseError.message);
       return [];
     }
 
@@ -5399,7 +5403,7 @@ ${idx + 1}. ${job.title} at ${job.company}
     return enrichedRecommendations.slice(0, limit);
 
   } catch (error) {
-    console.error('[GPT-4] API 오류:', error.message);
+    console.error('[GPT-5] API 오류:', error.message);
     return [];
   }
 }
