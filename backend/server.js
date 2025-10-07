@@ -4174,9 +4174,87 @@ app.post('/api/interview-questions', async (req, res) => {
       }
     } catch (mcpError) {
       console.error('[INTERVIEW-QUESTIONS] MCP service error:', mcpError.message);
+
+      // GPT-5-mini 직접 호출 시도
+      if (openai) {
+        try {
+          console.log('[INTERVIEW-QUESTIONS] GPT-5-mini 직접 호출 시작');
+
+          const prompt = `
+당신은 전문 면접관입니다. 다음 정보를 바탕으로 면접 질문을 생성해주세요.
+
+**회사**: ${jobInfo.company_name}
+**포지션**: ${jobInfo.title}
+**사용자 프로필**:
+- 스킬: ${finalUserProfile.skills.join(', ') || '정보 없음'}
+- 경력: ${finalUserProfile.experience || '정보 없음'}
+- 희망 직무: ${finalUserProfile.preferred_jobs || '정보 없음'}
+
+총 5개의 면접 질문을 생성해주세요. 각 질문은 다음 형식으로:
+
+응답은 반드시 다음 JSON 형식으로 해주세요:
+{
+  "questions": [
+    {
+      "id": 1,
+      "question": "질문 내용",
+      "category": "인성 | 지원동기 | 직무 이해 | 기술 역량 | 문제해결",
+      "difficulty": "쉬움 | 보통 | 어려움"
+    }
+  ]
+}
+`;
+
+          const completion = await openai.chat.completions.create({
+            model: 'gpt-5-mini',
+            messages: [
+              {
+                role: 'system',
+                content: 'You are a professional interview expert. Always respond in valid JSON format only.'
+              },
+              {
+                role: 'user',
+                content: prompt
+              }
+            ],
+            max_completion_tokens: 16000,
+            temperature: 1,
+            response_format: { type: "json_object" }
+          });
+
+          const gptResponse = completion.choices[0].message.content;
+          console.log('[INTERVIEW-QUESTIONS] GPT-5-mini 응답 받음');
+
+          const parsedResponse = JSON.parse(gptResponse);
+          if (parsedResponse.questions && Array.isArray(parsedResponse.questions)) {
+            console.log(`[INTERVIEW-QUESTIONS] GPT-5-mini로 ${parsedResponse.questions.length}개 질문 생성 완료`);
+
+            // 질문 기록 저장
+            if (job_id) {
+              const logQuery = `
+                INSERT INTO interview_logs (user_id, job_id, questions, created_at)
+                VALUES (?, ?, ?, NOW())
+              `;
+              await pool.execute(logQuery, [user_id, job_id, JSON.stringify(parsedResponse.questions)]);
+            }
+
+            return res.json({
+              success: true,
+              job_title: jobInfo.title,
+              company: jobInfo.company_name,
+              questions: parsedResponse.questions,
+              total_questions: parsedResponse.questions.length,
+              powered_by: "GPT-5-mini",
+              generated_at: new Date().toISOString()
+            });
+          }
+        } catch (gptError) {
+          console.error('[INTERVIEW-QUESTIONS] GPT-5-mini 오류:', gptError.message);
+        }
+      }
     }
 
-    // MCP 서비스 실패 시 폴백 질문 생성
+    // GPT-5-mini도 실패 시 폴백 질문 생성
     const fallbackQuestions = [
       {
         id: 1,
