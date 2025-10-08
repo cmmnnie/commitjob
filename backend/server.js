@@ -343,6 +343,12 @@ const corsOptions = {
       return callback(null, true); // 서버-서버 / curl 허용
     }
 
+    // '*' wildcard가 있으면 모든 origin 허용
+    if (allowedOrigins.includes('*')) {
+      console.log(`[CORS Check] Wildcard '*' found. All origins allowed. Origin: "${origin}"`);
+      return callback(null, true);
+    }
+
     // LocalTunnel URL 허용 (*.loca.lt)
     if (origin.endsWith('.loca.lt')) {
       console.log(`[CORS Check] LocalTunnel origin "${origin}" allowed.`);
