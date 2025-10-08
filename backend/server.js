@@ -4163,9 +4163,7 @@ app.post('/api/interview-questions', async (req, res) => {
     // 사용자 프로필 데이터 결정 (DB user_profiles 테이블에서 조회)
     let finalUserProfile;
 
-    // GPT MCP 서비스를 통한 면접 질문 생성
     try {
-
       // DB에서 user_profiles 조회
       const [userRows] = await pool.execute(`
         SELECT up.*, u.name as user_name
