@@ -4445,8 +4445,14 @@ ${reviewsSection ? '특히 회사 리뷰에서 언급된 내용을 반영하여 
         generated_at: new Date().toISOString()
       });
 
-  } catch (error) {
-    console.error('[INTERVIEW-QUESTIONS] Error generating questions:', error);
+    } catch (error) {
+      console.error('[INTERVIEW-QUESTIONS] Error generating questions:', error);
+      res.status(500).json({
+        error: '면접 질문 생성 중 오류가 발생했습니다'
+      });
+    }
+  } catch (outerError) {
+    console.error('[INTERVIEW-QUESTIONS] Outer error:', outerError);
     res.status(500).json({
       error: '면접 질문 생성 중 오류가 발생했습니다'
     });
