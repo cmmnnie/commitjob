@@ -2043,9 +2043,21 @@ def search_company_info():
         detail_result = scraper.extract_company_detail(search_result.get('company_url'))
         
         if detail_result.get('success'):
+            company_detail = detail_result.get('company_detail')
+
+            # 리뷰를 5개로 제한
+            if company_detail and 'reviews' in company_detail:
+                company_detail['reviews'] = company_detail['reviews'][:5]
+                print(f"리뷰를 5개로 제한: {len(company_detail['reviews'])}개")
+
             return jsonify({
                 "success": True,
-                "company_detail": detail_result.get('company_detail'),
+                "company_info": {
+                    "description": company_detail.get('company_name', ''),
+                    "culture": f"업종: {company_detail.get('industry', '')} | 규모: {company_detail.get('company_type', '')} | 위치: {company_detail.get('location', '')}"
+                },
+                "reviews": company_detail.get('reviews', []),
+                "company_detail": company_detail,
                 "message": f"'{company_name}' 기업 정보 추출 완료"
             })
         else:
