@@ -4060,7 +4060,7 @@ app.post('/api/interview-questions', async (req, res) => {
         title: finalPosition,
         company_name: custom_company,
         company_description: companyInfo?.company_info?.description || `${custom_company}에서 일하는 것에 대한 정보`,
-        company_reviews: companyInfo?.reviews?.slice(0, 5) || [], // 최대 5개 리뷰
+        company_reviews: companyInfo?.reviews?.slice(0, 20) || [], // 최대 20개 리뷰
         company_culture: companyInfo?.company_info?.culture || null,
         skills: user_profile?.skills || [],
         experience_level: user_profile?.experience || '신입-경력',
@@ -4118,7 +4118,7 @@ app.post('/api/interview-questions', async (req, res) => {
 
           if (catchCompanyResponse.data) {
             const companyInfo = catchCompanyResponse.data;
-            jobInfo.company_reviews = companyInfo.reviews?.slice(0, 5) || [];
+            jobInfo.company_reviews = companyInfo.reviews?.slice(0, 20) || [];
             jobInfo.company_culture = companyInfo.company_info?.culture || null;
             console.log(`[INTERVIEW-QUESTIONS] Catch 추가 정보 수집 완료 (리뷰 ${jobInfo.company_reviews.length}개)`);
           }
@@ -4294,7 +4294,7 @@ app.post('/api/interview-questions', async (req, res) => {
           company: jobInfo.company_name,
           questions: mcpResponse.data.questions,
           total_questions: mcpResponse.data.questions.length,
-          powered_by: "GPT-5-mini + Catch Data",
+          powered_by: "GPT-5-mini + Catch 20건 + DB Data",
           generated_at: new Date().toISOString()
         });
       }
