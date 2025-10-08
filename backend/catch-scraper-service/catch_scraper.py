@@ -308,6 +308,7 @@ class CatchScraper:
     def init_driver(self):
         """Chrome 드라이버 초기화"""
         try:
+            import os
             chrome_options = Options()
             chrome_options.add_argument('--headless')
             chrome_options.add_argument('--no-sandbox')
@@ -322,6 +323,12 @@ class CatchScraper:
             chrome_options.add_argument('--disable-backgrounding-occluded-windows')
             chrome_options.add_argument('--disable-blink-features=AutomationControlled')
             chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
+
+            # Railway 환경에서 Chromium 바이너리 경로 설정
+            chromium_path = os.environ.get('CHROME_BIN', '/usr/bin/chromium')
+            if os.path.exists(chromium_path):
+                chrome_options.binary_location = chromium_path
+                print(f"[DRIVER] Using Chromium at: {chromium_path}")
 
             prefs = {
                 'profile.default_content_setting_values': {
@@ -2120,7 +2127,9 @@ def search_company_info():
         })
 
 if __name__ == '__main__':
+    import os
+    port = int(os.environ.get('PORT', 3000))
     try:
-        app.run(host='0.0.0.0', port=3000, debug=True, use_reloader=False)
+        app.run(host='0.0.0.0', port=port, debug=True, use_reloader=False)
     except KeyboardInterrupt:
         scraper.close_driver()
