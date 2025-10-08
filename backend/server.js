@@ -4033,7 +4033,7 @@ app.post('/api/interview-questions', async (req, res) => {
         console.log(`[INTERVIEW-QUESTIONS] Overriding position with additional_preferences.preferred_job: ${finalPosition}`);
       }
 
-      // Catch 스크래퍼로 회사 정보 + 리뷰 20건 가져오기
+      // Catch 스크래퍼로 회사 정보 가져오기 (리뷰 수집 비활성화)
       let companyInfo = null;
       try {
         console.log(`[INTERVIEW-QUESTIONS] Catch 스크래퍼로 ${custom_company} 회사 정보 조회 중...`);
@@ -4066,7 +4066,7 @@ app.post('/api/interview-questions', async (req, res) => {
           const data = catchResponse.data;
           companyInfo = {
             company_info: data.company_info || {},
-            reviews: (data.reviews || []).slice(0, 20) // 최대 20개 리뷰
+            reviews: [] // 리뷰 수집 비활성화
           };
 
           const matchedName = data.matched_name || custom_company;
@@ -4079,16 +4079,7 @@ app.post('/api/interview-questions', async (req, res) => {
           console.log(`  - 입력한 회사명: ${inputName}`);
           console.log(`  - 매칭된 회사명: ${matchedName}`);
           console.log(`  - 회사 정보: ${data.company_info ? '있음' : '없음'}`);
-          console.log(`  - 리뷰 개수: ${companyInfo.reviews.length}건 (최대 20건)\n`);
-
-          if (companyInfo.reviews.length > 0) {
-            console.log(`💬 리뷰 샘플 (1개):`);
-            const firstReview = companyInfo.reviews[0];
-            console.log(`  [리뷰 1] ${JSON.stringify(firstReview).substring(0, 100)}...`);
-            if (companyInfo.reviews.length > 1) {
-              console.log(`  ... 외 ${companyInfo.reviews.length - 1}개 리뷰`);
-            }
-          }
+          console.log(`  - 리뷰 수집: 비활성화 (회사 정보만 사용)\n`);
           console.log(`${'='.repeat(80)}\n`);
         } else {
           console.log(`[INTERVIEW-QUESTIONS] ⚠️ Catch 스크래핑 실패 또는 "${custom_company}" 회사 정보 없음`);
@@ -4097,12 +4088,44 @@ app.post('/api/interview-questions', async (req, res) => {
         console.warn(`[INTERVIEW-QUESTIONS] Catch 스크래핑 실패:`, catchError.message);
       }
 
+      // 면접 후기 기출질문 10개 수집
+      let interviewQuestions = [];
+      try {
+        console.log(`[INTERVIEW-QUESTIONS] ${custom_company} 면접 후기 기출질문 수집 중...`);
+
+        const interviewResponse = await axios.post(`${CATCH_SCRAPER_URL}/api/search-interview-questions`, {
+          company_name: custom_company,
+          max_questions: 10
+        }, { timeout: 120000 });
+
+        if (interviewResponse.data && interviewResponse.data.success) {
+          interviewQuestions = interviewResponse.data.questions || [];
+          console.log(`\n${'='.repeat(80)}`);
+          console.log(`[INTERVIEW-QUESTIONS] ✅ 면접 기출질문 수집 완료`);
+          console.log(`${'='.repeat(80)}`);
+          console.log(`📝 수집된 기출질문: ${interviewQuestions.length}개`);
+          if (interviewQuestions.length > 0) {
+            console.log(`\n[샘플 질문 3개]:`);
+            interviewQuestions.slice(0, 3).forEach((q, idx) => {
+              console.log(`  ${idx + 1}. ${q.question.substring(0, 80)}${q.question.length > 80 ? '...' : ''}`);
+              if (q.position) console.log(`     직무: ${q.position}`);
+            });
+          }
+          console.log(`${'='.repeat(80)}\n`);
+        } else {
+          console.log(`[INTERVIEW-QUESTIONS] ⚠️ 면접 기출질문 없음 (해당 기업의 면접 후기가 없을 수 있음)`);
+        }
+      } catch (interviewError) {
+        console.warn(`[INTERVIEW-QUESTIONS] 면접 기출질문 수집 실패:`, interviewError.message);
+      }
+
       jobInfo = {
         title: finalPosition,
         company_name: custom_company,
         company_description: companyInfo?.company_info?.description || `${custom_company}에서 일하는 것에 대한 정보`,
-        company_reviews: companyInfo?.reviews?.slice(0, 5) || [], // 최대 5개 리뷰
+        company_reviews: [], // 리뷰 수집 비활성화
         company_culture: companyInfo?.company_info?.culture || null,
+        interview_questions: interviewQuestions, // 면접 기출질문 추가
         skills: user_profile?.skills || [],
         experience_level: user_profile?.experience || '신입-경력',
         employment_type: '정규직',
@@ -4159,15 +4182,40 @@ app.post('/api/interview-questions', async (req, res) => {
 
           if (catchCompanyResponse.data) {
             const companyInfo = catchCompanyResponse.data;
-            jobInfo.company_reviews = companyInfo.reviews?.slice(0, 20) || [];
+            jobInfo.company_reviews = []; // 리뷰 수집 비활성화
             jobInfo.company_culture = companyInfo.company_info?.culture || null;
-            console.log(`[INTERVIEW-QUESTIONS] Catch 추가 정보 수집 완료 (리뷰 ${jobInfo.company_reviews.length}개)`);
+            console.log(`[INTERVIEW-QUESTIONS] Catch 추가 정보 수집 완료 (회사 정보만 사용, 리뷰 비활성화)`);
           }
+
+          // 면접 후기 기출질문 10개 수집
+          try {
+            console.log(`[INTERVIEW-QUESTIONS] ${jobInfo.company_name} 면접 후기 기출질문 수집 중...`);
+
+            const interviewResponse = await axios.post(`${CATCH_SCRAPER_URL}/api/search-interview-questions`, {
+              company_name: jobInfo.company_name,
+              max_questions: 10
+            }, { timeout: 120000 });
+
+            if (interviewResponse.data && interviewResponse.data.success) {
+              jobInfo.interview_questions = interviewResponse.data.questions || [];
+              console.log(`[INTERVIEW-QUESTIONS] ✅ 면접 기출질문 ${jobInfo.interview_questions.length}개 수집 완료`);
+            } else {
+              jobInfo.interview_questions = [];
+              console.log(`[INTERVIEW-QUESTIONS] ⚠️ 면접 기출질문 없음`);
+            }
+          } catch (interviewError) {
+            console.warn(`[INTERVIEW-QUESTIONS] 면접 기출질문 수집 실패:`, interviewError.message);
+            jobInfo.interview_questions = [];
+          }
+
         } catch (catchError) {
           console.warn(`[INTERVIEW-QUESTIONS] Catch 추가 정보 조회 실패:`, catchError.message);
           jobInfo.company_reviews = [];
           jobInfo.company_culture = null;
+          jobInfo.interview_questions = [];
         }
+      } else {
+        jobInfo.interview_questions = [];
       }
     }
 
@@ -4292,13 +4340,16 @@ app.post('/api/interview-questions', async (req, res) => {
         try {
           console.log('\n[INTERVIEW-QUESTIONS] 🤖 GPT-5-mini 직접 호출 시작\n');
 
-          // 회사 리뷰 정보 추가
-          const reviewsSection = jobInfo.company_reviews && jobInfo.company_reviews.length > 0
-            ? `\n**회사 리뷰** (www.catch.co.kr에서 수집한 ${jobInfo.company_reviews.length}건):\n${jobInfo.company_reviews.slice(0, 5).map((r, i) => `${i + 1}. ${r.content || r} (평점: ${r.rating || 'N/A'})`).join('\n')}\n`
-            : '';
+          // 회사 리뷰 수집 비활성화
+          const reviewsSection = ''; // 리뷰 정보 사용 안 함
 
           const cultureSection = jobInfo.company_culture
             ? `\n**회사 문화**:\n${jobInfo.company_culture}\n`
+            : '';
+
+          // 면접 기출질문 섹션 추가
+          const interviewQuestionsSection = jobInfo.interview_questions && jobInfo.interview_questions.length > 0
+            ? `\n**${jobInfo.company_name}의 실제 면접 기출질문** (www.catch.co.kr에서 수집한 ${jobInfo.interview_questions.length}개):\n${jobInfo.interview_questions.map((q, i) => `${i + 1}. ${q.question}${q.position ? ` (${q.position})` : ''}`).join('\n')}\n`
             : '';
 
           // 사용자 프로필 섹션 (정보가 있을 때만 포함)
@@ -4307,13 +4358,13 @@ app.post('/api/interview-questions', async (req, res) => {
             : '';
 
           const prompt = `
-당신은 전문 면접관입니다. 다음 정보를 바탕으로 ${jobInfo.company_name} ${jobInfo.title} 포지션의 면접 질문을 생성해주세요.
+당신은 전문 면접관입니다. 다음 정보를 바탕으로 ${jobInfo.company_name} ${jobInfo.title} 포지션의 면접 질문 5개를 생성해주세요.
 
 **회사**: ${jobInfo.company_name}
 **포지션**: ${jobInfo.title}
-${userProfileSection}${reviewsSection}${cultureSection}
-위 정보를 바탕으로 총 5개의 면접 질문을 생성해주세요.
-${reviewsSection ? '특히 회사 리뷰에서 언급된 내용을 반영하여 질문을 만들어주세요.' : ''}
+${userProfileSection}${cultureSection}${interviewQuestionsSection}
+${interviewQuestionsSection ? '위 실제 기출질문들을 참고하여, 해당 기업의 면접 스타일과 중요시하는 가치를 반영한 새로운 면접 질문 5개를 생성해주세요.' : '위 정보를 바탕으로 총 5개의 면접 질문을 생성해주세요.'}
+${interviewQuestionsSection ? '기출질문과 유사하지만 더 깊이 있고, 사용자 프로필에 맞춤화된 질문을 만들어주세요.' : ''}
 각 질문은 다음 형식으로:
 
 응답은 반드시 다음 JSON 형식으로 해주세요:
@@ -4337,7 +4388,8 @@ ${reviewsSection ? '특히 회사 리뷰에서 언급된 내용을 반영하여 
           console.log(`${'='.repeat(80)}`);
           console.log(`📊 프롬프트 통계:`);
           console.log(`  - 프롬프트 길이: ${prompt.length}자`);
-          console.log(`  - 회사 리뷰: ${jobInfo.company_reviews?.length || 0}건 (www.catch.co.kr)`);
+          console.log(`  - 회사 리뷰: 비활성화 (수집하지 않음)`);
+          console.log(`  - 면접 기출질문: ${jobInfo.interview_questions?.length || 0}개 (www.catch.co.kr)`);
           console.log(`  - 회사 문화: ${jobInfo.company_culture ? '있음' : '없음'}`);
           console.log(`  - 사용자 프로필: ${userProfileSection ? '있음' : '없음 (사용자 입력 없음)'}`);
           console.log(`${'='.repeat(80)}\n`);

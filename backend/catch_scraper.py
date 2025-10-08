@@ -1416,62 +1416,9 @@ class CatchScraper:
                 print("동종 업종 평균 연봉 추출 실패")
                 company_detail["industry_average_salary"] = ""
             
-            # 현직자 리뷰 추출
-            try:
-                print("현직자 리뷰 탭으로 이동...")
-                # 탭 클릭
-                review_tab = wait.until(EC.element_to_be_clickable((By.XPATH, "//div[@class='bot']//ul[@class='menu']//li//a[contains(text(), '현직자리뷰')]")))
-                try:
-                    review_tab.click()
-                except Exception:
-                    self.driver.execute_script("arguments[0].click();", review_tab)
-
-                # 한 번에 로딩된 리스트를 안정적으로 획득(개수 안정화 폴링)
-                review_elements = self._wait_for_stable_elements(By.XPATH, "//ul[@class='corp_review_list']//li", timeout_seconds=5.0, settle_seconds=0.6)
-                if not review_elements:
-                    # 대안 XPath로도 안정화 시도
-                    review_elements = self._wait_for_stable_elements(By.XPATH, "//div[@class='corp_info_box']//ul//li", timeout_seconds=3.0, settle_seconds=0.6)
-                
-                print(f"리뷰 요소 {len(review_elements)}개 발견")
-
-                # JS로 한 번에 리뷰 정보를 수집하여 속도 향상
-                try:
-                    reviews = self.driver.execute_script(
-                        """
-                        const pick = (el, sel) => {
-                          const t = el.querySelector(sel);
-                          return t ? t.textContent.trim() : "";
-                        };
-                        const pickAll = (el, sel) => Array.from(el.querySelectorAll(sel)).map(e => e.textContent.trim());
-                        const result = [];
-                        const items = document.querySelectorAll('ul.corp_review_list li');
-                        (items && items.length ? items : document.querySelectorAll('div.corp_info_box ul li')).forEach((li) => {
-                          result.push({
-                            employee_status: pick(li, 'p.state'),
-                            employee_info: pickAll(li, 'div.info p span'),
-                            rating: pick(li, 'div.rating_star2 span.fill'),
-                            good_points: pick(li, 'p.review.good span.t'),
-                            bad_points: pick(li, 'p.review.bad span.t'),
-                            review_date: pick(li, 'p.bot span.date'),
-                            likes: pick(li, 'span.like label')
-                          });
-                        });
-                        return result;
-                        """
-                    ) or []
-                except Exception:
-                    # JS 수집 실패 시, 리스트만 초기화
-                    reviews = []
-                
-                company_detail["reviews"] = reviews
-                print(f"현직자 리뷰 {len(reviews)}개 추출 완료")
-                
-            except Exception as e:
-                print(f"현직자 리뷰 추출 실패: {e}")
-                # 디버깅을 위해 현재 페이지 URL과 제목 확인
-                print(f"현재 페이지 URL: {self.driver.current_url}")
-                print(f"현재 페이지 제목: {self.driver.title}")
-                company_detail["reviews"] = []
+            # 현직자 리뷰 수집 비활성화 (회사 정보만 수집)
+            print("현직자 리뷰 수집 생략 - 회사 정보만 수집합니다.")
+            company_detail["reviews"] = []
             
             print(f"기업 상세 정보 추출 완료: {company_detail['company_name']}")
             return {
@@ -1486,6 +1433,139 @@ class CatchScraper:
                 "success": False,
                 "error": str(e),
                 "message": "기업 상세 정보 추출 실패"
+            }
+
+    def extract_interview_questions(self, company_url, max_questions=10):
+        """기업 면접 질문 추출 (최대 10개)"""
+        try:
+            print(f"면접 후기 페이지로 이동: {company_url}")
+            self.driver.get(company_url)
+
+            wait = WebDriverWait(self.driver, 10)
+
+            # 페이지 로딩 대기
+            import time
+            time.sleep(3)
+
+            # 면접후기 탭 클릭
+            try:
+                interview_tab = wait.until(EC.element_to_be_clickable((By.XPATH, "//div[@class='bot']//ul[@class='menu']//li//a[contains(text(), '면접후기')]")))
+                try:
+                    interview_tab.click()
+                except Exception:
+                    self.driver.execute_script("arguments[0].click();", interview_tab)
+
+                print("면접후기 탭 클릭 완료")
+                time.sleep(3)  # 탭 전환 후 로딩 대기
+
+            except Exception as e:
+                print(f"면접후기 탭 클릭 실패: {e}")
+                return {
+                    "success": False,
+                    "error": str(e),
+                    "message": "면접후기 탭을 찾을 수 없습니다"
+                }
+
+            # 면접 질문 수집
+            interview_questions = []
+
+            try:
+                # JavaScript로 면접 질문 추출
+                questions = self.driver.execute_script(
+                    """
+                    const questions = [];
+                    const questionElements = document.querySelectorAll('.corp_interview_list li');
+
+                    questionElements.forEach((li) => {
+                        const questionText = li.querySelector('.question');
+                        const answerText = li.querySelector('.answer');
+                        const dateText = li.querySelector('.date');
+                        const positionText = li.querySelector('.position, .info');
+
+                        if (questionText) {
+                            questions.push({
+                                question: questionText.textContent.trim().replace('Q.', '').trim(),
+                                answer: answerText ? answerText.textContent.trim().replace('A.', '').trim() : '',
+                                date: dateText ? dateText.textContent.trim() : '',
+                                position: positionText ? positionText.textContent.trim() : ''
+                            });
+                        }
+                    });
+
+                    return questions;
+                    """
+                ) or []
+
+                # 최대 10개로 제한
+                interview_questions = questions[:max_questions]
+                print(f"면접 질문 {len(interview_questions)}개 추출 완료 (최대 {max_questions}개)")
+
+            except Exception as e:
+                print(f"면접 질문 추출 실패: {e}")
+                # 대체 XPath로 시도
+                try:
+                    question_elements = wait.until(EC.presence_of_all_elements_located((By.XPATH, "//ul[@class='corp_interview_list']//li")))
+
+                    for elem in question_elements[:max_questions]:
+                        try:
+                            question = elem.find_element(By.CLASS_NAME, "question").text.strip()
+                            answer = ""
+                            date = ""
+                            position = ""
+
+                            try:
+                                answer = elem.find_element(By.CLASS_NAME, "answer").text.strip()
+                            except:
+                                pass
+
+                            try:
+                                date = elem.find_element(By.CLASS_NAME, "date").text.strip()
+                            except:
+                                pass
+
+                            try:
+                                position = elem.find_element(By.CLASS_NAME, "position").text.strip()
+                            except:
+                                try:
+                                    position = elem.find_element(By.CLASS_NAME, "info").text.strip()
+                                except:
+                                    pass
+
+                            interview_questions.append({
+                                "question": question.replace('Q.', '').strip(),
+                                "answer": answer.replace('A.', '').strip(),
+                                "date": date,
+                                "position": position
+                            })
+
+                        except Exception as elem_error:
+                            print(f"개별 면접 질문 추출 실패: {elem_error}")
+                            continue
+
+                    print(f"대체 방법으로 면접 질문 {len(interview_questions)}개 추출")
+
+                except Exception as fallback_error:
+                    print(f"대체 방법도 실패: {fallback_error}")
+
+            if len(interview_questions) == 0:
+                return {
+                    "success": False,
+                    "message": "면접 질문을 찾을 수 없습니다. 해당 기업의 면접 후기가 없을 수 있습니다."
+                }
+
+            return {
+                "success": True,
+                "questions": interview_questions,
+                "total_count": len(interview_questions),
+                "message": f"{len(interview_questions)}개의 면접 질문 추출 완료"
+            }
+
+        except Exception as e:
+            print(f"면접 질문 추출 중 오류 발생: {str(e)}")
+            return {
+                "success": False,
+                "error": str(e),
+                "message": "면접 질문 추출 실패"
             }
 
 scraper = CatchScraper()
@@ -2109,10 +2189,10 @@ def search_company_info():
         if detail_result.get('success'):
             company_detail = detail_result.get('company_detail')
 
-            # 리뷰를 20개로 제한
+            # 리뷰 수집 비활성화 (빈 배열 유지)
             if company_detail and 'reviews' in company_detail:
-                company_detail['reviews'] = company_detail['reviews'][:20]
-                print(f"리뷰를 20개로 제한: {len(company_detail['reviews'])}개")
+                company_detail['reviews'] = []
+                print(f"리뷰 수집 비활성화 - 회사 정보만 반환")
 
             return jsonify({
                 "success": True,
@@ -2135,6 +2215,68 @@ def search_company_info():
             
     except Exception as e:
         print(f"기업 정보 검색 API 오류: {str(e)}")
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "message": "서버 오류가 발생했습니다"
+        })
+
+@app.route('/api/search-interview-questions', methods=['POST'])
+def search_interview_questions():
+    """기업 면접 질문 검색 및 추출 (최대 10개)"""
+    try:
+        data = request.get_json(silent=True) or {}
+        company_name = data.get('company_name', '')
+        max_questions = data.get('max_questions', 10)
+
+        if not company_name:
+            return jsonify({"success": False, "message": "기업명을 입력해주세요."})
+
+        # 최대 질문 수 제한 (1~20 범위)
+        if max_questions < 1 or max_questions > 20:
+            max_questions = 10
+
+        print(f"면접 질문 검색 요청: {company_name} (최대 {max_questions}개)")
+
+        # 1. 기업 검색 (띄어쓰기 무시를 위해 원문+정규화 키 모두 시도)
+        search_result = scraper.search_company(company_name)
+        if not search_result.get('success'):
+            normalized_name = company_name.replace('\u00A0','').replace(' ','')
+            search_result = scraper.search_company(normalized_name)
+        if not search_result.get('success'):
+            return jsonify({
+                "success": False,
+                "message": search_result.get('message')
+            })
+
+        # 매칭된 실제 회사명 추출
+        matched_name = search_result.get('matched_name', company_name)
+        print(f"입력한 회사명: '{company_name}' → 매칭된 회사명: '{matched_name}'")
+
+        # 2. 면접 질문 추출
+        interview_result = scraper.extract_interview_questions(
+            search_result.get('company_url'),
+            max_questions=max_questions
+        )
+
+        if interview_result.get('success'):
+            return jsonify({
+                "success": True,
+                "questions": interview_result.get('questions', []),
+                "total_count": interview_result.get('total_count', 0),
+                "matched_name": matched_name,
+                "input_name": company_name,
+                "message": interview_result.get('message')
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "error": interview_result.get('error'),
+                "message": interview_result.get('message')
+            })
+
+    except Exception as e:
+        print(f"면접 질문 검색 API 오류: {str(e)}")
         return jsonify({
             "success": False,
             "error": str(e),
