@@ -17,7 +17,7 @@ DB_HOST=your-mysql-host
 DB_PORT=3306
 DB_USER=your-db-user
 DB_PASS=your-db-password
-DB_NAME=commitjob
+DB_NAME=appdb
 CHROME_BIN=/usr/bin/chromium
 ```
 

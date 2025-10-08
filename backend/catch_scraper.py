@@ -325,10 +325,25 @@ class CatchScraper:
             chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
 
             # Railway 환경에서 Chromium 바이너리 경로 설정
-            chromium_path = os.environ.get('CHROME_BIN', '/usr/bin/chromium')
-            if os.path.exists(chromium_path):
-                chrome_options.binary_location = chromium_path
-                print(f"[DRIVER] Using Chromium at: {chromium_path}")
+            # 여러 가능한 경로 시도
+            possible_paths = [
+                os.environ.get('CHROME_BIN'),
+                '/usr/bin/chromium',
+                '/usr/bin/chromium-browser',
+                '/usr/bin/google-chrome',
+                '/usr/bin/google-chrome-stable'
+            ]
+
+            chromium_path = None
+            for path in possible_paths:
+                if path and os.path.exists(path):
+                    chromium_path = path
+                    chrome_options.binary_location = chromium_path
+                    print(f"[DRIVER] Using Chromium at: {chromium_path}")
+                    break
+
+            if not chromium_path:
+                print(f"[DRIVER] Warning: No Chromium binary found. Tried: {possible_paths}")
 
             prefs = {
                 'profile.default_content_setting_values': {
