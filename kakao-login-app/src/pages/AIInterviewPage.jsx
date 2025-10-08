@@ -112,7 +112,7 @@ export default function AIInterviewPage() {
             },
             {
                 id: 3,
-                question: `${position || '해당 포지션'}에서 가장 중요하다고 생각하는 역량은 무엇인가요?`,
+                question: `해당 포지션에서 가장 중요하다고 생각하는 역량은 무엇인가요?`,
                 category: "직무 이해",
                 difficulty: "보통"
             },
@@ -371,7 +371,7 @@ export default function AIInterviewPage() {
                                 fontSize: '1.2rem',
                                 fontWeight: '700'
                             }}>
-                                {position} - {companyName} 면접 질문
+                                {companyName} 면접 질문
                             </h3>
                             <p style={{ color: '#718096', fontSize: '0.95rem' }}>
                                 <strong>총 {questions.length}개 질문</strong>
