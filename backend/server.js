@@ -4469,7 +4469,7 @@ ${interviewQuestionsSection ? '기출질문과 유사하지만 더 깊이 있고
         },
         {
           id: 3,
-          question: `${jobInfo.title} 포지션에서 가장 중요하다고 생각하는 역량은 무엇인가요?`,
+          question: `${jobInfo.company_name}에서 일하기 위해 가장 중요하다고 생각하는 역량은 무엇인가요?`,
           category: "직무 이해",
           difficulty: "보통"
         },
