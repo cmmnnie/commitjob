@@ -47,6 +47,10 @@ const app = express();
 // ✨ 안전한 포트/호스트 결정
 const PORT = Number(process.env.PORT || 4001);
 
+// Catch 스크래퍼 서비스 URL
+const CATCH_SCRAPER_URL = process.env.CATCH_SCRAPER_URL || 'http://localhost:3000';
+console.log(`[CONFIG] Catch Scraper URL: ${CATCH_SCRAPER_URL}`);
+
 // 모든 네트워크 인터페이스에서 접근 가능하도록 설정 (프론트엔드 팀 접근용)
 const HOST = process.env.HOST || '0.0.0.0';
 
@@ -4036,7 +4040,7 @@ app.post('/api/interview-questions', async (req, res) => {
 
         // Catch 스크래퍼 초기화
         try {
-          await axios.post('http://localhost:3000/api/init', {}, { timeout: 5000 });
+          await axios.post(`${CATCH_SCRAPER_URL}/api/init`, {}, { timeout: 5000 });
           console.log('[INTERVIEW-QUESTIONS] Catch 스크래퍼 초기화 완료');
         } catch (initErr) {
           console.log('[INTERVIEW-QUESTIONS] Catch 초기화 생략 (이미 초기화됨 또는 타임아웃)');
@@ -4044,7 +4048,7 @@ app.post('/api/interview-questions', async (req, res) => {
 
         // Catch 로그인
         try {
-          await axios.post('http://localhost:3000/api/login', {
+          await axios.post(`${CATCH_SCRAPER_URL}/api/login`, {
             username: 'test0137',
             password: '#test0808'
           }, { timeout: 5000 });
@@ -4054,7 +4058,7 @@ app.post('/api/interview-questions', async (req, res) => {
         }
 
         // 회사 정보 + 리뷰 스크래핑
-        const catchResponse = await axios.post('http://localhost:3000/api/search-company-info', {
+        const catchResponse = await axios.post(`${CATCH_SCRAPER_URL}/api/search-company-info`, {
           company_name: custom_company
         }, { timeout: 120000 });
 
@@ -4133,14 +4137,14 @@ app.post('/api/interview-questions', async (req, res) => {
 
           // Catch 스크래퍼 초기화 및 로그인
           try {
-            await axios.post('http://localhost:3000/api/init', {}, { timeout: 5000 });
+            await axios.post(`${CATCH_SCRAPER_URL}/api/init`, {}, { timeout: 5000 });
             console.log('[INTERVIEW-QUESTIONS] Catch 스크래퍼 초기화 완료');
           } catch (initErr) {
             console.log('[INTERVIEW-QUESTIONS] Catch 초기화 생략 (이미 초기화됨 또는 타임아웃)');
           }
 
           try {
-            await axios.post('http://localhost:3000/api/login', {
+            await axios.post(`${CATCH_SCRAPER_URL}/api/login`, {
               username: 'test0137',
               password: '#test0808'
             }, { timeout: 5000 });
@@ -4149,7 +4153,7 @@ app.post('/api/interview-questions', async (req, res) => {
             console.log('[INTERVIEW-QUESTIONS] Catch 로그인 생략 (이미 로그인됨 또는 타임아웃)');
           }
 
-          const catchCompanyResponse = await axios.post('http://localhost:3000/api/search-company-info', {
+          const catchCompanyResponse = await axios.post(`${CATCH_SCRAPER_URL}/api/search-company-info`, {
             company_name: jobInfo.company_name
           }, { timeout: 120000 }); // 120초 타임아웃
 
