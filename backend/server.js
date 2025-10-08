@@ -4059,11 +4059,15 @@ app.post('/api/interview-questions', async (req, res) => {
             reviews: (data.reviews || []).slice(0, 20) // 최대 20개 리뷰
           };
 
+          const matchedName = data.matched_name || custom_company;
+          const inputName = data.input_name || custom_company;
+
           console.log(`\n${'='.repeat(80)}`);
           console.log(`[INTERVIEW-QUESTIONS] ✅ Catch 스크래핑 완료`);
           console.log(`${'='.repeat(80)}`);
           console.log(`📊 수집 결과:`);
-          console.log(`  - 회사명: ${custom_company}`);
+          console.log(`  - 입력한 회사명: ${inputName}`);
+          console.log(`  - 매칭된 회사명: ${matchedName}`);
           console.log(`  - 회사 정보: ${data.company_info ? '있음' : '없음'}`);
           console.log(`  - 리뷰 개수: ${companyInfo.reviews.length}건 (최대 20건)\n`);
 

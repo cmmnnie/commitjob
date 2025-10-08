@@ -1188,19 +1188,47 @@ class CatchScraper:
             
             # 검색 결과에서 정확한 기업명 찾기
             company_links = wait.until(EC.presence_of_all_elements_located((By.XPATH, "//ul[@class='list_corp_round']//li//p[@class='name']//a")))
-            
+
+            # 정규화 함수: 띄어쓰기 제거, 소문자 변환
+            def normalize_name(name):
+                return name.replace('\u00A0', '').replace(' ', '').lower()
+
+            normalized_input = normalize_name(company_name)
             target_company_url = None
+            matched_name = None
+
+            # 1차 시도: 정규화된 이름으로 정확 매칭
             for link in company_links:
                 company_text = link.text.strip()
-                if company_text == company_name:
+                if normalize_name(company_text) == normalized_input:
                     target_company_url = link.get_attribute('href')
-                    print(f"정확한 기업명 발견: {company_text}")
+                    matched_name = company_text
+                    print(f"정확한 기업명 매칭 성공: '{company_name}' → '{company_text}'")
                     break
-            
+
+            # 2차 시도: 정규화된 이름으로 부분 매칭 (정확한 매칭 실패 시)
             if not target_company_url:
-                return {"success": False, "message": f"'{company_name}' 기업을 찾을 수 없습니다."}
+                for link in company_links:
+                    company_text = link.text.strip()
+                    if normalized_input in normalize_name(company_text) or normalize_name(company_text) in normalized_input:
+                        target_company_url = link.get_attribute('href')
+                        matched_name = company_text
+                        print(f"부분 매칭으로 기업 발견: '{company_name}' → '{company_text}'")
+                        break
+
+            if not target_company_url:
+                available_companies = [link.text.strip() for link in company_links[:5]]
+                return {
+                    "success": False,
+                    "message": f"'{company_name}' 기업을 찾을 수 없습니다. 검색 결과: {', '.join(available_companies)}"
+                }
             
-            return {"success": True, "company_url": target_company_url, "message": f"'{company_name}' 기업을 찾았습니다."}
+            return {
+                "success": True,
+                "company_url": target_company_url,
+                "matched_name": matched_name,
+                "message": f"'{company_name}' 기업을 찾았습니다. (실제 매칭: '{matched_name}')"
+            }
             
         except Exception as e:
             return {"success": False, "message": str(e)}
@@ -2039,9 +2067,13 @@ def search_company_info():
                 "message": search_result.get('message')
             })
         
+        # 매칭된 실제 회사명 추출
+        matched_name = search_result.get('matched_name', company_name)
+        print(f"입력한 회사명: '{company_name}' → 매칭된 회사명: '{matched_name}'")
+
         # 2. 기업 상세 정보 추출
         detail_result = scraper.extract_company_detail(search_result.get('company_url'))
-        
+
         if detail_result.get('success'):
             company_detail = detail_result.get('company_detail')
 
@@ -2058,7 +2090,9 @@ def search_company_info():
                 },
                 "reviews": company_detail.get('reviews', []),
                 "company_detail": company_detail,
-                "message": f"'{company_name}' 기업 정보 추출 완료"
+                "matched_name": matched_name,
+                "input_name": company_name,
+                "message": f"'{company_name}' 기업 정보 추출 완료 (실제 매칭: '{matched_name}')"
             })
         else:
             return jsonify({
