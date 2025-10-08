@@ -4052,7 +4052,7 @@ app.post('/api/interview-questions', async (req, res) => {
           console.log(`📊 수집 통계:`);
           console.log(`  - 회사 정보 존재: ${!!companyInfo.company_info}`);
           console.log(`  - 리뷰 총 개수: ${companyInfo.reviews?.length || 0}건`);
-          console.log(`  - 사용할 리뷰: ${Math.min(companyInfo.reviews?.length || 0, 20)}건 (최대 20건)\n`);
+          console.log(`  - 사용할 리뷰: ${Math.min(companyInfo.reviews?.length || 0, 5)}건 (최대 5건)\n`);
 
           if (companyInfo.company_info) {
             console.log(`📝 회사 정보:`);
@@ -4081,7 +4081,7 @@ app.post('/api/interview-questions', async (req, res) => {
         title: finalPosition,
         company_name: custom_company,
         company_description: companyInfo?.company_info?.description || `${custom_company}에서 일하는 것에 대한 정보`,
-        company_reviews: companyInfo?.reviews?.slice(0, 20) || [], // 최대 20개 리뷰
+        company_reviews: companyInfo?.reviews?.slice(0, 5) || [], // 최대 5개 리뷰
         company_culture: companyInfo?.company_info?.culture || null,
         skills: user_profile?.skills || [],
         experience_level: user_profile?.experience || '신입-경력',
@@ -4298,7 +4298,7 @@ app.post('/api/interview-questions', async (req, res) => {
           company: jobInfo.company_name,
           questions: mcpResponse.data.questions,
           total_questions: mcpResponse.data.questions.length,
-          powered_by: "GPT-5-mini + Catch 20건 + DB Data",
+          powered_by: "GPT-5-mini + Catch 5건 + DB user_profiles",
           generated_at: new Date().toISOString()
         });
       }
@@ -4313,7 +4313,7 @@ app.post('/api/interview-questions', async (req, res) => {
 
           // 회사 리뷰 정보 추가
           const reviewsSection = jobInfo.company_reviews && jobInfo.company_reviews.length > 0
-            ? `\n**회사 리뷰** (www.catch.co.kr에서 수집한 ${jobInfo.company_reviews.length}건):\n${jobInfo.company_reviews.slice(0, 20).map((r, i) => `${i + 1}. ${r.content || r} (평점: ${r.rating || 'N/A'})`).join('\n')}\n`
+            ? `\n**회사 리뷰** (www.catch.co.kr에서 수집한 ${jobInfo.company_reviews.length}건):\n${jobInfo.company_reviews.slice(0, 5).map((r, i) => `${i + 1}. ${r.content || r} (평점: ${r.rating || 'N/A'})`).join('\n')}\n`
             : '';
 
           const cultureSection = jobInfo.company_culture
