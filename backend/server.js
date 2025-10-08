@@ -4062,13 +4062,12 @@ app.post('/api/interview-questions', async (req, res) => {
           }
 
           if (companyInfo.reviews && companyInfo.reviews.length > 0) {
-            console.log(`💬 수집된 리뷰 샘플 (상위 5개):`);
-            companyInfo.reviews.slice(0, 5).forEach((review, idx) => {
-              console.log(`  [리뷰 ${idx + 1}] ${review.content?.substring(0, 80) || '내용 없음'}...`);
-              console.log(`           평점: ${review.rating || 'N/A'} | 날짜: ${review.date || 'N/A'}`);
-            });
-            if (companyInfo.reviews.length > 5) {
-              console.log(`  ... 외 ${companyInfo.reviews.length - 5}개 리뷰`);
+            console.log(`💬 수집된 리뷰 샘플 (1개):`);
+            const firstReview = companyInfo.reviews[0];
+            console.log(`  [리뷰 1] ${firstReview.content || '내용 없음'}`);
+            console.log(`           평점: ${firstReview.rating || 'N/A'} | 날짜: ${firstReview.date || 'N/A'}`);
+            if (companyInfo.reviews.length > 1) {
+              console.log(`  ... 외 ${companyInfo.reviews.length - 1}개 리뷰 수집됨`);
             }
           }
           console.log(`${'='.repeat(80)}\n`);
@@ -4203,7 +4202,17 @@ app.post('/api/interview-questions', async (req, res) => {
           expected_salary: userProfile.expected_salary || ''
         };
 
-        console.log(`[INTERVIEW-QUESTIONS] ✅ DB user_profiles 사용:`, finalUserProfile);
+        console.log(`\n${'='.repeat(80)}`);
+        console.log(`[INTERVIEW-QUESTIONS] ✅ 사용자 프로필 정보 (DB user_profiles)`);
+        console.log(`${'='.repeat(80)}`);
+        console.log(`👤 사용자 정보:`);
+        console.log(`  - 이름: ${finalUserProfile.name}`);
+        console.log(`  - 스킬: ${finalUserProfile.skills.length > 0 ? finalUserProfile.skills.join(', ') : '미입력'}`);
+        console.log(`  - 경력: ${finalUserProfile.experience || '미입력'}`);
+        console.log(`  - 희망 직무: ${finalUserProfile.preferred_jobs || '미입력'}`);
+        console.log(`  - 희망 지역: ${finalUserProfile.preferred_regions.length > 0 ? finalUserProfile.preferred_regions.join(', ') : '미입력'}`);
+        console.log(`  - 희망 연봉: ${finalUserProfile.expected_salary || '미입력'}`);
+        console.log(`${'='.repeat(80)}\n`);
       } else {
         // DB에 프로필이 없으면 빈 프로필 사용 (기본값 없음)
         finalUserProfile = {
