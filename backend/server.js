@@ -4273,54 +4273,7 @@ app.post('/api/interview-questions', async (req, res) => {
       const expandedTitle = expandJobTitle(jobInfo.title);
       console.log(`[INTERVIEW-QUESTIONS] Job title expanded: "${jobInfo.title}" → "${expandedTitle}"`);
 
-      const mcpPayload = {
-        action: 'generate_interview_questions',
-        user_profile: finalUserProfile,
-        job_info: {
-          title: expandedTitle,
-          company: jobInfo.company_name,
-          description: jobInfo.description || '',
-          requirements: jobInfo.requirements || '',
-          skills: parsedJobSkills,
-          experience_level: jobInfo.experience_level || ''
-        }
-      };
-
-      console.log(`[INTERVIEW-QUESTIONS] Calling MCP service for job ${job_id || `custom_${custom_company}`}`);
-
-      const mcpResponse = await axios.post(`${process.env.MCP_RECS_BASE}/tools/generate_interview`, {
-        user_profile: mcpPayload.user_profile,
-        job_detail: mcpPayload.job_info
-      }, {
-        timeout: 180000,
-        headers: { 'Content-Type': 'application/json' }
-      });
-
-      if (mcpResponse.data && mcpResponse.data.questions) {
-        // 면접 질문 기록 저장 (job_id가 있을 때만)
-        if (job_id) {
-          const logQuery = `
-            INSERT INTO interview_logs (user_id, job_id, questions, created_at)
-            VALUES (?, ?, ?, NOW())
-          `;
-
-          await pool.execute(logQuery, [user_id, job_id, JSON.stringify(mcpResponse.data.questions)]);
-        }
-
-        return res.json({
-          success: true,
-          job_title: jobInfo.title,
-          company: jobInfo.company_name,
-          questions: mcpResponse.data.questions,
-          total_questions: mcpResponse.data.questions.length,
-          powered_by: "GPT-5-mini + Catch 5건 + DB user_profiles",
-          generated_at: new Date().toISOString()
-        });
-      }
-    } catch (mcpError) {
-      console.error('[INTERVIEW-QUESTIONS] MCP service error:', mcpError.message);
-
-      // GPT-5-mini 직접 호출 시도
+      // GPT-5-mini 직접 호출 (MCP 서비스 없이)
       console.log('[INTERVIEW-QUESTIONS] openai 객체 존재 여부:', !!openai);
       if (openai) {
         try {
