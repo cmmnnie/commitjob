@@ -349,6 +349,12 @@ const corsOptions = {
       return callback(null, true);
     }
 
+    // Vercel 프리뷰 배포 URL 허용 (*.vercel.app)
+    if (origin.endsWith('.vercel.app')) {
+      console.log(`[CORS Check] Vercel preview origin "${origin}" allowed.`);
+      return callback(null, true);
+    }
+
     if (allowedOrigins.includes(origin) || origin === null || origin === 'null') {
       console.log(`[CORS Check] Origin "${origin}" allowed (${origin === null || origin === 'null' ? 'file protocol' : 'in allowed list'}).`);
       return callback(null, true);
