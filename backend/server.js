@@ -4358,7 +4358,9 @@ app.post('/api/interview-questions', async (req, res) => {
             : '';
 
           const prompt = `
-당신은 전문 면접관입니다. 다음 정보를 바탕으로 ${jobInfo.company_name}의 면접 질문 5개를 생성해주세요.
+당신은 전문 면접관입니다.
+
+www.catch.co.kr에서 수집한 ${jobInfo.company_name}의 실제 면접 후기와 사용자 프로필을 바탕으로 맞춤형 면접 질문 5개를 생성해주세요.
 
 **회사**: ${jobInfo.company_name}
 ${userProfileSection}${cultureSection}${interviewQuestionsSection}
