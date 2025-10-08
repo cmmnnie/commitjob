@@ -4358,10 +4358,9 @@ app.post('/api/interview-questions', async (req, res) => {
             : '';
 
           const prompt = `
-당신은 전문 면접관입니다. 다음 정보를 바탕으로 ${jobInfo.company_name} ${jobInfo.title} 포지션의 면접 질문 5개를 생성해주세요.
+당신은 전문 면접관입니다. 다음 정보를 바탕으로 ${jobInfo.company_name}의 면접 질문 5개를 생성해주세요.
 
 **회사**: ${jobInfo.company_name}
-**포지션**: ${jobInfo.title}
 ${userProfileSection}${cultureSection}${interviewQuestionsSection}
 ${interviewQuestionsSection ? '위 실제 기출질문들을 참고하여, 해당 기업의 면접 스타일과 중요시하는 가치를 반영한 새로운 면접 질문 5개를 생성해주세요.' : '위 정보를 바탕으로 총 5개의 면접 질문을 생성해주세요.'}
 ${interviewQuestionsSection ? '기출질문과 유사하지만 더 깊이 있고, 사용자 프로필에 맞춤화된 질문을 만들어주세요.' : ''}
@@ -4381,10 +4380,10 @@ ${interviewQuestionsSection ? '기출질문과 유사하지만 더 깊이 있고
 `;
 
           // 프롬프트 로그 출력
-          console.log(`${'='.repeat(80)}`);
+          console.log(`\n${'='.repeat(80)}`);
           console.log(`[INTERVIEW-QUESTIONS] 📝 GPT-5-mini 프롬프트 생성`);
           console.log(`${'='.repeat(80)}`);
-          console.log(`\n${prompt}\n`);
+          console.log(prompt);
           console.log(`${'='.repeat(80)}`);
           console.log(`📊 프롬프트 통계:`);
           console.log(`  - 프롬프트 길이: ${prompt.length}자`);
