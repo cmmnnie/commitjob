@@ -4046,11 +4046,32 @@ app.post('/api/interview-questions', async (req, res) => {
 
         if (catchCompanyResponse.data) {
           companyInfo = catchCompanyResponse.data;
-          console.log(`[INTERVIEW-QUESTIONS] Catch에서 회사 정보 수집 완료:`, {
-            hasReviews: !!companyInfo.reviews,
-            reviewCount: companyInfo.reviews?.length || 0,
-            hasInfo: !!companyInfo.company_info
-          });
+          console.log(`\n${'='.repeat(80)}`);
+          console.log(`[INTERVIEW-QUESTIONS] ✅ Catch 회사 정보 수집 완료`);
+          console.log(`${'='.repeat(80)}`);
+          console.log(`📊 수집 통계:`);
+          console.log(`  - 회사 정보 존재: ${!!companyInfo.company_info}`);
+          console.log(`  - 리뷰 총 개수: ${companyInfo.reviews?.length || 0}건`);
+          console.log(`  - 사용할 리뷰: ${Math.min(companyInfo.reviews?.length || 0, 20)}건 (최대 20건)\n`);
+
+          if (companyInfo.company_info) {
+            console.log(`📝 회사 정보:`);
+            console.log(`  - 회사명: ${custom_company}`);
+            console.log(`  - 설명: ${companyInfo.company_info.description?.substring(0, 100) || '없음'}...`);
+            console.log(`  - 문화: ${companyInfo.company_info.culture?.substring(0, 100) || '없음'}...\n`);
+          }
+
+          if (companyInfo.reviews && companyInfo.reviews.length > 0) {
+            console.log(`💬 수집된 리뷰 샘플 (상위 5개):`);
+            companyInfo.reviews.slice(0, 5).forEach((review, idx) => {
+              console.log(`  [리뷰 ${idx + 1}] ${review.content?.substring(0, 80) || '내용 없음'}...`);
+              console.log(`           평점: ${review.rating || 'N/A'} | 날짜: ${review.date || 'N/A'}`);
+            });
+            if (companyInfo.reviews.length > 5) {
+              console.log(`  ... 외 ${companyInfo.reviews.length - 5}개 리뷰`);
+            }
+          }
+          console.log(`${'='.repeat(80)}\n`);
         }
       } catch (catchError) {
         console.warn(`[INTERVIEW-QUESTIONS] Catch 회사 정보 조회 실패:`, catchError.message);
@@ -4305,7 +4326,16 @@ app.post('/api/interview-questions', async (req, res) => {
       console.log('[INTERVIEW-QUESTIONS] openai 객체 존재 여부:', !!openai);
       if (openai) {
         try {
-          console.log('[INTERVIEW-QUESTIONS] GPT-5-mini 직접 호출 시작');
+          console.log('\n[INTERVIEW-QUESTIONS] 🤖 GPT-5-mini 직접 호출 시작\n');
+
+          // 회사 리뷰 정보 추가
+          const reviewsSection = jobInfo.company_reviews && jobInfo.company_reviews.length > 0
+            ? `\n**회사 리뷰** (${jobInfo.company_reviews.length}건):\n${jobInfo.company_reviews.slice(0, 20).map((r, i) => `${i + 1}. ${r.content || r} (평점: ${r.rating || 'N/A'})`).join('\n')}\n`
+            : '';
+
+          const cultureSection = jobInfo.company_culture
+            ? `\n**회사 문화**:\n${jobInfo.company_culture}\n`
+            : '';
 
           const prompt = `
 당신은 전문 면접관입니다. 다음 정보를 바탕으로 면접 질문을 생성해주세요.
@@ -4316,7 +4346,7 @@ app.post('/api/interview-questions', async (req, res) => {
 - 스킬: ${finalUserProfile.skills.join(', ') || '정보 없음'}
 - 경력: ${finalUserProfile.experience || '정보 없음'}
 - 희망 직무: ${finalUserProfile.preferred_jobs || '정보 없음'}
-
+${reviewsSection}${cultureSection}
 총 5개의 면접 질문을 생성해주세요. 각 질문은 다음 형식으로:
 
 응답은 반드시 다음 JSON 형식으로 해주세요:
@@ -4331,6 +4361,17 @@ app.post('/api/interview-questions', async (req, res) => {
   ]
 }
 `;
+
+          // 프롬프트 로그 출력
+          console.log(`${'='.repeat(80)}`);
+          console.log(`[INTERVIEW-QUESTIONS] 📝 GPT-5-mini 프롬프트 생성`);
+          console.log(`${'='.repeat(80)}`);
+          console.log(`\n${prompt}\n`);
+          console.log(`${'='.repeat(80)}`);
+          console.log(`프롬프트 길이: ${prompt.length}자`);
+          console.log(`포함된 리뷰 개수: ${jobInfo.company_reviews?.length || 0}건`);
+          console.log(`회사 문화 정보: ${jobInfo.company_culture ? '있음' : '없음'}`);
+          console.log(`${'='.repeat(80)}\n`);
 
           const completion = await openai.chat.completions.create({
             model: 'gpt-5-mini',
@@ -4350,11 +4391,22 @@ app.post('/api/interview-questions', async (req, res) => {
           });
 
           const gptResponse = completion.choices[0].message.content;
-          console.log('[INTERVIEW-QUESTIONS] GPT-5-mini 응답 받음');
+
+          console.log(`\n${'='.repeat(80)}`);
+          console.log(`[INTERVIEW-QUESTIONS] ✅ GPT-5-mini 응답 받음`);
+          console.log(`${'='.repeat(80)}\n`);
+          console.log(`응답 내용:\n${gptResponse}\n`);
+          console.log(`${'='.repeat(80)}\n`);
 
           const parsedResponse = JSON.parse(gptResponse);
           if (parsedResponse.questions && Array.isArray(parsedResponse.questions)) {
-            console.log(`[INTERVIEW-QUESTIONS] GPT-5-mini로 ${parsedResponse.questions.length}개 질문 생성 완료`);
+            console.log(`[INTERVIEW-QUESTIONS] ✅ GPT-5-mini로 ${parsedResponse.questions.length}개 질문 생성 완료\n`);
+
+            // 생성된 질문 출력
+            parsedResponse.questions.forEach((q, idx) => {
+              console.log(`질문 ${idx + 1}: ${q.question}`);
+              console.log(`  카테고리: ${q.category} | 난이도: ${q.difficulty}\n`);
+            });
 
             // 질문 기록 저장
             if (job_id) {
