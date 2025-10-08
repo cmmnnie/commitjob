@@ -8,9 +8,7 @@ export default function AIInterviewPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [questions, setQuestions] = useState([]);
     const [error, setError] = useState(null);
-    const [selectedJobId, setSelectedJobId] = useState('');
     const [companyName, setCompanyName] = useState('');
-    const [position, setPosition] = useState('');
 
     useEffect(() => {
         checkLogin();
@@ -56,8 +54,8 @@ export default function AIInterviewPage() {
     };
 
     const generateQuestions = async () => {
-        if (!companyName.trim() || !position.trim()) {
-            alert('회사명과 지원 포지션을 입력해주세요.');
+        if (!companyName.trim()) {
+            alert('회사명을 입력해주세요.');
             return;
         }
 
@@ -75,11 +73,7 @@ export default function AIInterviewPage() {
                 },
                 body: JSON.stringify({
                     user_id: currentUser?.id,
-                    custom_company: companyName.trim(),
-                    custom_position: position.trim(),
-                    user_profile: {
-                        position: position.trim()
-                    }
+                    custom_company: companyName.trim()
                 })
             });
 
@@ -275,9 +269,10 @@ export default function AIInterviewPage() {
                             fontSize: '0.95rem',
                             color: '#666',
                             lineHeight: '1.6',
-                            marginBottom: '15px'
+                            marginBottom: '0'
                         }}>
-                            <strong>AI 기능:</strong> 회사와 포지션 정보를 입력하면 맞춤형 면접 질문을 생성합니다
+                            <strong>💡 AI 기능:</strong> 회사명만 입력하면 www.catch.co.kr에서 회사 리뷰 20건을 수집하고,<br />
+                            사용자 프로필과 함께 GPT-5-mini가 맞춤형 면접 질문 5개를 생성합니다
                         </p>
                     </div>
 
@@ -287,7 +282,8 @@ export default function AIInterviewPage() {
                             display: 'block',
                             marginBottom: '8px',
                             fontWeight: '600',
-                            color: '#333'
+                            color: '#333',
+                            fontSize: '1.05rem'
                         }}>
                             회사명 <span style={{ color: '#d32f2f' }}>*</span>
                         </label>
@@ -295,39 +291,28 @@ export default function AIInterviewPage() {
                             type="text"
                             value={companyName}
                             onChange={(e) => setCompanyName(e.target.value)}
-                            placeholder="예: 네이버, 카카오, 삼성전자"
-                            style={{
-                                width: '100%',
-                                padding: '12px',
-                                border: '2px solid #e2e8f0',
-                                borderRadius: '8px',
-                                fontSize: '1rem',
-                                boxSizing: 'border-box'
+                            onKeyPress={(e) => {
+                                if (e.key === 'Enter' && !isLoading) {
+                                    generateQuestions();
+                                }
                             }}
-                        />
-                    </div>
-
-                    <div style={{ marginBottom: '20px' }}>
-                        <label style={{
-                            display: 'block',
-                            marginBottom: '8px',
-                            fontWeight: '600',
-                            color: '#333'
-                        }}>
-                            지원 포지션 <span style={{ color: '#d32f2f' }}>*</span>
-                        </label>
-                        <input
-                            type="text"
-                            value={position}
-                            onChange={(e) => setPosition(e.target.value)}
-                            placeholder="예: 프론트엔드 개발자, 백엔드 개발자"
+                            placeholder="예: 네이버, 카카오, 삼성전자, 쿠팡"
                             style={{
                                 width: '100%',
-                                padding: '12px',
+                                padding: '14px 16px',
                                 border: '2px solid #e2e8f0',
-                                borderRadius: '8px',
-                                fontSize: '1rem',
-                                boxSizing: 'border-box'
+                                borderRadius: '10px',
+                                fontSize: '1.05rem',
+                                boxSizing: 'border-box',
+                                transition: 'all 0.2s'
+                            }}
+                            onFocus={(e) => {
+                                e.currentTarget.style.borderColor = '#667eea';
+                                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.1)';
+                            }}
+                            onBlur={(e) => {
+                                e.currentTarget.style.borderColor = '#e2e8f0';
+                                e.currentTarget.style.boxShadow = 'none';
                             }}
                         />
                     </div>

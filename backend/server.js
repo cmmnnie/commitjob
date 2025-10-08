@@ -4151,87 +4151,70 @@ app.post('/api/interview-questions', async (req, res) => {
       }
     }
 
-    // 사용자 프로필 조회
-    const userQuery = `
-      SELECT up.*, u.name as user_name
-      FROM user_profiles up
-      LEFT JOIN users u ON up.user_id = u.id
-      WHERE up.user_id = ?
-    `;
-
-    const [userRows] = await pool.execute(userQuery, [user_id]);
-    const userProfile = userRows.length > 0 ? userRows[0] : null;
-
-    // 사용자 프로필 데이터 결정 (입력받은 데이터 우선, 없으면 DB에서)
+    // 사용자 프로필 데이터 결정 (DB user_profiles 테이블에서 조회)
     let finalUserProfile;
 
     // GPT MCP 서비스를 통한 면접 질문 생성
     try {
 
-      if (user_profile && custom_company) {
-        // 사용자가 직접 입력한 프로필 데이터 사용
-        finalUserProfile = {
-          name: '사용자',
-          skills: user_profile.skills || [],
-          experience: user_profile.experience || '신입',
-          preferred_jobs: user_profile.position || '개발자',
-          preferred_regions: user_profile.preferred_regions || [],
-          expected_salary: user_profile.expected_salary || ''
-        };
-        console.log(`[INTERVIEW-QUESTIONS] Using input user profile:`, finalUserProfile);
-      } else if (userProfile) {
-        // 데이터베이스에서 가져온 기존 프로필 사용
-        // skills 파싱: JSON 배열이면 JSON.parse, 콤마 구분 문자열이면 split
-        let parsedSkills = [];
+      // DB에서 user_profiles 조회
+      const [userRows] = await pool.execute(`
+        SELECT up.*, u.name as user_name
+        FROM user_profiles up
+        JOIN users u ON up.user_id = u.id
+        WHERE u.id = ?
+      `, [user_id]);
+
+      if (userRows.length > 0) {
+        const userProfile = userRows[0];
+
+        // JSON 필드 파싱
+        let skills = [];
+        let preferredRegions = [];
+
         if (userProfile.skills) {
-          if (Array.isArray(userProfile.skills)) {
-            // 이미 배열이면 그대로 사용
-            parsedSkills = userProfile.skills;
-          } else if (typeof userProfile.skills === 'string') {
-            try {
-              // JSON 문자열 파싱 시도
-              parsedSkills = JSON.parse(userProfile.skills);
-            } catch (e) {
-              // JSON 파싱 실패 시 콤마로 구분된 문자열로 처리
-              parsedSkills = userProfile.skills.split(',').map(s => s.trim());
-            }
+          try {
+            skills = typeof userProfile.skills === 'string'
+              ? JSON.parse(userProfile.skills)
+              : userProfile.skills;
+          } catch (e) {
+            console.log(`[INTERVIEW-QUESTIONS] ⚠️ skills 파싱 실패:`, e);
+            skills = [];
           }
         }
 
-        // preferred_regions 파싱
-        let parsedRegions = [];
         if (userProfile.preferred_regions) {
-          if (Array.isArray(userProfile.preferred_regions)) {
-            parsedRegions = userProfile.preferred_regions;
-          } else if (typeof userProfile.preferred_regions === 'string') {
-            try {
-              parsedRegions = JSON.parse(userProfile.preferred_regions);
-            } catch (e) {
-              parsedRegions = userProfile.preferred_regions.split(',').map(s => s.trim());
-            }
+          try {
+            preferredRegions = typeof userProfile.preferred_regions === 'string'
+              ? JSON.parse(userProfile.preferred_regions)
+              : userProfile.preferred_regions;
+          } catch (e) {
+            console.log(`[INTERVIEW-QUESTIONS] ⚠️ preferred_regions 파싱 실패:`, e);
+            preferredRegions = [];
           }
         }
 
         finalUserProfile = {
           name: userProfile.user_name || '사용자',
-          skills: parsedSkills,
-          experience: userProfile.experience || '신입',
+          skills: skills || [],
+          experience: userProfile.experience || '',
           preferred_jobs: userProfile.preferred_jobs || '',
-          preferred_regions: parsedRegions,
+          preferred_regions: preferredRegions || [],
           expected_salary: userProfile.expected_salary || ''
         };
-        console.log(`[INTERVIEW-QUESTIONS] Using DB user profile:`, finalUserProfile);
+
+        console.log(`[INTERVIEW-QUESTIONS] ✅ DB user_profiles 사용:`, finalUserProfile);
       } else {
-        // 기본 프로필 사용
+        // DB에 프로필이 없으면 빈 프로필 사용 (기본값 없음)
         finalUserProfile = {
           name: '사용자',
-          skills: ['JavaScript', 'Node.js'],
-          experience: '신입',
-          preferred_jobs: '개발자',
-          preferred_regions: ['서울'],
+          skills: [],
+          experience: '',
+          preferred_jobs: '',
+          preferred_regions: [],
           expected_salary: ''
         };
-        console.log(`[INTERVIEW-QUESTIONS] Using default user profile:`, finalUserProfile);
+        console.log(`[INTERVIEW-QUESTIONS] ⚠️ DB에 프로필 없음 - 빈 프로필 사용`);
       }
 
       // job skills 파싱
@@ -4330,24 +4313,27 @@ app.post('/api/interview-questions', async (req, res) => {
 
           // 회사 리뷰 정보 추가
           const reviewsSection = jobInfo.company_reviews && jobInfo.company_reviews.length > 0
-            ? `\n**회사 리뷰** (${jobInfo.company_reviews.length}건):\n${jobInfo.company_reviews.slice(0, 20).map((r, i) => `${i + 1}. ${r.content || r} (평점: ${r.rating || 'N/A'})`).join('\n')}\n`
+            ? `\n**회사 리뷰** (www.catch.co.kr에서 수집한 ${jobInfo.company_reviews.length}건):\n${jobInfo.company_reviews.slice(0, 20).map((r, i) => `${i + 1}. ${r.content || r} (평점: ${r.rating || 'N/A'})`).join('\n')}\n`
             : '';
 
           const cultureSection = jobInfo.company_culture
             ? `\n**회사 문화**:\n${jobInfo.company_culture}\n`
             : '';
 
+          // 사용자 프로필 섹션 (정보가 있을 때만 포함)
+          const userProfileSection = finalUserProfile.skills.length > 0 || finalUserProfile.experience || finalUserProfile.preferred_jobs
+            ? `\n**사용자 프로필**:\n- 스킬: ${finalUserProfile.skills.join(', ') || '미입력'}\n- 경력: ${finalUserProfile.experience || '미입력'}\n- 희망 직무: ${finalUserProfile.preferred_jobs || '미입력'}\n`
+            : '';
+
           const prompt = `
-당신은 전문 면접관입니다. 다음 정보를 바탕으로 면접 질문을 생성해주세요.
+당신은 전문 면접관입니다. 다음 정보를 바탕으로 ${jobInfo.company_name} ${jobInfo.title} 포지션의 면접 질문을 생성해주세요.
 
 **회사**: ${jobInfo.company_name}
 **포지션**: ${jobInfo.title}
-**사용자 프로필**:
-- 스킬: ${finalUserProfile.skills.join(', ') || '정보 없음'}
-- 경력: ${finalUserProfile.experience || '정보 없음'}
-- 희망 직무: ${finalUserProfile.preferred_jobs || '정보 없음'}
-${reviewsSection}${cultureSection}
-총 5개의 면접 질문을 생성해주세요. 각 질문은 다음 형식으로:
+${userProfileSection}${reviewsSection}${cultureSection}
+위 정보를 바탕으로 총 5개의 면접 질문을 생성해주세요.
+${reviewsSection ? '특히 회사 리뷰에서 언급된 내용을 반영하여 질문을 만들어주세요.' : ''}
+각 질문은 다음 형식으로:
 
 응답은 반드시 다음 JSON 형식으로 해주세요:
 {
@@ -4368,9 +4354,11 @@ ${reviewsSection}${cultureSection}
           console.log(`${'='.repeat(80)}`);
           console.log(`\n${prompt}\n`);
           console.log(`${'='.repeat(80)}`);
-          console.log(`프롬프트 길이: ${prompt.length}자`);
-          console.log(`포함된 리뷰 개수: ${jobInfo.company_reviews?.length || 0}건`);
-          console.log(`회사 문화 정보: ${jobInfo.company_culture ? '있음' : '없음'}`);
+          console.log(`📊 프롬프트 통계:`);
+          console.log(`  - 프롬프트 길이: ${prompt.length}자`);
+          console.log(`  - 회사 리뷰: ${jobInfo.company_reviews?.length || 0}건 (www.catch.co.kr)`);
+          console.log(`  - 회사 문화: ${jobInfo.company_culture ? '있음' : '없음'}`);
+          console.log(`  - 사용자 프로필: ${userProfileSection ? '있음' : '없음 (사용자 입력 없음)'}`);
           console.log(`${'='.repeat(80)}\n`);
 
           const completion = await openai.chat.completions.create({
