@@ -4023,67 +4023,64 @@ app.post('/api/interview-questions', async (req, res) => {
         console.log(`[INTERVIEW-QUESTIONS] Overriding position with additional_preferences.preferred_job: ${finalPosition}`);
       }
 
-      // DB에서 회사 정보 + 리뷰 가져오기
+      // Catch 스크래퍼로 회사 정보 + 리뷰 20건 가져오기
       let companyInfo = null;
       try {
-        console.log(`[INTERVIEW-QUESTIONS] DB에서 ${custom_company} 회사 정보 조회 중...`);
+        console.log(`[INTERVIEW-QUESTIONS] Catch 스크래퍼로 ${custom_company} 회사 정보 조회 중...`);
 
-        // 1. 회사 정보 조회 (LIKE 검색으로 유사 회사명 허용)
-        const [companyRows] = await pool.execute(`
-          SELECT * FROM catch_companies
-          WHERE name LIKE ? OR name LIKE ? OR name LIKE ?
-          LIMIT 1
-        `, [`%${custom_company}%`, `${custom_company}%`, `%${custom_company}`]);
+        // Catch 스크래퍼 초기화
+        try {
+          await axios.post('http://localhost:3000/api/init', {}, { timeout: 5000 });
+          console.log('[INTERVIEW-QUESTIONS] Catch 스크래퍼 초기화 완료');
+        } catch (initErr) {
+          console.log('[INTERVIEW-QUESTIONS] Catch 초기화 생략 (이미 초기화됨 또는 타임아웃)');
+        }
 
-        if (companyRows.length > 0) {
-          const company = companyRows[0];
+        // Catch 로그인
+        try {
+          await axios.post('http://localhost:3000/api/login', {
+            username: 'test0137',
+            password: '#test0808'
+          }, { timeout: 5000 });
+          console.log('[INTERVIEW-QUESTIONS] Catch 로그인 완료');
+        } catch (loginErr) {
+          console.log('[INTERVIEW-QUESTIONS] Catch 로그인 생략 (이미 로그인됨 또는 타임아웃)');
+        }
 
-          // 2. 해당 회사의 리뷰 조회 (최대 5개, 평점 높은 순)
-          const [reviewRows] = await pool.execute(`
-            SELECT * FROM catch_reviews
-            WHERE company_id = ?
-            ORDER BY rating DESC, created_at DESC
-            LIMIT 5
-          `, [company.id]);
+        // 회사 정보 + 리뷰 스크래핑
+        const catchResponse = await axios.post('http://localhost:3000/api/search-company-info', {
+          company_name: custom_company
+        }, { timeout: 120000 });
 
+        if (catchResponse.data && catchResponse.data.success) {
+          const data = catchResponse.data;
           companyInfo = {
-            company_info: {
-              name: company.name,
-              description: company.name,
-              culture: `업종: ${company.industry || '미상'} | 규모: ${company.company_type || '미상'} | 위치: ${company.location || '미상'}`
-            },
-            reviews: reviewRows.map(r => ({
-              content: `[장점] ${r.pros || '없음'} [단점] ${r.cons || '없음'}`,
-              rating: r.rating,
-              date: r.review_date,
-              reviewer_info: r.reviewer_info
-            }))
+            company_info: data.company_info || {},
+            reviews: (data.reviews || []).slice(0, 20) // 최대 20개 리뷰
           };
 
           console.log(`\n${'='.repeat(80)}`);
-          console.log(`[INTERVIEW-QUESTIONS] ✅ DB 회사 정보 조회 완료`);
+          console.log(`[INTERVIEW-QUESTIONS] ✅ Catch 스크래핑 완료`);
           console.log(`${'='.repeat(80)}`);
-          console.log(`📊 조회 결과:`);
-          console.log(`  - 회사명: ${company.name}`);
-          console.log(`  - 업종: ${company.industry || '미상'}`);
-          console.log(`  - 리뷰 개수: ${reviewRows.length}건\n`);
+          console.log(`📊 수집 결과:`);
+          console.log(`  - 회사명: ${custom_company}`);
+          console.log(`  - 회사 정보: ${data.company_info ? '있음' : '없음'}`);
+          console.log(`  - 리뷰 개수: ${companyInfo.reviews.length}건 (최대 20건)\n`);
 
-          if (reviewRows.length > 0) {
+          if (companyInfo.reviews.length > 0) {
             console.log(`💬 리뷰 샘플 (1개):`);
-            const firstReview = reviewRows[0];
-            console.log(`  [리뷰 1] [장점] ${firstReview.pros?.substring(0, 50) || '없음'}...`);
-            console.log(`           [단점] ${firstReview.cons?.substring(0, 50) || '없음'}...`);
-            console.log(`           평점: ${firstReview.rating} | 날짜: ${firstReview.review_date || 'N/A'}`);
-            if (reviewRows.length > 1) {
-              console.log(`  ... 외 ${reviewRows.length - 1}개 리뷰`);
+            const firstReview = companyInfo.reviews[0];
+            console.log(`  [리뷰 1] ${JSON.stringify(firstReview).substring(0, 100)}...`);
+            if (companyInfo.reviews.length > 1) {
+              console.log(`  ... 외 ${companyInfo.reviews.length - 1}개 리뷰`);
             }
           }
           console.log(`${'='.repeat(80)}\n`);
         } else {
-          console.log(`[INTERVIEW-QUESTIONS] ⚠️ DB에 "${custom_company}" 회사 정보 없음`);
+          console.log(`[INTERVIEW-QUESTIONS] ⚠️ Catch 스크래핑 실패 또는 "${custom_company}" 회사 정보 없음`);
         }
-      } catch (dbError) {
-        console.warn(`[INTERVIEW-QUESTIONS] DB 회사 정보 조회 실패:`, dbError.message);
+      } catch (catchError) {
+        console.warn(`[INTERVIEW-QUESTIONS] Catch 스크래핑 실패:`, catchError.message);
       }
 
       jobInfo = {

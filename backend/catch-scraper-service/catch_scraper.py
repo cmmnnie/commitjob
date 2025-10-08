@@ -2045,10 +2045,10 @@ def search_company_info():
         if detail_result.get('success'):
             company_detail = detail_result.get('company_detail')
 
-            # 리뷰를 5개로 제한
+            # 리뷰를 20개로 제한
             if company_detail and 'reviews' in company_detail:
-                company_detail['reviews'] = company_detail['reviews'][:5]
-                print(f"리뷰를 5개로 제한: {len(company_detail['reviews'])}개")
+                company_detail['reviews'] = company_detail['reviews'][:20]
+                print(f"리뷰를 20개로 제한: {len(company_detail['reviews'])}개")
 
             return jsonify({
                 "success": True,
