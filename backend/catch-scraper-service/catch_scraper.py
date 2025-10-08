@@ -340,8 +340,12 @@ class CatchScraper:
             self.driver.set_page_load_timeout(30)
             self.driver.implicitly_wait(10)
 
+            print("[DRIVER] Chrome 드라이버 초기화 성공")
             return True
-        except Exception:
+        except Exception as e:
+            print(f"[DRIVER] Chrome 드라이버 초기화 실패: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return False
     
     def _find_element_with_fallbacks(self, wait, selectors):
@@ -1473,8 +1477,11 @@ def _handle_api_error(e):
 def init_scraper():
     """스크래퍼 초기화"""
     try:
+        print("[INIT] 스크래퍼 초기화 요청 받음")
         driver_ok = scraper.init_driver()
+        print(f"[INIT] Driver 초기화 결과: {driver_ok}")
         db_ok = init_db()
+        print(f"[INIT] DB 초기화 결과: {db_ok}")
         return jsonify({
             "success": driver_ok and db_ok,
             "driver": driver_ok,
@@ -1482,6 +1489,9 @@ def init_scraper():
             "message": "스크래퍼/DB 초기화 완료" if (driver_ok and db_ok) else "일부 초기화 실패"
         })
     except Exception as e:
+        print(f"[INIT] 초기화 예외 발생: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return _handle_api_error(e)
 
 @app.route('/api/login', methods=['POST'])
@@ -2111,6 +2121,6 @@ def search_company_info():
 
 if __name__ == '__main__':
     try:
-        app.run(host='0.0.0.0', port=3000, debug=True)
+        app.run(host='0.0.0.0', port=3000, debug=True, use_reloader=False)
     except KeyboardInterrupt:
         scraper.close_driver()
