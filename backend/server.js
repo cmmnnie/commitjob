@@ -4444,7 +4444,6 @@ ${reviewsSection ? '특히 회사 리뷰에서 언급된 내용을 반영하여 
         powered_by: "Fallback Algorithm",
         generated_at: new Date().toISOString()
       });
-    }
 
   } catch (error) {
     console.error('[INTERVIEW-QUESTIONS] Error generating questions:', error);
