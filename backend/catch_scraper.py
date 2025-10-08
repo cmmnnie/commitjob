@@ -2141,6 +2141,40 @@ def search_company_info():
             "message": "서버 오류가 발생했습니다"
         })
 
+@app.route('/api/debug', methods=['GET'])
+def debug_environment():
+    """환경 디버깅 엔드포인트"""
+    import os
+    import subprocess
+
+    debug_info = {
+        "chrome_bin_env": os.environ.get('CHROME_BIN', 'Not set'),
+        "python_version": subprocess.getoutput('python --version'),
+        "paths_checked": []
+    }
+
+    # 가능한 Chromium 경로들 확인
+    possible_paths = [
+        '/usr/bin/chromium',
+        '/usr/bin/chromium-browser',
+        '/usr/bin/google-chrome',
+        '/usr/bin/google-chrome-stable'
+    ]
+
+    for path in possible_paths:
+        exists = os.path.exists(path)
+        debug_info["paths_checked"].append({
+            "path": path,
+            "exists": exists
+        })
+
+    # which chromium 실행
+    debug_info["which_chromium"] = subprocess.getoutput('which chromium')
+    debug_info["which_chromium_browser"] = subprocess.getoutput('which chromium-browser')
+    debug_info["chromium_version"] = subprocess.getoutput('chromium --version 2>&1')
+
+    return jsonify(debug_info)
+
 if __name__ == '__main__':
     import os
     port = int(os.environ.get('PORT', 3000))
