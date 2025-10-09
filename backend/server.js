@@ -2007,15 +2007,15 @@ app.get("/api/main-recommendations", async (req, res) => {
 
       // GPT에게 전달할 공고 목록 상세 출력
       console.log('[MAIN-RECS] GPT에게 전달되는 공고 목록:');
-      allJobs.slice(0, 10).forEach((job, idx) => {
-        console.log(`  [${idx + 1}] ${job.company} - ${job.title} [출처: ${job.source}]`);
-        console.log(`      경력: ${job.experience}, 지역: ${job.location?.join(', ')}`);
-        console.log(`      스킬: ${Array.isArray(job.skills) ? job.skills.join(', ') : job.skills}`);
-        console.log(`      연봉: ${job.salary}`);
-      });
-      if (allJobs.length > 10) {
-        console.log(`  ... 외 ${allJobs.length - 10}개 공고`);
-      }
+      // allJobs.slice(0, 10).forEach((job, idx) => {
+      //   console.log(`  [${idx + 1}] ${job.company} - ${job.title} [출처: ${job.source}]`);
+      //   console.log(`      경력: ${job.experience}, 지역: ${job.location?.join(', ')}`);
+      //   console.log(`      스킬: ${Array.isArray(job.skills) ? job.skills.join(', ') : job.skills}`);
+      //   console.log(`      연봉: ${job.salary}`);
+      // });
+      // if (allJobs.length > 10) {
+        console.log(` ${allJobs.length - 10}개 공고`);
+      // }
 
       // GPT-5-mini 기반 추천 시도
       let rerankedJobs = [];
@@ -2039,41 +2039,53 @@ app.get("/api/main-recommendations", async (req, res) => {
           // OpenAI 미설정 시
           console.log('[MAIN-RECS] 기본 추천 알고리즘 사용');
         }
-        // 프로필 기반 기본 매칭 (스킬 매칭 위주)
+        // 프로필 기반 기본 매칭
+        // 기본 50점 + 경력 10점 + 지역 최대 20점 + 스킬 최대 20점 = 최고 100점 (95점으로 제한)
         const userSkills = (userProfile?.skills || []).map(s => s.toLowerCase());
+        const userExperience = userProfile?.experience || '';
+        const isUserFresher = userExperience.includes('신입');
 
         rerankedJobs = allJobs.map(job => {
           let matchScore = 50; // 기본 점수
+          const matchReasons = [];
           const jobSkills = (job.skills || []).map(s => s.toLowerCase());
 
-          // 스킬 매칭 점수
+          // 스킬 매칭 점수 (매칭 개수 × 5점, 최대 20점)
           const matchingSkills = jobSkills.filter(js =>
             userSkills.some(us => js.includes(us) || us.includes(js))
           );
-          matchScore += matchingSkills.length * 10;
+          const skillScore = Math.min(matchingSkills.length * 5, 20);
+          matchScore += skillScore;
+          if (matchingSkills.length > 0) {
+            matchReasons.push(`${matchingSkills.length}개 기술스택 매칭 (+${skillScore}점)`);
+          }
 
-          // 경력 매칭
+          // 경력 매칭 (신입/신입아님 매칭 시 +10점)
           if (userProfile?.experience && job.experience) {
-            if (job.experience.includes('신입') && userProfile.experience.includes('신입')) {
+            const isJobFresher = job.experience.includes('신입');
+            if (isUserFresher === isJobFresher) {
               matchScore += 10;
+              matchReasons.push(`경력 매칭 (+10점)`);
             }
           }
 
-          // 지역 매칭
+          // 지역 매칭 (매칭 개수 × 5점, 최대 20점)
           if (userProfile?.preferred_regions && job.location) {
             const matchingRegions = userProfile.preferred_regions.filter(r =>
               job.location.some(l => l.includes(r) || r.includes(l))
             );
-            matchScore += matchingRegions.length * 5;
+            const regionScore = Math.min(matchingRegions.length * 5, 20);
+            matchScore += regionScore;
+            if (matchingRegions.length > 0) {
+              matchReasons.push(`${matchingRegions.length}개 지역 매칭 (+${regionScore}점)`);
+            }
           }
 
           return {
             ...job,
             job_id: job.id,
-            match_score: Math.min(matchScore, 95),
-            match_reasons: matchingSkills.length > 0
-              ? [`${matchingSkills.length}개 기술스택 매칭`]
-              : ['기본 추천']
+            match_score: Math.min(matchScore, 95), // 최고점 95점
+            match_reasons: matchReasons.length > 0 ? matchReasons : ['기본 추천 (50점)']
           };
         });
 
