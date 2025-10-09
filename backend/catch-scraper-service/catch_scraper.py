@@ -1203,6 +1203,25 @@ class CatchScraper:
     def search_company(self, company_name):
         """기업 검색"""
         try:
+            # Driver 세션 확인 및 복구
+            if not self.driver:
+                print("⚠️ Driver가 초기화되지 않았습니다. 재초기화 시도...")
+                self.init_driver()
+                if self.is_logged_in:
+                    print("⚠️ 로그인 세션도 만료되었을 수 있습니다. 재로그인 시도...")
+                    self.login()
+            else:
+                # Driver 세션이 살아있는지 확인
+                try:
+                    _ = self.driver.current_url
+                except Exception as session_error:
+                    print(f"⚠️ Driver 세션 만료 감지: {str(session_error)[:100]}")
+                    print("재초기화 및 재로그인 시도...")
+                    self.close_driver()
+                    self.init_driver()
+                    if self.is_logged_in:
+                        self.login()
+
             print(f"기업 검색 페이지로 이동: {company_name}")
             self.driver.get("https://www.catch.co.kr/Comp/CompMajor/SearchPage")
             
@@ -1452,6 +1471,25 @@ class CatchScraper:
     def extract_interview_questions(self, company_url, max_questions=10):
         """기업 면접 질문 추출 (최대 10개) - 면접후기 기출질문 탭 사용"""
         try:
+            # Driver 세션 확인 및 복구
+            if not self.driver:
+                print("⚠️ Driver가 초기화되지 않았습니다. 재초기화 시도...")
+                self.init_driver()
+                if self.is_logged_in:
+                    print("⚠️ 로그인 세션도 만료되었을 수 있습니다. 재로그인 시도...")
+                    self.login()
+            else:
+                # Driver 세션이 살아있는지 확인
+                try:
+                    _ = self.driver.current_url
+                except Exception as session_error:
+                    print(f"⚠️ Driver 세션 만료 감지: {str(session_error)[:100]}")
+                    print("재초기화 및 재로그인 시도...")
+                    self.close_driver()
+                    self.init_driver()
+                    if self.is_logged_in:
+                        self.login()
+
             # URL을 InterviewReview 경로로 변환하고 ?tab=question 파라미터 추가
             # CompSummary → InterviewReview + ?tab=question
             interview_review_url = company_url.replace('/CompSummary/', '/InterviewReview/') + "?tab=question"
