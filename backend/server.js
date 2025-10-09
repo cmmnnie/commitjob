@@ -409,12 +409,16 @@ async function findOrCreateUser(providerKey, email, name, picture, provider) {
       return { ...user, provider_key: providerKey, name, picture, isNewUser: false };
     } else {
       // 최초 로그인 - 새 사용자 생성
-      const [result] = await pool.execute(
-        'INSERT INTO users (provider_key, email, name, picture, provider) VALUES (?, ?, ?, ?, ?)',
-        [providerKey, email, name, picture, provider]
-      );
+      const insertUserSQL = 'INSERT INTO users (provider_key, email, name, picture, provider) VALUES (?, ?, ?, ?, ?)';
+      const insertUserParams = [providerKey, email, name, picture, provider];
+
+      console.log('[DB] 최초 로그인 - 새 사용자 생성 SQL:');
+      console.log('  SQL:', insertUserSQL);
+      console.log('  Params:', JSON.stringify(insertUserParams));
+
+      const [result] = await pool.execute(insertUserSQL, insertUserParams);
       const newUserId = result.insertId;
-      console.log('[DB] 최초 로그인 - 새 사용자 생성:', email);
+      console.log('[DB] ✅ 새 사용자 생성 완료 - ID:', newUserId, ', Email:', email);
 
       // 기본 프로필 생성 (백엔드 또는 프론트엔드 개발자 중 랜덤 선택)
       const profileTemplates = [
