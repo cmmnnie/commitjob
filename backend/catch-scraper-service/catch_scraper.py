@@ -1436,10 +1436,16 @@ class CatchScraper:
             }
 
     def extract_interview_questions(self, company_url, max_questions=10):
-        """기업 면접 질문 추출 (최대 10개)"""
+        """기업 면접 질문 추출 (최대 10개) - 기출질문 탭 사용"""
         try:
-            print(f"면접 후기 페이지로 이동: {company_url}")
-            self.driver.get(company_url)
+            # URL에 ?tab=question 파라미터 추가하여 기출질문 탭으로 직접 이동
+            if '?' in company_url:
+                interview_questions_url = f"{company_url}&tab=question"
+            else:
+                interview_questions_url = f"{company_url}?tab=question"
+
+            print(f"기출질문 탭으로 이동: {interview_questions_url}")
+            self.driver.get(interview_questions_url)
 
             wait = WebDriverWait(self.driver, 10)
 
@@ -1447,24 +1453,9 @@ class CatchScraper:
             import time
             time.sleep(3)
 
-            # 면접후기 탭 클릭
-            try:
-                interview_tab = wait.until(EC.element_to_be_clickable((By.XPATH, "//div[@class='bot']//ul[@class='menu']//li//a[contains(text(), '면접후기')]")))
-                try:
-                    interview_tab.click()
-                except Exception:
-                    self.driver.execute_script("arguments[0].click();", interview_tab)
-
-                print("면접후기 탭 클릭 완료")
-                time.sleep(3)  # 탭 전환 후 로딩 대기
-
-            except Exception as e:
-                print(f"면접후기 탭 클릭 실패: {e}")
-                return {
-                    "success": False,
-                    "error": str(e),
-                    "message": "면접후기 탭을 찾을 수 없습니다"
-                }
+            # 기출질문 탭이 로드되었는지 확인 (추가 탭 클릭 불필요)
+            print("기출질문 탭 로딩 완료")
+            time.sleep(2)  # 콘텐츠 로딩 대기
 
             # 면접 질문 수집
             interview_questions = []
