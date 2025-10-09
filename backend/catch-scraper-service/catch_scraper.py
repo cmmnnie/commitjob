@@ -1475,24 +1475,26 @@ class CatchScraper:
             interview_questions = []
 
             try:
-                # JavaScript로 면접 질문 추출
+                # JavaScript로 면접 질문 추출 (기출질문 탭 - interview_previous2)
                 questions = self.driver.execute_script(
                     """
                     const questions = [];
-                    const questionElements = document.querySelectorAll('.corp_interview_list li');
+                    const questionElements = document.querySelectorAll('.interview_previous2 li');
 
                     questionElements.forEach((li) => {
-                        const questionText = li.querySelector('.question');
-                        const answerText = li.querySelector('.answer');
-                        const dateText = li.querySelector('.date');
-                        const positionText = li.querySelector('.position, .info');
+                        const questionText = li.querySelector('p.que .txt');
+                        const cateElements = li.querySelectorAll('p.cate span');
 
                         if (questionText) {
+                            const period = cateElements[0] ? cateElements[0].textContent.trim() : '';
+                            const position = cateElements[1] ? cateElements[1].textContent.trim() : '';
+                            const experience = cateElements[2] ? cateElements[2].textContent.trim() : '';
+
                             questions.push({
                                 question: questionText.textContent.trim().replace('Q.', '').trim(),
-                                answer: answerText ? answerText.textContent.trim().replace('A.', '').trim() : '',
-                                date: dateText ? dateText.textContent.trim() : '',
-                                position: positionText ? positionText.textContent.trim() : ''
+                                period: period,
+                                position: position,
+                                experience: experience
                             });
                         }
                     });
@@ -1506,41 +1508,35 @@ class CatchScraper:
                 print(f"면접 질문 {len(interview_questions)}개 추출 완료 (최대 {max_questions}개)")
 
             except Exception as e:
-                print(f"면접 질문 추출 실패: {e}")
-                # 대체 XPath로 시도
+                print(f"면접 질문 추출 실패 (JavaScript): {e}")
+                # 대체 XPath로 시도 (interview_previous2)
                 try:
-                    question_elements = wait.until(EC.presence_of_all_elements_located((By.XPATH, "//ul[@class='corp_interview_list']//li")))
+                    print("대체 방법으로 시도 중...")
+                    question_elements = wait.until(EC.presence_of_all_elements_located((By.XPATH, "//ul[@class='interview_previous2']//li")))
 
                     for elem in question_elements[:max_questions]:
                         try:
-                            question = elem.find_element(By.CLASS_NAME, "question").text.strip()
-                            answer = ""
-                            date = ""
+                            question = elem.find_element(By.CSS_SELECTOR, "p.que .txt").text.strip()
+                            period = ""
                             position = ""
+                            experience = ""
 
                             try:
-                                answer = elem.find_element(By.CLASS_NAME, "answer").text.strip()
+                                cate_elements = elem.find_elements(By.CSS_SELECTOR, "p.cate span")
+                                if len(cate_elements) > 0:
+                                    period = cate_elements[0].text.strip()
+                                if len(cate_elements) > 1:
+                                    position = cate_elements[1].text.strip()
+                                if len(cate_elements) > 2:
+                                    experience = cate_elements[2].text.strip()
                             except:
                                 pass
-
-                            try:
-                                date = elem.find_element(By.CLASS_NAME, "date").text.strip()
-                            except:
-                                pass
-
-                            try:
-                                position = elem.find_element(By.CLASS_NAME, "position").text.strip()
-                            except:
-                                try:
-                                    position = elem.find_element(By.CLASS_NAME, "info").text.strip()
-                                except:
-                                    pass
 
                             interview_questions.append({
                                 "question": question.replace('Q.', '').strip(),
-                                "answer": answer.replace('A.', '').strip(),
-                                "date": date,
-                                "position": position
+                                "period": period,
+                                "position": position,
+                                "experience": experience
                             })
 
                         except Exception as elem_error:
