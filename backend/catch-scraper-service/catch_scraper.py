@@ -1207,9 +1207,9 @@ class CatchScraper:
             if not self.driver:
                 print("⚠️ Driver가 초기화되지 않았습니다. 재초기화 시도...")
                 self.init_driver()
-                if self.is_logged_in:
-                    print("⚠️ 로그인 세션도 만료되었을 수 있습니다. 재로그인 시도...")
-                    self.login()
+                print("⚠️ 세션 복구 후 재로그인 시도...")
+                self.is_logged_in = False  # 플래그 초기화
+                self.login()
             else:
                 # Driver 세션이 살아있는지 확인
                 try:
@@ -1219,12 +1219,24 @@ class CatchScraper:
                     print("재초기화 및 재로그인 시도...")
                     self.close_driver()
                     self.init_driver()
-                    if self.is_logged_in:
-                        self.login()
+                    self.is_logged_in = False  # 플래그 초기화
+                    self.login()
 
             print(f"기업 검색 페이지로 이동: {company_name}")
-            self.driver.get("https://www.catch.co.kr/Comp/CompMajor/SearchPage")
-            
+
+            # 페이지 이동 시도 (세션 에러 발생 시 재시도)
+            try:
+                self.driver.get("https://www.catch.co.kr/Comp/CompMajor/SearchPage")
+            except Exception as nav_error:
+                print(f"⚠️ 페이지 이동 중 세션 에러 발생: {str(nav_error)[:100]}")
+                print("세션 재연결 후 다시 시도...")
+                self.close_driver()
+                self.init_driver()
+                self.is_logged_in = False
+                self.login()
+                self.driver.get("https://www.catch.co.kr/Comp/CompMajor/SearchPage")
+                print(f"✅ 재시도 후 페이지 이동 완료")
+
             wait = WebDriverWait(self.driver, 10)
             
             # 페이지 로딩 대기
@@ -1475,9 +1487,9 @@ class CatchScraper:
             if not self.driver:
                 print("⚠️ Driver가 초기화되지 않았습니다. 재초기화 시도...")
                 self.init_driver()
-                if self.is_logged_in:
-                    print("⚠️ 로그인 세션도 만료되었을 수 있습니다. 재로그인 시도...")
-                    self.login()
+                print("⚠️ 세션 복구 후 재로그인 시도...")
+                self.is_logged_in = False  # 플래그 초기화
+                self.login()
             else:
                 # Driver 세션이 살아있는지 확인
                 try:
@@ -1487,8 +1499,8 @@ class CatchScraper:
                     print("재초기화 및 재로그인 시도...")
                     self.close_driver()
                     self.init_driver()
-                    if self.is_logged_in:
-                        self.login()
+                    self.is_logged_in = False  # 플래그 초기화
+                    self.login()
 
             # URL을 InterviewReview 경로로 변환하고 ?tab=question 파라미터 추가
             # CompSummary → InterviewReview + ?tab=question
@@ -1497,8 +1509,19 @@ class CatchScraper:
             print(f"📋 기업 정보 페이지: {company_url}")
             print(f"📋 면접후기 기출질문 페이지로 변환: {interview_review_url}")
 
-            self.driver.get(interview_review_url)
-            print(f"✅ 면접후기 기출질문 페이지 이동 완료")
+            # 페이지 이동 시도 (세션 에러 발생 시 재시도)
+            try:
+                self.driver.get(interview_review_url)
+                print(f"✅ 면접후기 기출질문 페이지 이동 완료")
+            except Exception as nav_error:
+                print(f"⚠️ 페이지 이동 중 세션 에러 발생: {str(nav_error)[:100]}")
+                print("세션 재연결 후 다시 시도...")
+                self.close_driver()
+                self.init_driver()
+                self.is_logged_in = False
+                self.login()
+                self.driver.get(interview_review_url)
+                print(f"✅ 재시도 후 페이지 이동 완료")
 
             wait = WebDriverWait(self.driver, 10)
 
