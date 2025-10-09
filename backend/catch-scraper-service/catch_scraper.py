@@ -1452,11 +1452,14 @@ class CatchScraper:
     def extract_interview_questions(self, company_url, max_questions=10):
         """기업 면접 질문 추출 (최대 10개) - 면접후기 탭 사용"""
         try:
-            # 면접후기 탭으로 직접 이동 (기본 탭 또는 tab=review)
-            # InterviewReview 경로는 이미 면접후기 섹션이므로 파라미터 없이 접근
-            print(f"📋 면접후기 탭 URL: {company_url}")
-            self.driver.get(company_url)
-            print(f"✅ 면접후기 탭 페이지 이동 완료")
+            # URL을 InterviewReview 경로로 변환 (CompSummary → InterviewReview)
+            interview_review_url = company_url.replace('/CompSummary/', '/InterviewReview/')
+
+            print(f"📋 기업 정보 페이지: {company_url}")
+            print(f"📋 면접후기 페이지로 변환: {interview_review_url}")
+
+            self.driver.get(interview_review_url)
+            print(f"✅ 면접후기 페이지 이동 완료")
 
             wait = WebDriverWait(self.driver, 10)
 
@@ -1464,8 +1467,7 @@ class CatchScraper:
             import time
             time.sleep(3)
 
-            # 기출질문 탭이 로드되었는지 확인 (추가 탭 클릭 불필요)
-            print("기출질문 탭 로딩 완료")
+            print("면접후기 페이지 로딩 완료")
             time.sleep(2)  # 콘텐츠 로딩 대기
 
             # 면접 질문 수집
