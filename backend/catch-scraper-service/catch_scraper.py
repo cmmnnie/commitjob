@@ -432,42 +432,54 @@ class CatchScraper:
     def login(self, username='test0137', password='#test0808'):
         """CATCH 사이트 로그인"""
         try:
+            print(f"🔐 Catch.co.kr 로그인 시도 시작 (사용자: {username})")
             self.driver.get(BASE_URL)
-            
+
             wait = WebDriverWait(self.driver, 15)
             login_button = self._find_element_with_fallbacks(wait, SELECTORS['login_button'])
             if not login_button:
+                print("❌ 로그인 버튼을 찾을 수 없습니다")
                 return {"success": False, "message": "로그인 버튼을 찾을 수 없습니다."}
-            
+
             self.driver.execute_script("arguments[0].click();", login_button)
-            
+            print("로그인 버튼 클릭 완료")
+
             WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.ID, "id_login"))
             )
-            
+
             id_input = self.driver.find_element(By.ID, "id_login")
             password_input = self.driver.find_element(By.ID, "pw_login")
-            
+
             id_input.clear()
             id_input.send_keys(username)
             password_input.clear()
             password_input.send_keys(password)
             password_input.send_keys(Keys.RETURN)
-            
+            print("로그인 정보 입력 및 제출 완료")
+
             try:
                 WebDriverWait(self.driver, 15).until(
-                    lambda driver: "Login" not in driver.current_url or 
+                    lambda driver: "Login" not in driver.current_url or
                     len(driver.find_elements(By.ID, "id_login")) == 0
                 )
                 self.is_logged_in = True
+                print(f"✅ Catch.co.kr 로그인 성공 (사용자: {username})")
                 return {"success": True, "message": "로그인 성공"}
-            except Exception:
+            except Exception as login_wait_error:
+                print(f"❌ 로그인 대기 중 오류: {str(login_wait_error)}")
                 try:
-                    return {"success": False, "message": self.driver.find_element(By.CLASS_NAME, 'error-message').text}
+                    error_msg = self.driver.find_element(By.CLASS_NAME, 'error-message').text
+                    print(f"❌ 로그인 실패 (서버 에러 메시지): {error_msg}")
+                    return {"success": False, "message": error_msg}
                 except Exception:
-                    return {"success": False, "message": "로그인 실패 - 로그인 페이지에 머물러 있음" if 'login' in self.driver.current_url else "로그인 상태 확인 실패"}
-                    
+                    current_url = self.driver.current_url
+                    msg = "로그인 실패 - 로그인 페이지에 머물러 있음" if 'login' in current_url else "로그인 상태 확인 실패"
+                    print(f"❌ {msg} (현재 URL: {current_url})")
+                    return {"success": False, "message": msg}
+
         except Exception as e:
+            print(f"❌ 로그인 예외 발생: {str(e)}")
             return {"success": False, "message": str(e)}
     
     def get_current_status(self):
@@ -1248,7 +1260,9 @@ class CatchScraper:
                     "success": False,
                     "message": f"'{company_name}' 기업을 찾을 수 없습니다. 검색 결과: {', '.join(available_companies)}"
                 }
-            
+
+            print(f"✅ 기업 정보 페이지 URL: {target_company_url}")
+
             return {
                 "success": True,
                 "company_url": target_company_url,
@@ -1444,8 +1458,9 @@ class CatchScraper:
             else:
                 interview_questions_url = f"{company_url}?tab=question"
 
-            print(f"기출질문 탭으로 이동: {interview_questions_url}")
+            print(f"📋 면접후기 기출질문 수집 URL: {interview_questions_url}")
             self.driver.get(interview_questions_url)
+            print(f"✅ 기출질문 탭 페이지 이동 완료")
 
             wait = WebDriverWait(self.driver, 10)
 
