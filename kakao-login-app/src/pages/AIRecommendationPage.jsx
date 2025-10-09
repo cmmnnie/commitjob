@@ -468,7 +468,7 @@ export default function AIRecommendationPage() {
                                     margin: 0,
                                     fontWeight: '500'
                                 }}>
-                                    <strong>{maskName(currentUser?.name)}님</strong>에게 딱 맞는 채용공고
+                                    GPT-5-mini가 추천하는 맞춤형 채용 공고
                                 </p>
                             </div>
                             <button
@@ -545,7 +545,7 @@ export default function AIRecommendationPage() {
                                         margin: 0,
                                         fontWeight: '500'
                                     }}>
-                                        GPT-5-mini가 분석한 맞춤 채용공고
+                                        GPT-5-mini가 사용자 이력서와 <strong style={{ fontWeight: '700' }}>DB에 저장된 채용공고를 참고</strong>하여 맞춤형 채용공고 추천
                                     </p>
                                 </div>
                                 <div style={{
