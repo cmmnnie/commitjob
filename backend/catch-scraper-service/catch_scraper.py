@@ -433,7 +433,17 @@ class CatchScraper:
         """CATCH 사이트 로그인"""
         try:
             print(f"🔐 Catch.co.kr 로그인 시도 시작 (사용자: {username})")
-            self.driver.get(BASE_URL)
+
+            # 페이지 이동 시도 (세션 에러 발생 시 재시도)
+            try:
+                self.driver.get(BASE_URL)
+            except Exception as nav_error:
+                print(f"⚠️ 로그인 페이지 이동 중 세션 에러 발생: {str(nav_error)[:100]}")
+                print("Driver 재초기화 후 다시 시도...")
+                self.close_driver()
+                self.init_driver()
+                self.driver.get(BASE_URL)
+                print(f"✅ 재시도 후 로그인 페이지 이동 완료")
 
             wait = WebDriverWait(self.driver, 15)
             login_button = self._find_element_with_fallbacks(wait, SELECTORS['login_button'])
