@@ -242,50 +242,73 @@ export default function AIInterviewPage() {
                 <div style={{
                     background: 'white',
                     borderRadius: '20px',
-                    padding: '30px',
+                    padding: '24px',
                     marginBottom: '20px',
                     boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)'
                 }}>
-                    <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                        <div style={{ fontSize: '3rem', marginBottom: '10px' }}>🎤</div>
+                    <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+                        <div style={{
+                            fontSize: '2.5rem',
+                            marginBottom: '6px',
+                            display: 'inline-block',
+                            padding: '8px',
+                            background: 'linear-gradient(135deg, #667eea15 0%, #764ba215 100%)',
+                            borderRadius: '12px'
+                        }}>🎤</div>
                         <h1 style={{
-                            fontSize: '2rem',
+                            fontSize: '1.75rem',
                             color: '#667eea',
-                            marginBottom: '10px',
-                            fontWeight: '700'
+                            marginBottom: '6px',
+                            fontWeight: '700',
+                            letterSpacing: '-0.5px'
                         }}>AI 면접 준비</h1>
-                        <p style={{ color: '#666', fontSize: '1rem' }}>
-                            GPT-5-mini가 생성한 맞춤형 면접 질문으로 면접을 준비하세요
+                        <p style={{
+                            color: '#718096',
+                            fontSize: '0.9rem',
+                            margin: '0'
+                        }}>
+                            GPT-5-mini가 생성한 맞춤형 면접 질문
                         </p>
                     </div>
 
                     <div style={{
-                        background: 'linear-gradient(135deg, #e6fffa 0%, #e0e7ff 100%)',
+                        background: 'linear-gradient(135deg, #667eea08 0%, #764ba208 100%)',
+                        border: '1px solid #e0e7ff',
                         borderRadius: '12px',
-                        padding: '20px',
-                        marginBottom: '20px'
+                        padding: '14px 16px',
+                        marginBottom: '18px',
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '10px'
                     }}>
-                        <p style={{
-                            fontSize: '0.95rem',
-                            color: '#666',
-                            lineHeight: '1.6',
-                            marginBottom: '0'
+                        <div style={{
+                            fontSize: '1.25rem',
+                            lineHeight: '1',
+                            marginTop: '2px',
+                            flexShrink: '0'
+                        }}>💡</div>
+                        <div style={{
+                            fontSize: '0.875rem',
+                            color: '#4a5568',
+                            lineHeight: '1.5',
+                            flex: '1'
                         }}>
-                            <strong>💡 AI 기능:</strong> 회사명만 입력하면 www.catch.co.kr에서 실시간 기출면접질문 10건을 수집하고,<br />
-                            사용자 프로필을 참고하여 GPT-5-mini가 맞춤형 면접 질문 5개를 생성합니다
-                        </p>
+                            <strong style={{ color: '#667eea' }}>AI 기능</strong>
+                            <br />
+                            회사명 입력 → www.catch.co.kr에서 실시간 기출질문 10건 수집 → 사용자 프로필 참고 → 맞춤형 면접 질문 5개 생성
+                        </div>
                     </div>
 
                     {/* 입력 폼 */}
-                    <div style={{ marginBottom: '20px' }}>
+                    <div style={{ marginBottom: '14px' }}>
                         <label style={{
                             display: 'block',
-                            marginBottom: '8px',
+                            marginBottom: '6px',
                             fontWeight: '600',
-                            color: '#333',
-                            fontSize: '1.05rem'
+                            color: '#2d3748',
+                            fontSize: '0.95rem'
                         }}>
-                            회사명 <span style={{ color: '#d32f2f' }}>*</span>
+                            회사명 <span style={{ color: '#e53e3e' }}>*</span>
                         </label>
                         <input
                             type="text"
@@ -299,10 +322,10 @@ export default function AIInterviewPage() {
                             placeholder="예: 네이버, 카카오, 삼성전자, 쿠팡"
                             style={{
                                 width: '100%',
-                                padding: '14px 16px',
+                                padding: '12px 14px',
                                 border: '2px solid #e2e8f0',
                                 borderRadius: '10px',
-                                fontSize: '1.05rem',
+                                fontSize: '1rem',
                                 boxSizing: 'border-box',
                                 transition: 'all 0.2s'
                             }}
@@ -323,17 +346,17 @@ export default function AIInterviewPage() {
                         style={{
                             width: '100%',
                             background: isLoading
-                                ? '#cccccc'
+                                ? '#cbd5e0'
                                 : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                             color: 'white',
                             border: 'none',
-                            padding: '15px 24px',
-                            borderRadius: '12px',
-                            fontSize: '1.1rem',
+                            padding: '13px 20px',
+                            borderRadius: '10px',
+                            fontSize: '1rem',
                             fontWeight: '600',
                             cursor: isLoading ? 'not-allowed' : 'pointer',
                             transition: 'all 0.2s',
-                            boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+                            boxShadow: isLoading ? 'none' : '0 4px 12px rgba(102, 126, 234, 0.3)'
                         }}
                         onMouseEnter={(e) => {
                             if (!isLoading) {
