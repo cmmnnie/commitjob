@@ -271,7 +271,7 @@ export default function AIInterviewPage() {
                             lineHeight: '1.6',
                             marginBottom: '0'
                         }}>
-                            <strong>💡 AI 기능:</strong> 회사명만 입력하면 www.catch.co.kr에서 회사 리뷰 5건을 수집하고,<br />
+                            <strong>💡 AI 기능:</strong> 회사명만 입력하면 www.catch.co.kr에서 면접후기 1건을 수집하고,<br />
                             사용자 프로필과 함께 GPT-5-mini가 맞춤형 면접 질문 5개를 생성합니다
                         </p>
                     </div>
@@ -450,7 +450,7 @@ export default function AIInterviewPage() {
                             color: '#718096',
                             textAlign: 'center'
                         }}>
-                            💡 GPT-5-mini가 Catch 리뷰 5건과 사용자 프로필을 분석하여 생성한 맞춤형 질문입니다
+                            💡 GPT-5-mini가 www.catch.co.kr 면접후기 1건과 사용자 프로필을 분석하여 생성한 맞춤형 질문입니다
                         </div>
                     </div>
                 )}
