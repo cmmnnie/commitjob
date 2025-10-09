@@ -442,19 +442,23 @@ async function findOrCreateUser(providerKey, email, name, picture, provider) {
 
       const selectedTemplate = profileTemplates[Math.floor(Math.random() * profileTemplates.length)];
 
-      await pool.execute(
-        `INSERT INTO user_profiles (user_id, skills, experience, preferred_regions, preferred_jobs, expected_salary, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-        [
-          newUserId,
-          JSON.stringify(selectedTemplate.skills),
-          selectedTemplate.experience,
-          JSON.stringify(selectedTemplate.preferred_regions),
-          selectedTemplate.preferred_jobs,
-          selectedTemplate.expected_salary
-        ]
-      );
-      console.log(`[DB] 기본 프로필 생성 완료: ${selectedTemplate.type}`);
+      const insertProfileSQL = `INSERT INTO user_profiles (user_id, skills, experience, preferred_regions, preferred_jobs, expected_salary, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`;
+      const insertProfileParams = [
+        newUserId,
+        JSON.stringify(selectedTemplate.skills),
+        selectedTemplate.experience,
+        JSON.stringify(selectedTemplate.preferred_regions),
+        selectedTemplate.preferred_jobs,
+        selectedTemplate.expected_salary
+      ];
+
+      console.log('[DB] 기본 프로필 생성 SQL:');
+      console.log('  SQL:', insertProfileSQL);
+      console.log('  Params:', JSON.stringify(insertProfileParams));
+
+      await pool.execute(insertProfileSQL, insertProfileParams);
+      console.log(`[DB] ✅ 기본 프로필 생성 완료: ${selectedTemplate.type}`);
 
       return {
         id: newUserId,
