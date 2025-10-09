@@ -5577,6 +5577,12 @@ ${idx + 1}. ${job.title} at ${job.company}
 }
 `;
 
+  console.log('\n' + '='.repeat(80));
+  console.log('[AI추천] GPT-5-mini Prompt:');
+  console.log('='.repeat(80));
+  console.log(prompt);
+  console.log('='.repeat(80) + '\n');
+
   try {
     const completion = await openai.chat.completions.create({
       model: 'gpt-5-mini',
