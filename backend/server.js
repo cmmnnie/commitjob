@@ -2014,7 +2014,7 @@ app.get("/api/main-recommendations", async (req, res) => {
       //   console.log(`      연봉: ${job.salary}`);
       // });
       // if (allJobs.length > 10) {
-        console.log(` ${allJobs.length - 10}개 공고`);
+        console.log(` ${allJobs.length }개 공고`);
       // }
 
       // GPT-5-mini 기반 추천 시도
@@ -2201,12 +2201,12 @@ app.get("/api/main-recommendations", async (req, res) => {
                 INSERT INTO recommendation_logs (user_id, job_id, recommendation_score, match_reasons, created_at)
                 VALUES (?, ?, ?, ?, NOW())
               `;
-              await pool.query(logQuery, [
-                user_id,
-                job.job_id || job.id,
-                job.match_score || 85, // Use GPT match_score if available
-                JSON.stringify(job.match_reasons || [])
-              ]);
+              // await pool.query(logQuery, [
+              //   user_id,
+              //   job.job_id || job.id,
+              //   job.match_score || 85, // Use GPT match_score if available
+              //   JSON.stringify(job.match_reasons || [])
+              // ]);
               savedCount++;
             } catch (jobLogError) {
               // 로깅 에러는 무시 (추천 결과에는 영향 없음)
@@ -3091,10 +3091,10 @@ app.get("/session/interview", async (req, res) => {
     if (responseData?.questions && Array.isArray(responseData.questions)) {
       // 면접 로그 저장
       try {
-        await pool.execute(
-          'INSERT INTO interview_logs (user_id, job_id, questions, created_at) VALUES (?, ?, ?, NOW())',
-          [user_id, job_id, JSON.stringify(responseData.questions)]
-        );
+        // await pool.execute(
+        //   'INSERT INTO interview_logs (user_id, job_id, questions, created_at) VALUES (?, ?, ?, NOW())',
+        //   [user_id, job_id, JSON.stringify(responseData.questions)]
+        // );
         console.log(`[GPT-INTERVIEW] 면접 로그 저장 완료`);
       } catch (logError) {
         console.error(`[GPT-INTERVIEW] 면접 로그 저장 실패:`, logError);
@@ -4277,8 +4277,8 @@ app.post('/api/interview-questions', async (req, res) => {
         return title;
       };
 
-      const expandedTitle = expandJobTitle(jobInfo.title);
-      console.log(`[INTERVIEW-QUESTIONS] Job title expanded: "${jobInfo.title}" → "${expandedTitle}"`);
+      //const expandedTitle = expandJobTitle(jobInfo.title);
+      // console.log(`[INTERVIEW-QUESTIONS] Job title expanded: "${jobInfo.title}" → "${expandedTitle}"`);
 
       // GPT-5-mini 직접 호출 (MCP 서비스 없이)
       console.log('[INTERVIEW-QUESTIONS] openai 객체 존재 여부:', !!openai);
@@ -4378,7 +4378,7 @@ ${interviewQuestionsSection ? '기출질문과 유사하지만 더 깊이 있고
 
             return res.json({
               success: true,
-              job_title: jobInfo.title,
+            //  job_title: jobInfo.title,
               company: jobInfo.company_name,
               questions: parsedResponse.questions,
               total_questions: parsedResponse.questions.length,
@@ -4438,7 +4438,7 @@ ${interviewQuestionsSection ? '기출질문과 유사하지만 더 깊이 있고
 
       return res.json({
         success: true,
-        job_title: jobInfo.title,
+      //  job_title: jobInfo.title,
         company: jobInfo.company_name,
         questions: fallbackQuestions,
         total_questions: fallbackQuestions.length,
@@ -5571,7 +5571,7 @@ async function generateGPT4Recommendations(userProfile, jobCandidates, limit) {
 - 희망 직무: ${formatArray(userProfile.jobs)}
 - 희망 연봉: ${userProfile.expected_salary || '정보 없음'}
 
-**채용공고 목록:**
+**채용공고 목록: ${jobCandidates.length} 개 **
 ${jobCandidates.slice(0, 20).map((job, idx) => `
 ${idx + 1}. ${job.title} at ${job.company}
    - 요구 기술: ${formatSkills(job.skills)}
