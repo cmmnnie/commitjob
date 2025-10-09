@@ -1579,11 +1579,17 @@ def _handle_api_error(e):
 def init_scraper():
     """스크래퍼 초기화"""
     try:
-        print("[INIT] 스크래퍼 초기화 요청 받음")
+        print("[INIT] 🚀 Catch Scraper 초기화 요청 받음")
         driver_ok = scraper.init_driver()
-        print(f"[INIT] Driver 초기화 결과: {driver_ok}")
+        print(f"[INIT] Chromium Driver 초기화: {'✅ 성공' if driver_ok else '❌ 실패'}")
         db_ok = init_db()
-        print(f"[INIT] DB 초기화 결과: {db_ok}")
+        print(f"[INIT] Database 초기화: {'✅ 성공' if db_ok else '❌ 실패'}")
+
+        if driver_ok and db_ok:
+            print("[INIT] ✅ Catch Scraper 초기화 완료")
+        else:
+            print("[INIT] ⚠️ 일부 초기화 실패")
+
         return jsonify({
             "success": driver_ok and db_ok,
             "driver": driver_ok,
@@ -1603,9 +1609,18 @@ def login():
         data = request.get_json()
         username = data.get('username', 'test0137')
         password = data.get('password', '#test0808')
-        
-        return jsonify(scraper.login(username, password))
+
+        print(f"[LOGIN] Catch.co.kr 로그인 시도: 사용자={username}")
+        result = scraper.login(username, password)
+
+        if result.get('success'):
+            print(f"[LOGIN] ✅ Catch.co.kr 로그인 성공: {username}")
+        else:
+            print(f"[LOGIN] ❌ Catch.co.kr 로그인 실패: {result.get('message', '알 수 없는 오류')}")
+
+        return jsonify(result)
     except Exception as e:
+        print(f"[LOGIN] ❌ 로그인 예외 발생: {str(e)}")
         return _handle_api_error(e)
 
 # ==================================
@@ -2236,14 +2251,18 @@ def search_interview_questions():
         if max_questions < 1 or max_questions > 20:
             max_questions = 10
 
-        print(f"면접 질문 검색 요청: {company_name} (최대 {max_questions}개)")
+        print(f"[INTERVIEW-Q] 📝 면접 질문 검색 요청: {company_name} (최대 {max_questions}개)")
 
         # 1. 기업 검색 (띄어쓰기 무시를 위해 원문+정규화 키 모두 시도)
+        print(f"[INTERVIEW-Q] 🔍 기업 검색 중: {company_name}")
         search_result = scraper.search_company(company_name)
         if not search_result.get('success'):
             normalized_name = company_name.replace('\u00A0','').replace(' ','')
+            print(f"[INTERVIEW-Q] 정규화된 이름으로 재시도: {normalized_name}")
             search_result = scraper.search_company(normalized_name)
+
         if not search_result.get('success'):
+            print(f"[INTERVIEW-Q] ❌ 기업 검색 실패: {search_result.get('message')}")
             return jsonify({
                 "success": False,
                 "message": search_result.get('message')
@@ -2251,24 +2270,28 @@ def search_interview_questions():
 
         # 매칭된 실제 회사명 추출
         matched_name = search_result.get('matched_name', company_name)
-        print(f"입력한 회사명: '{company_name}' → 매칭된 회사명: '{matched_name}'")
+        print(f"[INTERVIEW-Q] ✅ 기업 검색 성공: '{company_name}' → '{matched_name}'")
 
         # 2. 면접 질문 추출
+        print(f"[INTERVIEW-Q] 📋 면접 질문 추출 시작 (목표: {max_questions}개)")
         interview_result = scraper.extract_interview_questions(
             search_result.get('company_url'),
             max_questions=max_questions
         )
 
         if interview_result.get('success'):
+            total_questions = interview_result.get('total_count', 0)
+            print(f"[INTERVIEW-Q] ✅ 면접 질문 추출 성공: {total_questions}개 수집")
             return jsonify({
                 "success": True,
                 "questions": interview_result.get('questions', []),
-                "total_count": interview_result.get('total_count', 0),
+                "total_count": total_questions,
                 "matched_name": matched_name,
                 "input_name": company_name,
                 "message": interview_result.get('message')
             })
         else:
+            print(f"[INTERVIEW-Q] ❌ 면접 질문 추출 실패: {interview_result.get('message')}")
             return jsonify({
                 "success": False,
                 "error": interview_result.get('error'),
