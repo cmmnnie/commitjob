@@ -16,7 +16,7 @@
 2. 기존 Catch Scraper 서비스 선택 또는 새 프로젝트 생성
 3. **Settings → Build 섹션:**
    - Builder: **Docker** 선택 (Nixpacks 대신)
-   - Root Directory: `backend`로 설정
+   - Root Directory: `backend/catch-scraper-service`로 설정
 4. Dockerfile이 자동으로 감지됩니다
 
 ### 2. 환경 변수 설정
@@ -35,7 +35,7 @@ PORT=3000
 
 ### 3. 배포 파일 확인
 
-다음 파일들이 `backend/` 디렉토리에 있어야 합니다:
+다음 파일들이 `backend/catch-scraper-service/` 디렉토리에 있어야 합니다:
 
 - ✅ `Dockerfile` - Docker 이미지 빌드 설정 (Chromium 포함)
 - ✅ `catch_scraper.py` - 메인 스크래퍼 코드
@@ -75,7 +75,7 @@ curl -X POST https://your-service.up.railway.app/api/search-company-info \
 
 ### 404 "Application not found" 에러
 - Railway 프로젝트가 생성되지 않았거나 배포 실패
-- Root Directory가 `backend`로 설정되었는지 확인
+- Root Directory가 `backend/catch-scraper-service`로 설정되었는지 확인
 - 빌드 로그에서 에러 확인
 
 ### Chromium 드라이버 에러
@@ -88,7 +88,7 @@ curl -X POST https://your-service.up.railway.app/api/search-company-info \
 
 ## 다음 단계
 
-1. ✅ Railway에서 새 프로젝트 생성 (Root Directory: `backend`)
+1. ✅ Railway에서 새 프로젝트 생성 (Root Directory: `backend/catch-scraper-service`)
 2. ✅ 환경 변수 설정
 3. ✅ 배포 확인 및 URL 확보
 4. ✅ Backend 서비스의 `CATCH_SCRAPER_URL` 환경 변수 업데이트
