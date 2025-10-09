@@ -2009,62 +2009,28 @@ app.get("/api/main-recommendations", async (req, res) => {
         console.log(`  ... 외 ${allJobs.length - 10}개 공고`);
       }
 
-      // GPT MCP에 추천 요청 (MCP 서비스가 없으면 기본 추천 사용)
+      // GPT-5-mini 기반 추천 시도
       let rerankedJobs = [];
 
-      if (process.env.MCP_RECS_BASE && process.env.MCP_RECS_BASE !== 'http://localhost:4002') {
-        try {
-          console.log(`[MAIN-RECS] GPT MCP 서비스 호출 중... (${process.env.MCP_RECS_BASE})`);
-          const mcpResponse = await axios.post(
-            `${process.env.MCP_RECS_BASE}/tools/rerank_jobs`,
-            {
-              user_profile: userProfile || {
-                skills: [],
-                experience: "신입",
-                preferred_regions: [],
-                jobs: [],
-                expected_salary: ""
-              },
-              job_candidates: allJobs.slice(0, 20).map(job => ({
-                ...job,
-                job_id: job.id || job.job_id  // id를 job_id로 변환
-              })),
-              limit: 10  // 10개의 맞춤형 추천 반환
-            },
-            {
-              timeout: 30000,  // 30초로 타임아웃 단축
-              headers: { 'Content-Type': 'application/json' }
-            }
-          );
-
-          console.log(`[MAIN-RECS] GPT MCP response received for user ${user_id}`);
-
-          if (mcpResponse.data && mcpResponse.data.success && mcpResponse.data.recommendations) {
-            rerankedJobs = mcpResponse.data.recommendations;
-            console.log(`[MAIN-RECS] GPT reranked ${rerankedJobs.length} jobs`);
-          }
-        } catch (mcpError) {
-          console.error('[MAIN-RECS] MCP 서비스 호출 실패:', mcpError.message);
-          console.log('[MAIN-RECS] 기본 추천 알고리즘 사용');
-        }
-      } else {
-        console.log('[MAIN-RECS] MCP 서비스 미설정 - 기본 추천 알고리즘 사용');
-      }
-
-      // MCP 서비스가 실패하거나 없으면 GPT-5-mini 또는 기본 추천 사용
-      if (rerankedJobs.length === 0 && openai) {
+      if (openai) {
         try {
           console.log('[MAIN-RECS] GPT-5-mini 기반 추천 시작');
           rerankedJobs = await generateGPT4Recommendations(userProfile, allJobs, 6);
-          console.log(`[MAIN-RECS] GPT-5-mini로 ${rerankedJobs.length}개 공고 추천 완료`);
+          console.log(`[MAIN-RECS] ✅ GPT-5-mini로 ${rerankedJobs.length}개 공고 추천 완료`);
         } catch (gptError) {
-          console.error('[MAIN-RECS] GPT-5-mini 추천 실패:', gptError.message);
+          console.error('[MAIN-RECS] ❌ GPT-5-mini 추천 실패:', gptError.message);
         }
       }
 
-      // GPT-5-mini도 실패하면 기본 알고리즘 사용
+      // GPT-5-mini 실패 또는 미설정 시 기본 알고리즘 사용
       if (rerankedJobs.length === 0) {
-        console.log('[MAIN-RECS] 기본 추천 알고리즘으로 공고 선택');
+        if (openai) {
+          // GPT-5-mini가 설정되어 있지만 실패한 경우에만 로그
+          console.log('[MAIN-RECS] ⚠️ GPT-5-mini 장애 - 기본 추천 알고리즘 사용');
+        } else {
+          // OpenAI 미설정 시
+          console.log('[MAIN-RECS] 기본 추천 알고리즘 사용');
+        }
         // 프로필 기반 기본 매칭 (스킬 매칭 위주)
         const userSkills = (userProfile?.skills || []).map(s => s.toLowerCase());
 
@@ -4313,7 +4279,7 @@ app.post('/api/interview-questions', async (req, res) => {
           const prompt = `
 당신은 전문 면접관입니다.
 
-www.catch.co.kr에서 수집한 ${jobInfo.company_name}의 실제 면접 후기와 사용자 프로필을 바탕으로 맞춤형 면접 질문 5개를 생성해주세요.
+www.catch.co.kr에서 수집한 ${jobInfo.company_name}의 실제 면접질문과 사용자 프로필을 바탕으로 맞춤형 면접 질문 5개를 생성해주세요.
 
 **회사**: ${jobInfo.company_name}
 ${userProfileSection}${interviewQuestionsSection}
