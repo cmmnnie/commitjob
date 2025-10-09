@@ -4063,11 +4063,11 @@ app.post('/api/interview-questions', async (req, res) => {
       // 3. 면접 후기 기출질문 수집
       let interviewQuestions = [];
       try {
-        console.log(`[INTERVIEW-QUESTIONS] ${custom_company} 면접 후기 기출질문 수집 중...`);
+        console.log(`[INTERVIEW-QUESTIONS] ${custom_company} 면접 후기 기출질문 수집 중 (최대 10개)...`);
 
         const interviewResponse = await axios.post(`${CATCH_SCRAPER_URL}/api/search-interview-questions`, {
           company_name: custom_company,
-          max_questions: 1
+          max_questions: 10
         }, { timeout: 120000 });
 
         if (interviewResponse.data && interviewResponse.data.success) {
@@ -4149,13 +4149,13 @@ app.post('/api/interview-questions', async (req, res) => {
             console.warn('[INTERVIEW-QUESTIONS] ⚠️ 로그인 실패:', loginError.message);
           }
 
-          // 3. 면접 후기 기출질문 1개 수집
+          // 3. 면접 후기 기출질문 최대 10개 수집
           try {
-            console.log(`[INTERVIEW-QUESTIONS] ${jobInfo.company_name} 면접 후기 기출질문 수집 중...`);
+            console.log(`[INTERVIEW-QUESTIONS] ${jobInfo.company_name} 면접 후기 기출질문 수집 중 (최대 10개)...`);
 
             const interviewResponse = await axios.post(`${CATCH_SCRAPER_URL}/api/search-interview-questions`, {
               company_name: jobInfo.company_name,
-              max_questions: 1
+              max_questions: 10
             }, { timeout: 120000 });
 
             if (interviewResponse.data && interviewResponse.data.success) {
