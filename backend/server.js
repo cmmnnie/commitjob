@@ -4026,69 +4026,8 @@ app.post('/api/interview-questions', async (req, res) => {
     let jobInfo = null;
 
     if (custom_company) {
-      // 사용자 입력 기반 맞춤형 면접 질문
-      let finalPosition = custom_position || '일반';
-      if (additional_preferences?.preferred_job && additional_preferences.preferred_job.trim() !== '') {
-        finalPosition = additional_preferences.preferred_job;
-        console.log(`[INTERVIEW-QUESTIONS] Overriding position with additional_preferences.preferred_job: ${finalPosition}`);
-      }
-
-      // Catch 스크래퍼로 회사 정보 가져오기 (리뷰 수집 비활성화)
-      let companyInfo = null;
-      try {
-        console.log(`[INTERVIEW-QUESTIONS] Catch 스크래퍼로 ${custom_company} 회사 정보 조회 중...`);
-
-        // Catch 스크래퍼 초기화
-        try {
-          await axios.post(`${CATCH_SCRAPER_URL}/api/init`, {}, { timeout: 5000 });
-          console.log('[INTERVIEW-QUESTIONS] Catch 스크래퍼 초기화 완료');
-        } catch (initErr) {
-          console.log('[INTERVIEW-QUESTIONS] Catch 초기화 생략 (이미 초기화됨 또는 타임아웃)');
-        }
-
-        // Catch 로그인
-        try {
-          await axios.post(`${CATCH_SCRAPER_URL}/api/login`, {
-            username: 'test0137',
-            password: '#test0808'
-          }, { timeout: 5000 });
-          console.log('[INTERVIEW-QUESTIONS] Catch 로그인 완료');
-        } catch (loginErr) {
-          console.log('[INTERVIEW-QUESTIONS] Catch 로그인 생략 (이미 로그인됨 또는 타임아웃)');
-        }
-
-        // 회사 정보 + 리뷰 스크래핑
-        const catchResponse = await axios.post(`${CATCH_SCRAPER_URL}/api/search-company-info`, {
-          company_name: custom_company
-        }, { timeout: 120000 });
-
-        if (catchResponse.data && catchResponse.data.success) {
-          const data = catchResponse.data;
-          companyInfo = {
-            company_info: data.company_info || {},
-            reviews: [] // 리뷰 수집 비활성화
-          };
-
-          const matchedName = data.matched_name || custom_company;
-          const inputName = data.input_name || custom_company;
-
-          console.log(`\n${'='.repeat(80)}`);
-          console.log(`[INTERVIEW-QUESTIONS] ✅ Catch 스크래핑 완료`);
-          console.log(`${'='.repeat(80)}`);
-          console.log(`📊 수집 결과:`);
-          console.log(`  - 입력한 회사명: ${inputName}`);
-          console.log(`  - 매칭된 회사명: ${matchedName}`);
-          console.log(`  - 회사 정보: ${data.company_info ? '있음' : '없음'}`);
-          console.log(`  - 리뷰 수집: 비활성화 (회사 정보만 사용)\n`);
-          console.log(`${'='.repeat(80)}\n`);
-        } else {
-          console.log(`[INTERVIEW-QUESTIONS] ⚠️ Catch 스크래핑 실패 또는 "${custom_company}" 회사 정보 없음`);
-        }
-      } catch (catchError) {
-        console.warn(`[INTERVIEW-QUESTIONS] Catch 스크래핑 실패:`, catchError.message);
-      }
-
-      // 면접 후기 기출질문 1개 수집
+      // 사용자 입력 기반 맞춤형 면접 질문 (회사명 + 면접후기 1건 + 사용자 프로필)
+      // 면접 후기 기출질문 1개 수집 (회사 정보/리뷰/문화 수집 제거)
       let interviewQuestions = [];
       try {
         console.log(`[INTERVIEW-QUESTIONS] ${custom_company} 면접 후기 기출질문 수집 중...`);
@@ -4120,20 +4059,13 @@ app.post('/api/interview-questions', async (req, res) => {
       }
 
       jobInfo = {
-        title: finalPosition,
         company_name: custom_company,
-        company_description: companyInfo?.company_info?.description || `${custom_company}에서 일하는 것에 대한 정보`,
-        company_reviews: [], // 리뷰 수집 비활성화
-        company_culture: companyInfo?.company_info?.culture || null,
-        interview_questions: interviewQuestions, // 면접 기출질문 추가
+        interview_questions: interviewQuestions, // 면접 기출질문 1개
         skills: user_profile?.skills || [],
         experience_level: user_profile?.experience || '신입-경력',
-        employment_type: '정규직',
-        location: user_profile?.preferred_regions?.[0] || '미정',
         source: 'user_input'
       };
-      console.log(`[INTERVIEW-QUESTIONS] Using custom company input: ${custom_company} - ${finalPosition}`);
-      console.log(`[INTERVIEW-QUESTIONS] User profile provided:`, user_profile);
+      console.log(`[INTERVIEW-QUESTIONS] Custom company: ${custom_company}`);
     } else {
       // 기존 채용공고 기반 면접 질문
       const jobQuery = `
@@ -4153,39 +4085,10 @@ app.post('/api/interview-questions', async (req, res) => {
 
       jobInfo = jobRows[0];
 
-      // Catch 스크래퍼에서 회사 정보 + 리뷰 추가 수집
+      // Catch 스크래퍼에서 면접 후기 기출질문만 수집 (회사 정보/리뷰/문화 제거)
       if (jobInfo.company_name) {
         try {
-          console.log(`[INTERVIEW-QUESTIONS] Catch에서 ${jobInfo.company_name} 추가 정보 조회 중...`);
-
-          // Catch 스크래퍼 초기화 및 로그인
-          try {
-            await axios.post(`${CATCH_SCRAPER_URL}/api/init`, {}, { timeout: 5000 });
-            console.log('[INTERVIEW-QUESTIONS] Catch 스크래퍼 초기화 완료');
-          } catch (initErr) {
-            console.log('[INTERVIEW-QUESTIONS] Catch 초기화 생략 (이미 초기화됨 또는 타임아웃)');
-          }
-
-          try {
-            await axios.post(`${CATCH_SCRAPER_URL}/api/login`, {
-              username: 'test0137',
-              password: '#test0808'
-            }, { timeout: 5000 });
-            console.log('[INTERVIEW-QUESTIONS] Catch 로그인 완료');
-          } catch (loginErr) {
-            console.log('[INTERVIEW-QUESTIONS] Catch 로그인 생략 (이미 로그인됨 또는 타임아웃)');
-          }
-
-          const catchCompanyResponse = await axios.post(`${CATCH_SCRAPER_URL}/api/search-company-info`, {
-            company_name: jobInfo.company_name
-          }, { timeout: 120000 }); // 120초 타임아웃
-
-          if (catchCompanyResponse.data) {
-            const companyInfo = catchCompanyResponse.data;
-            jobInfo.company_reviews = []; // 리뷰 수집 비활성화
-            jobInfo.company_culture = companyInfo.company_info?.culture || null;
-            console.log(`[INTERVIEW-QUESTIONS] Catch 추가 정보 수집 완료 (회사 정보만 사용, 리뷰 비활성화)`);
-          }
+          console.log(`[INTERVIEW-QUESTIONS] ${jobInfo.company_name} 면접 후기 기출질문만 수집 시작...`);
 
           // 면접 후기 기출질문 1개 수집
           try {
@@ -4209,9 +4112,7 @@ app.post('/api/interview-questions', async (req, res) => {
           }
 
         } catch (catchError) {
-          console.warn(`[INTERVIEW-QUESTIONS] Catch 추가 정보 조회 실패:`, catchError.message);
-          jobInfo.company_reviews = [];
-          jobInfo.company_culture = null;
+          console.warn(`[INTERVIEW-QUESTIONS] 면접 기출질문 수집 실패:`, catchError.message);
           jobInfo.interview_questions = [];
         }
       } else {
@@ -4340,14 +4241,7 @@ app.post('/api/interview-questions', async (req, res) => {
         try {
           console.log('\n[INTERVIEW-QUESTIONS] 🤖 GPT-5-mini 직접 호출 시작\n');
 
-          // 회사 리뷰 수집 비활성화
-          const reviewsSection = ''; // 리뷰 정보 사용 안 함
-
-          const cultureSection = jobInfo.company_culture
-            ? `\n**회사 문화**:\n${jobInfo.company_culture}\n`
-            : '';
-
-          // 면접 기출질문 섹션 추가
+          // 면접 기출질문 섹션 (회사 정보/리뷰/문화 수집하지 않음)
           const interviewQuestionsSection = jobInfo.interview_questions && jobInfo.interview_questions.length > 0
             ? `\n**${jobInfo.company_name}의 실제 면접 기출질문** (www.catch.co.kr에서 수집한 ${jobInfo.interview_questions.length}개):\n${jobInfo.interview_questions.map((q, i) => `${i + 1}. ${q.question}${q.position ? ` (${q.position})` : ''}`).join('\n')}\n`
             : '';
@@ -4363,7 +4257,7 @@ app.post('/api/interview-questions', async (req, res) => {
 www.catch.co.kr에서 수집한 ${jobInfo.company_name}의 실제 면접 후기와 사용자 프로필을 바탕으로 맞춤형 면접 질문 5개를 생성해주세요.
 
 **회사**: ${jobInfo.company_name}
-${userProfileSection}${cultureSection}${interviewQuestionsSection}
+${userProfileSection}${interviewQuestionsSection}
 ${interviewQuestionsSection ? '위 실제 기출질문들을 참고하여, 해당 기업의 면접 스타일과 중요시하는 가치를 반영한 새로운 면접 질문 5개를 생성해주세요.' : '위 정보를 바탕으로 총 5개의 면접 질문을 생성해주세요.'}
 ${interviewQuestionsSection ? '기출질문과 유사하지만 더 깊이 있고, 사용자 프로필에 맞춤화된 질문을 만들어주세요.' : ''}
 각 질문은 다음 형식으로:
@@ -4389,9 +4283,7 @@ ${interviewQuestionsSection ? '기출질문과 유사하지만 더 깊이 있고
           console.log(`${'='.repeat(80)}`);
           console.log(`📊 프롬프트 통계:`);
           console.log(`  - 프롬프트 길이: ${prompt.length}자`);
-          console.log(`  - 회사 리뷰: 비활성화 (수집하지 않음)`);
           console.log(`  - 면접 기출질문: ${jobInfo.interview_questions?.length || 0}개 (www.catch.co.kr)`);
-          console.log(`  - 회사 문화: ${jobInfo.company_culture ? '있음' : '없음'}`);
           console.log(`  - 사용자 프로필: ${userProfileSection ? '있음' : '없음 (사용자 입력 없음)'}`);
           console.log(`${'='.repeat(80)}\n`);
 
