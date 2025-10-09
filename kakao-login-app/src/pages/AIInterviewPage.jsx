@@ -246,29 +246,35 @@ export default function AIInterviewPage() {
                     marginBottom: '20px',
                     boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)'
                 }}>
-                    <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        marginBottom: '16px'
+                    }}>
                         <div style={{
-                            fontSize: '2.5rem',
-                            marginBottom: '6px',
-                            display: 'inline-block',
+                            fontSize: '2.2rem',
                             padding: '8px',
                             background: 'linear-gradient(135deg, #667eea15 0%, #764ba215 100%)',
-                            borderRadius: '12px'
+                            borderRadius: '12px',
+                            flexShrink: '0'
                         }}>🎤</div>
-                        <h1 style={{
-                            fontSize: '1.75rem',
-                            color: '#667eea',
-                            marginBottom: '6px',
-                            fontWeight: '700',
-                            letterSpacing: '-0.5px'
-                        }}>AI 면접 준비</h1>
-                        <p style={{
-                            color: '#718096',
-                            fontSize: '0.9rem',
-                            margin: '0'
-                        }}>
-                            GPT-5-mini가 생성한 맞춤형 면접 질문
-                        </p>
+                        <div style={{ flex: '1' }}>
+                            <h1 style={{
+                                fontSize: '1.6rem',
+                                color: '#667eea',
+                                marginBottom: '2px',
+                                fontWeight: '700',
+                                letterSpacing: '-0.5px'
+                            }}>AI 면접 준비</h1>
+                            <p style={{
+                                color: '#718096',
+                                fontSize: '0.85rem',
+                                margin: '0'
+                            }}>
+                                GPT-5-mini가 생성한 맞춤형 면접 질문
+                            </p>
+                        </div>
                     </div>
 
                     <div style={{
