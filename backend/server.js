@@ -4095,7 +4095,33 @@ app.post('/api/interview-questions', async (req, res) => {
         try {
           console.log(`[INTERVIEW-QUESTIONS] ${jobInfo.company_name} 면접 후기 기출질문만 수집 시작...`);
 
-          // 면접 후기 기출질문 1개 수집
+          // 1. Catch Scraper 초기화
+          try {
+            console.log('[INTERVIEW-QUESTIONS] Catch Scraper 초기화 중...');
+            await axios.post(`${CATCH_SCRAPER_URL}/api/init`, {}, { timeout: 30000 });
+            console.log('[INTERVIEW-QUESTIONS] ✅ Catch Scraper 초기화 완료');
+          } catch (initError) {
+            console.warn('[INTERVIEW-QUESTIONS] ⚠️ 초기화 실패 (무시하고 계속):', initError.message);
+          }
+
+          // 2. Catch.co.kr 로그인
+          try {
+            console.log('[INTERVIEW-QUESTIONS] Catch.co.kr 로그인 중...');
+            const loginResponse = await axios.post(`${CATCH_SCRAPER_URL}/api/login`, {
+              username: 'test0137',
+              password: '#test0808'
+            }, { timeout: 30000 });
+
+            if (loginResponse.data && loginResponse.data.success) {
+              console.log('[INTERVIEW-QUESTIONS] ✅ Catch.co.kr 로그인 성공');
+            } else {
+              console.warn('[INTERVIEW-QUESTIONS] ⚠️ 로그인 응답 확인 필요:', loginResponse.data);
+            }
+          } catch (loginError) {
+            console.warn('[INTERVIEW-QUESTIONS] ⚠️ 로그인 실패:', loginError.message);
+          }
+
+          // 3. 면접 후기 기출질문 1개 수집
           try {
             console.log(`[INTERVIEW-QUESTIONS] ${jobInfo.company_name} 면접 후기 기출질문 수집 중...`);
 
