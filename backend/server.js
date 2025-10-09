@@ -13,6 +13,11 @@ import path from 'path';
 import fs from 'fs';
 import OpenAI from 'openai';
 
+// jose 라이브러리를 위한 Web Crypto API 설정
+if (!globalThis.crypto) {
+  globalThis.crypto = crypto.webcrypto;
+}
+
 // Removed: Advanced Recommendation Algorithms (replaced with GPT MCP)
 
 // 헬퍼 함수: 스킬로부터 직무 유형 추론
