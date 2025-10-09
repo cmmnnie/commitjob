@@ -2179,7 +2179,7 @@ app.get("/api/main-recommendations", async (req, res) => {
           };
         }
 
-        // 추천 이력 저장 (Catch 공고는 DB에 없으므로 개별적으로 try-catch 처리)
+        // 추천 이력 저장 (jobs 테이블의 공고 ID 저장)
         const allRecommended = [...finalDataAiJobs, ...finalItJobs];
         let savedCount = 0;
         for (const job of allRecommended) {
@@ -2192,17 +2192,17 @@ app.get("/api/main-recommendations", async (req, res) => {
               await pool.query(logQuery, [
                 user_id,
                 job.job_id || job.id,
-                85, // Default score
+                job.match_score || 85, // Use GPT match_score if available
                 JSON.stringify(job.match_reasons || [])
               ]);
               savedCount++;
             } catch (jobLogError) {
-              // Catch 공고는 DB에 job_postings가 없어서 foreign key 에러 발생 - 무시
-              console.log(`[MAIN-RECS] Skip saving log for Catch job: ${job.job_id || job.id} (not in DB)`);
+              // 로깅 에러는 무시 (추천 결과에는 영향 없음)
+              console.log(`[MAIN-RECS] ⚠️ Failed to save log for job ${job.job_id || job.id}:`, jobLogError.message);
             }
           }
         }
-        console.log(`[MAIN-RECS] Saved recommendation history for ${savedCount}/${allRecommended.length} jobs`)
+        console.log(`[MAIN-RECS] ✅ Saved recommendation history for ${savedCount}/${allRecommended.length} jobs`)
 
         return res.json(response);
       }
@@ -3798,16 +3798,16 @@ app.get('/api/user-recommendation-history', async (req, res) => {
     console.log(`[REC-HISTORY] Fetching recommendation history for user ${user_id}`);
 
     // DB에서 사용자 추천 이력 조회
+    // jobs 테이블과 LEFT JOIN (job_postings는 사용 안 함)
     const historyQuery = `
       SELECT DISTINCT
         rl.job_id,
-        jp.title,
-        c.name as company,
+        j.title,
+        j.company,
         rl.created_at as recommendation_date,
         rl.match_reasons
       FROM recommendation_logs rl
-      LEFT JOIN job_postings jp ON rl.job_id = jp.job_id
-      LEFT JOIN companies c ON jp.company_id = c.company_id
+      LEFT JOIN jobs j ON rl.job_id = j.id
       WHERE rl.user_id = ?
       ORDER BY rl.created_at DESC
       LIMIT 20

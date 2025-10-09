@@ -95,6 +95,7 @@ CREATE TABLE IF NOT EXISTS user_sessions (
 );
 
 -- 추천 기록 테이블
+-- job_id는 jobs 테이블의 id를 참조하므로 foreign key constraint 제거
 CREATE TABLE IF NOT EXISTS recommendation_logs (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT,
@@ -104,7 +105,6 @@ CREATE TABLE IF NOT EXISTS recommendation_logs (
     match_reasons JSON,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
-    FOREIGN KEY (job_id) REFERENCES job_postings(job_id) ON DELETE CASCADE,
     INDEX idx_user_id (user_id),
     INDEX idx_session_id (session_id),
     INDEX idx_job_id (job_id),
@@ -112,6 +112,7 @@ CREATE TABLE IF NOT EXISTS recommendation_logs (
 );
 
 -- 면접 질문 기록 테이블
+-- job_id는 Catch 스크래핑 결과나 jobs 테이블의 데이터를 참조하므로 foreign key constraint 제거
 CREATE TABLE IF NOT EXISTS interview_logs (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT,
@@ -120,7 +121,6 @@ CREATE TABLE IF NOT EXISTS interview_logs (
     questions JSON, -- [{ id: 1, question: "...", category: "기술", difficulty: "보통" }]
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
-    FOREIGN KEY (job_id) REFERENCES job_postings(job_id) ON DELETE CASCADE,
     INDEX idx_user_id (user_id),
     INDEX idx_session_id (session_id),
     INDEX idx_job_id (job_id)
