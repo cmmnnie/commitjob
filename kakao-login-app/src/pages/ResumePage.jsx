@@ -583,7 +583,7 @@ export default function ResumePage() {
                                     margin: 0,
                                     fontWeight: '600'
                                 }}>
-                                    {userProfile ? '프로필을 수정해주세요' : '프로필을 등록해주세요'}
+                                    {userProfile ? '프로필을 수정해주세요' : '이력서를 작성해주세요'}
                                 </p>
                             </div>
                             <p style={{
