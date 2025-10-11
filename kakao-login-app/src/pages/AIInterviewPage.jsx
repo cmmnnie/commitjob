@@ -278,30 +278,34 @@ export default function AIInterviewPage() {
                     </div>
 
                     <div style={{
-                        background: 'linear-gradient(135deg, #667eea08 0%, #764ba208 100%)',
-                        border: '1px solid #e0e7ff',
+                        background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
+                        border: '2px solid #2196f3',
                         borderRadius: '12px',
-                        padding: '14px 16px',
+                        padding: '16px 18px',
                         marginBottom: '18px',
                         display: 'flex',
                         alignItems: 'flex-start',
-                        gap: '10px'
+                        gap: '12px',
+                        boxShadow: '0 2px 8px rgba(33, 150, 243, 0.2)'
                     }}>
                         <div style={{
-                            fontSize: '1.25rem',
+                            fontSize: '1.5rem',
                             lineHeight: '1',
                             marginTop: '2px',
                             flexShrink: '0'
                         }}>💡</div>
                         <div style={{
-                            fontSize: '0.875rem',
-                            color: '#4a5568',
-                            lineHeight: '1.5',
-                            flex: '1'
+                            fontSize: '0.95rem',
+                            color: '#0d47a1',
+                            lineHeight: '1.6',
+                            flex: '1',
+                            fontWeight: '700',
+                            textShadow: '0 1px 2px rgba(0,0,0,0.1)',
+                            letterSpacing: '-0.2px'
                         }}>
-                            <strong style={{ color: '#667eea' }}>AI 기능</strong>
+                            <span style={{ color: '#667eea', fontSize: '1rem' }}>AI 기능</span>
                             <br />
-                            회사명 입력 → <strong style={{ fontWeight: '700' }}>www.catch.co.kr에서 실시간 기출질문 10건 스크래핑</strong> → 사용자 이력서 참고 → GPT-5-mini가 맞춤형 면접 질문 5개 생성
+                            회사명 입력 → <span style={{ color: '#1976d2', fontWeight: '800' }}>www.catch.co.kr에서 실시간 기출질문 10건 스크래핑</span> → 사용자 이력서 참고 → <span style={{ color: '#1976d2', fontWeight: '800' }}>GPT-5-mini가 맞춤형 면접 질문 5개 생성</span>
                         </div>
                     </div>
 
