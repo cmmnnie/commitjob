@@ -4968,16 +4968,42 @@ ${feedback}`;
     });
 
     let revisedAnswer = completion.choices[0].message.content;
+    const originalLength = revisedAnswer.length;
 
-    // --- 구분자로 나뉜 경우 중간 부분만 추출
+    // 1. --- 구분자 처리
     const separators = revisedAnswer.split('---');
     if (separators.length >= 3) {
-      // 첫 번째 --- 위의 내용 제거, 두 번째 --- 아래의 내용 제거
-      // separators[0]: 첫 번째 --- 위
-      // separators[1]: 두 --- 사이 (실제 답변)
-      // separators[2]: 두 번째 --- 아래
+      // 두 개 이상의 --- 가 있는 경우: 중간 부분만 추출
       revisedAnswer = separators[1].trim();
-      console.log(`[INTERVIEW-REVISED-ANSWER] --- 구분자 제거됨 (원본 길이: ${completion.choices[0].message.content.length}, 정제 후: ${revisedAnswer.length})`);
+      console.log(`[INTERVIEW-REVISED-ANSWER] --- 구분자 제거 (3개 이상 분할)`);
+    } else if (separators.length === 2) {
+      // --- 가 하나만 있는 경우: 두 번째 부분(--- 이후)만 추출
+      revisedAnswer = separators[1].trim();
+      console.log(`[INTERVIEW-REVISED-ANSWER] --- 구분자 제거 (2개 분할)`);
+    }
+
+    // 2. 메타 설명 제거 (GPT가 추가하는 불필요한 설명)
+    const metaPhrases = [
+      /^물론입니다[!.]?\s*/i,
+      /^아래는.*?답변입니다[.:]?\s*/i,
+      /^개선된\s*답변입니다[.:]?\s*/i,
+      /^피드백을\s*반영하여.*?답변입니다[.:]?\s*/i,
+      /^다음은.*?답변입니다[.:]?\s*/i,
+      /^수정된\s*답변[.:]?\s*/i,
+      /^\[.*?\]\s*/,  // [개선된 답변] 같은 표시
+      /^===+\s*/,     // ===== 구분선
+      /^---+\s*/      // ----- 구분선 (남아있을 경우)
+    ];
+
+    for (const pattern of metaPhrases) {
+      revisedAnswer = revisedAnswer.replace(pattern, '');
+    }
+
+    // 3. 앞뒤 공백 제거
+    revisedAnswer = revisedAnswer.trim();
+
+    if (revisedAnswer.length < originalLength) {
+      console.log(`[INTERVIEW-REVISED-ANSWER] 불필요한 내용 제거됨 (원본: ${originalLength}자 → 정제: ${revisedAnswer.length}자)`);
     }
 
     console.log(`[INTERVIEW-REVISED-ANSWER] ✅ Revised answer generated successfully`);
