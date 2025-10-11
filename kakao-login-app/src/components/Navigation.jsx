@@ -25,22 +25,22 @@ export default function Navigation() {
         alignItems: 'center',
         listStyle: 'none',
         margin: 0,
-        padding: '4px 0',
+        padding: '8px 0',
         maxWidth: '600px',
         marginLeft: 'auto',
         marginRight: 'auto'
     };
 
     const linkStyle = (isActive) => ({
-        color: isActive ? '#667eea' : '#666',
+        color: isActive ? '#667eea' : '#444',
         textDecoration: 'none',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: '2px',
-        padding: '6px 8px',
-        fontSize: '0.65rem',
-        fontWeight: isActive ? '600' : '500',
+        gap: '4px',
+        padding: '10px 8px',
+        fontSize: '0.75rem',
+        fontWeight: isActive ? '700' : '600',
         transition: 'all 0.3s ease',
         borderRadius: '8px',
         minWidth: '65px',
@@ -48,8 +48,10 @@ export default function Navigation() {
     });
 
     const iconStyle = (isActive) => ({
-        fontSize: '1.3rem',
-        marginBottom: '1px'
+        fontSize: '1.8rem',
+        marginBottom: '2px',
+        filter: isActive ? 'brightness(1.1)' : 'brightness(0.95)',
+        textShadow: '0 1px 2px rgba(0,0,0,0.1)'
     });
 
     return (
