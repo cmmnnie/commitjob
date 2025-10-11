@@ -6176,6 +6176,132 @@ app.get('/api/jobs', async (req, res) => {
 });
 
 // ==============================================================================
+// 최신 공고 스크래핑 API
+// ==============================================================================
+
+app.post('/api/scrape-latest-jobs', async (req, res) => {
+  console.log('[SCRAPE-JOBS] 최신 공고 스크래핑 요청 받음');
+
+  try {
+    // 1. Catch Scraper 초기화
+    console.log('[SCRAPE-JOBS] Catch Scraper 초기화 중...');
+    try {
+      await axios.post(`${CATCH_SCRAPER_URL}/api/init`, {}, { timeout: 30000 });
+      console.log('[SCRAPE-JOBS] ✅ Catch Scraper 초기화 완료');
+    } catch (initError) {
+      console.error('[SCRAPE-JOBS] Catch Scraper 초기화 실패:', initError.message);
+      return res.status(500).json({
+        success: false,
+        message: 'Catch Scraper 초기화에 실패했습니다.'
+      });
+    }
+
+    // 2. Catch.co.kr 로그인
+    console.log('[SCRAPE-JOBS] Catch.co.kr 로그인 중...');
+    try {
+      const loginResponse = await axios.post(`${CATCH_SCRAPER_URL}/api/login`, {
+        username: 'test0137',
+        password: '#test0808'
+      }, { timeout: 30000 });
+
+      if (!loginResponse.data.success) {
+        throw new Error('로그인 실패');
+      }
+      console.log('[SCRAPE-JOBS] ✅ 로그인 완료');
+    } catch (loginError) {
+      console.error('[SCRAPE-JOBS] 로그인 실패:', loginError.message);
+      return res.status(500).json({
+        success: false,
+        message: 'Catch.co.kr 로그인에 실패했습니다.'
+      });
+    }
+
+    // 3. 공고 스크래핑 (max_pages=2로 약 30개)
+    console.log('[SCRAPE-JOBS] 공고 스크래핑 시작... (max_pages=2)');
+    let scrapedJobs = [];
+
+    try {
+      const scrapeResponse = await axios.get(`${CATCH_SCRAPER_URL}/api/extract-all-jobs?max_pages=2`, {
+        timeout: 120000 // 2분
+      });
+
+      if (!scrapeResponse.data.success) {
+        throw new Error('스크래핑 실패');
+      }
+
+      const results = scrapeResponse.data.results || {};
+      const itJobs = results.it_jobs || [];
+      const bigdataJobs = results.bigdata_ai_jobs || [];
+      scrapedJobs = [...itJobs, ...bigdataJobs];
+
+      console.log(`[SCRAPE-JOBS] ✅ 스크래핑 완료: IT ${itJobs.length}개, BIGDATA/AI ${bigdataJobs.length}개, 총 ${scrapedJobs.length}개`);
+    } catch (scrapeError) {
+      console.error('[SCRAPE-JOBS] 스크래핑 실패:', scrapeError.message);
+      return res.status(500).json({
+        success: false,
+        message: '공고 스크래핑에 실패했습니다.'
+      });
+    }
+
+    // 4. DB에 삽입 (중복 체크)
+    let newJobs = 0;
+    let duplicates = 0;
+
+    for (const job of scrapedJobs) {
+      try {
+        // 제목과 회사명으로 중복 체크
+        const [existing] = await pool.execute(
+          'SELECT id FROM jobs WHERE title = ? AND company = ?',
+          [job.title, job.company]
+        );
+
+        if (existing.length > 0) {
+          duplicates++;
+          console.log(`[SCRAPE-JOBS] 중복 제외: ${job.title} (${job.company})`);
+          continue;
+        }
+
+        // 새 공고 insert
+        const insertQuery = `
+          INSERT INTO jobs (title, company, url, job_info, conditions, registration_info, category, scraped_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+        `;
+
+        await pool.execute(insertQuery, [
+          job.title,
+          job.company,
+          job.url,
+          JSON.stringify(job.job_info || []),
+          JSON.stringify(job.conditions || []),
+          JSON.stringify(job.registration_info || []),
+          job.category
+        ]);
+
+        newJobs++;
+        console.log(`[SCRAPE-JOBS] ✅ 새 공고 추가: ${job.title} (${job.company})`);
+      } catch (insertError) {
+        console.error(`[SCRAPE-JOBS] DB 삽입 오류 (${job.title}):`, insertError.message);
+      }
+    }
+
+    console.log(`[SCRAPE-JOBS] 완료 - 새 공고: ${newJobs}개, 중복: ${duplicates}개`);
+
+    res.json({
+      success: true,
+      total_scraped: scrapedJobs.length,
+      new_jobs: newJobs,
+      duplicates: duplicates
+    });
+  } catch (error) {
+    console.error('[SCRAPE-JOBS] 예상치 못한 오류:', error);
+    res.status(500).json({
+      success: false,
+      message: '스크래핑 중 오류가 발생했습니다.'
+    });
+  }
+});
+
+// ==============================================================================
 // GPT-4 기반 추천 함수
 // ==============================================================================
 
