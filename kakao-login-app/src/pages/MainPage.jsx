@@ -19,6 +19,7 @@ export default function MainPage() {
     const [bigdataJobs, setBigdataJobs] = useState([]);
     const [itJobs, setItJobs] = useState([]);
     const [currentView, setCurrentView] = useState('jobs'); // 'jobs', 'login', 'profile'
+    const [searchQuery, setSearchQuery] = useState('');
     const hasCheckedLogin = useRef(false);
 
     const showStatus = (text, type = 'info') => {
@@ -487,39 +488,6 @@ export default function MainPage() {
                     maxWidth: '1000px',
                     margin: '0 auto'
                 }}>
-                    {/* 헤더 - 채용공고 화면에만 표시 */}
-                    {currentView === 'jobs' && (
-                        <div style={{
-                            background: 'white',
-                            borderRadius: '16px',
-                            padding: '20px',
-                            marginBottom: '20px',
-                            boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
-                        }}>
-                            <div style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center'
-                            }}>
-                                <div>
-                                    <h1 style={{
-                                        fontSize: '2rem',
-                                        fontWeight: '700',
-                                        color: '#333',
-                                        marginBottom: '8px'
-                                    }}>
-                                        채용공고
-                                    </h1>
-                                    <p style={{
-                                        fontSize: '1rem',
-                                        color: '#666'
-                                    }}>
-                                        최신 IT 및 빅데이터/AI 분야 채용정보를 확인하세요
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
 
                     {/* 로그인 화면 */}
                     {currentView === 'login' && (
@@ -1102,8 +1070,64 @@ export default function MainPage() {
                             padding: '20px',
                             boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
                         }}>
+                            {/* 채용공고 헤더 및 검색 */}
+                            <div style={{ marginBottom: '30px' }}>
+                                <h1 style={{
+                                    fontSize: '2rem',
+                                    fontWeight: '700',
+                                    color: '#333',
+                                    marginBottom: '16px'
+                                }}>
+                                    채용공고
+                                </h1>
+
+                                {/* 검색 바 */}
+                                <div style={{
+                                    position: 'relative',
+                                    maxWidth: '600px'
+                                }}>
+                                    <input
+                                        type="text"
+                                        placeholder="회사명 또는 직무를 검색하세요"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        style={{
+                                            width: '100%',
+                                            padding: '14px 50px 14px 20px',
+                                            fontSize: '1rem',
+                                            border: '2px solid #e0e0e0',
+                                            borderRadius: '12px',
+                                            outline: 'none',
+                                            transition: 'all 0.3s'
+                                        }}
+                                        onFocus={(e) => {
+                                            e.target.style.borderColor = '#667eea';
+                                            e.target.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.1)';
+                                        }}
+                                        onBlur={(e) => {
+                                            e.target.style.borderColor = '#e0e0e0';
+                                            e.target.style.boxShadow = 'none';
+                                        }}
+                                    />
+                                    <span style={{
+                                        position: 'absolute',
+                                        right: '20px',
+                                        top: '50%',
+                                        transform: 'translateY(-50%)',
+                                        fontSize: '1.3rem',
+                                        color: '#999'
+                                    }}>🔍</span>
+                                </div>
+                            </div>
+
                             {/* BIGDATA_AI 섹션 */}
-                            {bigdataJobs.length > 0 && (
+                            {(() => {
+                                const filteredBigdataJobs = bigdataJobs.filter(job =>
+                                    searchQuery === '' ||
+                                    job.company?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                    job.title?.toLowerCase().includes(searchQuery.toLowerCase())
+                                );
+                                return filteredBigdataJobs.length > 0 && (
                             <div style={{ marginBottom: '0px' }}>
                                 <div style={{
                                     display: 'flex',
@@ -1127,7 +1151,7 @@ export default function MainPage() {
                                             fontWeight: '400',
                                             marginLeft: '8px'
                                         }}>
-                                            ({bigdataJobs.length}건)
+                                            ({filteredBigdataJobs.length}건)
                                         </span>
                                     </h2>
                                     <button
@@ -1163,15 +1187,22 @@ export default function MainPage() {
                                     maxWidth: '1200px',
                                     margin: '0 auto'
                                 }}>
-                                    {bigdataJobs.map((job) => (
+                                    {filteredBigdataJobs.map((job) => (
                                         <JobCard key={job.id} job={job} />
                                     ))}
                                 </div>
                             </div>
-                        )}
+                        );
+                            })()}
 
                         {/* IT 섹션 */}
-                        {itJobs.length > 0 && (
+                        {(() => {
+                            const filteredItJobs = itJobs.filter(job =>
+                                searchQuery === '' ||
+                                job.company?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                job.title?.toLowerCase().includes(searchQuery.toLowerCase())
+                            );
+                            return filteredItJobs.length > 0 && (
                             <div style={{ marginBottom: '0px', marginTop: '40px' }}>
                                 <div style={{
                                     display: 'flex',
@@ -1195,7 +1226,7 @@ export default function MainPage() {
                                             fontWeight: '400',
                                             marginLeft: '8px'
                                         }}>
-                                            ({itJobs.length}건)
+                                            ({filteredItJobs.length}건)
                                         </span>
                                     </h2>
                                     <button
@@ -1231,12 +1262,13 @@ export default function MainPage() {
                                     maxWidth: '1200px',
                                     margin: '0 auto'
                                 }}>
-                                    {itJobs.map((job) => (
+                                    {filteredItJobs.map((job) => (
                                         <JobCard key={job.id} job={job} />
                                     ))}
                                 </div>
                             </div>
-                            )}
+                            );
+                        })()}
                         </div>
                     )}
                 </div>
