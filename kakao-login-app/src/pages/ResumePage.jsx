@@ -12,7 +12,7 @@ export default function ResumePage() {
         careerYears: '',  // 경력 년수
         regions: [],
         skills: '',
-        expected_salary: ''
+        expected_salary: '0'  // 기본값 0
     });
 
     useEffect(() => {
@@ -167,7 +167,7 @@ export default function ResumePage() {
                 careerYears,
                 regions: userProfile.preferred_regions || [],
                 skills: userProfile.skills ? userProfile.skills.join(', ') : '',
-                expected_salary: String(userProfile.expected_salary || '')
+                expected_salary: String(parseInt(userProfile.expected_salary) || 0)  // 정수로 변환
             });
             setIsEditing(true);
         }
@@ -181,7 +181,7 @@ export default function ResumePage() {
             careerYears: '',
             regions: [],
             skills: '',
-            expected_salary: ''
+            expected_salary: '0'
         });
     };
 
@@ -789,6 +789,8 @@ export default function ResumePage() {
                                     value={formData.expected_salary}
                                     onChange={handleInputChange}
                                     placeholder="예: 3000"
+                                    min="0"
+                                    step="1"
                                     required
                                     style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '0.9rem' }}
                                 />
