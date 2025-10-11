@@ -419,46 +419,47 @@ async function findOrCreateUser(providerKey, email, name, picture, provider) {
       const [result] = await pool.execute(insertUserSQL, insertUserParams);
       const newUserId = result.insertId;
       console.log('[DB] ✅ 새 사용자 생성 완료 - ID:', newUserId, ', Email:', email);
+      console.log('[DB] 💡 프로필은 사용자가 직접 입력하도록 대기 중...');
 
-      // 기본 프로필 생성 (백엔드 또는 프론트엔드 개발자 중 랜덤 선택)
-      const profileTemplates = [
-        {
-          type: '백엔드 개발자',
-          skills: ['Java', 'Spring', 'MySQL', 'Node.js', 'AWS'],
-          experience: '신입',
-          preferred_jobs: '백엔드 개발자',
-          preferred_regions: ['서울', '경기'],
-          expected_salary: '3000만원 이상'
-        },
-        {
-          type: '프론트엔드 개발자',
-          skills: ['JavaScript', 'React', 'TypeScript', 'HTML/CSS', 'Vue.js'],
-          experience: '신입',
-          preferred_jobs: '프론트엔드 개발자',
-          preferred_regions: ['서울', '경기'],
-          expected_salary: '3000만원 이상'
-        }
-      ];
-
-      const selectedTemplate = profileTemplates[Math.floor(Math.random() * profileTemplates.length)];
-
-      const insertProfileSQL = `INSERT INTO user_profiles (user_id, skills, experience, preferred_regions, preferred_jobs, expected_salary, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`;
-      const insertProfileParams = [
-        newUserId,
-        JSON.stringify(selectedTemplate.skills),
-        selectedTemplate.experience,
-        JSON.stringify(selectedTemplate.preferred_regions),
-        selectedTemplate.preferred_jobs,
-        selectedTemplate.expected_salary
-      ];
-
-      console.log('[DB] 기본 프로필 생성 SQL:');
-      console.log('  SQL:', insertProfileSQL);
-      console.log('  Params:', JSON.stringify(insertProfileParams));
-
-      await pool.execute(insertProfileSQL, insertProfileParams);
-      console.log(`[DB] ✅ 기본 프로필 생성 완료: ${selectedTemplate.type}`);
+      // 기본 프로필 자동 생성 비활성화 (사용자가 직접 입력하도록 변경)
+      // const profileTemplates = [
+      //   {
+      //     type: '백엔드 개발자',
+      //     skills: ['Java', 'Spring', 'MySQL', 'Node.js', 'AWS'],
+      //     experience: '신입',
+      //     preferred_jobs: '백엔드 개발자',
+      //     preferred_regions: ['서울', '경기'],
+      //     expected_salary: '3000만원 이상'
+      //   },
+      //   {
+      //     type: '프론트엔드 개발자',
+      //     skills: ['JavaScript', 'React', 'TypeScript', 'HTML/CSS', 'Vue.js'],
+      //     experience: '신입',
+      //     preferred_jobs: '프론트엔드 개발자',
+      //     preferred_regions: ['서울', '경기'],
+      //     expected_salary: '3000만원 이상'
+      //   }
+      // ];
+      //
+      // const selectedTemplate = profileTemplates[Math.floor(Math.random() * profileTemplates.length)];
+      //
+      // const insertProfileSQL = `INSERT INTO user_profiles (user_id, skills, experience, preferred_regions, preferred_jobs, expected_salary, created_at, updated_at)
+      //    VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`;
+      // const insertProfileParams = [
+      //   newUserId,
+      //   JSON.stringify(selectedTemplate.skills),
+      //   selectedTemplate.experience,
+      //   JSON.stringify(selectedTemplate.preferred_regions),
+      //   selectedTemplate.preferred_jobs,
+      //   selectedTemplate.expected_salary
+      // ];
+      //
+      // console.log('[DB] 기본 프로필 생성 SQL:');
+      // console.log('  SQL:', insertProfileSQL);
+      // console.log('  Params:', JSON.stringify(insertProfileParams));
+      //
+      // await pool.execute(insertProfileSQL, insertProfileParams);
+      // console.log(`[DB] ✅ 기본 프로필 생성 완료: ${selectedTemplate.type}`);
 
       return {
         id: newUserId,
@@ -1492,7 +1493,8 @@ app.post('/api/profile', uploadProfile.single('resume'), async (req, res) => {
       jobs,
       careers,
       regions,
-      skills
+      skills,
+      expected_salary
     } = req.body || {};
 
     if (!user_id) {
@@ -1538,6 +1540,10 @@ app.post('/api/profile', uploadProfile.single('resume'), async (req, res) => {
         updateFields.push('skills = ?');
         updateValues.push(JSON.stringify(skills.split(',').map(s => s.trim())));
       }
+      if (expected_salary) {
+        updateFields.push('expected_salary = ?');
+        updateValues.push(expected_salary);
+      }
       if (resumePath) {
         updateFields.push('resume_path = ?');
         updateValues.push(resumePath);
@@ -1553,8 +1559,8 @@ app.post('/api/profile', uploadProfile.single('resume'), async (req, res) => {
     } else {
       // 새 프로필 생성
       await pool.execute(
-        'INSERT INTO user_profiles (user_id, preferred_jobs, experience, preferred_regions, skills, resume_path) VALUES (?, ?, ?, ?, ?, ?)',
-        [user_id, jobs, careers, JSON.stringify([regions]), skills ? JSON.stringify(skills.split(',').map(s => s.trim())) : null, resumePath]
+        'INSERT INTO user_profiles (user_id, preferred_jobs, experience, preferred_regions, skills, expected_salary, resume_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
+        [user_id, jobs, careers, JSON.stringify([regions]), skills ? JSON.stringify(skills.split(',').map(s => s.trim())) : null, expected_salary, resumePath]
       );
     }
 

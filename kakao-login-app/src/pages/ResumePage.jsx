@@ -5,6 +5,14 @@ export default function ResumePage() {
     const [currentUser, setCurrentUser] = useState(null);
     const [userProfile, setUserProfile] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isEditing, setIsEditing] = useState(false);
+    const [formData, setFormData] = useState({
+        jobs: '',
+        careers: '',
+        regions: '',
+        skills: '',
+        expected_salary: ''
+    });
 
     useEffect(() => {
         checkLoginAndLoadProfile();
@@ -107,6 +115,47 @@ export default function ResumePage() {
             return name[0] + middle + name[name.length - 1];
         }
         return name;
+    };
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+
+        try {
+            const formDataToSend = new FormData();
+            formDataToSend.append('user_id', currentUser.id);
+            formDataToSend.append('jobs', formData.jobs);
+            formDataToSend.append('careers', formData.careers);
+            formDataToSend.append('regions', formData.regions);
+            formDataToSend.append('skills', formData.skills);
+            formDataToSend.append('expected_salary', formData.expected_salary);
+
+            const response = await fetch(`${CONFIG.BACKEND_URL}/api/profile`, {
+                method: 'POST',
+                body: formDataToSend
+            });
+
+            if (response.ok) {
+                alert('프로필이 저장되었습니다!');
+                await loadUserProfile(currentUser.id);
+                setIsEditing(false);
+            } else {
+                alert('프로필 저장에 실패했습니다.');
+            }
+        } catch (error) {
+            console.error('[RESUME] 프로필 저장 오류:', error);
+            alert('프로필 저장 중 오류가 발생했습니다.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     if (isLoading) {
@@ -458,93 +507,130 @@ export default function ResumePage() {
                     </>
                 ) : (
                     <>
-                        {/* 프로필 미등록 상태 */}
+                        {/* 프로필 입력 폼 */}
                         <div style={{
                             background: 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)',
                             borderRadius: '15px',
-                            padding: '25px',
+                            padding: '20px',
                             textAlign: 'center',
                             marginBottom: '15px',
                             border: '2px dashed #fb8c00'
                         }}>
-                            <div style={{ fontSize: '3rem', marginBottom: '12px' }}>📝</div>
+                            <div style={{ fontSize: '2.5rem', marginBottom: '10px' }}>📝</div>
                             <p style={{
                                 fontSize: '1.1rem',
                                 color: '#e65100',
-                                marginBottom: '8px',
+                                marginBottom: '5px',
                                 fontWeight: '600'
                             }}>
-                                프로필 정보가 등록되지 않았습니다
+                                프로필을 등록해주세요
                             </p>
                             <p style={{
                                 fontSize: '0.85rem',
                                 color: '#f57c00',
-                                lineHeight: '1.5',
-                                marginBottom: '15px'
+                                lineHeight: '1.5'
                             }}>
-                                프로필을 등록하면 AI가 {currentUser.name}님께<br />
-                                맞춤형 채용공고와 면접 질문을 추천해드립니다
+                                AI가 맞춤형 채용공고와 면접 질문을 추천해드립니다
                             </p>
                         </div>
 
-                        <div style={{
-                            background: '#f8f9fa',
-                            borderRadius: '12px',
-                            padding: '18px',
-                            marginBottom: '12px'
-                        }}>
-                            <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                marginBottom: '12px'
-                            }}>
-                                <span style={{ fontSize: '1.2rem' }}>📋</span>
-                                <h3 style={{
-                                    fontSize: '1rem',
-                                    color: '#333',
-                                    fontWeight: '600',
-                                    margin: 0
-                                }}>등록 가능한 정보</h3>
+                        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.9rem', fontWeight: '600', color: '#333' }}>
+                                    희망직무 <span style={{ color: '#e74c3c' }}>*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    name="jobs"
+                                    value={formData.jobs}
+                                    onChange={handleInputChange}
+                                    placeholder="예: 백엔드 개발자"
+                                    required
+                                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '0.9rem' }}
+                                />
                             </div>
-                            <ul style={{
-                                paddingLeft: '25px',
-                                lineHeight: '1.8',
-                                margin: 0,
-                                color: '#666',
-                                fontSize: '0.85rem'
-                            }}>
-                                <li><strong>희망직무</strong>: 백엔드/프론트엔드/풀스택 등</li>
-                                <li><strong>경력</strong>: 신입, 1-3년, 3년 이상 등</li>
-                                <li><strong>희망지역</strong>: 서울, 경기, 부산 등</li>
-                                <li><strong>기술스택</strong>: Java, React, Python 등</li>
-                                <li><strong>희망연봉</strong>: 연봉 정보 (만원 단위)</li>
-                                <li><strong>이력서 파일</strong>: PDF 형식 이력서</li>
-                            </ul>
-                        </div>
 
-                        <div style={{
-                            background: '#e3f2fd',
-                            borderRadius: '10px',
-                            padding: '12px',
-                            border: '1px solid #90caf9'
-                        }}>
-                            <div style={{
-                                display: 'flex',
-                                alignItems: 'flex-start',
-                                gap: '8px'
-                            }}>
-                                <span style={{ fontSize: '1rem' }}>💡</span>
-                                <p style={{
-                                    margin: 0,
-                                    fontSize: '0.8rem',
-                                    color: '#1565c0',
-                                    lineHeight: '1.4'
-                                }}>
-                                    프로필 등록 기능은 준비 중입니다. 곧 이용하실 수 있습니다!
-                                </p>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.9rem', fontWeight: '600', color: '#333' }}>
+                                    경력 <span style={{ color: '#e74c3c' }}>*</span>
+                                </label>
+                                <select
+                                    name="careers"
+                                    value={formData.careers}
+                                    onChange={handleInputChange}
+                                    required
+                                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '0.9rem' }}
+                                >
+                                    <option value="">선택하세요</option>
+                                    <option value="신입">신입</option>
+                                    <option value="1-3년">1-3년</option>
+                                    <option value="3-5년">3-5년</option>
+                                    <option value="5년 이상">5년 이상</option>
+                                </select>
                             </div>
-                        </div>
+
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.9rem', fontWeight: '600', color: '#333' }}>
+                                    희망지역 <span style={{ color: '#e74c3c' }}>*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    name="regions"
+                                    value={formData.regions}
+                                    onChange={handleInputChange}
+                                    placeholder="예: 서울"
+                                    required
+                                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '0.9rem' }}
+                                />
+                            </div>
+
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.9rem', fontWeight: '600', color: '#333' }}>
+                                    기술스택 <span style={{ color: '#e74c3c' }}>*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    name="skills"
+                                    value={formData.skills}
+                                    onChange={handleInputChange}
+                                    placeholder="예: Java, Spring, MySQL (쉼표로 구분)"
+                                    required
+                                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '0.9rem' }}
+                                />
+                            </div>
+
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.9rem', fontWeight: '600', color: '#333' }}>
+                                    희망연봉 (만원) <span style={{ color: '#e74c3c' }}>*</span>
+                                </label>
+                                <input
+                                    type="number"
+                                    name="expected_salary"
+                                    value={formData.expected_salary}
+                                    onChange={handleInputChange}
+                                    placeholder="예: 3000"
+                                    required
+                                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '0.9rem' }}
+                                />
+                            </div>
+
+                            <button
+                                type="submit"
+                                style={{
+                                    padding: '12px',
+                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    fontSize: '1rem',
+                                    fontWeight: '600',
+                                    cursor: 'pointer',
+                                    marginTop: '10px'
+                                }}
+                            >
+                                프로필 저장
+                            </button>
+                        </form>
                     </>
                 )}
             </div>
