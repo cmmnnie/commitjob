@@ -203,6 +203,7 @@ export default function AIInterviewPage() {
             return;
         }
 
+        console.log('[피드백 요청] 답변 길이:', answer.trim().length, '문자');
         setIsFeedbackLoading(true);
         setFeedback(null);
         setAnswerScore(null);
@@ -229,9 +230,11 @@ export default function AIInterviewPage() {
             }
 
             const data = await response.json();
+            console.log('[피드백 응답] 점수:', data.score, '피드백 길이:', data.feedback?.length);
             if (data.success && data.feedback) {
                 setFeedback(data.feedback);
                 setAnswerScore(data.score);
+                console.log('[피드백 설정] 점수가', data.score, '점으로 업데이트되었습니다');
             } else {
                 alert('피드백을 받을 수 없습니다.');
             }
@@ -271,12 +274,18 @@ export default function AIInterviewPage() {
 
             const data = await response.json();
             if (data.success && data.revisedAnswer) {
+                console.log('[수정된 답변] 답변 업데이트:', data.revisedAnswer.substring(0, 50) + '...');
                 setRevisedAnswer(data.revisedAnswer);
                 // 수정된 답변을 textarea에 자동으로 채우기
                 setAnswer(data.revisedAnswer);
                 // 기존 피드백과 점수 초기화 (새로운 답변이므로 다시 피드백 받아야 함)
                 setFeedback(null);
                 setAnswerScore(null);
+                console.log('[수정된 답변] 피드백과 점수 초기화 완료');
+                // 사용자에게 다음 단계 안내
+                setTimeout(() => {
+                    alert('✨ 개선된 답변이 답변란에 입력되었습니다!\n\n새로운 답변에 대해 "AI 피드백 받기" 버튼을 다시 클릭하여 개선된 점수를 확인해보세요!');
+                }, 500);
             } else {
                 alert('수정된 답변을 받을 수 없습니다.');
             }
