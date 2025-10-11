@@ -5625,6 +5625,62 @@ app.get('/api/jobs', async (req, res) => {
   }
 });
 
+// 채용공고 검색 (회사명 또는 직무로 검색)
+app.get('/api/jobs/search', async (req, res) => {
+  const searchQuery = req.query.query || '';
+  const startTime = Date.now();
+
+  try {
+    console.log(`[JOBS-SEARCH] Searching jobs with query: "${searchQuery}"`);
+
+    if (!searchQuery.trim()) {
+      return res.json({ success: true, jobs: [], total: 0 });
+    }
+
+    // company 또는 title에서 검색
+    const query = `
+      SELECT * FROM jobs
+      WHERE company LIKE ? OR title LIKE ?
+      ORDER BY scraped_at DESC
+      LIMIT 100
+    `;
+
+    const searchPattern = `%${searchQuery}%`;
+    const [results] = await pool.execute(query, [searchPattern, searchPattern]);
+
+    console.log(`[JOBS-SEARCH] Query completed in ${Date.now() - startTime}ms, found ${results.length} jobs`);
+
+    // JSON 문자열을 파싱
+    const jobs = results.map(job => {
+      try {
+        return {
+          ...job,
+          job_info: job.job_info ? JSON.parse(job.job_info) : [],
+          conditions: job.conditions ? JSON.parse(job.conditions) : [],
+          registration_info: job.registration_info ? JSON.parse(job.registration_info) : []
+        };
+      } catch (parseError) {
+        console.error(`[JOBS-SEARCH] JSON parse error for job ${job.id}:`, parseError);
+        return {
+          ...job,
+          job_info: [],
+          conditions: [],
+          registration_info: []
+        };
+      }
+    });
+
+    res.json({ success: true, jobs, total: jobs.length });
+  } catch (error) {
+    console.error('[ERROR] Jobs search error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message
+    });
+  }
+});
+
 // ==============================================================================
 // GPT-4 기반 추천 함수
 // ==============================================================================

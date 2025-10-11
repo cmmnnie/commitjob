@@ -20,6 +20,8 @@ export default function MainPage() {
     const [itJobs, setItJobs] = useState([]);
     const [currentView, setCurrentView] = useState('jobs'); // 'jobs', 'login', 'profile'
     const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState([]);
+    const [isSearching, setIsSearching] = useState(false);
     const hasCheckedLogin = useRef(false);
 
     const showStatus = (text, type = 'info') => {
@@ -182,6 +184,7 @@ export default function MainPage() {
     useEffect(() => {
         const urlParams = new URLSearchParams(location.search);
         const view = urlParams.get('view');
+        const search = urlParams.get('search');
 
         if (view === 'login') {
             setCurrentView('login');
@@ -194,7 +197,49 @@ export default function MainPage() {
             const newUrl = window.location.pathname;
             window.history.replaceState({}, '', newUrl);
         }
+
+        // 검색 파라미터 처리
+        if (search) {
+            setSearchQuery(search);
+            handleSearchFromUrl(search);
+        } else {
+            setSearchQuery('');
+            setSearchResults([]);
+            setIsSearching(false);
+        }
     }, [location.search]);
+
+    // URL에서 검색어를 받아서 DB 검색
+    const handleSearchFromUrl = async (query) => {
+        if (!query || !query.trim()) {
+            setSearchResults([]);
+            setIsSearching(false);
+            return;
+        }
+
+        try {
+            setIsSearching(true);
+            console.log('[MAIN] Searching jobs with query:', query);
+
+            const response = await axios.get(`${API_BASE_URL}/api/jobs/search`, {
+                params: { query },
+                withCredentials: true,
+                timeout: 10000
+            });
+
+            if (response.data.success) {
+                setSearchResults(response.data.jobs);
+                console.log('[MAIN] Found', response.data.jobs.length, 'jobs');
+            } else {
+                setSearchResults([]);
+            }
+        } catch (error) {
+            console.error('[MAIN] Search error:', error);
+            setSearchResults([]);
+        } finally {
+            setIsSearching(false);
+        }
+    };
 
     // 로그인 상태 변경 감지
     useEffect(() => {
@@ -1070,64 +1115,69 @@ export default function MainPage() {
                             padding: '20px',
                             boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
                         }}>
-                            {/* 채용공고 헤더 및 검색 */}
+                            {/* 채용공고 헤더 */}
                             <div style={{ marginBottom: '30px' }}>
                                 <h1 style={{
                                     fontSize: '2rem',
                                     fontWeight: '700',
                                     color: '#333',
-                                    marginBottom: '16px'
+                                    marginBottom: '8px'
                                 }}>
                                     채용공고
                                 </h1>
-
-                                {/* 검색 바 */}
-                                <div style={{
-                                    position: 'relative',
-                                    maxWidth: '600px'
-                                }}>
-                                    <input
-                                        type="text"
-                                        placeholder="회사명 또는 직무를 검색하세요"
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        style={{
-                                            width: '100%',
-                                            padding: '14px 50px 14px 20px',
-                                            fontSize: '1rem',
-                                            border: '2px solid #e0e0e0',
-                                            borderRadius: '12px',
-                                            outline: 'none',
-                                            transition: 'all 0.3s'
-                                        }}
-                                        onFocus={(e) => {
-                                            e.target.style.borderColor = '#667eea';
-                                            e.target.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.1)';
-                                        }}
-                                        onBlur={(e) => {
-                                            e.target.style.borderColor = '#e0e0e0';
-                                            e.target.style.boxShadow = 'none';
-                                        }}
-                                    />
-                                    <span style={{
-                                        position: 'absolute',
-                                        right: '20px',
-                                        top: '50%',
-                                        transform: 'translateY(-50%)',
-                                        fontSize: '1.3rem',
-                                        color: '#999'
-                                    }}>🔍</span>
-                                </div>
+                                {searchQuery && (
+                                    <p style={{
+                                        fontSize: '1rem',
+                                        color: '#666',
+                                        marginTop: '8px'
+                                    }}>
+                                        "{searchQuery}" 검색 결과 {isSearching ? '검색 중...' : `(${searchResults.length}건)`}
+                                    </p>
+                                )}
                             </div>
 
-                            {/* BIGDATA_AI 섹션 */}
-                            {(() => {
-                                const filteredBigdataJobs = bigdataJobs.filter(job =>
-                                    searchQuery === '' ||
-                                    job.company?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                    job.title?.toLowerCase().includes(searchQuery.toLowerCase())
-                                );
-                                return filteredBigdataJobs.length > 0 && (
+                            {/* 검색 결과 표시 */}
+                            {searchQuery && !isSearching && (
+                                <div style={{ marginBottom: '30px' }}>
+                                    {searchResults.length > 0 ? (
+                                        <div style={{
+                                            display: 'grid',
+                                            gridTemplateColumns: 'repeat(3, 1fr)',
+                                            gap: '20px',
+                                            maxWidth: '1200px',
+                                            margin: '0 auto'
+                                        }}>
+                                            {searchResults.map((job) => (
+                                                <JobCard key={job.id} job={job} />
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div style={{
+                                            textAlign: 'center',
+                                            padding: '60px 20px',
+                                            color: '#999'
+                                        }}>
+                                            <p style={{ fontSize: '1.2rem', marginBottom: '8px' }}>🔍</p>
+                                            <p>검색 결과가 없습니다</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* 검색 중일 때 로딩 표시 */}
+                            {isSearching && (
+                                <div style={{
+                                    textAlign: 'center',
+                                    padding: '60px 20px',
+                                    color: '#666'
+                                }}>
+                                    <div className="spinner" style={{ margin: '0 auto 20px' }}></div>
+                                    <p>검색 중...</p>
+                                </div>
+                            )}
+
+                            {/* BIGDATA_AI 섹션 - 검색 중이 아닐 때만 표시 */}
+                            {!searchQuery && bigdataJobs.length > 0 && (
                             <div style={{ marginBottom: '0px' }}>
                                 <div style={{
                                     display: 'flex',
@@ -1151,7 +1201,7 @@ export default function MainPage() {
                                             fontWeight: '400',
                                             marginLeft: '8px'
                                         }}>
-                                            ({filteredBigdataJobs.length}건)
+                                            ({bigdataJobs.length}건)
                                         </span>
                                     </h2>
                                     <button
@@ -1187,22 +1237,15 @@ export default function MainPage() {
                                     maxWidth: '1200px',
                                     margin: '0 auto'
                                 }}>
-                                    {filteredBigdataJobs.map((job) => (
+                                    {bigdataJobs.map((job) => (
                                         <JobCard key={job.id} job={job} />
                                     ))}
                                 </div>
                             </div>
-                        );
-                            })()}
+                            )}
 
-                        {/* IT 섹션 */}
-                        {(() => {
-                            const filteredItJobs = itJobs.filter(job =>
-                                searchQuery === '' ||
-                                job.company?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                job.title?.toLowerCase().includes(searchQuery.toLowerCase())
-                            );
-                            return filteredItJobs.length > 0 && (
+                        {/* IT 섹션 - 검색 중이 아닐 때만 표시 */}
+                        {!searchQuery && itJobs.length > 0 && (
                             <div style={{ marginBottom: '0px', marginTop: '40px' }}>
                                 <div style={{
                                     display: 'flex',
@@ -1226,7 +1269,7 @@ export default function MainPage() {
                                             fontWeight: '400',
                                             marginLeft: '8px'
                                         }}>
-                                            ({filteredItJobs.length}건)
+                                            ({itJobs.length}건)
                                         </span>
                                     </h2>
                                     <button
@@ -1262,13 +1305,12 @@ export default function MainPage() {
                                     maxWidth: '1200px',
                                     margin: '0 auto'
                                 }}>
-                                    {filteredItJobs.map((job) => (
+                                    {itJobs.map((job) => (
                                         <JobCard key={job.id} job={job} />
                                     ))}
                                 </div>
                             </div>
-                            );
-                        })()}
+                            )}
                         </div>
                     )}
                 </div>

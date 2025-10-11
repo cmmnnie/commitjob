@@ -305,6 +305,18 @@ export default function ResumePage() {
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             minHeight: 'calc(100vh - 60px)'
         }}>
+            {/* 숫자 입력 필드의 스피너 버튼 숨기기 */}
+            <style>{`
+                input[type=number]::-webkit-inner-spin-button,
+                input[type=number]::-webkit-outer-spin-button {
+                    -webkit-appearance: none;
+                    margin: 0;
+                }
+                input[type=number] {
+                    -moz-appearance: textfield;
+                }
+            `}</style>
+
             <div style={{
                 background: 'white',
                 borderRadius: '20px',
@@ -543,23 +555,27 @@ export default function ResumePage() {
 
                         {/* 정보 수정 안내 */}
                         <div style={{
-                            background: '#e3f2fd',
-                            borderRadius: '10px',
-                            padding: '8px 12px',
+                            background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
+                            borderRadius: '12px',
+                            padding: '12px 16px',
                             marginBottom: '12px',
-                            border: '1px solid #90caf9'
+                            border: '2px solid #2196f3',
+                            boxShadow: '0 2px 8px rgba(33, 150, 243, 0.2)'
                         }}>
                             <div style={{
                                 display: 'flex',
                                 alignItems: 'flex-start',
-                                gap: '8px'
+                                gap: '10px'
                             }}>
-                                <span style={{ fontSize: '1rem' }}>💡</span>
+                                <span style={{ fontSize: '1.3rem', flexShrink: 0 }}>💡</span>
                                 <p style={{
                                     margin: 0,
-                                    fontSize: '0.8rem',
-                                    color: '#1565c0',
-                                    lineHeight: '1.4'
+                                    fontSize: '0.9rem',
+                                    color: '#0d47a1',
+                                    lineHeight: '1.5',
+                                    fontWeight: '700',
+                                    textShadow: '0 1px 2px rgba(0,0,0,0.1)',
+                                    letterSpacing: '-0.2px'
                                 }}>
                                     이력서 정보를 활용하여 AI 채용공고와 AI 면접질문을 추천해드립니다
                                 </p>

@@ -6,11 +6,15 @@ export default function Header() {
     const location = useLocation();
     const navigate = useNavigate();
     const [currentUser, setCurrentUser] = useState(null);
+    const [searchQuery, setSearchQuery] = useState('');
 
     // 콜백 페이지에서는 헤더 숨기기
     if (location.pathname === '/callback') {
         return null;
     }
+
+    // 메인 페이지가 아닐 때는 검색바 숨기기
+    const showSearchBar = location.pathname === '/';
 
     useEffect(() => {
         const checkLoginStatus = async () => {
@@ -59,6 +63,12 @@ export default function Header() {
         }
     };
 
+    const handleSearch = (e) => {
+        if (e.key === 'Enter' && searchQuery.trim()) {
+            navigate(`/?search=${encodeURIComponent(searchQuery.trim())}`);
+        }
+    };
+
     const headerStyle = {
         position: 'sticky',
         top: 0,
@@ -71,12 +81,13 @@ export default function Header() {
     };
 
     const containerStyle = {
-        maxWidth: '600px',
+        maxWidth: showSearchBar ? '1200px' : '600px',
         margin: '0 auto',
         padding: '12px 20px',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-between'
+        justifyContent: 'space-between',
+        gap: '20px'
     };
 
     const logoStyle = {
@@ -125,6 +136,49 @@ export default function Header() {
                         <span style={{ color: '#ec4899' }}>C</span>ommit<span style={{ color: '#ec4899' }}>J</span>ob
                     </span>
                 </Link>
+
+                {/* 검색바 - 메인 페이지에서만 표시 */}
+                {showSearchBar && (
+                    <div style={{
+                        flex: 1,
+                        maxWidth: '500px',
+                        position: 'relative'
+                    }}>
+                        <input
+                            type="text"
+                            placeholder="회사명 또는 직무 검색"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onKeyPress={handleSearch}
+                            style={{
+                                width: '100%',
+                                padding: '10px 40px 10px 16px',
+                                fontSize: '0.9rem',
+                                border: '2px solid #e0e0e0',
+                                borderRadius: '24px',
+                                outline: 'none',
+                                transition: 'all 0.3s'
+                            }}
+                            onFocus={(e) => {
+                                e.target.style.borderColor = '#667eea';
+                                e.target.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.1)';
+                            }}
+                            onBlur={(e) => {
+                                e.target.style.borderColor = '#e0e0e0';
+                                e.target.style.boxShadow = 'none';
+                            }}
+                        />
+                        <span style={{
+                            position: 'absolute',
+                            right: '16px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            fontSize: '1.1rem',
+                            color: '#999',
+                            pointerEvents: 'none'
+                        }}>🔍</span>
+                    </div>
+                )}
 
                 <button onClick={handleProfileClick} style={profileButtonStyle}>
                     {currentUser ? (
