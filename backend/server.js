@@ -286,20 +286,26 @@ const allowedOrigins = (process.env.FRONTEND_ORIGIN || "")
 
 
 console.log("[CORS] Initial allowedOrigins (on startup) =", allowedOrigins); // 시작 시점에 확인
-// 운영/로컬 둘 다 안전하게 기본값 보강
-if (allowedOrigins.length === 0) {
-  allowedOrigins.push(
-    'https://commitjob.site',
-    'https://www.commitjob.site',
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:3002',
-    'http://localhost:4001',
-    'http://localhost:5173',
-    'http://localhost:5174',
-    'http://commitjob.site',
-    '*'
-  );
+
+// 프로덕션 URL은 환경 변수 설정과 관계없이 항상 포함
+const requiredOrigins = [
+  'https://commitjob.site',
+  'https://www.commitjob.site',
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:3002',
+  'http://localhost:4001',
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://commitjob.site',
+  '*'
+];
+
+// 기존 allowedOrigins에 없는 requiredOrigins만 추가 (중복 방지)
+for (const origin of requiredOrigins) {
+  if (!allowedOrigins.includes(origin)) {
+    allowedOrigins.push(origin);
+  }
 }
 
 // Debug endpoint to check CORS configuration
