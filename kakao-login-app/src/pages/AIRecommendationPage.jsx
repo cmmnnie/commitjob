@@ -157,13 +157,17 @@ export default function AIRecommendationPage() {
                     <div style={{
                         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                         color: 'white',
-                        padding: '4px 12px',
-                        borderRadius: '12px',
-                        fontSize: '0.85rem',
-                        fontWeight: '600',
-                        marginLeft: '10px'
+                        padding: '8px 16px',
+                        borderRadius: '16px',
+                        fontSize: '1rem',
+                        fontWeight: '800',
+                        marginLeft: '10px',
+                        boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',
+                        border: '2px solid rgba(255, 255, 255, 0.3)',
+                        textShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                        letterSpacing: '-0.3px'
                     }}>
-                        {job.match_score}% 매칭
+                        AI 매칭률 {job.match_score}%
                     </div>
                 )}
             </div>
@@ -229,16 +233,34 @@ export default function AIRecommendationPage() {
 
             {job.match_reasons && job.match_reasons.length > 0 && (
                 <div style={{
-                    background: '#e6fffa',
-                    color: '#234e52',
-                    padding: '12px',
-                    borderRadius: '8px',
-                    marginTop: '12px',
-                    fontSize: '0.85rem',
-                    lineHeight: '1.5'
+                    background: 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)',
+                    color: '#075985',
+                    padding: '16px 18px',
+                    borderRadius: '12px',
+                    marginTop: '16px',
+                    fontSize: '0.95rem',
+                    lineHeight: '1.7',
+                    border: '2px solid #38bdf8',
+                    boxShadow: '0 4px 12px rgba(56, 189, 248, 0.2)'
                 }}>
-                    <strong>🤖 AI 매칭 이유:</strong><br/>
-                    {job.match_reasons.join(', ')}
+                    <div style={{
+                        fontWeight: '800',
+                        fontSize: '1rem',
+                        marginBottom: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                    }}>
+                        <span style={{ fontSize: '1.2rem' }}>🤖</span>
+                        AI 매칭 이유
+                    </div>
+                    <div style={{
+                        fontWeight: '600',
+                        letterSpacing: '-0.2px'
+                    }}>
+                        {job.match_reasons.join(', ')}
+                    </div>
                 </div>
             )}
         </div>
