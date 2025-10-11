@@ -144,6 +144,30 @@ export default function ResumePage() {
         });
     };
 
+    const handleEditClick = () => {
+        if (userProfile) {
+            setFormData({
+                jobs: userProfile.preferred_jobs || '',
+                careers: userProfile.experience || '',
+                regions: userProfile.preferred_regions || [],
+                skills: userProfile.skills ? userProfile.skills.join(', ') : '',
+                expected_salary: userProfile.expected_salary || ''
+            });
+            setIsEditing(true);
+        }
+    };
+
+    const handleCancelEdit = () => {
+        setIsEditing(false);
+        setFormData({
+            jobs: '',
+            careers: '',
+            regions: [],
+            skills: '',
+            expected_salary: ''
+        });
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -287,7 +311,7 @@ export default function ResumePage() {
                     }}>{maskName(currentUser.name)}님의 이력서</h1>
                 </div>
 
-                {userProfile ? (
+                {userProfile && !isEditing ? (
                     <>
                         {/* 기본 정보 섹션 */}
                         <div style={{
@@ -546,30 +570,56 @@ export default function ResumePage() {
                             </div>
                         </div>
 
+                        {/* 수정 버튼 */}
+                        <button
+                            onClick={handleEditClick}
+                            style={{
+                                width: '100%',
+                                padding: '12px',
+                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '8px',
+                                fontSize: '1rem',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '8px'
+                            }}
+                        >
+                            ✏️ 프로필 수정
+                        </button>
+
                     </>
                 ) : (
                     <>
                         {/* 프로필 입력 폼 */}
                         <div style={{
-                            background: 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)',
+                            background: userProfile
+                                ? 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)'
+                                : 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)',
                             borderRadius: '15px',
                             padding: '20px',
                             textAlign: 'center',
                             marginBottom: '15px',
-                            border: '2px dashed #fb8c00'
+                            border: userProfile ? '2px dashed #2196f3' : '2px dashed #fb8c00'
                         }}>
-                            <div style={{ fontSize: '2.5rem', marginBottom: '10px' }}>📝</div>
+                            <div style={{ fontSize: '2.5rem', marginBottom: '10px' }}>
+                                {userProfile ? '✏️' : '📝'}
+                            </div>
                             <p style={{
                                 fontSize: '1.1rem',
-                                color: '#e65100',
+                                color: userProfile ? '#1565c0' : '#e65100',
                                 marginBottom: '5px',
                                 fontWeight: '600'
                             }}>
-                                프로필을 등록해주세요
+                                {userProfile ? '프로필을 수정해주세요' : '프로필을 등록해주세요'}
                             </p>
                             <p style={{
                                 fontSize: '0.85rem',
-                                color: '#f57c00',
+                                color: userProfile ? '#1976d2' : '#f57c00',
                                 lineHeight: '1.5'
                             }}>
                                 AI가 맞춤형 채용공고와 면접 질문을 추천해드립니다
@@ -690,22 +740,43 @@ export default function ResumePage() {
                                 />
                             </div>
 
-                            <button
-                                type="submit"
-                                style={{
-                                    padding: '12px',
-                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '8px',
-                                    fontSize: '1rem',
-                                    fontWeight: '600',
-                                    cursor: 'pointer',
-                                    marginTop: '10px'
-                                }}
-                            >
-                                프로필 저장
-                            </button>
+                            <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                                <button
+                                    type="submit"
+                                    style={{
+                                        flex: 1,
+                                        padding: '12px',
+                                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        fontSize: '1rem',
+                                        fontWeight: '600',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    {userProfile ? '수정 완료' : '프로필 저장'}
+                                </button>
+                                {userProfile && (
+                                    <button
+                                        type="button"
+                                        onClick={handleCancelEdit}
+                                        style={{
+                                            flex: 1,
+                                            padding: '12px',
+                                            background: '#f0f0f0',
+                                            color: '#666',
+                                            border: 'none',
+                                            borderRadius: '8px',
+                                            fontSize: '1rem',
+                                            fontWeight: '600',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        취소
+                                    </button>
+                                )}
+                            </div>
                         </form>
                     </>
                 )}
