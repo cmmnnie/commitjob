@@ -4591,7 +4591,7 @@ ${interviewQuestionsSection ? '기출질문과 유사하지만 더 깊이 있고
  */
 app.post('/api/interview-feedback', async (req, res) => {
   try {
-    const { question, answer, company } = req.body;
+    const { question, answer, company, previous_score } = req.body;
 
     if (!question || !answer) {
       return res.status(400).json({
@@ -4601,6 +4601,9 @@ app.post('/api/interview-feedback', async (req, res) => {
     }
 
     console.log(`[INTERVIEW-FEEDBACK] Generating feedback for question: "${question.substring(0, 50)}..."`);
+    if (previous_score) {
+      console.log(`[INTERVIEW-FEEDBACK] Previous score: ${previous_score}`);
+    }
 
     if (!openai) {
       return res.status(503).json({
@@ -4619,6 +4622,12 @@ app.post('/api/interview-feedback', async (req, res) => {
 
 그리고 답변의 점수를 100점 만점으로 평가해주세요.
 
+**중요한 점수 평가 원칙:**
+- 이전 답변의 점수가 제공되는 경우, 현재 답변과 비교하여 평가해주세요.
+- 만약 답변이 개선되었거나 더 구체적/상세해졌다면, 이전 점수보다 **최소 3~10점** 이상 높은 점수를 부여해주세요.
+- 답변이 동일하거나 오히려 퇴보했다면, 그에 맞는 점수를 부여해주세요.
+- 처음 평가하는 답변이라면, 객관적으로 평가해주세요.
+
 응답 형식:
 {
   "score": 85,
@@ -4627,14 +4636,19 @@ app.post('/api/interview-feedback', async (req, res) => {
 
 피드백은 친절하고 격려하는 톤으로 작성하되, 구체적인 개선 방안을 제시해주세요.`;
 
-    const userPrompt = `${company ? `[${company} 면접]` : '[면접]'}
+    let userPrompt = `${company ? `[${company} 면접]` : '[면접]'}
 
 질문: ${question}
 
 지원자 답변:
-${answer}
+${answer}`;
 
-위 답변에 대해 전문적인 피드백과 점수(100점 만점)를 JSON 형식으로 제공해주세요.`;
+    // 이전 점수가 있으면 추가
+    if (previous_score) {
+      userPrompt += `\n\n**참고:** 이 질문에 대한 이전 답변의 점수는 ${previous_score}점이었습니다. 현재 답변이 개선되었는지 비교하여 평가해주세요. 개선되었다면 최소 3점 이상 높은 점수를 부여해주세요.`;
+    }
+
+    userPrompt += `\n\n위 답변에 대해 전문적인 피드백과 점수(100점 만점)를 JSON 형식으로 제공해주세요.`;
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',

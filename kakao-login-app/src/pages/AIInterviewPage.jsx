@@ -14,6 +14,7 @@ export default function AIInterviewPage() {
     const [answer, setAnswer] = useState('');
     const [feedback, setFeedback] = useState(null);
     const [answerScore, setAnswerScore] = useState(null);
+    const [previousScore, setPreviousScore] = useState(null); // 이전 점수 저장
     const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
     const [modelAnswer, setModelAnswer] = useState(null);
     const [isModelAnswerLoading, setIsModelAnswerLoading] = useState(false);
@@ -204,6 +205,11 @@ export default function AIInterviewPage() {
         }
 
         console.log('[피드백 요청] 답변 길이:', answer.trim().length, '문자');
+        console.log('[피드백 요청] 이전 점수:', answerScore);
+
+        // 현재 점수를 이전 점수로 저장
+        const currentPreviousScore = answerScore;
+
         setIsFeedbackLoading(true);
         setFeedback(null);
         setAnswerScore(null);
@@ -221,7 +227,8 @@ export default function AIInterviewPage() {
                 body: JSON.stringify({
                     question: selectedQuestion.question,
                     answer: answer.trim(),
-                    company: generatedCompanyName
+                    company: generatedCompanyName,
+                    previous_score: currentPreviousScore // 이전 점수 전달
                 })
             });
 
