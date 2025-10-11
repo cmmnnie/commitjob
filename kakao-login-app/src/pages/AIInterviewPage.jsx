@@ -17,6 +17,8 @@ export default function AIInterviewPage() {
     const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
     const [modelAnswer, setModelAnswer] = useState(null);
     const [isModelAnswerLoading, setIsModelAnswerLoading] = useState(false);
+    const [revisedAnswer, setRevisedAnswer] = useState(null);
+    const [isRevisedAnswerLoading, setIsRevisedAnswerLoading] = useState(false);
 
     useEffect(() => {
         checkLogin();
@@ -154,6 +156,7 @@ export default function AIInterviewPage() {
         setFeedback(null);
         setAnswerScore(null);
         setModelAnswer(null);
+        setRevisedAnswer(null);
     };
 
     const handleGetModelAnswer = async () => {
@@ -203,6 +206,7 @@ export default function AIInterviewPage() {
         setIsFeedbackLoading(true);
         setFeedback(null);
         setAnswerScore(null);
+        setRevisedAnswer(null);
 
         try {
             const token = localStorage.getItem('app_session');
@@ -236,6 +240,46 @@ export default function AIInterviewPage() {
             alert('피드백 생성에 실패했습니다. 다시 시도해주세요.');
         } finally {
             setIsFeedbackLoading(false);
+        }
+    };
+
+    const handleGetRevisedAnswer = async () => {
+        setIsRevisedAnswerLoading(true);
+        setRevisedAnswer(null);
+
+        try {
+            const token = localStorage.getItem('app_session');
+            const response = await fetch(`${CONFIG.BACKEND_URL}/api/interview-revised-answer`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    question: selectedQuestion.question,
+                    original_answer: answer.trim(),
+                    feedback: feedback,
+                    company: generatedCompanyName,
+                    user_id: currentUser?.id
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('수정된 답변 생성에 실패했습니다.');
+            }
+
+            const data = await response.json();
+            if (data.success && data.revisedAnswer) {
+                setRevisedAnswer(data.revisedAnswer);
+            } else {
+                alert('수정된 답변을 받을 수 없습니다.');
+            }
+        } catch (err) {
+            console.error('[수정된 답변 생성] 오류:', err);
+            alert('수정된 답변 생성에 실패했습니다. 다시 시도해주세요.');
+        } finally {
+            setIsRevisedAnswerLoading(false);
         }
     };
 
@@ -839,6 +883,80 @@ export default function AIInterviewPage() {
                                     whiteSpace: 'pre-wrap'
                                 }}>
                                     {feedback}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 피드백을 받은 후 수정된 답변 받기 버튼 */}
+                        {feedback && !revisedAnswer && (
+                            <button
+                                onClick={handleGetRevisedAnswer}
+                                disabled={isRevisedAnswerLoading}
+                                style={{
+                                    width: '100%',
+                                    marginTop: '20px',
+                                    background: isRevisedAnswerLoading
+                                        ? '#cbd5e0'
+                                        : 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '12px 20px',
+                                    borderRadius: '10px',
+                                    fontSize: '0.95rem',
+                                    fontWeight: '600',
+                                    cursor: isRevisedAnswerLoading ? 'not-allowed' : 'pointer',
+                                    transition: 'all 0.2s',
+                                    boxShadow: isRevisedAnswerLoading ? 'none' : '0 4px 12px rgba(6, 182, 212, 0.3)'
+                                }}
+                                onMouseEnter={(e) => {
+                                    if (!isRevisedAnswerLoading) {
+                                        e.currentTarget.style.transform = 'translateY(-2px)';
+                                        e.currentTarget.style.boxShadow = '0 6px 16px rgba(6, 182, 212, 0.4)';
+                                    }
+                                }}
+                                onMouseLeave={(e) => {
+                                    if (!isRevisedAnswerLoading) {
+                                        e.currentTarget.style.transform = 'translateY(0)';
+                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(6, 182, 212, 0.3)';
+                                    }
+                                }}
+                            >
+                                {isRevisedAnswerLoading ? '✨ 수정된 답변 생성 중...' : '✨ 피드백을 반영한 수정된 답변 받기'}
+                            </button>
+                        )}
+
+                        {/* 수정된 답변 결과 */}
+                        {revisedAnswer && (
+                            <div style={{
+                                marginTop: '24px',
+                                background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
+                                borderRadius: '12px',
+                                padding: '20px',
+                                border: '2px solid #06b6d4'
+                            }}>
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '10px',
+                                    marginBottom: '16px'
+                                }}>
+                                    <span style={{ fontSize: '1.8rem' }}>✨</span>
+                                    <h3 style={{
+                                        fontSize: '1.2rem',
+                                        color: '#0c4a6e',
+                                        fontWeight: '700',
+                                        margin: 0
+                                    }}>
+                                        피드백 반영 수정 답변
+                                    </h3>
+                                </div>
+                                <div style={{
+                                    fontSize: '1rem',
+                                    color: '#0369a1',
+                                    lineHeight: '1.8',
+                                    whiteSpace: 'pre-wrap'
+                                }}>
+                                    {revisedAnswer}
                                 </div>
                             </div>
                         )}

@@ -4820,6 +4820,169 @@ app.post('/api/interview-model-answer', async (req, res) => {
   }
 });
 
+/* ==================== 면접 수정된 답변 API ==================== */
+/**
+ * @swagger
+ * /api/interview-revised-answer:
+ *   post:
+ *     summary: AI 피드백을 반영한 수정된 답변
+ *     description: 원래 답변과 AI 피드백을 기반으로 개선된 답변을 GPT-4o-mini가 생성합니다.
+ *     tags: [면접 준비]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               question:
+ *                 type: string
+ *                 description: 면접 질문
+ *               original_answer:
+ *                 type: string
+ *                 description: 원래 작성한 답변
+ *               feedback:
+ *                 type: string
+ *                 description: AI 피드백 내용
+ *               company:
+ *                 type: string
+ *                 description: 회사명 (선택)
+ *               user_id:
+ *                 type: integer
+ *                 description: 사용자 ID (선택, 프로필 정보 활용)
+ *             required:
+ *               - question
+ *               - original_answer
+ *               - feedback
+ *     responses:
+ *       200:
+ *         description: 수정된 답변 생성 성공
+ *       400:
+ *         description: 잘못된 요청
+ *       500:
+ *         description: 서버 오류
+ */
+app.post('/api/interview-revised-answer', async (req, res) => {
+  try {
+    const { question, original_answer, feedback, company, user_id } = req.body;
+
+    if (!question || !original_answer || !feedback) {
+      return res.status(400).json({
+        success: false,
+        error: '질문, 원래 답변, 피드백은 필수입니다.'
+      });
+    }
+
+    console.log(`[INTERVIEW-REVISED-ANSWER] Generating revised answer for question: "${question.substring(0, 50)}..."`);
+
+    if (!openai) {
+      return res.status(503).json({
+        success: false,
+        error: 'OpenAI API가 설정되지 않았습니다.'
+      });
+    }
+
+    // 사용자 프로필 정보 조회 (있을 경우)
+    let userProfile = null;
+    if (user_id) {
+      try {
+        const [userRows] = await pool.execute(`
+          SELECT up.*, u.name as user_name
+          FROM user_profiles up
+          JOIN users u ON up.user_id = u.id
+          WHERE u.id = ?
+        `, [user_id]);
+
+        if (userRows.length > 0) {
+          const profile = userRows[0];
+
+          // JSON 필드 파싱
+          let skills = [];
+          if (profile.skills) {
+            try {
+              skills = typeof profile.skills === 'string'
+                ? JSON.parse(profile.skills)
+                : profile.skills;
+            } catch (e) {
+              skills = [];
+            }
+          }
+
+          userProfile = {
+            jobs: profile.jobs,
+            career_type: profile.career_type,
+            career_years: profile.career_years,
+            skills: skills,
+            education: profile.education
+          };
+        }
+      } catch (profileError) {
+        console.warn('[INTERVIEW-REVISED-ANSWER] Failed to load user profile:', profileError);
+      }
+    }
+
+    // GPT-4o-mini에게 수정된 답변 요청
+    let systemPrompt = `당신은 전문 면접 코치입니다. 지원자가 작성한 면접 답변과 피드백을 바탕으로 개선된 답변을 작성해주세요.
+
+수정된 답변 작성 가이드:
+1. 원래 답변의 강점은 유지하면서 피드백의 개선점을 반영
+2. STAR 기법 활용 (Situation, Task, Action, Result)
+3. 구체적인 예시와 수치를 포함하여 설득력 강화
+4. 자연스럽고 진정성 있는 답변 작성
+5. 답변 길이: 2-3분 분량 (약 300-500자)
+
+원래 답변의 내용과 톤을 최대한 존중하면서, 피드백의 조언을 반영하여 더 나은 답변을 만들어주세요.`;
+
+    let userPrompt = `${company ? `[${company} 면접]` : '[면접]'}
+
+질문: ${question}
+
+원래 답변:
+${original_answer}
+
+AI 피드백:
+${feedback}`;
+
+    if (userProfile) {
+      userPrompt += `\n\n지원자 프로필:
+- 직무: ${userProfile.jobs || '미기재'}
+- 경력: ${userProfile.career_type || '미기재'}${userProfile.career_years ? ` (${userProfile.career_years}년)` : ''}
+- 기술스택: ${userProfile.skills && userProfile.skills.length > 0 ? userProfile.skills.join(', ') : '미기재'}
+- 학력: ${userProfile.education || '미기재'}
+
+위 프로필을 참고하여 지원자에게 맞는 수정된 답변을 작성해주세요.`;
+    } else {
+      userPrompt += `\n\n위 피드백을 반영하여 개선된 답변을 작성해주세요.`;
+    }
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      temperature: 0.7,
+      max_tokens: 1000
+    });
+
+    const revisedAnswer = completion.choices[0].message.content;
+
+    console.log(`[INTERVIEW-REVISED-ANSWER] ✅ Revised answer generated successfully`);
+
+    res.json({
+      success: true,
+      revisedAnswer
+    });
+  } catch (error) {
+    console.error('[ERROR] Interview revised answer error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message
+    });
+  }
+});
+
 /* ==================== 회사 추천 API ==================== */
 /**
  * @swagger
