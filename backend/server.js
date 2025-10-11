@@ -6226,70 +6226,152 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
       });
     }
 
-    // 3. catch.co.kr에서 실시간 스크래핑 (catch.db 거치지 않고 직접 반환)
-    console.log('[SCRAPE-JOBS] catch.co.kr에서 공고 직접 스크래핑 중 (catch.db 우회)...');
-    let scrapedJobs = [];
+    // 3. 채용공고 페이지로 이동
+    console.log('[SCRAPE-JOBS] 채용공고 페이지로 이동 중...');
+    try {
+      const recruitResponse = await axios.post(`${CATCH_SCRAPER_URL}/api/recruit`, {}, { timeout: 30000 });
+      if (!recruitResponse.data.success) {
+        console.error('[SCRAPE-JOBS] 채용공고 페이지 이동 실패:', recruitResponse.data);
+        throw new Error('채용공고 페이지로 이동할 수 없습니다.');
+      }
+      console.log('[SCRAPE-JOBS] ✅ 채용공고 페이지 이동 완료');
+    } catch (recruitError) {
+      console.error('[SCRAPE-JOBS] 채용공고 페이지 이동 오류:', recruitError.message);
+
+      // 폴백: catch.db에서 가져오기
+      console.log('[SCRAPE-JOBS] 페이지 이동 실패, catch.db 폴백 시도...');
+      const dbResponse = await axios.get(`${CATCH_SCRAPER_URL}/api/db/homepage`, { timeout: 30000 });
+
+      if (dbResponse.data.success && dbResponse.data.results) {
+        const results = dbResponse.data.results;
+        const itJobs = (results.it_jobs || []).map(job => ({ ...job, category: 'IT' }));
+        const bigdataJobs = (results.bigdata_ai_jobs || []).map(job => ({ ...job, category: 'BIGDATA_AI' }));
+        const scrapedJobs = [...itJobs, ...bigdataJobs].slice(0, 20);
+
+        console.log(`[SCRAPE-JOBS] ✅ catch.db에서 ${scrapedJobs.length}개 공고 가져옴 (페이지 이동 실패 폴백)`);
+
+        // 바로 DB insert 처리 (페이지 이동 실패 시)
+        let newJobs = 0, duplicates = 0;
+        for (const job of scrapedJobs) {
+          try {
+            const [existing] = await pool.execute(
+              'SELECT id FROM jobs WHERE title = ? AND company = ?',
+              [job.title, job.company]
+            );
+            if (existing.length > 0) {
+              duplicates++;
+              continue;
+            }
+            await pool.execute(
+              `INSERT INTO jobs (title, company, url, job_info, conditions, registration_info, category, scraped_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
+              [job.title, job.company, job.url, JSON.stringify(job.job_info || []),
+               JSON.stringify(job.conditions || []), JSON.stringify(job.registration_info || []), job.category]
+            );
+            newJobs++;
+          } catch (insertError) {
+            console.error(`[SCRAPE-JOBS] DB 삽입 오류 (${job.title}):`, insertError.message);
+          }
+        }
+        return res.json({
+          success: true,
+          total_scraped: scrapedJobs.length,
+          new_jobs: newJobs,
+          duplicates: duplicates
+        });
+      }
+
+      throw recruitError;
+    }
+
+    // 4. IT개발 필터 적용 및 스크래핑 (15건)
+    console.log('[SCRAPE-JOBS] IT개발 공고 스크래핑 중...');
+    let itJobs = [];
 
     try {
-      // /api/extract-first-page-jobs?max_jobs=20 사용 (catch.db 저장 안함, 바로 반환)
-      console.log('[SCRAPE-JOBS] 첫 페이지에서 최대 20개 공고 추출 시작...');
+      // IT개발 필터 적용
+      console.log('[SCRAPE-JOBS] IT개발 필터 적용 중...');
+      const itFilterResponse = await axios.post(`${CATCH_SCRAPER_URL}/api/filter-it`, {}, { timeout: 30000 });
 
-      const scrapeResponse = await axios.get(
-        `${CATCH_SCRAPER_URL}/api/extract-first-page-jobs?max_jobs=20`,
-        { timeout: 120000 }  // 2분 타임아웃
-      );
-
-      console.log('[SCRAPE-JOBS] 스크래핑 응답:', JSON.stringify(scrapeResponse.data).substring(0, 300));
-
-      if (scrapeResponse.data.success && scrapeResponse.data.jobs) {
-        // extract-first-page-jobs는 jobs 배열로 직접 반환
-        scrapedJobs = scrapeResponse.data.jobs.map(job => ({
-          ...job,
-          category: job.category || 'IT'  // 기본 카테고리 IT
-        }));
-
-        console.log('[SCRAPE-JOBS] ✅ 실시간 스크래핑 완료');
-        console.log(`[SCRAPE-JOBS] - 총 ${scrapedJobs.length}개 공고 추출 (catch.db 우회)`);
-        console.log(`[SCRAPE-JOBS] - 첫 3개 공고: ${scrapedJobs.slice(0, 3).map(j => j.title).join(', ')}`);
+      if (!itFilterResponse.data.success) {
+        console.error('[SCRAPE-JOBS] IT개발 필터 적용 실패:', itFilterResponse.data);
       } else {
-        console.log('[SCRAPE-JOBS] 스크래핑 실패:', scrapeResponse.data.message || '알 수 없는 오류');
+        console.log('[SCRAPE-JOBS] ✅ IT개발 필터 적용 완료');
 
-        // 폴백: catch.db에서 가져오기
-        console.log('[SCRAPE-JOBS] 폴백: catch.db에서 가져오기 시도...');
+        // IT개발 공고 추출 (15건)
+        const itResponse = await axios.get(
+          `${CATCH_SCRAPER_URL}/api/extract-first-page-jobs?max_jobs=15`,
+          { timeout: 120000 }
+        );
 
+        if (itResponse.data.success && itResponse.data.jobs) {
+          itJobs = itResponse.data.jobs.map(job => ({
+            ...job,
+            category: 'IT'
+          }));
+          console.log(`[SCRAPE-JOBS] ✅ IT개발 공고 ${itJobs.length}개 추출 완료`);
+        }
+      }
+    } catch (itError) {
+      console.error('[SCRAPE-JOBS] IT개발 스크래핑 오류:', itError.message);
+    }
+
+    // 5. 빅데이터·AI 필터 적용 및 스크래핑 (15건)
+    console.log('[SCRAPE-JOBS] 빅데이터·AI 공고 스크래핑 중...');
+    let bigdataJobs = [];
+
+    try {
+      // 채용공고 페이지로 다시 이동 (필터 초기화)
+      await axios.post(`${CATCH_SCRAPER_URL}/api/recruit`, {}, { timeout: 30000 });
+
+      // 빅데이터·AI 필터 적용
+      console.log('[SCRAPE-JOBS] 빅데이터·AI 필터 적용 중...');
+      const bdFilterResponse = await axios.post(`${CATCH_SCRAPER_URL}/api/filter-bigdata-ai`, {}, { timeout: 30000 });
+
+      if (!bdFilterResponse.data.success) {
+        console.error('[SCRAPE-JOBS] 빅데이터·AI 필터 적용 실패:', bdFilterResponse.data);
+      } else {
+        console.log('[SCRAPE-JOBS] ✅ 빅데이터·AI 필터 적용 완료');
+
+        // 빅데이터·AI 공고 추출 (15건)
+        const bdResponse = await axios.get(
+          `${CATCH_SCRAPER_URL}/api/extract-first-page-jobs?max_jobs=15`,
+          { timeout: 120000 }
+        );
+
+        if (bdResponse.data.success && bdResponse.data.jobs) {
+          bigdataJobs = bdResponse.data.jobs.map(job => ({
+            ...job,
+            category: 'BIGDATA_AI'
+          }));
+          console.log(`[SCRAPE-JOBS] ✅ 빅데이터·AI 공고 ${bigdataJobs.length}개 추출 완료`);
+        }
+      }
+    } catch (bdError) {
+      console.error('[SCRAPE-JOBS] 빅데이터·AI 스크래핑 오류:', bdError.message);
+    }
+
+    // 6. 스크래핑된 공고 통합
+    let scrapedJobs = [...itJobs, ...bigdataJobs];
+    console.log(`[SCRAPE-JOBS] 총 ${scrapedJobs.length}개 공고 스크래핑 완료 (IT: ${itJobs.length}개, BIGDATA/AI: ${bigdataJobs.length}개)`);
+
+    // 폴백 처리
+    if (scrapedJobs.length === 0) {
+      console.log('[SCRAPE-JOBS] 스크래핑된 공고가 없음, catch.db 폴백 시도...');
+
+      try {
         const dbResponse = await axios.get(`${CATCH_SCRAPER_URL}/api/db/homepage`, { timeout: 30000 });
 
         if (dbResponse.data.success && dbResponse.data.results) {
           const results = dbResponse.data.results;
-          const itJobs = (results.it_jobs || []).map(job => ({ ...job, category: 'IT' }));
-          const bigdataJobs = (results.bigdata_ai_jobs || []).map(job => ({ ...job, category: 'BIGDATA_AI' }));
+          const dbItJobs = (results.it_jobs || []).map(job => ({ ...job, category: 'IT' }));
+          const dbBigdataJobs = (results.bigdata_ai_jobs || []).map(job => ({ ...job, category: 'BIGDATA_AI' }));
 
-          scrapedJobs = [...itJobs, ...bigdataJobs].slice(0, 20);
+          scrapedJobs = [...dbItJobs, ...dbBigdataJobs].slice(0, 30);
           console.log(`[SCRAPE-JOBS] ✅ catch.db에서 ${scrapedJobs.length}개 공고 가져옴 (폴백)`);
         }
-      }
-    } catch (scrapeError) {
-      console.error('[SCRAPE-JOBS] 스크래핑 오류:', scrapeError.message);
-      if (scrapeError.response) {
-        console.error('[SCRAPE-JOBS] 응답 상태:', scrapeError.response.status);
-        console.error('[SCRAPE-JOBS] 응답 데이터:', JSON.stringify(scrapeError.response.data).substring(0, 200));
-      }
-
-      // 최종 폴백: catch.db
-      try {
-        console.log('[SCRAPE-JOBS] 최종 폴백: catch.db 조회...');
-        const dbResponse = await axios.get(`${CATCH_SCRAPER_URL}/api/db/homepage`, { timeout: 30000 });
-
-        if (dbResponse.data.success && dbResponse.data.results) {
-          const results = dbResponse.data.results;
-          const itJobs = (results.it_jobs || []).map(job => ({ ...job, category: 'IT' }));
-          const bigdataJobs = (results.bigdata_ai_jobs || []).map(job => ({ ...job, category: 'BIGDATA_AI' }));
-
-          scrapedJobs = [...itJobs, ...bigdataJobs].slice(0, 20);
-          console.log(`[SCRAPE-JOBS] ✅ catch.db에서 ${scrapedJobs.length}개 공고 가져옴 (최종 폴백)`);
-        }
       } catch (dbError) {
-        console.error('[SCRAPE-JOBS] catch.db 조회도 실패:', dbError.message);
+        console.error('[SCRAPE-JOBS] catch.db 폴백도 실패:', dbError.message);
       }
     }
 
