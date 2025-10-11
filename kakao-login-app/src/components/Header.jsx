@@ -13,8 +13,8 @@ export default function Header() {
         return null;
     }
 
-    // 메인 페이지가 아닐 때는 검색바 숨기기
-    const showSearchBar = location.pathname === '/';
+    // 모든 페이지에서 검색바 표시
+    const showSearchBar = true;
 
     useEffect(() => {
         const checkLoginStatus = async () => {
@@ -56,12 +56,11 @@ export default function Header() {
         const urlParams = new URLSearchParams(location.search);
         const searchParam = urlParams.get('search');
 
-        // 메인 페이지가 아니거나 검색 파라미터가 없으면 검색어 초기화
-        if (location.pathname !== '/' || !searchParam) {
-            setSearchQuery('');
-        } else {
-            // 검색 파라미터가 있으면 그 값으로 설정
+        // 검색 파라미터가 있으면 그 값으로 설정, 없으면 초기화
+        if (searchParam) {
             setSearchQuery(searchParam);
+        } else {
+            setSearchQuery('');
         }
     }, [location.pathname, location.search]);
 
