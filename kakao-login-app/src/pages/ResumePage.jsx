@@ -512,7 +512,7 @@ export default function ResumePage() {
                         <div style={{
                             background: '#e3f2fd',
                             borderRadius: '10px',
-                            padding: '12px',
+                            padding: '8px 12px',
                             marginBottom: '12px',
                             border: '1px solid #90caf9'
                         }}>
@@ -585,7 +585,7 @@ export default function ResumePage() {
                                 color: userProfile ? '#1976d2' : '#f57c00',
                                 lineHeight: '1.5'
                             }}>
-                                AI가 맞춤형 채용공고와 면접 질문을 추천해드립니다
+                                이력서 정보를 활용하여 AI 채용공고와 AI 면접질문을 추천해드립니다
                             </p>
                         </div>
 
@@ -640,7 +640,7 @@ export default function ResumePage() {
                                     borderRadius: '8px',
                                     border: '1px solid #ddd'
                                 }}>
-                                    {['서울', '인천', '대구', '대전', '세종', '부산', '강원', '울산', '광주', '경남/경북', '전남/전북', '충남/충북', '제주'].map((region) => (
+                                    {['서울', '경기', '인천', '대구', '대전', '세종', '부산', '강원', '울산', '광주', '경남/경북', '전남/전북', '충남/충북', '제주'].map((region) => (
                                         <label
                                             key={region}
                                             style={{
