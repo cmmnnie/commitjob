@@ -121,16 +121,17 @@ export default function Header() {
         display: 'flex',
         alignItems: 'center',
         gap: '6px',
-        padding: '6px 12px',
-        background: currentUser ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : '#f0f0f0',
-        color: currentUser ? 'white' : '#666',
+        padding: '8px 16px',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        color: 'white',
         border: 'none',
-        borderRadius: '20px',
-        fontSize: '0.85rem',
-        fontWeight: '600',
+        borderRadius: '24px',
+        fontSize: '0.95rem',
+        fontWeight: '700',
         cursor: 'pointer',
         transition: 'all 0.3s ease',
-        boxShadow: currentUser ? '0 2px 8px rgba(102, 126, 234, 0.3)' : 'none'
+        boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',
+        letterSpacing: '-0.3px'
     };
 
     const profileImageStyle = {
@@ -205,14 +206,14 @@ export default function Header() {
                                     style={profileImageStyle}
                                 />
                             ) : (
-                                <span>👤</span>
+                                <span style={{ fontSize: '1.2rem' }}>👤</span>
                             )}
-                            <span style={{ fontSize: '0.9rem' }}>프로필</span>
+                            <span>프로필</span>
                         </>
                     ) : (
                         <>
-                            <span>👤</span>
-                            <span style={{ fontSize: '0.9rem' }}>로그인</span>
+                            <span style={{ fontSize: '1.2rem' }}>👤</span>
+                            <span>로그인</span>
                         </>
                     )}
                 </button>
