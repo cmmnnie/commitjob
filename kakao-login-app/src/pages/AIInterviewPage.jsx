@@ -473,18 +473,6 @@ export default function AIInterviewPage() {
                                 </div>
                             </div>
                         ))}
-
-                        <div style={{
-                            background: '#f0f4f8',
-                            borderRadius: '8px',
-                            padding: '15px',
-                            marginTop: '20px',
-                            fontSize: '0.85rem',
-                            color: '#718096',
-                            textAlign: 'center'
-                        }}>
-                            💡 <strong>www.catch.co.kr에서 실시간 기출질문 10건 스크래핑</strong> 후 사용자 이력서를 참고하여 GPT-5-mini가 생성한 맞춤형 질문입니다
-                        </div>
                     </div>
                 )}
             </div>
