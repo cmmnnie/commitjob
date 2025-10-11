@@ -4548,6 +4548,108 @@ ${interviewQuestionsSection ? '기출질문과 유사하지만 더 깊이 있고
   }
 });
 
+/* ==================== 면접 답변 피드백 API ==================== */
+/**
+ * @swagger
+ * /api/interview-feedback:
+ *   post:
+ *     summary: AI 면접 답변 피드백
+ *     description: 사용자가 작성한 면접 답변에 대해 GPT-5-mini가 피드백을 제공합니다.
+ *     tags: [면접 준비]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               question:
+ *                 type: string
+ *                 description: 면접 질문
+ *               answer:
+ *                 type: string
+ *                 description: 사용자 답변
+ *               company:
+ *                 type: string
+ *                 description: 회사명 (선택)
+ *             required:
+ *               - question
+ *               - answer
+ *     responses:
+ *       200:
+ *         description: 피드백 생성 성공
+ *       400:
+ *         description: 잘못된 요청
+ *       500:
+ *         description: 서버 오류
+ */
+app.post('/api/interview-feedback', async (req, res) => {
+  try {
+    const { question, answer, company } = req.body;
+
+    if (!question || !answer) {
+      return res.status(400).json({
+        success: false,
+        error: '질문과 답변은 필수입니다.'
+      });
+    }
+
+    console.log(`[INTERVIEW-FEEDBACK] Generating feedback for question: "${question.substring(0, 50)}..."`);
+
+    if (!openai) {
+      return res.status(503).json({
+        success: false,
+        error: 'OpenAI API가 설정되지 않았습니다.'
+      });
+    }
+
+    // GPT-5-mini에게 피드백 요청
+    const systemPrompt = `당신은 전문 면접 코치입니다. 면접 답변에 대해 건설적이고 구체적인 피드백을 제공해주세요.
+
+피드백 구조:
+1. 강점 (잘한 점)
+2. 개선점 (보완할 점)
+3. 추천 답변 방향
+
+피드백은 친절하고 격려하는 톤으로 작성하되, 구체적인 개선 방안을 제시해주세요.`;
+
+    const userPrompt = `${company ? `[${company} 면접]` : '[면접]'}
+
+질문: ${question}
+
+지원자 답변:
+${answer}
+
+위 답변에 대해 전문적인 피드백을 제공해주세요.`;
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      temperature: 0.7,
+      max_tokens: 1000
+    });
+
+    const feedback = completion.choices[0].message.content;
+
+    console.log(`[INTERVIEW-FEEDBACK] ✅ Feedback generated successfully`);
+
+    res.json({
+      success: true,
+      feedback
+    });
+  } catch (error) {
+    console.error('[ERROR] Interview feedback error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message
+    });
+  }
+});
+
 /* ==================== 회사 추천 API ==================== */
 /**
  * @swagger

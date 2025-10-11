@@ -10,6 +10,10 @@ export default function AIInterviewPage() {
     const [error, setError] = useState(null);
     const [companyName, setCompanyName] = useState('');
     const [generatedCompanyName, setGeneratedCompanyName] = useState(''); // 질문 생성 시점의 회사명 저장
+    const [selectedQuestion, setSelectedQuestion] = useState(null);
+    const [answer, setAnswer] = useState('');
+    const [feedback, setFeedback] = useState(null);
+    const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
 
     useEffect(() => {
         checkLogin();
@@ -139,6 +143,55 @@ export default function AIInterviewPage() {
 
     const handleLogin = () => {
         navigate('/?view=login');
+    };
+
+    const handleSelectQuestion = (question) => {
+        setSelectedQuestion(question);
+        setAnswer('');
+        setFeedback(null);
+    };
+
+    const handleSubmitAnswer = async () => {
+        if (!answer.trim()) {
+            alert('답변을 입력해주세요.');
+            return;
+        }
+
+        setIsFeedbackLoading(true);
+        setFeedback(null);
+
+        try {
+            const token = localStorage.getItem('app_session');
+            const response = await fetch(`${CONFIG.BACKEND_URL}/api/interview-feedback`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    question: selectedQuestion.question,
+                    answer: answer.trim(),
+                    company: generatedCompanyName
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('피드백 생성에 실패했습니다.');
+            }
+
+            const data = await response.json();
+            if (data.success && data.feedback) {
+                setFeedback(data.feedback);
+            } else {
+                alert('피드백을 받을 수 없습니다.');
+            }
+        } catch (err) {
+            console.error('[피드백 생성] 오류:', err);
+            alert('피드백 생성에 실패했습니다. 다시 시도해주세요.');
+        } finally {
+            setIsFeedbackLoading(false);
+        }
     };
 
     if (isLoading && !currentUser) {
@@ -420,11 +473,12 @@ export default function AIInterviewPage() {
                             <div
                                 key={question.id || index}
                                 style={{
-                                    background: '#f8f9fa',
+                                    background: selectedQuestion?.id === question.id ? '#e6f2ff' : '#f8f9fa',
                                     borderRadius: '12px',
                                     padding: '20px',
                                     marginBottom: '15px',
-                                    border: '1px solid #e2e8f0'
+                                    border: selectedQuestion?.id === question.id ? '2px solid #667eea' : '1px solid #e2e8f0',
+                                    transition: 'all 0.3s'
                                 }}
                             >
                                 <div style={{
@@ -447,7 +501,9 @@ export default function AIInterviewPage() {
                                 <div style={{
                                     display: 'flex',
                                     gap: '10px',
-                                    fontSize: '0.85rem'
+                                    fontSize: '0.85rem',
+                                    alignItems: 'center',
+                                    flexWrap: 'wrap'
                                 }}>
                                     <span style={{
                                         background: '#e0e7ff',
@@ -475,9 +531,178 @@ export default function AIInterviewPage() {
                                     }}>
                                         난이도: {question.difficulty || '보통'}
                                     </span>
+                                    <button
+                                        onClick={() => handleSelectQuestion(question)}
+                                        style={{
+                                            marginLeft: 'auto',
+                                            background: selectedQuestion?.id === question.id
+                                                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                                                : '#667eea',
+                                            color: 'white',
+                                            border: 'none',
+                                            padding: '6px 16px',
+                                            borderRadius: '8px',
+                                            fontSize: '0.85rem',
+                                            fontWeight: '600',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.transform = 'translateY(-1px)';
+                                            e.currentTarget.style.boxShadow = '0 4px 8px rgba(102, 126, 234, 0.3)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.transform = 'translateY(0)';
+                                            e.currentTarget.style.boxShadow = 'none';
+                                        }}
+                                    >
+                                        {selectedQuestion?.id === question.id ? '선택됨 ✓' : '답변하기'}
+                                    </button>
                                 </div>
                             </div>
                         ))}
+                    </div>
+                )}
+
+                {/* 답변 입력 및 피드백 */}
+                {selectedQuestion && (
+                    <div style={{
+                        background: 'white',
+                        borderRadius: '20px',
+                        padding: '30px',
+                        marginTop: '20px',
+                        boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)'
+                    }}>
+                        <div style={{
+                            background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
+                            borderRadius: '12px',
+                            padding: '16px 18px',
+                            marginBottom: '20px',
+                            border: '2px solid #2196f3'
+                        }}>
+                            <div style={{
+                                fontSize: '1.1rem',
+                                color: '#0d47a1',
+                                fontWeight: '700',
+                                marginBottom: '8px'
+                            }}>
+                                선택한 질문
+                            </div>
+                            <div style={{
+                                fontSize: '1rem',
+                                color: '#1976d2',
+                                lineHeight: '1.6'
+                            }}>
+                                {selectedQuestion.question}
+                            </div>
+                        </div>
+
+                        <div style={{ marginBottom: '18px' }}>
+                            <label style={{
+                                display: 'block',
+                                marginBottom: '8px',
+                                fontWeight: '600',
+                                color: '#2d3748',
+                                fontSize: '0.95rem'
+                            }}>
+                                답변 작성 <span style={{ color: '#e53e3e' }}>*</span>
+                            </label>
+                            <textarea
+                                value={answer}
+                                onChange={(e) => setAnswer(e.target.value)}
+                                placeholder="면접 답변을 작성해주세요. 구체적이고 상세하게 작성할수록 더 정확한 피드백을 받을 수 있습니다."
+                                style={{
+                                    width: '100%',
+                                    minHeight: '200px',
+                                    padding: '14px',
+                                    border: '2px solid #e2e8f0',
+                                    borderRadius: '10px',
+                                    fontSize: '1rem',
+                                    boxSizing: 'border-box',
+                                    resize: 'vertical',
+                                    lineHeight: '1.6',
+                                    fontFamily: 'inherit'
+                                }}
+                                onFocus={(e) => {
+                                    e.currentTarget.style.borderColor = '#667eea';
+                                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.1)';
+                                }}
+                                onBlur={(e) => {
+                                    e.currentTarget.style.borderColor = '#e2e8f0';
+                                    e.currentTarget.style.boxShadow = 'none';
+                                }}
+                            />
+                        </div>
+
+                        <button
+                            onClick={handleSubmitAnswer}
+                            disabled={isFeedbackLoading || !answer.trim()}
+                            style={{
+                                width: '100%',
+                                background: isFeedbackLoading || !answer.trim()
+                                    ? '#cbd5e0'
+                                    : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                color: 'white',
+                                border: 'none',
+                                padding: '14px 24px',
+                                borderRadius: '10px',
+                                fontSize: '1rem',
+                                fontWeight: '600',
+                                cursor: isFeedbackLoading || !answer.trim() ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.2s',
+                                boxShadow: isFeedbackLoading || !answer.trim() ? 'none' : '0 4px 12px rgba(102, 126, 234, 0.3)'
+                            }}
+                            onMouseEnter={(e) => {
+                                if (!isFeedbackLoading && answer.trim()) {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.4)';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (!isFeedbackLoading && answer.trim()) {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
+                                }
+                            }}
+                        >
+                            {isFeedbackLoading ? 'AI 피드백 생성 중...' : 'GPT-5-mini 피드백 받기'}
+                        </button>
+
+                        {/* 피드백 결과 */}
+                        {feedback && (
+                            <div style={{
+                                marginTop: '24px',
+                                background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+                                borderRadius: '12px',
+                                padding: '20px',
+                                border: '2px solid #10b981'
+                            }}>
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '10px',
+                                    marginBottom: '16px'
+                                }}>
+                                    <span style={{ fontSize: '1.8rem' }}>🎯</span>
+                                    <h3 style={{
+                                        fontSize: '1.2rem',
+                                        color: '#065f46',
+                                        fontWeight: '700',
+                                        margin: 0
+                                    }}>
+                                        AI 피드백
+                                    </h3>
+                                </div>
+                                <div style={{
+                                    fontSize: '1rem',
+                                    color: '#047857',
+                                    lineHeight: '1.8',
+                                    whiteSpace: 'pre-wrap'
+                                }}>
+                                    {feedback}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
