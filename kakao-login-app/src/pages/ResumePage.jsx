@@ -9,7 +9,7 @@ export default function ResumePage() {
     const [formData, setFormData] = useState({
         jobs: '',
         careers: '',
-        regions: '',
+        regions: [],
         skills: '',
         expected_salary: ''
     });
@@ -125,8 +125,34 @@ export default function ResumePage() {
         }));
     };
 
+    const handleRegionChange = (region) => {
+        setFormData(prev => {
+            const currentRegions = prev.regions;
+            if (currentRegions.includes(region)) {
+                // 이미 선택된 지역이면 제거
+                return {
+                    ...prev,
+                    regions: currentRegions.filter(r => r !== region)
+                };
+            } else {
+                // 선택되지 않은 지역이면 추가
+                return {
+                    ...prev,
+                    regions: [...currentRegions, region]
+                };
+            }
+        });
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // 희망지역 검증
+        if (formData.regions.length === 0) {
+            alert('희망지역을 1개 이상 선택해주세요.');
+            return;
+        }
+
         setIsLoading(true);
 
         try {
@@ -134,7 +160,7 @@ export default function ResumePage() {
             formDataToSend.append('user_id', currentUser.id);
             formDataToSend.append('jobs', formData.jobs);
             formDataToSend.append('careers', formData.careers);
-            formDataToSend.append('regions', formData.regions);
+            formDataToSend.append('regions', JSON.stringify(formData.regions));
             formDataToSend.append('skills', formData.skills);
             formDataToSend.append('expected_salary', formData.expected_salary);
 
@@ -570,18 +596,52 @@ export default function ResumePage() {
                             </div>
 
                             <div>
-                                <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.9rem', fontWeight: '600', color: '#333' }}>
+                                <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', fontWeight: '600', color: '#333' }}>
                                     희망지역 <span style={{ color: '#e74c3c' }}>*</span>
+                                    <span style={{ fontSize: '0.75rem', color: '#666', fontWeight: '400', marginLeft: '5px' }}>
+                                        (복수 선택 가능)
+                                    </span>
                                 </label>
-                                <input
-                                    type="text"
-                                    name="regions"
-                                    value={formData.regions}
-                                    onChange={handleInputChange}
-                                    placeholder="예: 서울"
-                                    required
-                                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '0.9rem' }}
-                                />
+                                <div style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(3, 1fr)',
+                                    gap: '8px',
+                                    padding: '10px',
+                                    background: '#f9f9f9',
+                                    borderRadius: '8px',
+                                    border: '1px solid #ddd'
+                                }}>
+                                    {['서울', '인천', '대구', '대전', '세종', '부산', '강원', '울산', '광주', '경남/경북', '전남/전북', '충남/충북', '제주'].map((region) => (
+                                        <label
+                                            key={region}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '5px',
+                                                cursor: 'pointer',
+                                                padding: '6px',
+                                                borderRadius: '6px',
+                                                background: formData.regions.includes(region) ? '#e3f2fd' : 'white',
+                                                border: formData.regions.includes(region) ? '1px solid #2196f3' : '1px solid #e0e0e0',
+                                                transition: 'all 0.2s ease'
+                                            }}
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={formData.regions.includes(region)}
+                                                onChange={() => handleRegionChange(region)}
+                                                style={{ cursor: 'pointer' }}
+                                            />
+                                            <span style={{
+                                                fontSize: '0.85rem',
+                                                color: formData.regions.includes(region) ? '#1976d2' : '#333',
+                                                fontWeight: formData.regions.includes(region) ? '600' : '400'
+                                            }}>
+                                                {region}
+                                            </span>
+                                        </label>
+                                    ))}
+                                </div>
                             </div>
 
                             <div>

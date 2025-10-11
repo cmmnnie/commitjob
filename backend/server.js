@@ -1534,7 +1534,9 @@ app.post('/api/profile', uploadProfile.single('resume'), async (req, res) => {
       }
       if (regions) {
         updateFields.push('preferred_regions = ?');
-        updateValues.push(JSON.stringify([regions]));
+        // regions는 프론트에서 JSON.stringify된 배열로 전송됨
+        const regionsArray = typeof regions === 'string' ? JSON.parse(regions) : regions;
+        updateValues.push(JSON.stringify(regionsArray));
       }
       if (skills) {
         updateFields.push('skills = ?');
@@ -1558,9 +1560,11 @@ app.post('/api/profile', uploadProfile.single('resume'), async (req, res) => {
       );
     } else {
       // 새 프로필 생성
+      // regions는 프론트에서 JSON.stringify된 배열로 전송됨
+      const regionsArray = typeof regions === 'string' ? JSON.parse(regions) : regions;
       await pool.execute(
         'INSERT INTO user_profiles (user_id, preferred_jobs, experience, preferred_regions, skills, expected_salary, resume_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
-        [user_id, jobs, careers, JSON.stringify([regions]), skills ? JSON.stringify(skills.split(',').map(s => s.trim())) : null, expected_salary, resumePath]
+        [user_id, jobs, careers, JSON.stringify(regionsArray), skills ? JSON.stringify(skills.split(',').map(s => s.trim())) : null, expected_salary, resumePath]
       );
     }
 
