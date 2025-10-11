@@ -939,42 +939,6 @@ export default function AIInterviewPage() {
                                 {isRevisedAnswerLoading ? '✨ AI 피드백 반영 모범답변 생성 중...' : '✨ AI 피드백 반영한 모범답변 받기'}
                             </button>
                         )}
-
-                        {/* 수정된 답변 결과 */}
-                        {revisedAnswer && (
-                            <div style={{
-                                marginTop: '24px',
-                                background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
-                                borderRadius: '12px',
-                                padding: '20px',
-                                border: '2px solid #06b6d4'
-                            }}>
-                                <div style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '10px',
-                                    marginBottom: '16px'
-                                }}>
-                                    <span style={{ fontSize: '1.8rem' }}>✨</span>
-                                    <h3 style={{
-                                        fontSize: '1.2rem',
-                                        color: '#0c4a6e',
-                                        fontWeight: '700',
-                                        margin: 0
-                                    }}>
-                                        피드백 반영 수정 답변
-                                    </h3>
-                                </div>
-                                <div style={{
-                                    fontSize: '1rem',
-                                    color: '#0369a1',
-                                    lineHeight: '1.8',
-                                    whiteSpace: 'pre-wrap'
-                                }}>
-                                    {revisedAnswer}
-                                </div>
-                            </div>
-                        )}
                     </div>
                 )}
             </div>
