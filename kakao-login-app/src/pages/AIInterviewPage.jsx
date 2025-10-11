@@ -582,9 +582,6 @@ export default function AIInterviewPage() {
                                     textShadow: '0 2px 4px rgba(102, 126, 234, 0.3)'
                                 }}>{generatedCompanyName}</span> 면접 질문
                             </h3>
-                            <p style={{ color: '#718096', fontSize: '0.95rem' }}>
-                                <strong>총 {questions.length}개 질문</strong>
-                            </p>
                         </div>
 
                         {questions.map((question, index) => (
