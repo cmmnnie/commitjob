@@ -1341,6 +1341,20 @@ app.get('/api/profile', async (req, res) => {
 
     const data = results[0];
 
+    // MySQL2가 JSON 컬럼을 자동 파싱할 수 있으므로 안전하게 처리
+    const safeParseJSON = (value) => {
+      if (!value) return [];
+      if (Array.isArray(value)) return value;
+      if (typeof value === 'string') {
+        try {
+          return JSON.parse(value);
+        } catch {
+          return [];
+        }
+      }
+      return [];
+    };
+
     const response = {
       user: {
         id: data.user_id,
@@ -1354,8 +1368,8 @@ app.get('/api/profile', async (req, res) => {
         user_id: data.profile_user_id,
         preferred_jobs: data.preferred_jobs,
         experience: data.experience,
-        preferred_regions: data.preferred_regions || [], // MySQL2가 이미 JSON을 배열로 파싱
-        skills: data.skills || [], // MySQL2가 이미 JSON을 배열로 파싱
+        preferred_regions: safeParseJSON(data.preferred_regions),
+        skills: safeParseJSON(data.skills),
         expected_salary: data.expected_salary,
         resume_path: data.resume_path,
         created_at: data.profile_created_at,
@@ -1617,12 +1631,33 @@ app.post('/api/profile', uploadProfile.single('resume'), async (req, res) => {
 
     const profile = profiles[0];
 
+    console.log('[PROFILE] 조회된 프로필 원본:', {
+      preferred_regions: profile.preferred_regions,
+      preferred_regions_type: typeof profile.preferred_regions,
+      skills: profile.skills,
+      skills_type: typeof profile.skills
+    });
+
+    // MySQL2가 JSON 컬럼을 자동 파싱할 수 있으므로 안전하게 처리
+    const safeParseJSON = (value) => {
+      if (!value) return [];
+      if (Array.isArray(value)) return value;
+      if (typeof value === 'string') {
+        try {
+          return JSON.parse(value);
+        } catch {
+          return [];
+        }
+      }
+      return [];
+    };
+
     res.status(201).json({
       user_id: profile.user_id,
       jobs: profile.preferred_jobs,
       careers: profile.experience,
-      regions: profile.preferred_regions ? JSON.parse(profile.preferred_regions)[0] : null,
-      skills: profile.skills ? JSON.parse(profile.skills) : null,
+      regions: safeParseJSON(profile.preferred_regions),  // 전체 배열 반환 (복수 선택 지원)
+      skills: safeParseJSON(profile.skills),
       resume_path: profile.resume_path,
       created_at: profile.created_at,
       updated_at: profile.updated_at
