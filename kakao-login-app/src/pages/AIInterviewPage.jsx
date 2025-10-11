@@ -9,6 +9,7 @@ export default function AIInterviewPage() {
     const [questions, setQuestions] = useState([]);
     const [error, setError] = useState(null);
     const [companyName, setCompanyName] = useState('');
+    const [generatedCompanyName, setGeneratedCompanyName] = useState(''); // 질문 생성 시점의 회사명 저장
 
     useEffect(() => {
         checkLogin();
@@ -62,6 +63,10 @@ export default function AIInterviewPage() {
         setIsLoading(true);
         setError(null);
 
+        // 질문 생성 시점의 회사명 저장
+        const currentCompanyName = companyName.trim();
+        setGeneratedCompanyName(currentCompanyName);
+
         try {
             const token = localStorage.getItem('app_session');
             const response = await fetch(`${CONFIG.BACKEND_URL}/api/interview-questions`, {
@@ -73,7 +78,7 @@ export default function AIInterviewPage() {
                 },
                 body: JSON.stringify({
                     user_id: currentUser?.id,
-                    custom_company: companyName.trim()
+                    custom_company: currentCompanyName
                 })
             });
 
@@ -86,17 +91,17 @@ export default function AIInterviewPage() {
                 setQuestions(data.questions);
             } else {
                 // 샘플 질문 표시
-                showSampleQuestions();
+                showSampleQuestions(currentCompanyName);
             }
         } catch (err) {
             console.error('[면접 질문 생성] 오류:', err);
-            showSampleQuestions();
+            showSampleQuestions(currentCompanyName);
         } finally {
             setIsLoading(false);
         }
     };
 
-    const showSampleQuestions = () => {
+    const showSampleQuestions = (company) => {
         const sampleQuestions = [
             {
                 id: 1,
@@ -106,7 +111,7 @@ export default function AIInterviewPage() {
             },
             {
                 id: 2,
-                question: `${companyName || '해당 회사'}에 지원한 이유는 무엇인가요?`,
+                question: `${company || '해당 회사'}에 지원한 이유는 무엇인가요?`,
                 category: "지원동기",
                 difficulty: "쉬움"
             },
@@ -404,7 +409,7 @@ export default function AIInterviewPage() {
                                 fontSize: '1.2rem',
                                 fontWeight: '700'
                             }}>
-                                {companyName} 면접 질문
+                                {generatedCompanyName} 면접 질문
                             </h3>
                             <p style={{ color: '#718096', fontSize: '0.95rem' }}>
                                 <strong>총 {questions.length}개 질문</strong>
