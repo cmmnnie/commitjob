@@ -263,6 +263,7 @@ export default function AIInterviewPage() {
                     question: selectedQuestion.question,
                     original_answer: answer.trim(),
                     feedback: feedback,
+                    original_score: answerScore,
                     company: generatedCompanyName,
                     user_id: currentUser?.id
                 })

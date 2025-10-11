@@ -4864,7 +4864,7 @@ app.post('/api/interview-model-answer', async (req, res) => {
  */
 app.post('/api/interview-revised-answer', async (req, res) => {
   try {
-    const { question, original_answer, feedback, company, user_id } = req.body;
+    const { question, original_answer, feedback, original_score, company, user_id } = req.body;
 
     if (!question || !original_answer || !feedback) {
       return res.status(400).json({
@@ -4873,7 +4873,7 @@ app.post('/api/interview-revised-answer', async (req, res) => {
       });
     }
 
-    console.log(`[INTERVIEW-REVISED-ANSWER] Generating revised answer for question: "${question.substring(0, 50)}..."`);
+    console.log(`[INTERVIEW-REVISED-ANSWER] Generating revised answer for question: "${question.substring(0, 50)}..." (Original score: ${original_score || 'N/A'})`);
 
     if (!openai) {
       return res.status(503).json({
@@ -4930,6 +4930,7 @@ app.post('/api/interview-revised-answer', async (req, res) => {
 3. 구체적인 예시와 수치를 포함하여 설득력 강화
 4. 자연스럽고 진정성 있는 답변 작성
 5. 답변 길이: 2-3분 분량 (약 300-500자)
+6. **중요**: 피드백의 개선점을 적극적으로 반영하여 원래 답변보다 명확하게 더 우수한 답변을 작성해주세요.
 
 원래 답변의 내용과 톤을 최대한 존중하면서, 피드백의 조언을 반영하여 더 나은 답변을 만들어주세요.`;
 
@@ -4937,7 +4938,7 @@ app.post('/api/interview-revised-answer', async (req, res) => {
 
 질문: ${question}
 
-원래 답변:
+원래 답변${original_score ? ` (평가 점수: ${original_score}점)` : ''}:
 ${original_answer}
 
 AI 피드백:
@@ -4951,9 +4952,9 @@ ${feedback}`;
 - 학력: ${userProfile.education || '미기재'}
 
 위 프로필을 참고하여 지원자에게 맞는 수정된 답변을 작성해주세요.`;
-    } else {
-      userPrompt += `\n\n위 피드백을 반영하여 개선된 답변을 작성해주세요.`;
     }
+
+    userPrompt += `\n\n위 피드백을 적극 반영하여, 원래 답변보다 구체적이고 설득력 있는 개선된 답변을 작성해주세요.${original_score ? ` 목표는 ${original_score}점보다 최소 5점 이상 높은 점수를 받을 수 있는 수준의 답변입니다.` : ''}`;
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
