@@ -4611,6 +4611,14 @@ app.post('/api/interview-feedback', async (req, res) => {
 2. 개선점 (보완할 점)
 3. 추천 답변 방향
 
+그리고 답변의 점수를 100점 만점으로 평가해주세요.
+
+응답 형식:
+{
+  "score": 85,
+  "feedback": "피드백 내용"
+}
+
 피드백은 친절하고 격려하는 톤으로 작성하되, 구체적인 개선 방안을 제시해주세요.`;
 
     const userPrompt = `${company ? `[${company} 면접]` : '[면접]'}
@@ -4620,7 +4628,7 @@ app.post('/api/interview-feedback', async (req, res) => {
 지원자 답변:
 ${answer}
 
-위 답변에 대해 전문적인 피드백을 제공해주세요.`;
+위 답변에 대해 전문적인 피드백과 점수(100점 만점)를 JSON 형식으로 제공해주세요.`;
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -4629,16 +4637,29 @@ ${answer}
         { role: 'user', content: userPrompt }
       ],
       temperature: 0.7,
-      max_tokens: 1000
+      max_tokens: 1000,
+      response_format: { type: "json_object" }
     });
 
-    const feedback = completion.choices[0].message.content;
+    const responseContent = completion.choices[0].message.content;
+    let feedback, score;
 
-    console.log(`[INTERVIEW-FEEDBACK] ✅ Feedback generated successfully`);
+    try {
+      const parsedResponse = JSON.parse(responseContent);
+      feedback = parsedResponse.feedback;
+      score = parsedResponse.score;
+    } catch (parseError) {
+      // JSON 파싱 실패 시 텍스트 그대로 사용
+      feedback = responseContent;
+      score = null;
+    }
+
+    console.log(`[INTERVIEW-FEEDBACK] ✅ Feedback generated successfully (Score: ${score})`);
 
     res.json({
       success: true,
-      feedback
+      feedback,
+      score
     });
   } catch (error) {
     console.error('[ERROR] Interview feedback error:', error);

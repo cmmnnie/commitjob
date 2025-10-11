@@ -13,6 +13,7 @@ export default function AIInterviewPage() {
     const [selectedQuestion, setSelectedQuestion] = useState(null);
     const [answer, setAnswer] = useState('');
     const [feedback, setFeedback] = useState(null);
+    const [answerScore, setAnswerScore] = useState(null);
     const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
     const [modelAnswer, setModelAnswer] = useState(null);
     const [isModelAnswerLoading, setIsModelAnswerLoading] = useState(false);
@@ -151,6 +152,7 @@ export default function AIInterviewPage() {
         setSelectedQuestion(question);
         setAnswer('');
         setFeedback(null);
+        setAnswerScore(null);
         setModelAnswer(null);
     };
 
@@ -200,6 +202,7 @@ export default function AIInterviewPage() {
 
         setIsFeedbackLoading(true);
         setFeedback(null);
+        setAnswerScore(null);
 
         try {
             const token = localStorage.getItem('app_session');
@@ -224,6 +227,7 @@ export default function AIInterviewPage() {
             const data = await response.json();
             if (data.success && data.feedback) {
                 setFeedback(data.feedback);
+                setAnswerScore(data.score);
             } else {
                 alert('피드백을 받을 수 없습니다.');
             }
@@ -778,7 +782,7 @@ export default function AIInterviewPage() {
                                 }
                             }}
                         >
-                            {isFeedbackLoading ? 'AI 피드백 생성 중...' : 'GPT-5-mini 피드백 받기'}
+                            {isFeedbackLoading ? 'AI 피드백 생성 중...' : 'AI 피드백 받기'}
                         </button>
 
                         {/* 피드백 결과 */}
@@ -792,19 +796,41 @@ export default function AIInterviewPage() {
                             }}>
                                 <div style={{
                                     display: 'flex',
+                                    justifyContent: 'space-between',
                                     alignItems: 'center',
-                                    gap: '10px',
                                     marginBottom: '16px'
                                 }}>
-                                    <span style={{ fontSize: '1.8rem' }}>🎯</span>
-                                    <h3 style={{
-                                        fontSize: '1.2rem',
-                                        color: '#065f46',
-                                        fontWeight: '700',
-                                        margin: 0
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '10px'
                                     }}>
-                                        AI 피드백
-                                    </h3>
+                                        <span style={{ fontSize: '1.8rem' }}>🎯</span>
+                                        <h3 style={{
+                                            fontSize: '1.2rem',
+                                            color: '#065f46',
+                                            fontWeight: '700',
+                                            margin: 0
+                                        }}>
+                                            AI 피드백
+                                        </h3>
+                                    </div>
+                                    {answerScore && (
+                                        <div style={{
+                                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                            color: 'white',
+                                            padding: '8px 16px',
+                                            borderRadius: '16px',
+                                            fontSize: '1rem',
+                                            fontWeight: '800',
+                                            boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',
+                                            border: '2px solid rgba(255, 255, 255, 0.3)',
+                                            textShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                                            letterSpacing: '-0.3px'
+                                        }}>
+                                            답변 점수: {answerScore}점
+                                        </div>
+                                    )}
                                 </div>
                                 <div style={{
                                     fontSize: '1rem',
