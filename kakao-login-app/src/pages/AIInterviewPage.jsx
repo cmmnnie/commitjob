@@ -14,6 +14,8 @@ export default function AIInterviewPage() {
     const [answer, setAnswer] = useState('');
     const [feedback, setFeedback] = useState(null);
     const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
+    const [modelAnswer, setModelAnswer] = useState(null);
+    const [isModelAnswerLoading, setIsModelAnswerLoading] = useState(false);
 
     useEffect(() => {
         checkLogin();
@@ -149,6 +151,45 @@ export default function AIInterviewPage() {
         setSelectedQuestion(question);
         setAnswer('');
         setFeedback(null);
+        setModelAnswer(null);
+    };
+
+    const handleGetModelAnswer = async () => {
+        setIsModelAnswerLoading(true);
+        setModelAnswer(null);
+
+        try {
+            const token = localStorage.getItem('app_session');
+            const response = await fetch(`${CONFIG.BACKEND_URL}/api/interview-model-answer`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    question: selectedQuestion.question,
+                    company: generatedCompanyName,
+                    user_id: currentUser?.id
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('모범답변 생성에 실패했습니다.');
+            }
+
+            const data = await response.json();
+            if (data.success && data.modelAnswer) {
+                setModelAnswer(data.modelAnswer);
+            } else {
+                alert('모범답변을 받을 수 없습니다.');
+            }
+        } catch (err) {
+            console.error('[모범답변 생성] 오류:', err);
+            alert('모범답변 생성에 실패했습니다. 다시 시도해주세요.');
+        } finally {
+            setIsModelAnswerLoading(false);
+        }
     };
 
     const handleSubmitAnswer = async () => {
@@ -596,6 +637,78 @@ export default function AIInterviewPage() {
                                 {selectedQuestion.question}
                             </div>
                         </div>
+
+                        {/* 모범답변 받기 버튼 */}
+                        <button
+                            onClick={handleGetModelAnswer}
+                            disabled={isModelAnswerLoading}
+                            style={{
+                                width: '100%',
+                                background: isModelAnswerLoading
+                                    ? '#cbd5e0'
+                                    : 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                                color: 'white',
+                                border: 'none',
+                                padding: '12px 20px',
+                                borderRadius: '10px',
+                                fontSize: '0.95rem',
+                                fontWeight: '600',
+                                cursor: isModelAnswerLoading ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.2s',
+                                boxShadow: isModelAnswerLoading ? 'none' : '0 4px 12px rgba(245, 158, 11, 0.3)',
+                                marginBottom: '20px'
+                            }}
+                            onMouseEnter={(e) => {
+                                if (!isModelAnswerLoading) {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(245, 158, 11, 0.4)';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (!isModelAnswerLoading) {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(245, 158, 11, 0.3)';
+                                }
+                            }}
+                        >
+                            {isModelAnswerLoading ? '🤖 모범답변 생성 중...' : '💡 모범답변 받기'}
+                        </button>
+
+                        {/* 모범답변 결과 */}
+                        {modelAnswer && (
+                            <div style={{
+                                marginBottom: '24px',
+                                background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+                                borderRadius: '12px',
+                                padding: '20px',
+                                border: '2px solid #f59e0b'
+                            }}>
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '10px',
+                                    marginBottom: '16px'
+                                }}>
+                                    <span style={{ fontSize: '1.8rem' }}>⭐</span>
+                                    <h3 style={{
+                                        fontSize: '1.2rem',
+                                        color: '#92400e',
+                                        fontWeight: '700',
+                                        margin: 0
+                                    }}>
+                                        AI 모범답변
+                                    </h3>
+                                </div>
+                                <div style={{
+                                    fontSize: '1rem',
+                                    color: '#78350f',
+                                    lineHeight: '1.8',
+                                    whiteSpace: 'pre-wrap'
+                                }}>
+                                    {modelAnswer}
+                                </div>
+                            </div>
+                        )}
 
                         <div style={{ marginBottom: '18px' }}>
                             <label style={{
