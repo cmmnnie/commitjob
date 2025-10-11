@@ -563,27 +563,35 @@ export default function ResumePage() {
                             background: userProfile
                                 ? 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)'
                                 : 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)',
-                            borderRadius: '15px',
-                            padding: '20px',
-                            textAlign: 'center',
+                            borderRadius: '12px',
+                            padding: '12px 16px',
                             marginBottom: '15px',
                             border: userProfile ? '2px dashed #2196f3' : '2px dashed #fb8c00'
                         }}>
-                            <div style={{ fontSize: '2.5rem', marginBottom: '10px' }}>
-                                {userProfile ? '✏️' : '📝'}
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                marginBottom: '4px'
+                            }}>
+                                <span style={{ fontSize: '1.4rem' }}>
+                                    {userProfile ? '✏️' : '📝'}
+                                </span>
+                                <p style={{
+                                    fontSize: '1.05rem',
+                                    color: userProfile ? '#1565c0' : '#e65100',
+                                    margin: 0,
+                                    fontWeight: '600'
+                                }}>
+                                    {userProfile ? '프로필을 수정해주세요' : '프로필을 등록해주세요'}
+                                </p>
                             </div>
                             <p style={{
-                                fontSize: '1.1rem',
-                                color: userProfile ? '#1565c0' : '#e65100',
-                                marginBottom: '5px',
-                                fontWeight: '600'
-                            }}>
-                                {userProfile ? '프로필을 수정해주세요' : '프로필을 등록해주세요'}
-                            </p>
-                            <p style={{
-                                fontSize: '0.85rem',
+                                fontSize: '0.8rem',
                                 color: userProfile ? '#1976d2' : '#f57c00',
-                                lineHeight: '1.5'
+                                lineHeight: '1.3',
+                                margin: 0,
+                                paddingLeft: '32px'
                             }}>
                                 이력서 정보를 활용하여 AI 채용공고와 AI 면접질문을 추천해드립니다
                             </p>
