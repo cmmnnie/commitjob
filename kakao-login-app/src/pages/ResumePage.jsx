@@ -8,7 +8,8 @@ export default function ResumePage() {
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({
         jobs: '',
-        careers: '',
+        careerType: '',  // '신입' 또는 '경력'
+        careerYears: '',  // 경력 년수
         regions: [],
         skills: '',
         expected_salary: ''
@@ -146,12 +147,27 @@ export default function ResumePage() {
 
     const handleEditClick = () => {
         if (userProfile) {
+            // 경력 데이터 파싱
+            const experience = userProfile.experience || '';
+            let careerType = '';
+            let careerYears = '';
+
+            if (experience === '신입') {
+                careerType = '신입';
+            } else if (experience) {
+                careerType = '경력';
+                // "3년", "5년" 등에서 숫자만 추출
+                const match = experience.match(/\d+/);
+                careerYears = match ? match[0] : '';
+            }
+
             setFormData({
                 jobs: userProfile.preferred_jobs || '',
-                careers: userProfile.experience || '',
+                careerType,
+                careerYears,
                 regions: userProfile.preferred_regions || [],
                 skills: userProfile.skills ? userProfile.skills.join(', ') : '',
-                expected_salary: userProfile.expected_salary || ''
+                expected_salary: String(userProfile.expected_salary || '')
             });
             setIsEditing(true);
         }
@@ -161,7 +177,8 @@ export default function ResumePage() {
         setIsEditing(false);
         setFormData({
             jobs: '',
-            careers: '',
+            careerType: '',
+            careerYears: '',
             regions: [],
             skills: '',
             expected_salary: ''
@@ -177,13 +194,29 @@ export default function ResumePage() {
             return;
         }
 
+        // 경력 검증
+        if (!formData.careerType) {
+            alert('신입 또는 경력을 선택해주세요.');
+            return;
+        }
+
+        if (formData.careerType === '경력' && !formData.careerYears) {
+            alert('경력 년수를 입력해주세요.');
+            return;
+        }
+
         setIsLoading(true);
 
         try {
+            // 경력 데이터 조합
+            const careerValue = formData.careerType === '신입'
+                ? '신입'
+                : `${formData.careerYears}년`;
+
             const formDataToSend = new FormData();
             formDataToSend.append('user_id', currentUser.id);
             formDataToSend.append('jobs', formData.jobs);
-            formDataToSend.append('careers', formData.careers);
+            formDataToSend.append('careers', careerValue);
             formDataToSend.append('regions', JSON.stringify(formData.regions));
             formDataToSend.append('skills', formData.skills);
             formDataToSend.append('expected_salary', formData.expected_salary);
@@ -196,7 +229,7 @@ export default function ResumePage() {
             console.log('[RESUME] 프로필 저장 요청:', {
                 user_id: currentUser.id,
                 jobs: formData.jobs,
-                careers: formData.careers,
+                careers: careerValue,
                 regions: formData.regions,
                 skills: formData.skills,
                 expected_salary: formData.expected_salary
@@ -528,7 +561,7 @@ export default function ResumePage() {
                                     color: '#1565c0',
                                     lineHeight: '1.4'
                                 }}>
-                                    이력서 정보는 AI 채용공고 추천과 AI 면접질문 생성에 활용됩니다
+                                    이력서 정보를 활용하여 AI 채용공고와 AI 면접질문을 추천해드립니다
                                 </p>
                             </div>
                         </div>
@@ -587,11 +620,13 @@ export default function ResumePage() {
                                 </p>
                             </div>
                             <p style={{
-                                fontSize: '0.8rem',
-                                color: userProfile ? '#1976d2' : '#f57c00',
+                                fontSize: '0.85rem',
+                                color: userProfile ? '#0d47a1' : '#e65100',
                                 lineHeight: '1.3',
                                 margin: 0,
-                                paddingLeft: '32px'
+                                paddingLeft: '32px',
+                                fontWeight: '700',
+                                textShadow: '0 1px 2px rgba(0,0,0,0.1)'
                             }}>
                                 이력서 정보를 활용하여 AI 채용공고와 AI 면접질문을 추천해드립니다
                             </p>
@@ -601,35 +636,64 @@ export default function ResumePage() {
                             <div>
                                 <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.9rem', fontWeight: '600', color: '#333' }}>
                                     희망직무 <span style={{ color: '#e74c3c' }}>*</span>
+                                    <span style={{ fontSize: '0.75rem', color: '#666', fontWeight: '400', marginLeft: '5px' }}>
+                                        (복수개 입력시 쉼표로 구분)
+                                    </span>
                                 </label>
                                 <input
                                     type="text"
                                     name="jobs"
                                     value={formData.jobs}
                                     onChange={handleInputChange}
-                                    placeholder="예: 백엔드 개발자"
+                                    placeholder="예: 백엔드 개발자, 프론트엔드 개발자"
                                     required
                                     style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '0.9rem' }}
                                 />
                             </div>
 
                             <div>
-                                <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.9rem', fontWeight: '600', color: '#333' }}>
+                                <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', fontWeight: '600', color: '#333' }}>
                                     경력 <span style={{ color: '#e74c3c' }}>*</span>
                                 </label>
-                                <select
-                                    name="careers"
-                                    value={formData.careers}
-                                    onChange={handleInputChange}
-                                    required
-                                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '0.9rem' }}
-                                >
-                                    <option value="">선택하세요</option>
-                                    <option value="신입">신입</option>
-                                    <option value="1-3년">1-3년</option>
-                                    <option value="3-5년">3-5년</option>
-                                    <option value="5년 이상">5년 이상</option>
-                                </select>
+                                <div style={{ display: 'flex', gap: '15px', marginBottom: '8px' }}>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}>
+                                        <input
+                                            type="radio"
+                                            name="careerType"
+                                            value="신입"
+                                            checked={formData.careerType === '신입'}
+                                            onChange={handleInputChange}
+                                            style={{ cursor: 'pointer' }}
+                                        />
+                                        <span style={{ fontSize: '0.9rem' }}>신입</span>
+                                    </label>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}>
+                                        <input
+                                            type="radio"
+                                            name="careerType"
+                                            value="경력"
+                                            checked={formData.careerType === '경력'}
+                                            onChange={handleInputChange}
+                                            style={{ cursor: 'pointer' }}
+                                        />
+                                        <span style={{ fontSize: '0.9rem' }}>경력</span>
+                                    </label>
+                                </div>
+                                {formData.careerType === '경력' && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <input
+                                            type="number"
+                                            name="careerYears"
+                                            value={formData.careerYears}
+                                            onChange={handleInputChange}
+                                            placeholder="년수 입력"
+                                            min="1"
+                                            max="50"
+                                            style={{ width: '120px', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '0.9rem' }}
+                                        />
+                                        <span style={{ fontSize: '0.9rem', color: '#666' }}>년</span>
+                                    </div>
+                                )}
                             </div>
 
                             <div>
@@ -684,13 +748,16 @@ export default function ResumePage() {
                             <div>
                                 <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.9rem', fontWeight: '600', color: '#333' }}>
                                     기술스택 <span style={{ color: '#e74c3c' }}>*</span>
+                                    <span style={{ fontSize: '0.75rem', color: '#666', fontWeight: '400', marginLeft: '5px' }}>
+                                        (복수개 입력시 쉼표로 구분)
+                                    </span>
                                 </label>
                                 <input
                                     type="text"
                                     name="skills"
                                     value={formData.skills}
                                     onChange={handleInputChange}
-                                    placeholder="예: Java, Spring, MySQL (쉼표로 구분)"
+                                    placeholder="예: Java, Spring, MySQL"
                                     required
                                     style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '0.9rem' }}
                                 />
