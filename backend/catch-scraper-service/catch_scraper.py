@@ -510,7 +510,7 @@ class CatchScraper:
         """채용공고 페이지로 이동"""
         try:
             wait = WebDriverWait(self.driver, 10)
-            
+
             recruit_menu = self._find_element_with_fallbacks(wait, SELECTORS['recruit_menu'])
             if recruit_menu:
                 self.driver.execute_script("arguments[0].click();", recruit_menu)
@@ -518,9 +518,22 @@ class CatchScraper:
             else:
                 self.driver.get(f"{BASE_URL}NCS/RecruitSearch")
                 wait.until(EC.url_contains("RecruitSearch"))
-            
+
+            # 페이지 DOM 로딩 완료 대기 (직무 카테고리 버튼이 나타날 때까지)
+            import time
+            time.sleep(2)  # 초기 로딩 대기
+
+            # 직무 카테고리 버튼이 로딩될 때까지 대기
+            try:
+                WebDriverWait(self.driver, 10).until(
+                    EC.presence_of_element_located((By.XPATH, "//button[contains(@class, 'bt') and contains(text(), '직무')]"))
+                )
+            except:
+                # 직무 버튼을 못 찾아도 계속 진행 (후속 API에서 재시도)
+                pass
+
             return {"success": True, "message": "채용공고 페이지로 이동 완료"}
-            
+
         except Exception as e:
             return {"success": False, "message": str(e)}
 
