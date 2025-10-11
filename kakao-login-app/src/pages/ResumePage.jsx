@@ -169,12 +169,28 @@ export default function ResumePage() {
                 body: formDataToSend
             });
 
+            console.log('[RESUME] 프로필 저장 요청:', {
+                user_id: currentUser.id,
+                jobs: formData.jobs,
+                careers: formData.careers,
+                regions: formData.regions,
+                skills: formData.skills,
+                expected_salary: formData.expected_salary
+            });
+
+            console.log('[RESUME] 응답 상태:', response.status);
+
             if (response.ok) {
                 alert('프로필이 저장되었습니다!');
                 await loadUserProfile(currentUser.id);
                 setIsEditing(false);
             } else {
-                alert('프로필 저장에 실패했습니다.');
+                const errorData = await response.json().catch(() => ({}));
+                console.error('[RESUME] 프로필 저장 실패:', {
+                    status: response.status,
+                    error: errorData
+                });
+                alert(`프로필 저장에 실패했습니다. (${response.status})\n${errorData.error?.message || '알 수 없는 오류'}`);
             }
         } catch (error) {
             console.error('[RESUME] 프로필 저장 오류:', error);

@@ -1497,7 +1497,19 @@ app.post('/api/profile', uploadProfile.single('resume'), async (req, res) => {
       expected_salary
     } = req.body || {};
 
+    console.log('[PROFILE] 프로필 저장 요청 받음:', {
+      user_id,
+      jobs,
+      careers,
+      regions,
+      regions_type: typeof regions,
+      skills,
+      expected_salary,
+      has_file: !!req.file
+    });
+
     if (!user_id) {
+      console.error('[PROFILE] ❌ user_id 누락');
       return res.status(400).json({ error: { code: "MISSING_USER_ID", message: "user_id is required" } });
     }
 
@@ -1535,7 +1547,14 @@ app.post('/api/profile', uploadProfile.single('resume'), async (req, res) => {
       if (regions) {
         updateFields.push('preferred_regions = ?');
         // regions는 프론트에서 JSON.stringify된 배열로 전송됨
-        const regionsArray = typeof regions === 'string' ? JSON.parse(regions) : regions;
+        let regionsArray;
+        try {
+          regionsArray = typeof regions === 'string' ? JSON.parse(regions) : regions;
+          console.log('[PROFILE] regions 파싱 성공:', regionsArray);
+        } catch (parseError) {
+          console.error('[PROFILE] ❌ regions 파싱 실패:', parseError.message);
+          throw new Error('희망지역 데이터 형식이 올바르지 않습니다');
+        }
         updateValues.push(JSON.stringify(regionsArray));
       }
       if (skills) {
@@ -1560,12 +1579,34 @@ app.post('/api/profile', uploadProfile.single('resume'), async (req, res) => {
       );
     } else {
       // 새 프로필 생성
+      console.log('[PROFILE] 새 프로필 생성 중...');
+
       // regions는 프론트에서 JSON.stringify된 배열로 전송됨
-      const regionsArray = typeof regions === 'string' ? JSON.parse(regions) : regions;
-      await pool.execute(
-        'INSERT INTO user_profiles (user_id, preferred_jobs, experience, preferred_regions, skills, expected_salary, resume_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
-        [user_id, jobs, careers, JSON.stringify(regionsArray), skills ? JSON.stringify(skills.split(',').map(s => s.trim())) : null, expected_salary, resumePath]
-      );
+      let regionsArray;
+      try {
+        regionsArray = typeof regions === 'string' ? JSON.parse(regions) : regions;
+        console.log('[PROFILE] regions 파싱 성공:', regionsArray);
+      } catch (parseError) {
+        console.error('[PROFILE] ❌ regions 파싱 실패:', parseError.message);
+        throw new Error('희망지역 데이터 형식이 올바르지 않습니다');
+      }
+
+      const insertSQL = 'INSERT INTO user_profiles (user_id, preferred_jobs, experience, preferred_regions, skills, expected_salary, resume_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())';
+      const insertParams = [
+        user_id,
+        jobs,
+        careers,
+        JSON.stringify(regionsArray),
+        skills ? JSON.stringify(skills.split(',').map(s => s.trim())) : null,
+        expected_salary,
+        resumePath
+      ];
+
+      console.log('[PROFILE] INSERT SQL:', insertSQL);
+      console.log('[PROFILE] INSERT Params:', insertParams);
+
+      await pool.execute(insertSQL, insertParams);
+      console.log('[PROFILE] ✅ 프로필 생성 성공');
     }
 
     // 업데이트된 프로필 조회
@@ -1587,9 +1628,11 @@ app.post('/api/profile', uploadProfile.single('resume'), async (req, res) => {
       updated_at: profile.updated_at
     });
   } catch (e) {
+    console.error('[PROFILE] ❌ 프로필 저장 실패:', e.message);
+    console.error('[PROFILE] Stack:', e.stack);
     res
       .status(400)
-      .json({ error: { code: e.message || "BAD_INPUT", message: "profile set failed" } });
+      .json({ error: { code: e.message || "BAD_INPUT", message: e.message || "profile set failed" } });
   }
 });
 
