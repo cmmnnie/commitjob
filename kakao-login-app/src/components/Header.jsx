@@ -90,13 +90,14 @@ export default function Header() {
         background: 'white',
         boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
         zIndex: 1000,
-        borderBottom: '1px solid rgba(0,0,0,0.1)'
+        borderBottom: '1px solid rgba(0,0,0,0.1)',
+        padding: '0 20px'
     };
 
     const containerStyle = {
         maxWidth: showSearchBar ? '1200px' : '600px',
         margin: '0 auto',
-        padding: '12px 20px',
+        padding: '12px 0',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
