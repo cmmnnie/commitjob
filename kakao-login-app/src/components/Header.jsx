@@ -207,12 +207,12 @@ export default function Header() {
                             ) : (
                                 <span>👤</span>
                             )}
-                            <span style={{ fontSize: '0.8rem' }}>프로필</span>
+                            <span style={{ fontSize: '0.9rem' }}>프로필</span>
                         </>
                     ) : (
                         <>
                             <span>👤</span>
-                            <span>로그인</span>
+                            <span style={{ fontSize: '0.9rem' }}>로그인</span>
                         </>
                     )}
                 </button>

@@ -39,7 +39,7 @@ export default function Navigation() {
         alignItems: 'center',
         gap: '4px',
         padding: '6px 8px',
-        fontSize: '0.8rem',
+        fontSize: '0.9rem',
         fontWeight: '700',
         transition: 'all 0.3s ease',
         borderRadius: '8px',
