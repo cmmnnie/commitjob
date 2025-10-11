@@ -272,6 +272,11 @@ export default function AIInterviewPage() {
             const data = await response.json();
             if (data.success && data.revisedAnswer) {
                 setRevisedAnswer(data.revisedAnswer);
+                // 수정된 답변을 textarea에 자동으로 채우기
+                setAnswer(data.revisedAnswer);
+                // 기존 피드백과 점수 초기화 (새로운 답변이므로 다시 피드백 받아야 함)
+                setFeedback(null);
+                setAnswerScore(null);
             } else {
                 alert('수정된 답변을 받을 수 없습니다.');
             }
@@ -719,7 +724,7 @@ export default function AIInterviewPage() {
                                 }
                             }}
                         >
-                            {isModelAnswerLoading ? '🤖 모범답변 생성 중...' : '💡 모범답변 받기'}
+                            {isModelAnswerLoading ? '🤖 AI 모범답변 생성 중...' : '💡 AI 모범답변 받기'}
                         </button>
 
                         {/* 모범답변 결과 */}
@@ -921,7 +926,7 @@ export default function AIInterviewPage() {
                                     }
                                 }}
                             >
-                                {isRevisedAnswerLoading ? '✨ 수정된 답변 생성 중...' : '✨ 피드백을 반영한 수정된 답변 받기'}
+                                {isRevisedAnswerLoading ? '✨ AI 피드백 반영 모범답변 생성 중...' : '✨ AI 피드백 반영한 모범답변 받기'}
                             </button>
                         )}
 
