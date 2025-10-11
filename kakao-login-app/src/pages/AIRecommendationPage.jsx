@@ -246,7 +246,7 @@ export default function AIRecommendationPage() {
                     <div style={{
                         fontWeight: '800',
                         fontSize: '1rem',
-                        marginBottom: '8px',
+                        marginBottom: '12px',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '6px',
@@ -259,7 +259,17 @@ export default function AIRecommendationPage() {
                         fontWeight: '600',
                         letterSpacing: '-0.2px'
                     }}>
-                        {job.match_reasons.join(', ')}
+                        {job.match_reasons.map((reason, idx) => (
+                            <div key={idx} style={{
+                                display: 'flex',
+                                alignItems: 'flex-start',
+                                gap: '8px',
+                                marginBottom: idx < job.match_reasons.length - 1 ? '6px' : '0'
+                            }}>
+                                <span style={{ color: '#0369a1', fontWeight: '700' }}>•</span>
+                                <span style={{ flex: 1 }}>{reason}</span>
+                            </div>
+                        ))}
                     </div>
                 </div>
             )}
