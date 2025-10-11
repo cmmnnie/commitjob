@@ -6183,16 +6183,26 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
   console.log('[SCRAPE-JOBS] 최신 공고 스크래핑 요청 받음');
 
   try {
-    // 1. Catch Scraper 초기화
+    // 1. Catch Scraper 서비스 연결 테스트
+    console.log('[SCRAPE-JOBS] Catch Scraper 서비스 연결 테스트...');
+    console.log('[SCRAPE-JOBS] CATCH_SCRAPER_URL:', CATCH_SCRAPER_URL);
+
+    // 2. Catch Scraper 초기화
     console.log('[SCRAPE-JOBS] Catch Scraper 초기화 중...');
     try {
       await axios.post(`${CATCH_SCRAPER_URL}/api/init`, {}, { timeout: 30000 });
       console.log('[SCRAPE-JOBS] ✅ Catch Scraper 초기화 완료');
     } catch (initError) {
       console.error('[SCRAPE-JOBS] Catch Scraper 초기화 실패:', initError.message);
+      if (initError.code === 'ECONNREFUSED') {
+        return res.status(503).json({
+          success: false,
+          message: 'Catch Scraper 서비스에 연결할 수 없습니다. 서비스가 실행 중인지 확인해주세요.'
+        });
+      }
       return res.status(500).json({
         success: false,
-        message: 'Catch Scraper 초기화에 실패했습니다.'
+        message: `Catch Scraper 초기화에 실패했습니다: ${initError.message}`
       });
     }
 
