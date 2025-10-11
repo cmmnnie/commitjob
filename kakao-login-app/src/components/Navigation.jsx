@@ -25,7 +25,7 @@ export default function Navigation() {
         alignItems: 'center',
         listStyle: 'none',
         margin: 0,
-        padding: '8px 0',
+        padding: '2px 0',
         maxWidth: '600px',
         marginLeft: 'auto',
         marginRight: 'auto'
@@ -38,7 +38,7 @@ export default function Navigation() {
         flexDirection: 'column',
         alignItems: 'center',
         gap: '4px',
-        padding: '10px 8px',
+        padding: '6px 8px',
         fontSize: '0.75rem',
         fontWeight: isActive ? '700' : '600',
         transition: 'all 0.3s ease',
