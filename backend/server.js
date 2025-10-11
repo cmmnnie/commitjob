@@ -4931,6 +4931,7 @@ app.post('/api/interview-revised-answer', async (req, res) => {
 4. 자연스럽고 진정성 있는 답변 작성
 5. 답변 길이: 2-3분 분량 (약 300-500자)
 6. **중요**: 피드백의 개선점을 적극적으로 반영하여 원래 답변보다 명확하게 더 우수한 답변을 작성해주세요.
+7. **출력 형식**: 설명이나 주석 없이 개선된 답변 내용만 출력해주세요. ---, ===, 구분선 등을 사용하지 마세요.
 
 원래 답변의 내용과 톤을 최대한 존중하면서, 피드백의 조언을 반영하여 더 나은 답변을 만들어주세요.`;
 
@@ -4966,7 +4967,18 @@ ${feedback}`;
       max_tokens: 1000
     });
 
-    const revisedAnswer = completion.choices[0].message.content;
+    let revisedAnswer = completion.choices[0].message.content;
+
+    // --- 구분자로 나뉜 경우 중간 부분만 추출
+    const separators = revisedAnswer.split('---');
+    if (separators.length >= 3) {
+      // 첫 번째 --- 위의 내용 제거, 두 번째 --- 아래의 내용 제거
+      // separators[0]: 첫 번째 --- 위
+      // separators[1]: 두 --- 사이 (실제 답변)
+      // separators[2]: 두 번째 --- 아래
+      revisedAnswer = separators[1].trim();
+      console.log(`[INTERVIEW-REVISED-ANSWER] --- 구분자 제거됨 (원본 길이: ${completion.choices[0].message.content.length}, 정제 후: ${revisedAnswer.length})`);
+    }
 
     console.log(`[INTERVIEW-REVISED-ANSWER] ✅ Revised answer generated successfully`);
 
