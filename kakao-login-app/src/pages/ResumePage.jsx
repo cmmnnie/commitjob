@@ -508,43 +508,6 @@ export default function ResumePage() {
                             </div>
                         </div>
 
-                        {/* 이력서 파일 섹션 */}
-                        <div style={{
-                            background: userProfile.resume_path ? '#e8f5e9' : '#fff3e0',
-                            borderRadius: '12px',
-                            padding: '15px',
-                            marginBottom: '12px',
-                            border: `1px solid ${userProfile.resume_path ? '#a5d6a7' : '#ffcc80'}`
-                        }}>
-                            <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px'
-                            }}>
-                                <span style={{ fontSize: '1.2rem' }}>
-                                    {userProfile.resume_path ? '📎' : '📝'}
-                                </span>
-                                <div style={{ flex: 1 }}>
-                                    <div style={{
-                                        color: userProfile.resume_path ? '#2e7d32' : '#f57c00',
-                                        fontSize: '0.9rem',
-                                        fontWeight: '600',
-                                        marginBottom: '2px'
-                                    }}>
-                                        {userProfile.resume_path ? '이력서 파일 등록됨' : '이력서 파일 미등록'}
-                                    </div>
-                                    {!userProfile.resume_path && (
-                                        <div style={{
-                                            color: '#f57c00',
-                                            fontSize: '0.75rem'
-                                        }}>
-                                            이력서를 등록하면 더 정확한 추천을 받을 수 있습니다
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
                         {/* 정보 수정 안내 */}
                         <div style={{
                             background: '#e3f2fd',
@@ -565,7 +528,7 @@ export default function ResumePage() {
                                     color: '#1565c0',
                                     lineHeight: '1.4'
                                 }}>
-                                    프로필 정보는 AI 추천과 면접 질문 생성에 활용됩니다
+                                    이력서 정보는 AI 채용공고 추천과 AI 면접질문 생성에 활용됩니다
                                 </p>
                             </div>
                         </div>
