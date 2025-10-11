@@ -6225,8 +6225,11 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
         timeout: 120000 // 2분
       });
 
+      console.log('[SCRAPE-JOBS] Scraper 응답:', JSON.stringify(scrapeResponse.data).substring(0, 200));
+
       if (!scrapeResponse.data.success) {
-        throw new Error('스크래핑 실패');
+        console.error('[SCRAPE-JOBS] Scraper에서 실패 응답:', scrapeResponse.data);
+        throw new Error(scrapeResponse.data.message || '스크래핑 실패');
       }
 
       const results = scrapeResponse.data.results || {};
@@ -6236,10 +6239,14 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
 
       console.log(`[SCRAPE-JOBS] ✅ 스크래핑 완료: IT ${itJobs.length}개, BIGDATA/AI ${bigdataJobs.length}개, 총 ${scrapedJobs.length}개`);
     } catch (scrapeError) {
-      console.error('[SCRAPE-JOBS] 스크래핑 실패:', scrapeError.message);
+      console.error('[SCRAPE-JOBS] 스크래핑 오류:', scrapeError.message);
+      if (scrapeError.response) {
+        console.error('[SCRAPE-JOBS] 응답 상태:', scrapeError.response.status);
+        console.error('[SCRAPE-JOBS] 응답 데이터:', scrapeError.response.data);
+      }
       return res.status(500).json({
         success: false,
-        message: '공고 스크래핑에 실패했습니다.'
+        message: `공고 스크래핑에 실패했습니다: ${scrapeError.message}`
       });
     }
 
