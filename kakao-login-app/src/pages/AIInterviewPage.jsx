@@ -430,9 +430,12 @@ export default function AIInterviewPage() {
                                 letterSpacing: '-0.5px'
                             }}>AI 면접 준비</h1>
                             <p style={{
-                                color: '#718096',
-                                fontSize: '0.85rem',
-                                margin: '0'
+                                color: '#1a202c',
+                                fontSize: '0.95rem',
+                                margin: '0',
+                                fontWeight: '700',
+                                letterSpacing: '-0.3px',
+                                textShadow: '0 1px 2px rgba(0,0,0,0.1)'
                             }}>
                                 GPT-5-mini가 생성한 맞춤형 면접 질문
                             </p>

@@ -32,19 +32,21 @@ export default function Navigation() {
     };
 
     const linkStyle = (isActive) => ({
-        color: isActive ? '#667eea' : '#444',
+        color: isActive ? '#667eea' : '#222',
         textDecoration: 'none',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         gap: '4px',
         padding: '6px 8px',
-        fontSize: '0.75rem',
-        fontWeight: isActive ? '700' : '600',
+        fontSize: '0.8rem',
+        fontWeight: '700',
         transition: 'all 0.3s ease',
         borderRadius: '8px',
         minWidth: '65px',
-        flex: 1
+        flex: 1,
+        letterSpacing: '-0.3px',
+        textShadow: isActive ? '0 1px 2px rgba(102, 126, 234, 0.3)' : '0 1px 1px rgba(0,0,0,0.1)'
     });
 
     const iconStyle = (isActive) => ({

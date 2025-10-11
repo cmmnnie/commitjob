@@ -166,11 +166,13 @@ export default function Header() {
                             style={{
                                 width: '100%',
                                 padding: '10px 40px 10px 16px',
-                                fontSize: '0.9rem',
+                                fontSize: '0.95rem',
+                                fontWeight: '600',
                                 border: '2px solid #e0e0e0',
                                 borderRadius: '24px',
                                 outline: 'none',
-                                transition: 'all 0.3s'
+                                transition: 'all 0.3s',
+                                color: '#222'
                             }}
                             onFocus={(e) => {
                                 e.target.style.borderColor = '#667eea';
