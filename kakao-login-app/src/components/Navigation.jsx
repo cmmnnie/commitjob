@@ -63,7 +63,7 @@ export default function Navigation() {
                         style={linkStyle(location.pathname === '/ai-recommendation')}
                     >
                         <span style={iconStyle(location.pathname === '/ai-recommendation')}>🤖</span>
-                        <span>AI추천</span>
+                        <span>AI채용</span>
                     </Link>
                 </li>
                 <li style={{ flex: 1 }}>

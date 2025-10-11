@@ -460,13 +460,15 @@ export default function AIRecommendationPage() {
                                         margin: 0,
                                         fontWeight: '800',
                                         letterSpacing: '-0.5px'
-                                    }}>AI 맞춤 추천</h1>
+                                    }}>AI 채용공고 추천</h1>
                                 </div>
                                 <p style={{
-                                    color: 'rgba(255, 255, 255, 0.95)',
-                                    fontSize: '1rem',
+                                    color: 'white',
+                                    fontSize: '1.1rem',
                                     margin: 0,
-                                    fontWeight: '500'
+                                    fontWeight: '700',
+                                    textShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                                    letterSpacing: '-0.3px'
                                 }}>
                                     GPT-5-mini가 추천하는 맞춤형 채용 공고
                                 </p>
@@ -516,48 +518,34 @@ export default function AIRecommendationPage() {
 
                         {allJobs.length > 0 && (
                             <div style={{
-                                background: 'rgba(255, 255, 255, 0.2)',
+                                background: 'rgba(255, 255, 255, 0.25)',
                                 backdropFilter: 'blur(10px)',
                                 borderRadius: '16px',
-                                padding: '20px',
-                                border: '1px solid rgba(255, 255, 255, 0.3)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                gap: '16px'
+                                padding: '20px 24px',
+                                border: '2px solid rgba(255, 255, 255, 0.4)',
+                                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.15)'
                             }}>
-                                <div style={{ flex: 1 }}>
-                                    <div style={{
-                                        fontSize: '1.8rem',
-                                        fontWeight: '800',
-                                        color: 'white',
-                                        marginBottom: '4px',
-                                        display: 'flex',
-                                        alignItems: 'baseline',
-                                        gap: '8px'
-                                    }}>
-                                        <span style={{ fontSize: '2.2rem' }}>{allJobs.length}</span>
-                                        <span style={{ fontSize: '1.1rem', fontWeight: '600' }}>개</span>
-                                    </div>
-                                    <p style={{
-                                        color: 'rgba(255, 255, 255, 0.9)',
-                                        fontSize: '0.95rem',
-                                        margin: 0,
-                                        fontWeight: '500'
-                                    }}>
-                                        GPT-5-mini가 사용자 이력서와 <strong style={{ fontWeight: '700' }}>DB에 저장된 채용공고를 참고</strong>하여 맞춤형 채용공고 추천
-                                    </p>
-                                </div>
                                 <div style={{
-                                    background: 'rgba(255, 255, 255, 0.25)',
-                                    padding: '12px 16px',
-                                    borderRadius: '12px',
-                                    border: '1px solid rgba(255, 255, 255, 0.3)'
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '12px',
+                                    marginBottom: '8px'
                                 }}>
                                     <div style={{
-                                        fontSize: '1.5rem',
+                                        fontSize: '1.8rem',
                                         filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))'
                                     }}>✨</div>
+                                    <p style={{
+                                        color: 'white',
+                                        fontSize: '1.05rem',
+                                        margin: 0,
+                                        fontWeight: '800',
+                                        textShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                                        lineHeight: '1.6',
+                                        letterSpacing: '-0.3px'
+                                    }}>
+                                        GPT-5-mini가 회원님 이력서와 CommitJob 채용공고를 매칭하여 매칭률 높은 {allJobs.length}개 채용공고를 추천
+                                    </p>
                                 </div>
                             </div>
                         )}
