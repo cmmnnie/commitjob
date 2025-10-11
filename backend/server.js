@@ -6226,34 +6226,76 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
       });
     }
 
-    // 3. 공고 스크래핑 (max_pages=2로 약 30개)
-    console.log('[SCRAPE-JOBS] 공고 스크래핑 시작... (max_pages=2)');
+    // 3. 공고 스크래핑 - 먼저 DB에서 가져오기 시도
+    console.log('[SCRAPE-JOBS] DB에서 기존 공고 확인 중...');
     let scrapedJobs = [];
 
     try {
-      const scrapeResponse = await axios.get(`${CATCH_SCRAPER_URL}/api/extract-all-jobs?max_pages=2`, {
+      const scrapeResponse = await axios.get(`${CATCH_SCRAPER_URL}/api/extract-all-jobs?max_pages=1`, {
         timeout: 120000 // 2분
       });
 
-      console.log('[SCRAPE-JOBS] Scraper 응답:', JSON.stringify(scrapeResponse.data).substring(0, 200));
+      console.log('[SCRAPE-JOBS] Scraper 응답:', JSON.stringify(scrapeResponse.data).substring(0, 500));
 
       if (!scrapeResponse.data.success) {
         console.error('[SCRAPE-JOBS] Scraper에서 실패 응답:', scrapeResponse.data);
-        throw new Error(scrapeResponse.data.message || '스크래핑 실패');
+
+        // DB에서 직접 가져오기 시도
+        console.log('[SCRAPE-JOBS] 스크래핑 실패 - MySQL DB에서 직접 조회 시도...');
+        const [dbJobs] = await pool.execute(
+          `SELECT * FROM jobs
+           WHERE category IN ('BIGDATA_AI', 'IT')
+           ORDER BY scraped_at DESC
+           LIMIT 30`
+        );
+
+        if (dbJobs.length > 0) {
+          console.log(`[SCRAPE-JOBS] MySQL DB에서 ${dbJobs.length}개 공고 가져옴`);
+          scrapedJobs = dbJobs;
+        } else {
+          throw new Error(scrapeResponse.data.message || '스크래핑 실패 및 DB에 공고 없음');
+        }
+      } else {
+        const results = scrapeResponse.data.results || {};
+        const itJobs = results.it_jobs || [];
+        const bigdataJobs = results.bigdata_ai_jobs || [];
+        scrapedJobs = [...itJobs, ...bigdataJobs];
+
+        console.log(`[SCRAPE-JOBS] ✅ 스크래핑 완료: IT ${itJobs.length}개, BIGDATA/AI ${bigdataJobs.length}개, 총 ${scrapedJobs.length}개`);
       }
-
-      const results = scrapeResponse.data.results || {};
-      const itJobs = results.it_jobs || [];
-      const bigdataJobs = results.bigdata_ai_jobs || [];
-      scrapedJobs = [...itJobs, ...bigdataJobs];
-
-      console.log(`[SCRAPE-JOBS] ✅ 스크래핑 완료: IT ${itJobs.length}개, BIGDATA/AI ${bigdataJobs.length}개, 총 ${scrapedJobs.length}개`);
     } catch (scrapeError) {
       console.error('[SCRAPE-JOBS] 스크래핑 오류:', scrapeError.message);
       if (scrapeError.response) {
         console.error('[SCRAPE-JOBS] 응답 상태:', scrapeError.response.status);
         console.error('[SCRAPE-JOBS] 응답 데이터:', scrapeError.response.data);
       }
+
+      // 최후의 수단: MySQL DB에서 가져오기
+      try {
+        console.log('[SCRAPE-JOBS] 최후 수단 - MySQL DB 조회...');
+        const [dbJobs] = await pool.execute(
+          `SELECT * FROM jobs
+           WHERE category IN ('BIGDATA_AI', 'IT')
+           ORDER BY scraped_at DESC
+           LIMIT 30`
+        );
+
+        if (dbJobs.length > 0) {
+          console.log(`[SCRAPE-JOBS] MySQL DB에서 ${dbJobs.length}개 공고 가져옴`);
+
+          // 이미 DB에 있는 공고이므로 중복 처리
+          return res.json({
+            success: true,
+            total_scraped: dbJobs.length,
+            new_jobs: 0,
+            duplicates: dbJobs.length,
+            message: '스크래핑 실패로 기존 DB 공고를 반환했습니다.'
+          });
+        }
+      } catch (dbError) {
+        console.error('[SCRAPE-JOBS] DB 조회 실패:', dbError.message);
+      }
+
       return res.status(500).json({
         success: false,
         message: `공고 스크래핑에 실패했습니다: ${scrapeError.message}`
