@@ -13,6 +13,7 @@ export default function JobsPage() {
     const [itJobs, setItJobs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [scraping, setScraping] = useState(false);
 
     useEffect(() => {
         fetchJobs();
@@ -77,6 +78,38 @@ export default function JobsPage() {
 
     const handleJobClick = (job) => {
         navigate(`/jobs/detail/${job.id}`, { state: { job } });
+    };
+
+    const handleScrapJobs = async () => {
+        if (scraping) return;
+
+        const confirmScrape = window.confirm('Catch.co.kr에서 최신 공고를 스크래핑하시겠습니까?\n약 30개의 IT/AI 공고를 가져옵니다.');
+        if (!confirmScrape) return;
+
+        try {
+            setScraping(true);
+            console.log('[SCRAPE] Starting job scraping...');
+
+            const response = await axios.post(`${API_BASE_URL}/api/scrape-latest-jobs`, {}, {
+                withCredentials: true,
+                timeout: 120000 // 2분
+            });
+
+            console.log('[SCRAPE] Response:', response.data);
+
+            if (response.data.success) {
+                alert(`스크래핑 완료!\n\n총 ${response.data.total_scraped}개의 공고를 가져왔습니다.\n새로운 공고: ${response.data.new_jobs}개\n중복 제외: ${response.data.duplicates}개`);
+                // 스크래핑 후 공고 목록 새로고침
+                fetchJobs();
+            } else {
+                alert(`스크래핑 실패: ${response.data.message || '알 수 없는 오류'}`);
+            }
+        } catch (error) {
+            console.error('[SCRAPE] Error:', error);
+            alert(`스크래핑 중 오류가 발생했습니다.\n${error.response?.data?.message || error.message}`);
+        } finally {
+            setScraping(false);
+        }
     };
 
     const JobCard = ({ job }) => (
@@ -281,27 +314,33 @@ export default function JobsPage() {
                             </p>
                         </div>
                         <button
-                            onClick={() => navigate('/')}
+                            onClick={handleScrapJobs}
+                            disabled={scraping}
                             style={{
-                                background: 'transparent',
-                                border: '2px solid #667eea',
-                                color: '#667eea',
+                                background: scraping ? '#cbd5e0' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                border: 'none',
+                                color: 'white',
                                 padding: '10px 24px',
                                 borderRadius: '24px',
                                 fontSize: '1rem',
                                 fontWeight: '600',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s'
+                                cursor: scraping ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.2s',
+                                boxShadow: scraping ? 'none' : '0 4px 12px rgba(102, 126, 234, 0.3)'
                             }}
                             onMouseEnter={(e) => {
-                                e.currentTarget.style.background = '#667eea';
-                                e.currentTarget.style.color = 'white';
+                                if (!scraping) {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.4)';
+                                }
                             }}
                             onMouseLeave={(e) => {
-                                e.currentTarget.style.background = 'transparent';
-                                e.currentTarget.style.color = '#667eea';
+                                if (!scraping) {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
+                                }
                             }}>
-                            메인으로
+                            {scraping ? '스크래핑 중...' : '최근 공고 스크래핑'}
                         </button>
                     </div>
                 </div>
