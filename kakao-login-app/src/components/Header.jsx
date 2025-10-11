@@ -51,6 +51,20 @@ export default function Header() {
         checkLoginStatus();
     }, [location.pathname]);
 
+    // URL 파라미터와 검색어 동기화
+    useEffect(() => {
+        const urlParams = new URLSearchParams(location.search);
+        const searchParam = urlParams.get('search');
+
+        // 메인 페이지가 아니거나 검색 파라미터가 없으면 검색어 초기화
+        if (location.pathname !== '/' || !searchParam) {
+            setSearchQuery('');
+        } else {
+            // 검색 파라미터가 있으면 그 값으로 설정
+            setSearchQuery(searchParam);
+        }
+    }, [location.pathname, location.search]);
+
     const handleProfileClick = () => {
         if (currentUser) {
             // 로그인된 경우: 프로필 화면 표시
