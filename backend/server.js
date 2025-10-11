@@ -6237,51 +6237,10 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
       console.log('[SCRAPE-JOBS] ✅ 채용공고 페이지 이동 완료');
     } catch (recruitError) {
       console.error('[SCRAPE-JOBS] 채용공고 페이지 이동 오류:', recruitError.message);
-
-      // 폴백: catch.db에서 가져오기
-      console.log('[SCRAPE-JOBS] 페이지 이동 실패, catch.db 폴백 시도...');
-      const dbResponse = await axios.get(`${CATCH_SCRAPER_URL}/api/db/homepage`, { timeout: 30000 });
-
-      if (dbResponse.data.success && dbResponse.data.results) {
-        const results = dbResponse.data.results;
-        const itJobs = (results.it_jobs || []).map(job => ({ ...job, category: 'IT' }));
-        const bigdataJobs = (results.bigdata_ai_jobs || []).map(job => ({ ...job, category: 'BIGDATA_AI' }));
-        const scrapedJobs = [...itJobs, ...bigdataJobs].slice(0, 20);
-
-        console.log(`[SCRAPE-JOBS] ✅ catch.db에서 ${scrapedJobs.length}개 공고 가져옴 (페이지 이동 실패 폴백)`);
-
-        // 바로 DB insert 처리 (페이지 이동 실패 시)
-        let newJobs = 0, duplicates = 0;
-        for (const job of scrapedJobs) {
-          try {
-            const [existing] = await pool.execute(
-              'SELECT id FROM jobs WHERE title = ? AND company = ?',
-              [job.title, job.company]
-            );
-            if (existing.length > 0) {
-              duplicates++;
-              continue;
-            }
-            await pool.execute(
-              `INSERT INTO jobs (title, company, url, job_info, conditions, registration_info, category, scraped_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
-              [job.title, job.company, job.url, JSON.stringify(job.job_info || []),
-               JSON.stringify(job.conditions || []), JSON.stringify(job.registration_info || []), job.category]
-            );
-            newJobs++;
-          } catch (insertError) {
-            console.error(`[SCRAPE-JOBS] DB 삽입 오류 (${job.title}):`, insertError.message);
-          }
-        }
-        return res.json({
-          success: true,
-          total_scraped: scrapedJobs.length,
-          new_jobs: newJobs,
-          duplicates: duplicates
-        });
-      }
-
-      throw recruitError;
+      return res.status(500).json({
+        success: false,
+        message: '채용공고 페이지로 이동할 수 없습니다. 잠시 후 다시 시도해주세요.'
+      });
     }
 
     // 4. IT개발 필터 적용 및 스크래핑 (15건)
@@ -6355,41 +6314,18 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
     let scrapedJobs = [...itJobs, ...bigdataJobs];
     console.log(`[SCRAPE-JOBS] 총 ${scrapedJobs.length}개 공고 스크래핑 완료 (IT: ${itJobs.length}개, BIGDATA/AI: ${bigdataJobs.length}개)`);
 
-    // 폴백 처리
-    if (scrapedJobs.length === 0) {
-      console.log('[SCRAPE-JOBS] 스크래핑된 공고가 없음, catch.db 폴백 시도...');
-
-      try {
-        const dbResponse = await axios.get(`${CATCH_SCRAPER_URL}/api/db/homepage`, { timeout: 30000 });
-
-        if (dbResponse.data.success && dbResponse.data.results) {
-          const results = dbResponse.data.results;
-          const dbItJobs = (results.it_jobs || []).map(job => ({ ...job, category: 'IT' }));
-          const dbBigdataJobs = (results.bigdata_ai_jobs || []).map(job => ({ ...job, category: 'BIGDATA_AI' }));
-
-          scrapedJobs = [...dbItJobs, ...dbBigdataJobs].slice(0, 30);
-          console.log(`[SCRAPE-JOBS] ✅ catch.db에서 ${scrapedJobs.length}개 공고 가져옴 (폴백)`);
-        }
-      } catch (dbError) {
-        console.error('[SCRAPE-JOBS] catch.db 폴백도 실패:', dbError.message);
-      }
-    }
-
-    console.log(`[SCRAPE-JOBS] 총 ${scrapedJobs.length}개 공고 확인`);
-
+    // catch.db 폴백 없이 직접 오류 반환
     if (scrapedJobs.length === 0) {
       console.error('[SCRAPE-JOBS] ❌ 스크래핑된 공고가 없습니다.');
-      console.error('[SCRAPE-JOBS] catch.db가 비어있거나, 스크래핑 과정에서 문제가 발생했을 수 있습니다.');
-      return res.status(200).json({
-        success: true,
-        total_scraped: 0,
-        new_jobs: 0,
-        duplicates: 0,
+      return res.status(500).json({
+        success: false,
         message: 'Catch 사이트에서 공고를 가져오지 못했습니다. 잠시 후 다시 시도해주세요.'
       });
     }
 
-    // 4. DB에 삽입 (중복 체크)
+    console.log(`[SCRAPE-JOBS] 총 ${scrapedJobs.length}개 공고 확인`);
+
+    // 7. DB에 삽입 (중복 체크)
     let newJobs = 0;
     let duplicates = 0;
 
