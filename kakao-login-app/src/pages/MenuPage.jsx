@@ -2,7 +2,9 @@ import { Link } from 'react-router-dom';
 
 export default function MenuPage() {
     const menuItemStyle = {
-        display: 'block',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '20px',
         padding: '20px',
         background: 'white',
         borderRadius: '15px',
@@ -13,22 +15,34 @@ export default function MenuPage() {
     };
 
     const menuIconStyle = {
-        fontSize: '2.5rem',
-        marginBottom: '10px',
-        display: 'block'
+        fontSize: '3rem',
+        flexShrink: 0,
+        width: '60px',
+        height: '60px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+    };
+
+    const menuContentStyle = {
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px'
     };
 
     const menuTitleStyle = {
-        fontSize: '1.1rem',
+        fontSize: '1.2rem',
         fontWeight: '700',
         color: '#333',
-        marginBottom: '5px'
+        lineHeight: '1.3'
     };
 
     const menuDescStyle = {
-        fontSize: '0.85rem',
-        color: '#999',
-        lineHeight: '1.4'
+        fontSize: '0.95rem',
+        color: '#666',
+        lineHeight: '1.5',
+        fontWeight: '400'
     };
 
     return (
@@ -61,26 +75,34 @@ export default function MenuPage() {
 
                     <Link to="/ai-recommendation" style={menuItemStyle}>
                         <span style={menuIconStyle}>🤖</span>
-                        <div style={menuTitleStyle}>AI 맞춤 추천</div>
-                        <div style={menuDescStyle}>GPT-5-mini가 사용자 이력서와 DB에 저장된 채용공고를 참고하여 맞춤형 채용공고 추천</div>
+                        <div style={menuContentStyle}>
+                            <div style={menuTitleStyle}>AI 채용 추천</div>
+                            <div style={menuDescStyle}>GPT가 회원님 이력서와 CommitJob 채용공고를 매칭하여 매칭률 높은 6개 채용공고를 추천해드립니다.</div>
+                        </div>
                     </Link>
 
                     <Link to="/ai-interview" style={menuItemStyle}>
                         <span style={menuIconStyle}>🎤</span>
-                        <div style={menuTitleStyle}>AI 면접 준비</div>
-                        <div style={menuDescStyle}>www.catch.co.kr에서 실시간 기출질문 10건 스크래핑 후 사용자 이력서 참고하여 GPT-5-mini가 맞춤형 면접 질문 5개 생성</div>
+                        <div style={menuContentStyle}>
+                            <div style={menuTitleStyle}>AI 면접 준비</div>
+                            <div style={menuDescStyle}>GPT가 맞춤형 면접 질문, 모범 답변, 답변에 대한 피드백을 해줍니다.</div>
+                        </div>
                     </Link>
 
                     <Link to="/jobs" style={menuItemStyle}>
                         <span style={menuIconStyle}>💼</span>
-                        <div style={menuTitleStyle}>채용공고</div>
-                        <div style={menuDescStyle}>최신 IT 채용공고를 확인하고 지원하세요</div>
+                        <div style={menuContentStyle}>
+                            <div style={menuTitleStyle}>채용공고</div>
+                            <div style={menuDescStyle}>최신 빅데이터/AI, IT개발 채용공고를 확인하고 지원하세요.</div>
+                        </div>
                     </Link>
 
                     <Link to="/resume" style={menuItemStyle}>
                         <span style={menuIconStyle}>📄</span>
-                        <div style={menuTitleStyle}>이력서 관리</div>
-                        <div style={menuDescStyle}>나만의 이력서를 작성하고 관리하세요</div>
+                        <div style={menuContentStyle}>
+                            <div style={menuTitleStyle}>이력서 관리</div>
+                            <div style={menuDescStyle}>이력서 정보를 활용하여 AI 채용공고와 AI 면접질문을 추천해드립니다.</div>
+                        </div>
                     </Link>
                 </div>
             </div>
