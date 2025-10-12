@@ -6031,6 +6031,13 @@ app.get('/api/jobs/:category', async (req, res) => {
       throw new Error('Database connection failed');
     }
 
+    // 전체 공고 수 조회
+    const [countResult] = await pool.execute(
+      'SELECT COUNT(*) as total FROM jobs WHERE category = ?',
+      [category]
+    );
+    const totalCount = countResult[0].total;
+
     let query = 'SELECT * FROM jobs WHERE category = ? ORDER BY scraped_at DESC';
 
     if (limit && limit > 0) {
@@ -6039,7 +6046,7 @@ app.get('/api/jobs/:category', async (req, res) => {
 
     console.log(`[JOBS-API] Executing query: ${query}, category:`, category);
     const [results] = await pool.execute(query, [category]);
-    console.log(`[JOBS-API] Query completed in ${Date.now() - startTime}ms, found ${results.length} jobs`);
+    console.log(`[JOBS-API] Query completed in ${Date.now() - startTime}ms, found ${results.length} jobs (total: ${totalCount})`);
 
     // JSON 문자열을 파싱 (안전하게)
     const jobs = results.map(job => {
@@ -6062,7 +6069,7 @@ app.get('/api/jobs/:category', async (req, res) => {
     });
 
     console.log(`[JOBS-API] Response ready in ${Date.now() - startTime}ms`);
-    res.json({ success: true, jobs, total: jobs.length });
+    res.json({ success: true, jobs, total: totalCount, returned: jobs.length });
   } catch (error) {
     console.error('[ERROR] Jobs API error:', error);
     console.error('[ERROR] Error name:', error.name);
