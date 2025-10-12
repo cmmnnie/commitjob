@@ -509,42 +509,46 @@ export default function AIRecommendationPage() {
                                 onClick={handleRefresh}
                                 disabled={isLoading}
                                 style={{
-                                    background: 'rgba(255, 255, 255, 0.25)',
-                                    backdropFilter: 'blur(10px)',
-                                    color: 'white',
-                                    border: '2px solid rgba(255, 255, 255, 0.3)',
-                                    padding: '12px 24px',
-                                    borderRadius: '12px',
-                                    fontSize: '0.95rem',
-                                    fontWeight: '600',
+                                    background: 'white',
+                                    color: '#667eea',
+                                    border: '3px solid white',
+                                    padding: '14px 28px',
+                                    borderRadius: '16px',
+                                    fontSize: '1rem',
+                                    fontWeight: '800',
                                     cursor: isLoading ? 'not-allowed' : 'pointer',
                                     transition: 'all 0.3s',
                                     opacity: isLoading ? 0.6 : 1,
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '8px',
-                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                                    gap: '10px',
+                                    boxShadow: '0 6px 20px rgba(0, 0, 0, 0.25)',
+                                    letterSpacing: '-0.3px',
+                                    textShadow: isLoading ? 'none' : '0 1px 2px rgba(102, 126, 234, 0.3)'
                                 }}
                                 onMouseEnter={(e) => {
                                     if (!isLoading) {
-                                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.35)';
-                                        e.currentTarget.style.transform = 'translateY(-2px)';
-                                        e.currentTarget.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.2)';
+                                        e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)';
+                                        e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.3)';
+                                        e.currentTarget.style.borderColor = '#fbbf24';
+                                        e.currentTarget.style.background = 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)';
                                     }
                                 }}
                                 onMouseLeave={(e) => {
                                     if (!isLoading) {
-                                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
-                                        e.currentTarget.style.transform = 'translateY(0)';
-                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+                                        e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                                        e.currentTarget.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.25)';
+                                        e.currentTarget.style.borderColor = 'white';
+                                        e.currentTarget.style.background = 'white';
                                     }
                                 }}>
                                 <span style={{
-                                    fontSize: '1.2rem',
+                                    fontSize: '1.3rem',
                                     display: 'inline-block',
-                                    animation: isLoading ? 'spin 1s linear infinite' : 'none'
+                                    animation: isLoading ? 'spin 1s linear infinite' : 'none',
+                                    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))'
                                 }}>🔄</span>
-                                <span>{isLoading ? '로딩 중' : '새로고침'}</span>
+                                <span>{isLoading ? '로딩 중...' : 'AI추천 새로고침'}</span>
                             </button>
                         </div>
 
