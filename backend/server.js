@@ -6229,7 +6229,7 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
     // 3. 채용공고 페이지로 이동
     console.log('[SCRAPE-JOBS] 채용공고 페이지로 이동 중...');
     try {
-      const recruitResponse = await axios.post(`${CATCH_SCRAPER_URL}/api/recruit`, {}, { timeout: 30000 });
+      const recruitResponse = await axios.post(`${CATCH_SCRAPER_URL}/api/recruit`, {}, { timeout: 60000 });
       if (!recruitResponse.data.success) {
         console.error('[SCRAPE-JOBS] 채용공고 페이지 이동 실패:', recruitResponse.data);
         throw new Error('채용공고 페이지로 이동할 수 없습니다.');
@@ -6291,7 +6291,7 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
     try {
       // 채용공고 페이지로 다시 이동 (필터 초기화)
       console.log('[SCRAPE-JOBS] 채용공고 페이지로 다시 이동 (필터 초기화)...');
-      await axios.post(`${CATCH_SCRAPER_URL}/api/recruit`, {}, { timeout: 30000 });
+      await axios.post(`${CATCH_SCRAPER_URL}/api/recruit`, {}, { timeout: 60000 });
       console.log('[SCRAPE-JOBS] ✅ 채용공고 페이지 이동 완료');
 
       // 빅데이터·AI 필터 적용
