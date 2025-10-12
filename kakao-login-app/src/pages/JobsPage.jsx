@@ -330,30 +330,35 @@ export default function JobsPage() {
                             onClick={handleScrapJobs}
                             disabled={scraping}
                             style={{
-                                background: scraping ? '#cbd5e0' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                border: 'none',
+                                background: scraping ? '#cbd5e0' : 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                                border: scraping ? 'none' : '3px solid white',
                                 color: 'white',
-                                padding: '10px 24px',
-                                borderRadius: '24px',
-                                fontSize: '1rem',
-                                fontWeight: '600',
+                                padding: '14px 32px',
+                                borderRadius: '28px',
+                                fontSize: '1.1rem',
+                                fontWeight: '800',
                                 cursor: scraping ? 'not-allowed' : 'pointer',
-                                transition: 'all 0.2s',
-                                boxShadow: scraping ? 'none' : '0 4px 12px rgba(102, 126, 234, 0.3)'
+                                transition: 'all 0.3s',
+                                boxShadow: scraping ? 'none' : '0 6px 24px rgba(245, 87, 108, 0.5)',
+                                position: 'relative',
+                                overflow: 'hidden'
                             }}
                             onMouseEnter={(e) => {
                                 if (!scraping) {
-                                    e.currentTarget.style.transform = 'translateY(-2px)';
-                                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.4)';
+                                    e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)';
+                                    e.currentTarget.style.boxShadow = '0 10px 32px rgba(245, 87, 108, 0.6)';
                                 }
                             }}
                             onMouseLeave={(e) => {
                                 if (!scraping) {
-                                    e.currentTarget.style.transform = 'translateY(0)';
-                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
+                                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                                    e.currentTarget.style.boxShadow = '0 6px 24px rgba(245, 87, 108, 0.5)';
                                 }
                             }}>
-                            {scraping ? '스크래핑 중...' : '최근 공고 스크래핑'}
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '1.3rem' }}>{scraping ? '⏳' : '🔄'}</span>
+                                <span>{scraping ? '스크래핑 중...' : '최근 공고 스크래핑'}</span>
+                            </span>
                         </button>
                     </div>
                 </div>

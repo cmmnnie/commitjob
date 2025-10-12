@@ -444,43 +444,266 @@ export default function AIInterviewPage() {
                                 letterSpacing: '-0.3px',
                                 textShadow: '0 1px 2px rgba(0,0,0,0.1)'
                             }}>
-                                GPT-5-mini가 생성한 맞춤형 면접 질문
+                                GPT-4o-mini가 맞춤형 면접 질문, 모범 답변, 답변에 대한 피드백 제공
                             </p>
                         </div>
                     </div>
+                </div>
 
-                    <div style={{
-                        background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
-                        border: '2px solid #2196f3',
-                        borderRadius: '12px',
-                        padding: '16px 18px',
-                        marginBottom: '18px',
+                {/* AI 기능 프로세스 도식화 */}
+                <div style={{
+                    background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+                    borderRadius: '20px',
+                    padding: '30px',
+                    marginBottom: '30px',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
+                }}>
+                    <h3 style={{
+                        textAlign: 'center',
+                        fontSize: '1.5rem',
+                        fontWeight: '700',
+                        color: '#333',
+                        marginBottom: '30px',
                         display: 'flex',
-                        alignItems: 'flex-start',
-                        gap: '12px',
-                        boxShadow: '0 2px 8px rgba(33, 150, 243, 0.2)'
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '10px'
                     }}>
+                        <span style={{ fontSize: '1.8rem' }}>🤖</span>
+                        <span>AI 면접 준비 프로세스</span>
+                    </h3>
+
+                    {/* 4단계 플로우차트 */}
+                    <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '20px'
+                    }}>
+                        {/* Step 1 */}
                         <div style={{
-                            fontSize: '1.5rem',
-                            lineHeight: '1',
-                            marginTop: '2px',
-                            flexShrink: '0'
-                        }}>💡</div>
-                        <div style={{
-                            fontSize: '0.95rem',
-                            color: '#0d47a1',
-                            lineHeight: '1.6',
-                            flex: '1',
-                            fontWeight: '700',
-                            textShadow: '0 1px 2px rgba(0,0,0,0.1)',
-                            letterSpacing: '-0.2px'
+                            background: 'white',
+                            borderRadius: '16px',
+                            padding: '24px',
+                            boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                            border: '2px solid #667eea',
+                            position: 'relative'
                         }}>
-                            <span style={{ color: '#667eea', fontSize: '1rem' }}>AI 기능</span>
-                            <br />
-                            회사명 입력 → <span style={{ color: '#1976d2', fontWeight: '800' }}>www.catch.co.kr에서 실시간 기출질문 10건 스크래핑</span> → 사용자 이력서 참고 → <span style={{ color: '#1976d2', fontWeight: '800' }}>GPT-5-mini가 맞춤형 면접 질문 5개 생성</span>
+                            <div style={{
+                                position: 'absolute',
+                                top: '-15px',
+                                left: '20px',
+                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                color: 'white',
+                                padding: '8px 20px',
+                                borderRadius: '20px',
+                                fontSize: '0.9rem',
+                                fontWeight: '700',
+                                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)'
+                            }}>
+                                STEP 1
+                            </div>
+                            <div style={{ marginTop: '10px' }}>
+                                <h4 style={{
+                                    fontSize: '1.2rem',
+                                    fontWeight: '700',
+                                    color: '#333',
+                                    marginBottom: '12px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px'
+                                }}>
+                                    <span style={{ fontSize: '1.5rem' }}>📝</span>
+                                    <span>맞춤형 면접 질문 5개 생성</span>
+                                </h4>
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '10px',
+                                    flexWrap: 'wrap',
+                                    fontSize: '0.95rem',
+                                    color: '#555',
+                                    lineHeight: '1.8'
+                                }}>
+                                    <span style={{
+                                        background: '#e3f2fd',
+                                        padding: '6px 14px',
+                                        borderRadius: '12px',
+                                        fontWeight: '600',
+                                        color: '#1976d2'
+                                    }}>회사명 입력</span>
+                                    <span style={{ fontSize: '1.2rem', color: '#999' }}>→</span>
+                                    <span style={{
+                                        background: '#f3e5f5',
+                                        padding: '6px 14px',
+                                        borderRadius: '12px',
+                                        fontWeight: '600',
+                                        color: '#7b1fa2'
+                                    }}>www.catch.co.kr에서 기출질문 10건 스크래핑</span>
+                                    <span style={{ fontSize: '1.2rem', color: '#999' }}>→</span>
+                                    <span style={{
+                                        background: '#e8f5e9',
+                                        padding: '6px 14px',
+                                        borderRadius: '12px',
+                                        fontWeight: '600',
+                                        color: '#388e3c'
+                                    }}>회원님 이력서 조회</span>
+                                    <span style={{ fontSize: '1.2rem', color: '#999' }}>→</span>
+                                    <span style={{
+                                        background: '#fff3e0',
+                                        padding: '6px 14px',
+                                        borderRadius: '12px',
+                                        fontWeight: '600',
+                                        color: '#f57c00'
+                                    }}>GPT-4o-mini에게 면접 질문 생성 요청</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Arrow down */}
+                        <div style={{ textAlign: 'center', fontSize: '2rem', color: '#667eea' }}>⬇️</div>
+
+                        {/* Step 2 */}
+                        <div style={{
+                            background: 'white',
+                            borderRadius: '16px',
+                            padding: '24px',
+                            boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                            border: '2px solid #f093fb',
+                            position: 'relative'
+                        }}>
+                            <div style={{
+                                position: 'absolute',
+                                top: '-15px',
+                                left: '20px',
+                                background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                                color: 'white',
+                                padding: '8px 20px',
+                                borderRadius: '20px',
+                                fontSize: '0.9rem',
+                                fontWeight: '700',
+                                boxShadow: '0 4px 12px rgba(240, 147, 251, 0.4)'
+                            }}>
+                                STEP 2
+                            </div>
+                            <div style={{ marginTop: '10px' }}>
+                                <h4 style={{
+                                    fontSize: '1.2rem',
+                                    fontWeight: '700',
+                                    color: '#333',
+                                    marginBottom: '8px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px'
+                                }}>
+                                    <span style={{ fontSize: '1.5rem' }}>💡</span>
+                                    <span>AI 모범 답변 제시</span>
+                                </h4>
+                                <p style={{ fontSize: '0.95rem', color: '#555', margin: 0 }}>
+                                    회원님이 선택한 면접 질문에 대해 GPT-4o-mini가 모범 답변을 생성합니다
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Arrow down */}
+                        <div style={{ textAlign: 'center', fontSize: '2rem', color: '#667eea' }}>⬇️</div>
+
+                        {/* Step 3 */}
+                        <div style={{
+                            background: 'white',
+                            borderRadius: '16px',
+                            padding: '24px',
+                            boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                            border: '2px solid #4facfe',
+                            position: 'relative'
+                        }}>
+                            <div style={{
+                                position: 'absolute',
+                                top: '-15px',
+                                left: '20px',
+                                background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                                color: 'white',
+                                padding: '8px 20px',
+                                borderRadius: '20px',
+                                fontSize: '0.9rem',
+                                fontWeight: '700',
+                                boxShadow: '0 4px 12px rgba(79, 172, 254, 0.4)'
+                            }}>
+                                STEP 3
+                            </div>
+                            <div style={{ marginTop: '10px' }}>
+                                <h4 style={{
+                                    fontSize: '1.2rem',
+                                    fontWeight: '700',
+                                    color: '#333',
+                                    marginBottom: '8px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px'
+                                }}>
+                                    <span style={{ fontSize: '1.5rem' }}>✍️</span>
+                                    <span>AI 피드백 및 점수 제시</span>
+                                </h4>
+                                <p style={{ fontSize: '0.95rem', color: '#555', margin: 0 }}>
+                                    회원님이 입력한 답변을 GPT-4o-mini가 분석하여 상세한 피드백과 점수를 제공합니다
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Arrow down */}
+                        <div style={{ textAlign: 'center', fontSize: '2rem', color: '#667eea' }}>⬇️</div>
+
+                        {/* Step 4 */}
+                        <div style={{
+                            background: 'white',
+                            borderRadius: '16px',
+                            padding: '24px',
+                            boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                            border: '2px solid #43e97b',
+                            position: 'relative'
+                        }}>
+                            <div style={{
+                                position: 'absolute',
+                                top: '-15px',
+                                left: '20px',
+                                background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+                                color: 'white',
+                                padding: '8px 20px',
+                                borderRadius: '20px',
+                                fontSize: '0.9rem',
+                                fontWeight: '700',
+                                boxShadow: '0 4px 12px rgba(67, 233, 123, 0.4)'
+                            }}>
+                                STEP 4
+                            </div>
+                            <div style={{ marginTop: '10px' }}>
+                                <h4 style={{
+                                    fontSize: '1.2rem',
+                                    fontWeight: '700',
+                                    color: '#333',
+                                    marginBottom: '8px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px'
+                                }}>
+                                    <span style={{ fontSize: '1.5rem' }}>🎯</span>
+                                    <span>수정된 모범 답변 제시</span>
+                                </h4>
+                                <p style={{ fontSize: '0.95rem', color: '#555', margin: 0 }}>
+                                    AI 피드백을 반영하여 GPT-4o-mini가 개선된 모범 답변을 제공합니다
+                                </p>
+                            </div>
                         </div>
                     </div>
+                </div>
 
+                {/* 회사명 입력 섹션 */}
+                <div style={{
+                    background: 'white',
+                    borderRadius: '20px',
+                    padding: '24px',
+                    marginBottom: '20px',
+                    boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)'
+                }}>
                     {/* 입력 폼 */}
                     <div style={{ marginBottom: '14px' }}>
                         <label style={{
