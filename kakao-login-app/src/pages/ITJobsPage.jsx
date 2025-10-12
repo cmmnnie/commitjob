@@ -324,7 +324,7 @@ export default function ITJobsPage() {
                                 fontSize: '1rem',
                                 color: '#666'
                             }}>
-                                최신 IT 분야 채용정보를 확인하세요
+                                IT 분야 채용정보를 확인하세요
                             </p>
                         </div>
                         <button

@@ -324,7 +324,7 @@ export default function AIJobsPage() {
                                 fontSize: '1rem',
                                 color: '#666'
                             }}>
-                                최신 빅데이터/AI 분야 채용정보를 확인하세요
+                                빅데이터/AI 분야 채용정보를 확인하세요
                             </p>
                         </div>
                         <button
