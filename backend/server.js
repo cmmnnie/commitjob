@@ -6225,6 +6225,11 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
     }
 
     // DB에 삽입 (중복 체크)
+    console.log('\n' + '='.repeat(80));
+    console.log('[SCRAPE-JOBS] 📊 DB 삽입 시작');
+    console.log('[SCRAPE-JOBS] 총 스크래핑된 공고 수:', scrapedJobs.length);
+    console.log('='.repeat(80) + '\n');
+
     let newJobs = 0;
     let duplicates = 0;
 
@@ -6238,7 +6243,7 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
 
         if (existing.length > 0) {
           duplicates++;
-          console.log(`[SCRAPE-JOBS] 중복 제외: ${job.title} (${job.company})`);
+          console.log(`[SCRAPE-JOBS] ⏭️  중복 제외 [${duplicates}]: ${job.title} | ${job.company} | 카테고리: ${job.category}`);
           continue;
         }
 
@@ -6248,7 +6253,7 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
           VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
         `;
 
-        await pool.execute(insertQuery, [
+        const [result] = await pool.execute(insertQuery, [
           job.title,
           job.company,
           job.url,
@@ -6259,13 +6264,28 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
         ]);
 
         newJobs++;
-        console.log(`[SCRAPE-JOBS] ✅ 새 공고 추가: ${job.title} (${job.company})`);
+        console.log(`[SCRAPE-JOBS] ✅ INSERT 성공 [${newJobs}]:`);
+        console.log(`[SCRAPE-JOBS]    - ID: ${result.insertId}`);
+        console.log(`[SCRAPE-JOBS]    - 제목: ${job.title}`);
+        console.log(`[SCRAPE-JOBS]    - 회사: ${job.company}`);
+        console.log(`[SCRAPE-JOBS]    - 카테고리: ${job.category}`);
+        console.log(`[SCRAPE-JOBS]    - URL: ${job.url}`);
+        console.log(`[SCRAPE-JOBS]    - 직무정보: ${job.job_info?.length || 0}개`);
+        console.log(`[SCRAPE-JOBS]    - 지원조건: ${job.conditions?.length || 0}개`);
+        console.log(`[SCRAPE-JOBS]    - 등록정보: ${job.registration_info?.length || 0}개`);
       } catch (insertError) {
-        console.error(`[SCRAPE-JOBS] DB 삽입 오류 (${job.title}):`, insertError.message);
+        console.error(`[SCRAPE-JOBS] ❌ INSERT 실패: ${job.title} (${job.company})`);
+        console.error(`[SCRAPE-JOBS]    오류 메시지: ${insertError.message}`);
+        console.error(`[SCRAPE-JOBS]    오류 코드: ${insertError.code}`);
       }
     }
 
-    console.log(`[SCRAPE-JOBS] 완료 - 새 공고: ${newJobs}개, 중복: ${duplicates}개`);
+    console.log('\n' + '='.repeat(80));
+    console.log('[SCRAPE-JOBS] 📊 DB 삽입 완료');
+    console.log(`[SCRAPE-JOBS] ✅ 새로 추가된 공고: ${newJobs}개`);
+    console.log(`[SCRAPE-JOBS] ⏭️  중복 제외된 공고: ${duplicates}개`);
+    console.log(`[SCRAPE-JOBS] 📈 총 처리된 공고: ${scrapedJobs.length}개`);
+    console.log('='.repeat(80) + '\n');
 
     res.json({
       success: true,
