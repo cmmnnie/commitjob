@@ -477,7 +477,7 @@ export default function AIInterviewPage() {
                     <div style={{
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '20px'
+                        gap: '12px'
                     }}>
                         {/* Step 1 */}
                         <div style={{
@@ -560,7 +560,7 @@ export default function AIInterviewPage() {
                         </div>
 
                         {/* Arrow down */}
-                        <div style={{ textAlign: 'center', fontSize: '2rem', color: '#667eea' }}>⬇️</div>
+                        <div style={{ textAlign: 'center', fontSize: '1.5rem', color: '#667eea', margin: '-5px 0' }}>⬇️</div>
 
                         {/* Step 2 */}
                         <div style={{
@@ -605,7 +605,7 @@ export default function AIInterviewPage() {
                         </div>
 
                         {/* Arrow down */}
-                        <div style={{ textAlign: 'center', fontSize: '2rem', color: '#667eea' }}>⬇️</div>
+                        <div style={{ textAlign: 'center', fontSize: '1.5rem', color: '#667eea', margin: '-5px 0' }}>⬇️</div>
 
                         {/* Step 3 */}
                         <div style={{
@@ -650,7 +650,7 @@ export default function AIInterviewPage() {
                         </div>
 
                         {/* Arrow down */}
-                        <div style={{ textAlign: 'center', fontSize: '2rem', color: '#667eea' }}>⬇️</div>
+                        <div style={{ textAlign: 'center', fontSize: '1.5rem', color: '#667eea', margin: '-5px 0' }}>⬇️</div>
 
                         {/* Step 4 */}
                         <div style={{
