@@ -29,12 +29,12 @@ export default function JobsPage() {
             // BIGDATA_AI 및 IT 카테고리 병렬 조회
             const [bigdataResponse, itResponse] = await Promise.all([
                 axios.get(`${API_BASE_URL}/api/jobs/BIGDATA_AI?limit=6`, {
-                    withCredentials: true,
-                    timeout: 10000
+                    withCredentials: true
+                    // timeout 제거: 느린 WiFi 환경 지원
                 }),
                 axios.get(`${API_BASE_URL}/api/jobs/IT?limit=6`, {
-                    withCredentials: true,
-                    timeout: 10000
+                    withCredentials: true
+                    // timeout 제거: 느린 WiFi 환경 지원
                 })
             ]);
 
@@ -91,8 +91,8 @@ export default function JobsPage() {
             console.log('[SCRAPE] Starting job scraping...');
 
             const response = await axios.post(`${API_BASE_URL}/api/scrape-latest-jobs`, {}, {
-                withCredentials: true,
-                timeout: 180000 // 3분
+                withCredentials: true
+                // timeout 제거: 스크래핑은 시간이 오래 걸릴 수 있으며, 느린 WiFi 환경 지원
             });
 
             console.log('[SCRAPE] Response:', response.data);
