@@ -42,7 +42,7 @@ export default function MenuPage() {
         fontSize: '0.95rem',
         color: '#666',
         lineHeight: '1.5',
-        fontWeight: '400'
+        fontWeight: '600'
     };
 
     return (
@@ -85,7 +85,7 @@ export default function MenuPage() {
                         <span style={menuIconStyle}>🎤</span>
                         <div style={menuContentStyle}>
                             <div style={menuTitleStyle}>AI 면접 준비</div>
-                            <div style={menuDescStyle}>GPT가 맞춤형 면접 질문, 모범 답변, 답변에 대한 피드백을 해줍니다.</div>
+                            <div style={menuDescStyle}>GPT가 맞춤형 면접 질문, 모범 답변, 입력한 답변에 대한 피드백을 해드립니다.</div>
                         </div>
                     </Link>
 
@@ -98,7 +98,7 @@ export default function MenuPage() {
                     </Link>
 
                     <Link to="/resume" style={menuItemStyle}>
-                        <span style={menuIconStyle}>📄</span>
+                        <span style={menuIconStyle}>📋</span>
                         <div style={menuContentStyle}>
                             <div style={menuTitleStyle}>이력서 관리</div>
                             <div style={menuDescStyle}>이력서 정보를 활용하여 AI 채용공고와 AI 면접질문을 추천해드립니다.</div>

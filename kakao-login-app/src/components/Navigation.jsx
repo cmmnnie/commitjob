@@ -91,7 +91,7 @@ export default function Navigation() {
                         to="/resume"
                         style={linkStyle(location.pathname === '/resume')}
                     >
-                        <span style={iconStyle(location.pathname === '/resume')}>📄</span>
+                        <span style={iconStyle(location.pathname === '/resume')}>📋</span>
                         <span>이력서</span>
                     </Link>
                 </li>
