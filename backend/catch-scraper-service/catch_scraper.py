@@ -525,16 +525,38 @@ class CatchScraper:
 
                 if recruit_menu:
                     print("[RECRUIT] 채용공고 메뉴 찾음, 클릭 중...")
-                    self.driver.execute_script("arguments[0].click();", recruit_menu)
-                    print("[RECRUIT] 채용공고 메뉴 클릭 완료")
+
+                    # 일반 클릭 시도
+                    try:
+                        recruit_menu.click()
+                        print("[RECRUIT] 일반 클릭 완료")
+                    except:
+                        # 일반 클릭 실패 시 JavaScript 클릭
+                        print("[RECRUIT] 일반 클릭 실패, JavaScript 클릭 시도")
+                        self.driver.execute_script("arguments[0].click();", recruit_menu)
+                        print("[RECRUIT] JavaScript 클릭 완료")
+
+                    # 클릭 후 대기
+                    import time
+                    time.sleep(2)
+                    print(f"[RECRUIT] 클릭 후 URL: {self.driver.current_url}")
+
+                    # URL 변경 대기
+                    print("[RECRUIT] URL 변경 대기 중...")
+                    try:
+                        wait.until(EC.url_contains("RecruitSearch"))
+                        print("[RECRUIT] URL 변경 완료")
+                    except:
+                        print("[RECRUIT] URL 변경 타임아웃, 직접 URL 이동 시도")
+                        self.driver.get(f"{BASE_URL}NCS/RecruitSearch")
+                        time.sleep(2)
+                        print(f"[RECRUIT] 직접 이동 후 URL: {self.driver.current_url}")
                 else:
                     print("[RECRUIT] 채용공고 메뉴를 찾지 못함, 직접 URL 이동")
                     self.driver.get(f"{BASE_URL}NCS/RecruitSearch")
-
-                # URL 변경 대기
-                print("[RECRUIT] URL 변경 대기 중...")
-                wait.until(EC.url_contains("RecruitSearch"))
-                print("[RECRUIT] URL 변경 완료")
+                    import time
+                    time.sleep(2)
+                    print(f"[RECRUIT] 직접 이동 후 URL: {self.driver.current_url}")
 
             # 페이지 로딩 대기
             print("[RECRUIT] 페이지 로딩 대기 중 (3초)...")
