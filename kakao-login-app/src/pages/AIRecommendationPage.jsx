@@ -509,7 +509,7 @@ export default function AIRecommendationPage() {
                                 onClick={handleRefresh}
                                 disabled={isLoading}
                                 style={{
-                                    background: isLoading ? '#cbd5e0' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                    background: isLoading ? '#cbd5e0' : 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
                                     color: 'white',
                                     border: isLoading ? 'none' : '3px solid white',
                                     padding: '14px 28px',
@@ -522,19 +522,19 @@ export default function AIRecommendationPage() {
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '10px',
-                                    boxShadow: isLoading ? 'none' : '0 6px 20px rgba(102, 126, 234, 0.4)',
+                                    boxShadow: isLoading ? 'none' : '0 6px 20px rgba(240, 147, 251, 0.4)',
                                     letterSpacing: '-0.3px'
                                 }}
                                 onMouseEnter={(e) => {
                                     if (!isLoading) {
                                         e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)';
-                                        e.currentTarget.style.boxShadow = '0 8px 24px rgba(102, 126, 234, 0.5)';
+                                        e.currentTarget.style.boxShadow = '0 8px 24px rgba(240, 147, 251, 0.5)';
                                     }
                                 }}
                                 onMouseLeave={(e) => {
                                     if (!isLoading) {
                                         e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                                        e.currentTarget.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.4)';
+                                        e.currentTarget.style.boxShadow = '0 6px 20px rgba(240, 147, 251, 0.4)';
                                     }
                                 }}>
                                 <span style={{
@@ -574,7 +574,7 @@ export default function AIRecommendationPage() {
                             <div style={{
                                 display: 'flex',
                                 flexDirection: 'column',
-                                gap: '20px'
+                                gap: '12px'
                             }}>
                                 {/* Step 1 */}
                                 <div style={{
@@ -604,7 +604,7 @@ export default function AIRecommendationPage() {
                                             fontSize: '1.2rem',
                                             fontWeight: '700',
                                             color: '#333',
-                                            marginBottom: '8px',
+                                            marginBottom: 0,
                                             display: 'flex',
                                             alignItems: 'center',
                                             gap: '8px'
@@ -612,14 +612,11 @@ export default function AIRecommendationPage() {
                                             <span style={{ fontSize: '1.5rem' }}>📋</span>
                                             <span>회원님 이력서 조회</span>
                                         </h4>
-                                        <p style={{ fontSize: '0.95rem', color: '#555', margin: 0, fontWeight: '700' }}>
-                                            GPT가 회원님의 프로필과 이력서 정보를 분석합니다
-                                        </p>
                                     </div>
                                 </div>
 
                                 {/* Arrow down */}
-                                <div style={{ textAlign: 'center', fontSize: '2rem', color: '#667eea' }}>⬇️</div>
+                                <div style={{ textAlign: 'center', fontSize: '1.5rem', color: '#667eea', margin: '-5px 0' }}>⬇️</div>
 
                                 {/* Step 2 */}
                                 <div style={{
@@ -658,13 +655,13 @@ export default function AIRecommendationPage() {
                                             <span>CommitJob 최근 채용공고 100건 조회</span>
                                         </h4>
                                         <p style={{ fontSize: '0.95rem', color: '#555', margin: 0, fontWeight: '700' }}>
-                                            CommitJob에 등록된 최신 빅데이터/AI, IT개발 채용공고를 수집합니다
+                                            CommitJob에 등록된 최신 빅데이터/AI, IT개발 채용공고를 조회합니다
                                         </p>
                                     </div>
                                 </div>
 
                                 {/* Arrow down */}
-                                <div style={{ textAlign: 'center', fontSize: '2rem', color: '#667eea' }}>⬇️</div>
+                                <div style={{ textAlign: 'center', fontSize: '1.5rem', color: '#667eea', margin: '-5px 0' }}>⬇️</div>
 
                                 {/* Step 3 */}
                                 <div style={{
