@@ -2400,7 +2400,7 @@ def scrape_integrated():
 
         # 1. Init
         print('[INTEGRATED] Step 1: Initializing driver...')
-        init_result = scraper.init_driver_and_db()
+        init_result = scraper.init_driver()
         if not init_result.get('success'):
             return jsonify(init_result)
 
