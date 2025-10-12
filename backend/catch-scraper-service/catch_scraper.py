@@ -509,33 +509,64 @@ class CatchScraper:
     def navigate_to_recruit_page(self):
         """채용공고 페이지로 이동"""
         try:
-            wait = WebDriverWait(self.driver, 10)
+            print("[RECRUIT] 채용공고 페이지 이동 시작")
+            wait = WebDriverWait(self.driver, 15)
 
-            recruit_menu = self._find_element_with_fallbacks(wait, SELECTORS['recruit_menu'])
-            if recruit_menu:
-                self.driver.execute_script("arguments[0].click();", recruit_menu)
-                wait.until(EC.url_contains("RecruitSearch"))
+            # 현재 URL 확인
+            current_url = self.driver.current_url
+            print(f"[RECRUIT] 현재 URL: {current_url}")
+
+            # 이미 채용공고 페이지에 있는지 확인
+            if "RecruitSearch" in current_url:
+                print("[RECRUIT] 이미 채용공고 페이지에 있음")
             else:
-                self.driver.get(f"{BASE_URL}NCS/RecruitSearch")
-                wait.until(EC.url_contains("RecruitSearch"))
+                print("[RECRUIT] 채용공고 메뉴 클릭 시도 중...")
+                recruit_menu = self._find_element_with_fallbacks(wait, SELECTORS['recruit_menu'])
 
-            # 페이지 DOM 로딩 완료 대기 (직무 카테고리 버튼이 나타날 때까지)
+                if recruit_menu:
+                    print("[RECRUIT] 채용공고 메뉴 찾음, 클릭 중...")
+                    self.driver.execute_script("arguments[0].click();", recruit_menu)
+                    print("[RECRUIT] 채용공고 메뉴 클릭 완료")
+                else:
+                    print("[RECRUIT] 채용공고 메뉴를 찾지 못함, 직접 URL 이동")
+                    self.driver.get(f"{BASE_URL}NCS/RecruitSearch")
+
+                # URL 변경 대기
+                print("[RECRUIT] URL 변경 대기 중...")
+                wait.until(EC.url_contains("RecruitSearch"))
+                print("[RECRUIT] URL 변경 완료")
+
+            # 페이지 로딩 대기
+            print("[RECRUIT] 페이지 로딩 대기 중 (3초)...")
             import time
-            time.sleep(2)  # 초기 로딩 대기
+            time.sleep(3)
 
             # 직무 카테고리 버튼이 로딩될 때까지 대기
+            print("[RECRUIT] 직무 카테고리 버튼 로딩 대기 중...")
             try:
-                WebDriverWait(self.driver, 10).until(
+                WebDriverWait(self.driver, 15).until(
                     EC.presence_of_element_located((By.XPATH, "//button[contains(@class, 'bt') and contains(text(), '직무')]"))
                 )
-            except:
-                # 직무 버튼을 못 찾아도 계속 진행 (후속 API에서 재시도)
-                pass
+                print("[RECRUIT] 직무 카테고리 버튼 로딩 완료")
+            except Exception as btn_error:
+                print(f"[RECRUIT] 경고: 직무 버튼을 찾지 못함 ({str(btn_error)}), 계속 진행")
 
+            print("[RECRUIT] ✅ 채용공고 페이지 이동 완료")
             return {"success": True, "message": "채용공고 페이지로 이동 완료"}
 
         except Exception as e:
-            return {"success": False, "message": str(e)}
+            print(f"[RECRUIT] ❌ 오류 발생: {str(e)}")
+            import traceback
+            traceback.print_exc()
+
+            # 현재 URL과 페이지 소스 일부 출력 (디버깅용)
+            try:
+                print(f"[RECRUIT] 오류 발생 시 URL: {self.driver.current_url}")
+                print(f"[RECRUIT] 페이지 제목: {self.driver.title}")
+            except:
+                pass
+
+            return {"success": False, "message": f"채용공고 페이지 이동 실패: {str(e)}"}
 
     def apply_company_search_on_recruit(self, company_name: str):
         """채용공고 페이지 상단 검색창으로 기업명 검색 적용"""
