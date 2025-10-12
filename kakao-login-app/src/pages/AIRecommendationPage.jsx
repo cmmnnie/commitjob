@@ -552,32 +552,67 @@ export default function AIRecommendationPage() {
 
                         {allJobs.length > 0 && (
                             <div style={{
-                                background: 'linear-gradient(135deg, #ffc1e3 0%, #ffc8dd 50%, #ffafcc 100%)',
+                                background: 'white',
                                 borderRadius: '20px',
-                                padding: '24px 28px',
-                                border: '3px solid white',
-                                boxShadow: '0 8px 24px rgba(255, 175, 204, 0.5)'
+                                padding: '28px',
+                                boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                                border: '3px solid #ffc1e3'
                             }}>
                                 <div style={{
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '14px'
+                                    gap: '12px',
+                                    marginBottom: '18px'
                                 }}>
                                     <div style={{
-                                        fontSize: '2.2rem',
-                                        filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.15))'
+                                        fontSize: '2rem',
+                                        filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))'
                                     }}>✨</div>
-                                    <p style={{
-                                        color: '#d6336c',
-                                        fontSize: '1.15rem',
-                                        margin: 0,
+                                    <h4 style={{
+                                        fontSize: '1.3rem',
                                         fontWeight: '800',
-                                        textShadow: '0 2px 4px rgba(255, 255, 255, 0.8)',
-                                        lineHeight: '1.7',
-                                        letterSpacing: '-0.4px'
+                                        color: '#333',
+                                        margin: 0,
+                                        letterSpacing: '-0.3px'
                                     }}>
-                                        GPT가 회원님 이력서와 CommitJob 채용공고를 매칭하여 매칭률 높은 {allJobs.length}개 채용공고를 추천
-                                    </p>
+                                        AI 채용공고 추천 프로세스
+                                    </h4>
+                                </div>
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '12px',
+                                    flexWrap: 'wrap',
+                                    fontSize: '0.95rem',
+                                    lineHeight: '1.8'
+                                }}>
+                                    <span style={{
+                                        background: '#e8f5e9',
+                                        padding: '8px 16px',
+                                        borderRadius: '14px',
+                                        fontWeight: '700',
+                                        color: '#2e7d32',
+                                        boxShadow: '0 2px 8px rgba(46, 125, 50, 0.2)'
+                                    }}>회원님 이력서 조회</span>
+                                    <span style={{ fontSize: '1.3rem', color: '#d6336c', fontWeight: '700' }}>→</span>
+                                    <span style={{
+                                        background: '#f3e5f5',
+                                        padding: '8px 16px',
+                                        borderRadius: '14px',
+                                        fontWeight: '700',
+                                        color: '#6a1b9a',
+                                        boxShadow: '0 2px 8px rgba(106, 27, 154, 0.2)'
+                                    }}>CommitJob 최근 채용공고 100건 조회</span>
+                                    <span style={{ fontSize: '1.3rem', color: '#d6336c', fontWeight: '700' }}>→</span>
+                                    <span style={{
+                                        background: 'linear-gradient(135deg, #ffc1e3 0%, #ffb3d9 100%)',
+                                        padding: '8px 16px',
+                                        borderRadius: '14px',
+                                        fontWeight: '700',
+                                        color: '#d6336c',
+                                        boxShadow: '0 2px 8px rgba(255, 175, 204, 0.4)',
+                                        border: '2px solid white'
+                                    }}>GPT에게 이력서와 채용공고 매칭률이 높은 {allJobs.length}개 채용공고 추천 요청</span>
                                 </div>
                             </div>
                         )}
