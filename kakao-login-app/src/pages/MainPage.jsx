@@ -18,6 +18,8 @@ export default function MainPage() {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [bigdataJobs, setBigdataJobs] = useState([]);
     const [itJobs, setItJobs] = useState([]);
+    const [bigdataTotal, setBigdataTotal] = useState(0);
+    const [itTotal, setItTotal] = useState(0);
     const [currentView, setCurrentView] = useState('jobs'); // 'jobs', 'login', 'profile'
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
@@ -139,10 +141,12 @@ export default function MainPage() {
 
             if (bigdataResponse?.data?.success) {
                 setBigdataJobs(bigdataResponse.data.jobs.slice(0, 6));
+                setBigdataTotal(bigdataResponse.data.total || 0);
             }
 
             if (itResponse?.data?.success) {
                 setItJobs(itResponse.data.jobs.slice(0, 6));
+                setItTotal(itResponse.data.total || 0);
             }
         } catch (error) {
             console.error('[MAIN] Failed to fetch jobs:', error);
@@ -1123,7 +1127,7 @@ export default function MainPage() {
                                     color: '#333',
                                     marginBottom: '8px'
                                 }}>
-                                    채용공고
+                                    최신 채용공고
                                 </h1>
                                 {searchQuery && (
                                     <p style={{
@@ -1201,7 +1205,7 @@ export default function MainPage() {
                                             fontWeight: '400',
                                             marginLeft: '8px'
                                         }}>
-                                            ({bigdataJobs.length}건)
+                                            ({bigdataJobs.length}건 / 전체 {bigdataTotal > 0 ? `${bigdataTotal}건` : '확인 중...'})
                                         </span>
                                     </h2>
                                     <button
@@ -1269,7 +1273,7 @@ export default function MainPage() {
                                             fontWeight: '400',
                                             marginLeft: '8px'
                                         }}>
-                                            ({itJobs.length}건)
+                                            ({itJobs.length}건 / 전체 {itTotal > 0 ? `${itTotal}건` : '확인 중...'})
                                         </span>
                                     </h2>
                                     <button

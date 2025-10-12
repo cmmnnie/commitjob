@@ -11,6 +11,8 @@ export default function JobsPage() {
     const navigate = useNavigate();
     const [bigdataJobs, setBigdataJobs] = useState([]);
     const [itJobs, setItJobs] = useState([]);
+    const [bigdataTotal, setBigdataTotal] = useState(0);
+    const [itTotal, setItTotal] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [scraping, setScraping] = useState(false);
@@ -44,11 +46,13 @@ export default function JobsPage() {
             if (bigdataResponse.data.success) {
                 const activeJobs = bigdataResponse.data.jobs.filter(job => !isExpired(job));
                 setBigdataJobs(activeJobs);
+                setBigdataTotal(bigdataResponse.data.total || 0);
             }
 
             if (itResponse.data.success) {
                 const activeJobs = itResponse.data.jobs.filter(job => !isExpired(job));
                 setItJobs(activeJobs);
+                setItTotal(itResponse.data.total || 0);
             }
         } catch (error) {
             console.error('[JOBS] Failed to fetch jobs:', error);
@@ -313,7 +317,7 @@ export default function JobsPage() {
                                 color: '#333',
                                 marginBottom: '8px'
                             }}>
-                                채용공고
+                                최신 채용공고
                             </h1>
                             <p style={{
                                 fontSize: '1rem',
@@ -385,7 +389,7 @@ export default function JobsPage() {
                                     fontWeight: '400',
                                     marginLeft: '8px'
                                 }}>
-                                    ({bigdataJobs.length}건)
+                                    ({bigdataJobs.length}건 / 전체 {bigdataTotal > 0 ? `${bigdataTotal}건` : '확인 중...'})
                                 </span>
                             </h2>
                             <button
@@ -462,7 +466,7 @@ export default function JobsPage() {
                                     fontWeight: '400',
                                     marginLeft: '8px'
                                 }}>
-                                    ({itJobs.length}건)
+                                    ({itJobs.length}건 / 전체 {itTotal > 0 ? `${itTotal}건` : '확인 중...'})
                                 </span>
                             </h2>
                             <button
