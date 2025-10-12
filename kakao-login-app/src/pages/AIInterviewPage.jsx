@@ -444,7 +444,7 @@ export default function AIInterviewPage() {
                                 letterSpacing: '-0.3px',
                                 textShadow: '0 1px 2px rgba(0,0,0,0.1)'
                             }}>
-                                GPT-4o-mini가 맞춤형 면접 질문, 모범 답변, 답변에 대한 피드백 제공
+                                GPT가 맞춤형 면접 질문, 모범 답변, 답변에 대한 피드백 제공
                             </p>
                         </div>
                     </div>
@@ -554,7 +554,7 @@ export default function AIInterviewPage() {
                                         borderRadius: '12px',
                                         fontWeight: '600',
                                         color: '#f57c00'
-                                    }}>GPT-4o-mini에게 면접 질문 생성 요청</span>
+                                    }}>GPT에게 면접 질문 생성 요청</span>
                                 </div>
                             </div>
                         </div>
@@ -599,7 +599,7 @@ export default function AIInterviewPage() {
                                     <span>AI 모범 답변 제시</span>
                                 </h4>
                                 <p style={{ fontSize: '0.95rem', color: '#555', margin: 0 }}>
-                                    회원님이 선택한 면접 질문에 대해 GPT-4o-mini가 모범 답변을 생성합니다
+                                    회원님이 선택한 면접 질문에 대해 GPT가 모범 답변을 생성합니다
                                 </p>
                             </div>
                         </div>
@@ -644,7 +644,7 @@ export default function AIInterviewPage() {
                                     <span>AI 피드백 및 점수 제시</span>
                                 </h4>
                                 <p style={{ fontSize: '0.95rem', color: '#555', margin: 0 }}>
-                                    회원님이 입력한 답변을 GPT-4o-mini가 분석하여 상세한 피드백과 점수를 제공합니다
+                                    회원님이 입력한 답변을 GPT가 분석하여 상세한 피드백과 점수를 제공합니다
                                 </p>
                             </div>
                         </div>
@@ -689,7 +689,7 @@ export default function AIInterviewPage() {
                                     <span>수정된 모범 답변 제시</span>
                                 </h4>
                                 <p style={{ fontSize: '0.95rem', color: '#555', margin: 0 }}>
-                                    AI 피드백을 반영하여 GPT-4o-mini가 개선된 모범 답변을 제공합니다
+                                    AI 피드백을 반영하여 GPT가 개선된 모범 답변을 제공합니다
                                 </p>
                             </div>
                         </div>

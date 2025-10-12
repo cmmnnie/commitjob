@@ -502,7 +502,7 @@ export default function AIRecommendationPage() {
                                     textShadow: '0 2px 4px rgba(0,0,0,0.2)',
                                     letterSpacing: '-0.3px'
                                 }}>
-                                    GPT-5-mini가 추천하는 맞춤형 채용 공고
+                                    GPT가 추천하는 맞춤형 채용 공고
                                 </p>
                             </div>
                             <button
@@ -580,7 +580,7 @@ export default function AIRecommendationPage() {
                                         lineHeight: '1.6',
                                         letterSpacing: '-0.3px'
                                     }}>
-                                        GPT-5-mini가 회원님 이력서와 CommitJob 채용공고를 매칭하여 매칭률 높은 {allJobs.length}개 채용공고를 추천
+                                        GPT가 회원님 이력서와 CommitJob 채용공고를 매칭하여 매칭률 높은 {allJobs.length}개 채용공고를 추천
                                     </p>
                                 </div>
                             </div>
