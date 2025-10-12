@@ -509,41 +509,39 @@ export default function AIRecommendationPage() {
                                 onClick={handleRefresh}
                                 disabled={isLoading}
                                 style={{
-                                    background: 'white',
-                                    color: '#667eea',
-                                    border: '3px solid white',
-                                    padding: '14px 28px',
-                                    borderRadius: '16px',
-                                    fontSize: '1rem',
+                                    background: isLoading ? '#f8d7da' : 'linear-gradient(135deg, #ffc1e3 0%, #ffc8dd 50%, #ffafcc 100%)',
+                                    color: isLoading ? '#999' : '#d6336c',
+                                    border: isLoading ? '3px solid #f8d7da' : '3px solid white',
+                                    padding: '16px 32px',
+                                    borderRadius: '20px',
+                                    fontSize: '1.1rem',
                                     fontWeight: '800',
                                     cursor: isLoading ? 'not-allowed' : 'pointer',
                                     transition: 'all 0.3s',
                                     opacity: isLoading ? 0.6 : 1,
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '10px',
-                                    boxShadow: '0 6px 20px rgba(0, 0, 0, 0.25)',
+                                    gap: '12px',
+                                    boxShadow: isLoading ? 'none' : '0 8px 24px rgba(255, 175, 204, 0.5)',
                                     letterSpacing: '-0.3px',
-                                    textShadow: isLoading ? 'none' : '0 1px 2px rgba(102, 126, 234, 0.3)'
+                                    textShadow: isLoading ? 'none' : '0 2px 4px rgba(214, 51, 108, 0.3)'
                                 }}
                                 onMouseEnter={(e) => {
                                     if (!isLoading) {
-                                        e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)';
-                                        e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.3)';
-                                        e.currentTarget.style.borderColor = '#fbbf24';
-                                        e.currentTarget.style.background = 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)';
+                                        e.currentTarget.style.transform = 'translateY(-4px) scale(1.08)';
+                                        e.currentTarget.style.boxShadow = '0 12px 32px rgba(255, 175, 204, 0.6)';
+                                        e.currentTarget.style.background = 'linear-gradient(135deg, #ffa3d7 0%, #ffb3d9 50%, #ff99c2 100%)';
                                     }
                                 }}
                                 onMouseLeave={(e) => {
                                     if (!isLoading) {
                                         e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                                        e.currentTarget.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.25)';
-                                        e.currentTarget.style.borderColor = 'white';
-                                        e.currentTarget.style.background = 'white';
+                                        e.currentTarget.style.boxShadow = '0 8px 24px rgba(255, 175, 204, 0.5)';
+                                        e.currentTarget.style.background = 'linear-gradient(135deg, #ffc1e3 0%, #ffc8dd 50%, #ffafcc 100%)';
                                     }
                                 }}>
                                 <span style={{
-                                    fontSize: '1.3rem',
+                                    fontSize: '1.5rem',
                                     display: 'inline-block',
                                     animation: isLoading ? 'spin 1s linear infinite' : 'none',
                                     filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))'
@@ -554,31 +552,29 @@ export default function AIRecommendationPage() {
 
                         {allJobs.length > 0 && (
                             <div style={{
-                                background: 'rgba(255, 255, 255, 0.25)',
-                                backdropFilter: 'blur(10px)',
-                                borderRadius: '16px',
-                                padding: '20px 24px',
-                                border: '2px solid rgba(255, 255, 255, 0.4)',
-                                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.15)'
+                                background: 'linear-gradient(135deg, #ffc1e3 0%, #ffc8dd 50%, #ffafcc 100%)',
+                                borderRadius: '20px',
+                                padding: '24px 28px',
+                                border: '3px solid white',
+                                boxShadow: '0 8px 24px rgba(255, 175, 204, 0.5)'
                             }}>
                                 <div style={{
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '12px',
-                                    marginBottom: '8px'
+                                    gap: '14px'
                                 }}>
                                     <div style={{
-                                        fontSize: '1.8rem',
-                                        filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))'
+                                        fontSize: '2.2rem',
+                                        filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.15))'
                                     }}>✨</div>
                                     <p style={{
-                                        color: 'white',
-                                        fontSize: '1.05rem',
+                                        color: '#d6336c',
+                                        fontSize: '1.15rem',
                                         margin: 0,
                                         fontWeight: '800',
-                                        textShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                                        lineHeight: '1.6',
-                                        letterSpacing: '-0.3px'
+                                        textShadow: '0 2px 4px rgba(255, 255, 255, 0.8)',
+                                        lineHeight: '1.7',
+                                        letterSpacing: '-0.4px'
                                     }}>
                                         GPT가 회원님 이력서와 CommitJob 채용공고를 매칭하여 매칭률 높은 {allJobs.length}개 채용공고를 추천
                                     </p>
@@ -643,10 +639,15 @@ export default function AIRecommendationPage() {
                                     }}>
                                         {category === 'IT' ? '💻' : '📊'} {category} 분야
                                         <span style={{
-                                            fontSize: '0.9rem',
-                                            color: '#999',
-                                            fontWeight: '400',
-                                            marginLeft: '8px'
+                                            fontSize: '1.1rem',
+                                            color: '#d6336c',
+                                            fontWeight: '700',
+                                            marginLeft: '12px',
+                                            background: 'linear-gradient(135deg, #ffc1e3 0%, #ffb3d9 100%)',
+                                            padding: '6px 16px',
+                                            borderRadius: '20px',
+                                            boxShadow: '0 4px 12px rgba(255, 175, 204, 0.4)',
+                                            border: '2px solid white'
                                         }}>
                                             ({jobs.length}개 공고)
                                         </span>
