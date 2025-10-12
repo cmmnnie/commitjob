@@ -363,12 +363,12 @@ class CatchScraper:
             self.driver.implicitly_wait(10)
 
             print("[DRIVER] Chrome 드라이버 초기화 성공")
-            return True
+            return {"success": True, "message": "드라이버 초기화 성공"}
         except Exception as e:
             print(f"[DRIVER] Chrome 드라이버 초기화 실패: {str(e)}")
             import traceback
             traceback.print_exc()
-            return False
+            return {"success": False, "message": f"드라이버 초기화 실패: {str(e)}"}
     
     def _find_element_with_fallbacks(self, wait, selectors):
         """여러 선택자를 시도해서 요소 찾기"""
