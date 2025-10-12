@@ -98,7 +98,16 @@ export default function JobsPage() {
             console.log('[SCRAPE] Response:', response.data);
 
             if (response.data.success) {
-                alert(`스크래핑 완료!\n\n총 ${response.data.total_scraped}개의 공고를 가져왔습니다.\n새로운 공고: ${response.data.new_jobs}개\n중복 제외: ${response.data.duplicates}개`);
+                const { total_scraped, new_jobs, duplicates } = response.data;
+
+                if (new_jobs === 0) {
+                    alert(`스크래핑 완료!\n\n총 ${total_scraped}개 공고를 확인했으나,\n모두 이미 DB에 등록된 공고입니다.\n\n새로운 공고가 없습니다.`);
+                } else if (new_jobs === 1) {
+                    alert(`스크래핑 완료!\n\n총 ${total_scraped}개 공고 중\n새로 추가된 공고: ${new_jobs}개\n(기존 공고 ${duplicates}개 제외)`);
+                } else {
+                    alert(`스크래핑 완료!\n\n총 ${total_scraped}개 공고 중\n새로 추가된 공고: ${new_jobs}개\n(기존 공고 ${duplicates}개 제외)`);
+                }
+
                 // 스크래핑 후 공고 목록 새로고침
                 fetchJobs();
             } else {
