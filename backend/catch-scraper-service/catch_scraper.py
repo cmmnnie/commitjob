@@ -2391,6 +2391,83 @@ def search_interview_questions():
             "message": "서버 오류가 발생했습니다"
         })
 
+@app.route('/api/scrape-integrated', methods=['POST'])
+def scrape_integrated():
+    """통합 스크래핑 API - init부터 extract까지 한 번에 처리"""
+    try:
+        data = request.get_json() or {}
+        max_jobs_per_category = data.get('max_jobs', 15)
+
+        # 1. Init
+        print('[INTEGRATED] Step 1: Initializing driver...')
+        init_result = scraper.init_driver_and_db()
+        if not init_result.get('success'):
+            return jsonify(init_result)
+
+        # 2. Login
+        print('[INTEGRATED] Step 2: Logging in...')
+        login_result = scraper.login('test0137', '#test0808')
+        if not login_result.get('success'):
+            return jsonify(login_result)
+
+        # 3. Navigate to recruit page
+        print('[INTEGRATED] Step 3: Navigating to recruit page...')
+        recruit_result = scraper.navigate_to_recruit_page()
+        if not recruit_result.get('success'):
+            return jsonify(recruit_result)
+
+        # 4. IT Filter and Extract
+        print(f'[INTEGRATED] Step 4: Filtering and extracting IT jobs ({max_jobs_per_category})...')
+        it_filter_result = scraper.filter_it_jobs()
+        if not it_filter_result.get('success'):
+            return jsonify(it_filter_result)
+
+        it_extract_result = scraper.extract_first_page_jobs(max_jobs=max_jobs_per_category)
+        if not it_extract_result.get('success'):
+            return jsonify(it_extract_result)
+
+        it_jobs = it_extract_result.get('jobs', [])
+
+        # 5. Navigate back to recruit page (reset filter)
+        print('[INTEGRATED] Step 5: Resetting filter...')
+        recruit_result2 = scraper.navigate_to_recruit_page()
+        if not recruit_result2.get('success'):
+            return jsonify(recruit_result2)
+
+        # 6. BigData/AI Filter and Extract
+        print(f'[INTEGRATED] Step 6: Filtering and extracting BigData/AI jobs ({max_jobs_per_category})...')
+        bd_filter_result = scraper.filter_bigdata_ai()
+        if not bd_filter_result.get('success'):
+            return jsonify(bd_filter_result)
+
+        bd_extract_result = scraper.extract_first_page_jobs(max_jobs=max_jobs_per_category)
+        if not bd_extract_result.get('success'):
+            return jsonify(bd_extract_result)
+
+        bd_jobs = bd_extract_result.get('jobs', [])
+
+        # 7. Return combined results
+        result = {
+            "success": True,
+            "message": f"통합 스크래핑 완료: IT {len(it_jobs)}개, BigData/AI {len(bd_jobs)}개",
+            "it_jobs": it_jobs,
+            "bigdata_ai_jobs": bd_jobs,
+            "total_jobs": len(it_jobs) + len(bd_jobs)
+        }
+
+        print(f'[INTEGRATED] ✅ Complete: {result["message"]}')
+        return jsonify(result)
+
+    except Exception as e:
+        print(f'[INTEGRATED] ❌ Error: {str(e)}')
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "message": "통합 스크래핑 중 오류가 발생했습니다"
+        })
+
 @app.route('/api/debug', methods=['GET'])
 def debug_environment():
     """환경 디버깅 엔드포인트"""
