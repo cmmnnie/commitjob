@@ -1200,10 +1200,14 @@ export default function MainPage() {
                                         <span style={{ fontSize: '1.8rem' }}>📊</span>
                                         BIGDATA/AI
                                         <span style={{
-                                            fontSize: '0.9rem',
-                                            color: '#999',
-                                            fontWeight: '400',
-                                            marginLeft: '8px'
+                                            fontSize: '1.1rem',
+                                            color: '#333',
+                                            fontWeight: '700',
+                                            marginLeft: '12px',
+                                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                            WebkitBackgroundClip: 'text',
+                                            WebkitTextFillColor: 'transparent',
+                                            padding: '4px 0'
                                         }}>
                                             ({bigdataJobs.length}건 / 전체 {bigdataTotal > 0 ? `${bigdataTotal}건` : '확인 중...'})
                                         </span>
@@ -1211,23 +1215,24 @@ export default function MainPage() {
                                     <button
                                         onClick={() => navigate('/jobs/ai')}
                                         style={{
-                                            background: '#1976d2',
+                                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                                             color: 'white',
                                             border: 'none',
-                                            padding: '8px 20px',
-                                            borderRadius: '20px',
-                                            fontSize: '0.9rem',
-                                            fontWeight: '600',
+                                            padding: '12px 28px',
+                                            borderRadius: '24px',
+                                            fontSize: '1rem',
+                                            fontWeight: '700',
                                             cursor: 'pointer',
-                                            transition: 'all 0.2s'
+                                            transition: 'all 0.3s',
+                                            boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)'
                                         }}
                                         onMouseEnter={(e) => {
-                                            e.currentTarget.style.opacity = '0.9';
-                                            e.currentTarget.style.transform = 'scale(1.05)';
+                                            e.currentTarget.style.transform = 'translateY(-2px)';
+                                            e.currentTarget.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.5)';
                                         }}
                                         onMouseLeave={(e) => {
-                                            e.currentTarget.style.opacity = '1';
-                                            e.currentTarget.style.transform = 'scale(1)';
+                                            e.currentTarget.style.transform = 'translateY(0)';
+                                            e.currentTarget.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.4)';
                                         }}>
                                         전체보기
                                     </button>
@@ -1268,10 +1273,14 @@ export default function MainPage() {
                                         <span style={{ fontSize: '1.8rem' }}>💻</span>
                                         IT
                                         <span style={{
-                                            fontSize: '0.9rem',
-                                            color: '#999',
-                                            fontWeight: '400',
-                                            marginLeft: '8px'
+                                            fontSize: '1.1rem',
+                                            color: '#333',
+                                            fontWeight: '700',
+                                            marginLeft: '12px',
+                                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                            WebkitBackgroundClip: 'text',
+                                            WebkitTextFillColor: 'transparent',
+                                            padding: '4px 0'
                                         }}>
                                             ({itJobs.length}건 / 전체 {itTotal > 0 ? `${itTotal}건` : '확인 중...'})
                                         </span>
@@ -1279,23 +1288,24 @@ export default function MainPage() {
                                     <button
                                         onClick={() => navigate('/jobs/it')}
                                         style={{
-                                            background: '#1976d2',
+                                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                                             color: 'white',
                                             border: 'none',
-                                            padding: '8px 20px',
-                                            borderRadius: '20px',
-                                            fontSize: '0.9rem',
-                                            fontWeight: '600',
+                                            padding: '12px 28px',
+                                            borderRadius: '24px',
+                                            fontSize: '1rem',
+                                            fontWeight: '700',
                                             cursor: 'pointer',
-                                            transition: 'all 0.2s'
+                                            transition: 'all 0.3s',
+                                            boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)'
                                         }}
                                         onMouseEnter={(e) => {
-                                            e.currentTarget.style.opacity = '0.9';
-                                            e.currentTarget.style.transform = 'scale(1.05)';
+                                            e.currentTarget.style.transform = 'translateY(-2px)';
+                                            e.currentTarget.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.5)';
                                         }}
                                         onMouseLeave={(e) => {
-                                            e.currentTarget.style.opacity = '1';
-                                            e.currentTarget.style.transform = 'scale(1)';
+                                            e.currentTarget.style.transform = 'translateY(0)';
+                                            e.currentTarget.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.4)';
                                         }}>
                                         전체보기
                                     </button>
