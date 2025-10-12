@@ -2398,55 +2398,101 @@ def scrape_integrated():
         data = request.get_json() or {}
         max_jobs_per_category = data.get('max_jobs', 15)
 
+        print('='*80)
+        print('[INTEGRATED] 🚀 통합 스크래핑 시작')
+        print(f'[INTEGRATED] 요청된 카테고리별 최대 공고 수: {max_jobs_per_category}개')
+        print('='*80)
+
         # 1. Init
-        print('[INTEGRATED] Step 1: Initializing driver...')
+        print('\n[INTEGRATED] 📋 Step 1/7: Chrome 드라이버 초기화 중...')
         init_result = scraper.init_driver()
         if not init_result.get('success'):
+            print(f'[INTEGRATED] ❌ 드라이버 초기화 실패: {init_result.get("message")}')
             return jsonify(init_result)
+        print('[INTEGRATED] ✅ Step 1/7 완료: Chrome 드라이버 초기화 성공')
 
         # 2. Login
-        print('[INTEGRATED] Step 2: Logging in...')
+        print('\n[INTEGRATED] 📋 Step 2/7: Catch.co.kr 로그인 중...')
         login_result = scraper.login('test0137', '#test0808')
         if not login_result.get('success'):
+            print(f'[INTEGRATED] ❌ 로그인 실패: {login_result.get("message")}')
             return jsonify(login_result)
+        print('[INTEGRATED] ✅ Step 2/7 완료: Catch.co.kr 로그인 성공')
 
         # 3. Navigate to recruit page
-        print('[INTEGRATED] Step 3: Navigating to recruit page...')
+        print('\n[INTEGRATED] 📋 Step 3/7: 채용공고 페이지 이동 중...')
         recruit_result = scraper.navigate_to_recruit_page()
         if not recruit_result.get('success'):
+            print(f'[INTEGRATED] ❌ 채용공고 페이지 이동 실패: {recruit_result.get("message")}')
             return jsonify(recruit_result)
+        print('[INTEGRATED] ✅ Step 3/7 완료: 채용공고 페이지 이동 성공')
 
         # 4. IT Filter and Extract
-        print(f'[INTEGRATED] Step 4: Filtering and extracting IT jobs ({max_jobs_per_category})...')
+        print('\n[INTEGRATED] 📋 Step 4/7: IT개발 필터 적용 및 스크래핑 중...')
+        print(f'[INTEGRATED] 🔍 IT개발 필터 적용 중...')
         it_filter_result = scraper.filter_it_jobs()
         if not it_filter_result.get('success'):
+            print(f'[INTEGRATED] ❌ IT개발 필터 적용 실패: {it_filter_result.get("message")}')
             return jsonify(it_filter_result)
+        print('[INTEGRATED] ✅ IT개발 필터 적용 완료')
 
+        print(f'[INTEGRATED] 📄 IT개발 공고 추출 중 (최대 {max_jobs_per_category}개)...')
         it_extract_result = scraper.extract_first_page_jobs(max_jobs=max_jobs_per_category)
         if not it_extract_result.get('success'):
+            print(f'[INTEGRATED] ❌ IT개발 공고 추출 실패: {it_extract_result.get("message")}')
             return jsonify(it_extract_result)
 
         it_jobs = it_extract_result.get('jobs', [])
+        print(f'[INTEGRATED] ✅ Step 4/7 완료: IT개발 공고 {len(it_jobs)}개 추출 완료')
+
+        # IT 공고 상세 로그
+        if it_jobs:
+            print(f'[INTEGRATED] 📊 IT개발 공고 목록:')
+            for idx, job in enumerate(it_jobs[:5], 1):  # 처음 5개만 출력
+                print(f'[INTEGRATED]   {idx}. {job.get("title", "제목없음")} - {job.get("company", "회사명없음")}')
+            if len(it_jobs) > 5:
+                print(f'[INTEGRATED]   ... 외 {len(it_jobs) - 5}개')
+        else:
+            print('[INTEGRATED] ⚠️ IT개발 공고가 없습니다.')
 
         # 5. Navigate back to recruit page (reset filter)
-        print('[INTEGRATED] Step 5: Resetting filter...')
+        print('\n[INTEGRATED] 📋 Step 5/7: 필터 초기화 (채용공고 페이지 재이동)...')
         recruit_result2 = scraper.navigate_to_recruit_page()
         if not recruit_result2.get('success'):
+            print(f'[INTEGRATED] ❌ 필터 초기화 실패: {recruit_result2.get("message")}')
             return jsonify(recruit_result2)
+        print('[INTEGRATED] ✅ Step 5/7 완료: 필터 초기화 성공')
 
         # 6. BigData/AI Filter and Extract
-        print(f'[INTEGRATED] Step 6: Filtering and extracting BigData/AI jobs ({max_jobs_per_category})...')
+        print('\n[INTEGRATED] 📋 Step 6/7: 빅데이터·AI 필터 적용 및 스크래핑 중...')
+        print(f'[INTEGRATED] 🔍 빅데이터·AI 필터 적용 중...')
         bd_filter_result = scraper.filter_bigdata_ai()
         if not bd_filter_result.get('success'):
+            print(f'[INTEGRATED] ❌ 빅데이터·AI 필터 적용 실패: {bd_filter_result.get("message")}')
             return jsonify(bd_filter_result)
+        print('[INTEGRATED] ✅ 빅데이터·AI 필터 적용 완료')
 
+        print(f'[INTEGRATED] 📄 빅데이터·AI 공고 추출 중 (최대 {max_jobs_per_category}개)...')
         bd_extract_result = scraper.extract_first_page_jobs(max_jobs=max_jobs_per_category)
         if not bd_extract_result.get('success'):
+            print(f'[INTEGRATED] ❌ 빅데이터·AI 공고 추출 실패: {bd_extract_result.get("message")}')
             return jsonify(bd_extract_result)
 
         bd_jobs = bd_extract_result.get('jobs', [])
+        print(f'[INTEGRATED] ✅ Step 6/7 완료: 빅데이터·AI 공고 {len(bd_jobs)}개 추출 완료')
+
+        # 빅데이터·AI 공고 상세 로그
+        if bd_jobs:
+            print(f'[INTEGRATED] 📊 빅데이터·AI 공고 목록:')
+            for idx, job in enumerate(bd_jobs[:5], 1):  # 처음 5개만 출력
+                print(f'[INTEGRATED]   {idx}. {job.get("title", "제목없음")} - {job.get("company", "회사명없음")}')
+            if len(bd_jobs) > 5:
+                print(f'[INTEGRATED]   ... 외 {len(bd_jobs) - 5}개')
+        else:
+            print('[INTEGRATED] ⚠️ 빅데이터·AI 공고가 없습니다.')
 
         # 7. Return combined results
+        print('\n[INTEGRATED] 📋 Step 7/7: 결과 집계 중...')
         result = {
             "success": True,
             "message": f"통합 스크래핑 완료: IT {len(it_jobs)}개, BigData/AI {len(bd_jobs)}개",
@@ -2455,11 +2501,20 @@ def scrape_integrated():
             "total_jobs": len(it_jobs) + len(bd_jobs)
         }
 
-        print(f'[INTEGRATED] ✅ Complete: {result["message"]}')
+        print('='*80)
+        print(f'[INTEGRATED] ✅ Step 7/7 완료: 모든 스크래핑 완료')
+        print(f'[INTEGRATED] 📊 최종 결과:')
+        print(f'[INTEGRATED]   - IT개발: {len(it_jobs)}개')
+        print(f'[INTEGRATED]   - 빅데이터·AI: {len(bd_jobs)}개')
+        print(f'[INTEGRATED]   - 총합: {result["total_jobs"]}개')
+        print('='*80)
+
         return jsonify(result)
 
     except Exception as e:
-        print(f'[INTEGRATED] ❌ Error: {str(e)}')
+        print('='*80)
+        print(f'[INTEGRATED] ❌ 오류 발생: {str(e)}')
+        print('='*80)
         import traceback
         traceback.print_exc()
         return jsonify({
