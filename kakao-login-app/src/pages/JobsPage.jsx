@@ -92,7 +92,7 @@ export default function JobsPage() {
 
             const response = await axios.post(`${API_BASE_URL}/api/scrape-latest-jobs`, {}, {
                 withCredentials: true,
-                timeout: 120000 // 2분
+                timeout: 180000 // 3분
             });
 
             console.log('[SCRAPE] Response:', response.data);
