@@ -509,39 +509,36 @@ export default function AIRecommendationPage() {
                                 onClick={handleRefresh}
                                 disabled={isLoading}
                                 style={{
-                                    background: isLoading ? '#f8d7da' : 'linear-gradient(135deg, #ffc1e3 0%, #ffc8dd 50%, #ffafcc 100%)',
-                                    color: isLoading ? '#999' : '#d6336c',
-                                    border: isLoading ? '3px solid #f8d7da' : '3px solid white',
-                                    padding: '16px 32px',
+                                    background: isLoading ? '#cbd5e0' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                    color: 'white',
+                                    border: isLoading ? 'none' : '3px solid white',
+                                    padding: '14px 28px',
                                     borderRadius: '20px',
-                                    fontSize: '1.1rem',
+                                    fontSize: '1rem',
                                     fontWeight: '800',
                                     cursor: isLoading ? 'not-allowed' : 'pointer',
                                     transition: 'all 0.3s',
                                     opacity: isLoading ? 0.6 : 1,
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '12px',
-                                    boxShadow: isLoading ? 'none' : '0 8px 24px rgba(255, 175, 204, 0.5)',
-                                    letterSpacing: '-0.3px',
-                                    textShadow: isLoading ? 'none' : '0 2px 4px rgba(214, 51, 108, 0.3)'
+                                    gap: '10px',
+                                    boxShadow: isLoading ? 'none' : '0 6px 20px rgba(102, 126, 234, 0.4)',
+                                    letterSpacing: '-0.3px'
                                 }}
                                 onMouseEnter={(e) => {
                                     if (!isLoading) {
-                                        e.currentTarget.style.transform = 'translateY(-4px) scale(1.08)';
-                                        e.currentTarget.style.boxShadow = '0 12px 32px rgba(255, 175, 204, 0.6)';
-                                        e.currentTarget.style.background = 'linear-gradient(135deg, #ffa3d7 0%, #ffb3d9 50%, #ff99c2 100%)';
+                                        e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)';
+                                        e.currentTarget.style.boxShadow = '0 8px 24px rgba(102, 126, 234, 0.5)';
                                     }
                                 }}
                                 onMouseLeave={(e) => {
                                     if (!isLoading) {
                                         e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                                        e.currentTarget.style.boxShadow = '0 8px 24px rgba(255, 175, 204, 0.5)';
-                                        e.currentTarget.style.background = 'linear-gradient(135deg, #ffc1e3 0%, #ffc8dd 50%, #ffafcc 100%)';
+                                        e.currentTarget.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.4)';
                                     }
                                 }}>
                                 <span style={{
-                                    fontSize: '1.5rem',
+                                    fontSize: '1.3rem',
                                     display: 'inline-block',
                                     animation: isLoading ? 'spin 1s linear infinite' : 'none',
                                     filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))'
@@ -556,7 +553,7 @@ export default function AIRecommendationPage() {
                                 borderRadius: '20px',
                                 padding: '28px',
                                 boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                                border: '3px solid #ffc1e3'
+                                border: '3px solid #667eea'
                             }}>
                                 <div style={{
                                     display: 'flex',
@@ -594,7 +591,7 @@ export default function AIRecommendationPage() {
                                         color: '#2e7d32',
                                         boxShadow: '0 2px 8px rgba(46, 125, 50, 0.2)'
                                     }}>회원님 이력서 조회</span>
-                                    <span style={{ fontSize: '1.3rem', color: '#d6336c', fontWeight: '700' }}>→</span>
+                                    <span style={{ fontSize: '1.3rem', color: '#667eea', fontWeight: '700' }}>→</span>
                                     <span style={{
                                         background: '#f3e5f5',
                                         padding: '8px 16px',
@@ -603,15 +600,15 @@ export default function AIRecommendationPage() {
                                         color: '#6a1b9a',
                                         boxShadow: '0 2px 8px rgba(106, 27, 154, 0.2)'
                                     }}>CommitJob 최근 채용공고 100건 조회</span>
-                                    <span style={{ fontSize: '1.3rem', color: '#d6336c', fontWeight: '700' }}>→</span>
+                                    <span style={{ fontSize: '1.3rem', color: '#667eea', fontWeight: '700' }}>→</span>
                                     <span style={{
-                                        background: 'linear-gradient(135deg, #ffc1e3 0%, #ffb3d9 100%)',
+                                        background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
                                         padding: '8px 16px',
                                         borderRadius: '14px',
                                         fontWeight: '700',
-                                        color: '#d6336c',
-                                        boxShadow: '0 2px 8px rgba(255, 175, 204, 0.4)',
-                                        border: '2px solid white'
+                                        color: '#1565c0',
+                                        boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
+                                        border: '2px solid #667eea'
                                     }}>GPT에게 이력서와 채용공고 매칭률이 높은 {allJobs.length}개 채용공고 추천 요청</span>
                                 </div>
                             </div>
@@ -675,14 +672,13 @@ export default function AIRecommendationPage() {
                                         {category === 'IT' ? '💻' : '📊'} {category} 분야
                                         <span style={{
                                             fontSize: '1.1rem',
-                                            color: '#d6336c',
+                                            color: '#333',
                                             fontWeight: '700',
                                             marginLeft: '12px',
-                                            background: 'linear-gradient(135deg, #ffc1e3 0%, #ffb3d9 100%)',
-                                            padding: '6px 16px',
-                                            borderRadius: '20px',
-                                            boxShadow: '0 4px 12px rgba(255, 175, 204, 0.4)',
-                                            border: '2px solid white'
+                                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                            WebkitBackgroundClip: 'text',
+                                            WebkitTextFillColor: 'transparent',
+                                            padding: '4px 0'
                                         }}>
                                             ({jobs.length}개 공고)
                                         </span>
