@@ -547,72 +547,168 @@ export default function AIRecommendationPage() {
                             </button>
                         </div>
 
-                        {allJobs.length > 0 && (
-                            <div style={{
-                                background: 'white',
-                                borderRadius: '20px',
-                                padding: '28px',
-                                boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                                border: '3px solid #667eea'
+                        {/* AI 기능 프로세스 도식화 */}
+                        <div style={{
+                            background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+                            borderRadius: '20px',
+                            padding: '30px',
+                            marginBottom: '0px',
+                            boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
+                        }}>
+                            <h3 style={{
+                                textAlign: 'center',
+                                fontSize: '1.5rem',
+                                fontWeight: '700',
+                                color: '#333',
+                                marginBottom: '30px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '10px'
                             }}>
+                                <span style={{ fontSize: '1.8rem' }}>🤖</span>
+                                <span>AI 채용공고 추천 프로세스</span>
+                            </h3>
+
+                            {/* 3단계 플로우차트 */}
+                            <div style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '20px'
+                            }}>
+                                {/* Step 1 */}
                                 <div style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '12px',
-                                    marginBottom: '18px'
+                                    background: 'white',
+                                    borderRadius: '16px',
+                                    padding: '24px',
+                                    boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                                    border: '2px solid #667eea',
+                                    position: 'relative'
                                 }}>
                                     <div style={{
-                                        fontSize: '2rem',
-                                        filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))'
-                                    }}>✨</div>
-                                    <h4 style={{
-                                        fontSize: '1.3rem',
-                                        fontWeight: '800',
-                                        color: '#333',
-                                        margin: 0,
-                                        letterSpacing: '-0.3px'
+                                        position: 'absolute',
+                                        top: '-15px',
+                                        left: '20px',
+                                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                        color: 'white',
+                                        padding: '8px 20px',
+                                        borderRadius: '20px',
+                                        fontSize: '0.9rem',
+                                        fontWeight: '700',
+                                        boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)'
                                     }}>
-                                        AI 채용공고 추천 프로세스
-                                    </h4>
+                                        STEP 1
+                                    </div>
+                                    <div style={{ marginTop: '10px' }}>
+                                        <h4 style={{
+                                            fontSize: '1.2rem',
+                                            fontWeight: '700',
+                                            color: '#333',
+                                            marginBottom: '8px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px'
+                                        }}>
+                                            <span style={{ fontSize: '1.5rem' }}>📋</span>
+                                            <span>회원님 이력서 조회</span>
+                                        </h4>
+                                        <p style={{ fontSize: '0.95rem', color: '#555', margin: 0, fontWeight: '700' }}>
+                                            GPT가 회원님의 프로필과 이력서 정보를 분석합니다
+                                        </p>
+                                    </div>
                                 </div>
+
+                                {/* Arrow down */}
+                                <div style={{ textAlign: 'center', fontSize: '2rem', color: '#667eea' }}>⬇️</div>
+
+                                {/* Step 2 */}
                                 <div style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '12px',
-                                    flexWrap: 'wrap',
-                                    fontSize: '0.95rem',
-                                    lineHeight: '1.8'
+                                    background: 'white',
+                                    borderRadius: '16px',
+                                    padding: '24px',
+                                    boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                                    border: '2px solid #f093fb',
+                                    position: 'relative'
                                 }}>
-                                    <span style={{
-                                        background: '#e8f5e9',
-                                        padding: '8px 16px',
-                                        borderRadius: '14px',
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '-15px',
+                                        left: '20px',
+                                        background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                                        color: 'white',
+                                        padding: '8px 20px',
+                                        borderRadius: '20px',
+                                        fontSize: '0.9rem',
                                         fontWeight: '700',
-                                        color: '#2e7d32',
-                                        boxShadow: '0 2px 8px rgba(46, 125, 50, 0.2)'
-                                    }}>회원님 이력서 조회</span>
-                                    <span style={{ fontSize: '1.3rem', color: '#667eea', fontWeight: '700' }}>→</span>
-                                    <span style={{
-                                        background: '#f3e5f5',
-                                        padding: '8px 16px',
-                                        borderRadius: '14px',
+                                        boxShadow: '0 4px 12px rgba(240, 147, 251, 0.4)'
+                                    }}>
+                                        STEP 2
+                                    </div>
+                                    <div style={{ marginTop: '10px' }}>
+                                        <h4 style={{
+                                            fontSize: '1.2rem',
+                                            fontWeight: '700',
+                                            color: '#333',
+                                            marginBottom: '8px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px'
+                                        }}>
+                                            <span style={{ fontSize: '1.5rem' }}>💼</span>
+                                            <span>CommitJob 최근 채용공고 100건 조회</span>
+                                        </h4>
+                                        <p style={{ fontSize: '0.95rem', color: '#555', margin: 0, fontWeight: '700' }}>
+                                            CommitJob에 등록된 최신 빅데이터/AI, IT개발 채용공고를 수집합니다
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Arrow down */}
+                                <div style={{ textAlign: 'center', fontSize: '2rem', color: '#667eea' }}>⬇️</div>
+
+                                {/* Step 3 */}
+                                <div style={{
+                                    background: 'white',
+                                    borderRadius: '16px',
+                                    padding: '24px',
+                                    boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                                    border: '2px solid #43e97b',
+                                    position: 'relative'
+                                }}>
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '-15px',
+                                        left: '20px',
+                                        background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+                                        color: 'white',
+                                        padding: '8px 20px',
+                                        borderRadius: '20px',
+                                        fontSize: '0.9rem',
                                         fontWeight: '700',
-                                        color: '#6a1b9a',
-                                        boxShadow: '0 2px 8px rgba(106, 27, 154, 0.2)'
-                                    }}>CommitJob 최근 채용공고 100건 조회</span>
-                                    <span style={{ fontSize: '1.3rem', color: '#667eea', fontWeight: '700' }}>→</span>
-                                    <span style={{
-                                        background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
-                                        padding: '8px 16px',
-                                        borderRadius: '14px',
-                                        fontWeight: '700',
-                                        color: '#1565c0',
-                                        boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
-                                        border: '2px solid #667eea'
-                                    }}>GPT에게 이력서와 채용공고 매칭률이 높은 {allJobs.length}개 채용공고 추천 요청</span>
+                                        boxShadow: '0 4px 12px rgba(67, 233, 123, 0.4)'
+                                    }}>
+                                        STEP 3
+                                    </div>
+                                    <div style={{ marginTop: '10px' }}>
+                                        <h4 style={{
+                                            fontSize: '1.2rem',
+                                            fontWeight: '700',
+                                            color: '#333',
+                                            marginBottom: '8px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px'
+                                        }}>
+                                            <span style={{ fontSize: '1.5rem' }}>🎯</span>
+                                            <span>AI 매칭 및 추천</span>
+                                        </h4>
+                                        <p style={{ fontSize: '0.95rem', color: '#555', margin: 0, fontWeight: '700' }}>
+                                            GPT가 이력서와 채용공고의 매칭률을 분석하여 가장 적합한 {allJobs.length || 6}개 공고를 추천합니다
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
-                        )}
+                        </div>
                     </div>
 
                     <style>{`

@@ -330,7 +330,7 @@ export default function JobsPage() {
                             onClick={handleScrapJobs}
                             disabled={scraping}
                             style={{
-                                background: scraping ? '#cbd5e0' : 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                                background: scraping ? '#cbd5e0' : 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
                                 border: scraping ? 'none' : '3px solid white',
                                 color: 'white',
                                 padding: '14px 32px',
@@ -339,20 +339,20 @@ export default function JobsPage() {
                                 fontWeight: '800',
                                 cursor: scraping ? 'not-allowed' : 'pointer',
                                 transition: 'all 0.3s',
-                                boxShadow: scraping ? 'none' : '0 6px 24px rgba(245, 87, 108, 0.5)',
+                                boxShadow: scraping ? 'none' : '0 6px 24px rgba(6, 182, 212, 0.5)',
                                 position: 'relative',
                                 overflow: 'hidden'
                             }}
                             onMouseEnter={(e) => {
                                 if (!scraping) {
                                     e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)';
-                                    e.currentTarget.style.boxShadow = '0 10px 32px rgba(245, 87, 108, 0.6)';
+                                    e.currentTarget.style.boxShadow = '0 10px 32px rgba(6, 182, 212, 0.6)';
                                 }
                             }}
                             onMouseLeave={(e) => {
                                 if (!scraping) {
                                     e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                                    e.currentTarget.style.boxShadow = '0 6px 24px rgba(245, 87, 108, 0.5)';
+                                    e.currentTarget.style.boxShadow = '0 6px 24px rgba(6, 182, 212, 0.5)';
                                 }
                             }}>
                             <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
