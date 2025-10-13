@@ -6730,17 +6730,12 @@ async function generateGPT4Recommendations(userProfile, jobCandidates, limit) {
     return String(arr);
   };
 
-  const prompt = `회원 프로필과 ${jobCandidates.length}개 채용공고를 매칭하여 상위 ${limit}개를 추천하세요.
+  const prompt = `프로필: 기술=${formatSkills(userProfile.skills)}|경력=${userProfile.experience||'정보없음'}|지역=${formatArray(userProfile.preferred_regions)}
 
-프로필: 기술=${formatSkills(userProfile.skills)} | 경력=${userProfile.experience || '정보없음'} | 지역=${formatArray(userProfile.preferred_regions)} | 직무=${formatArray(userProfile.jobs)}
+공고(${jobCandidates.length}개):
+${jobCandidates.map((job, idx) => `${idx+1}.[${job.company}]${job.title}|기술:${formatSkills(job.skills)}|ID:${job.id}`).join('\n')}
 
-공고목록:
-${jobCandidates.map((job, idx) => `${idx + 1}. [${job.company}] ${job.title} | 기술:${formatSkills(job.skills)} | 경력:${job.experience || '정보없음'} | 지역:${job.location || '정보없음'} | ID:${job.id}`).join('\n')}
-
-평가기준: 기술50점+경력25점+지역15점+직무10점=100점
-70-95점 범위, 상위 ${limit}개만, 각 공고당 구체적인 매칭이유 3개
-
-JSON형식: {"recommendations":[{"job_id":"ID","match_score":85,"match_reasons":["이유1","이유2","이유3"]}]}`;
+상위${limit}개 추천. 70-95점. 매칭이유 3개. JSON: {"recommendations":[{"job_id":"ID","match_score":85,"match_reasons":["이유1","이유2","이유3"]}]}`;
 
   try {
     const completion = await openai.chat.completions.create({
@@ -6748,17 +6743,15 @@ JSON형식: {"recommendations":[{"job_id":"ID","match_score":85,"match_reasons":
       messages: [
         {
           role: 'system',
-          content: `IT 채용 매칭 전문가. 프로필과 공고를 분석하여 최적 매칭 찾기.
-점수: 90-95(완벽), 80-89(우수), 70-79(양호). 70점 미만은 제외.
-매칭이유는 구체적으로 기술명, 경력, 지역 명시. JSON만 응답.`
+          content: `IT채용 매칭. 기술+경력 중심 평가. 70-95점. JSON만 응답.`
         },
         {
           role: 'user',
           content: prompt
         }
       ],
-      max_completion_tokens: 1000,
-      temperature: 0.1,
+      max_completion_tokens: 600,
+      temperature: 0,
       response_format: { type: "json_object" }
     });
 
