@@ -6481,10 +6481,10 @@ app.get('/api/company/:companyName', async (req, res) => {
   try {
     console.log(`[COMPANY-API] Fetching company info for: ${companyName}`);
 
-    // catch_companies 테이블은 'name' 컬럼 사용
+    // 모든 catch 테이블은 'company' 컬럼 사용
     // 정확한 일치 먼저 시도
     let [results] = await pool.execute(
-      'SELECT * FROM catch_companies WHERE name = ? LIMIT 1',
+      'SELECT * FROM catch_companies WHERE company = ? LIMIT 1',
       [companyName]
     );
 
@@ -6492,7 +6492,7 @@ app.get('/api/company/:companyName', async (req, res) => {
     if (results.length === 0) {
       console.log(`[COMPANY-API] No exact match, trying LIKE search...`);
       [results] = await pool.execute(
-        'SELECT * FROM catch_companies WHERE name LIKE ? LIMIT 1',
+        'SELECT * FROM catch_companies WHERE company LIKE ? LIMIT 1',
         [`%${companyName}%`]
       );
     }
@@ -6503,7 +6503,7 @@ app.get('/api/company/:companyName', async (req, res) => {
     }
 
     const company = results[0];
-    console.log(`[COMPANY-API] Found company: ${company.name}`);
+    console.log(`[COMPANY-API] Found company: ${company.company}`);
     res.json({ success: true, company });
   } catch (error) {
     console.error('[ERROR] Company API error:', error);
@@ -6519,9 +6519,10 @@ app.get('/api/company/:companyName/reviews', async (req, res) => {
   try {
     console.log(`[REVIEWS-API] Fetching reviews for: ${companyName}`);
 
+    // 모든 catch 테이블은 'company' 컬럼 사용
     // 정확한 일치 먼저 시도
     let [results] = await pool.execute(
-      'SELECT * FROM catch_reviews WHERE company_name = ? ORDER BY id DESC LIMIT ?',
+      'SELECT * FROM catch_reviews WHERE company = ? ORDER BY id DESC LIMIT ?',
       [companyName, limit]
     );
 
@@ -6529,7 +6530,7 @@ app.get('/api/company/:companyName/reviews', async (req, res) => {
     if (results.length === 0) {
       console.log(`[REVIEWS-API] No exact match, trying LIKE search...`);
       [results] = await pool.execute(
-        'SELECT * FROM catch_reviews WHERE company_name LIKE ? ORDER BY id DESC LIMIT ?',
+        'SELECT * FROM catch_reviews WHERE company LIKE ? ORDER BY id DESC LIMIT ?',
         [`%${companyName}%`, limit]
       );
     }
@@ -6550,9 +6551,10 @@ app.get('/api/company/:companyName/interview-questions', async (req, res) => {
   try {
     console.log(`[INTERVIEW-API] Fetching interview questions for: ${companyName}`);
 
+    // 모든 catch 테이블은 'company' 컬럼 사용
     // 정확한 일치 먼저 시도
     let [results] = await pool.execute(
-      'SELECT * FROM catch_interview_questions WHERE company_name = ? ORDER BY id DESC LIMIT ?',
+      'SELECT * FROM catch_interview_questions WHERE company = ? ORDER BY id DESC LIMIT ?',
       [companyName, limit]
     );
 
@@ -6560,7 +6562,7 @@ app.get('/api/company/:companyName/interview-questions', async (req, res) => {
     if (results.length === 0) {
       console.log(`[INTERVIEW-API] No exact match, trying LIKE search...`);
       [results] = await pool.execute(
-        'SELECT * FROM catch_interview_questions WHERE company_name LIKE ? ORDER BY id DESC LIMIT ?',
+        'SELECT * FROM catch_interview_questions WHERE company LIKE ? ORDER BY id DESC LIMIT ?',
         [`%${companyName}%`, limit]
       );
     }
