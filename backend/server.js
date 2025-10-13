@@ -2241,21 +2241,27 @@ app.get("/api/main-recommendations", async (req, res) => {
           matchScore += skillScore;
 
           if (matchedSkills.length > 0) {
-            matchReasons.push(`${matchedSkills.length}개 기술 매칭 (정확:${exactSkillMatches}, 유사:${partialSkillMatches})`);
+            const topSkills = matchedSkills.slice(0, 5).join(', ');
+            matchReasons.push(`보유 기술 ${matchedSkills.length}개 일치 (${topSkills}${matchedSkills.length > 5 ? ' 외' : ''})`);
+            if (exactSkillMatches > 0) {
+              matchReasons.push(`핵심 기술 ${exactSkillMatches}개 정확 매칭`);
+            }
           }
 
           // 2. 경력 매칭 (가중치: 25점)
           // 경력 레벨 차이에 따른 감점
           const careerDiff = Math.abs(userCareerLevel - jobCareerLevel);
           let careerScore = 25;
+          const careerLevelNames = ['신입', '1-2년', '3-5년', '6-8년', '9년+'];
           if (careerDiff === 0) {
             careerScore = 25;
-            matchReasons.push('경력 수준 정확히 일치');
+            matchReasons.push(`경력 수준 정확 일치 (${careerLevelNames[userCareerLevel]})`);
           } else if (careerDiff === 1) {
             careerScore = 20;
-            matchReasons.push('경력 수준 유사');
+            matchReasons.push(`경력 수준 적합 (회원: ${careerLevelNames[userCareerLevel]}, 공고: ${careerLevelNames[jobCareerLevel]})`);
           } else if (careerDiff === 2) {
             careerScore = 10;
+            matchReasons.push(`경력 차이 있지만 지원 가능 (회원: ${careerLevelNames[userCareerLevel]}, 공고: ${careerLevelNames[jobCareerLevel]})`);
           } else {
             careerScore = 5;
           }
@@ -2274,7 +2280,7 @@ app.get("/api/main-recommendations", async (req, res) => {
           });
           matchScore += regionScore;
           if (matchedRegions.length > 0) {
-            matchReasons.push(`${matchedRegions.length}개 지역 매칭`);
+            matchReasons.push(`희망 근무지역 일치 (${matchedRegions.join(', ')})`);
           }
 
           // 4. 직무 키워드 매칭 (가중치: 15점)
@@ -2282,7 +2288,7 @@ app.get("/api/main-recommendations", async (req, res) => {
           userJobs.forEach(ujob => {
             if (jobTitle.includes(ujob) || ujob.includes(jobTitle.split(' ')[0])) {
               jobTypeScore = 15;
-              matchReasons.push('희망 직무와 일치');
+              matchReasons.push(`희망 직무 일치 (${job.title})`);
             }
           });
           matchScore += jobTypeScore;
@@ -6522,8 +6528,8 @@ async function generateGPT4Recommendations(userProfile, jobCandidates, limit) {
 공고(${jobCandidates.length}개):
 ${jobCandidates.map((job, idx) => `${idx + 1}. ${job.title}@${job.company} | 기술=${formatSkills(job.skills)} | 경력=${job.experience || '없음'} | 위치=${job.location || '없음'} | ID=${job.id}`).join('\n')}
 
-상위 ${limit}개 추천. 간단히 응답:
-{"recommendations":[{"job_id":"1","match_score":85,"match_reasons":["핵심이유"]}]}
+상위 ${limit}개 추천. 각 공고별 매칭 이유 3-4개 제시:
+{"recommendations":[{"job_id":"1","match_score":85,"match_reasons":["기술스킬 매칭 상세","경력 적합도","지역/근무환경","기타 강점"]}]}
 `;
 
   console.log('\n' + '='.repeat(80));
@@ -6538,15 +6544,15 @@ ${jobCandidates.map((job, idx) => `${idx + 1}. ${job.title}@${job.company} | 기
       messages: [
         {
           role: 'system',
-          content: 'Job matching AI. Return JSON: {"recommendations":[{"job_id":"ID","match_score":85,"match_reasons":["reason"]}]}'
+          content: 'Job matching AI. 각 공고별 상세한 매칭 이유 3-4개 제공. JSON 형식: {"recommendations":[{"job_id":"ID","match_score":85,"match_reasons":["이유1","이유2","이유3"]}]}'
         },
         {
           role: 'user',
           content: prompt
         }
       ],
-      max_completion_tokens: 800,
-      temperature: 0.1,
+      max_completion_tokens: 1200,
+      temperature: 0.2,
       response_format: { type: "json_object" }
     });
 
