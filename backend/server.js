@@ -4937,15 +4937,17 @@ app.post('/api/interview-feedback', async (req, res) => {
 Q: ${question}
 답변: ${answer}
 
-피드백 (강점, 개선점, 추천 방향)을 JSON 형식으로:
-{"feedback": "..."}`;
+답변에 대한 피드백을 다음 JSON 형식으로만 작성:
+{"feedback": "강점: ...\n\n개선점: ...\n\n추천 방향: ..."}
+
+점수 없이 피드백 텍스트만 포함하세요.`;
 
     console.log(`[INTERVIEW-FEEDBACK] 📝 PROMPT 길이: ${userPrompt.length}자`);
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
-        { role: 'system', content: 'Interview coach. Respond in JSON format only.' },
+        { role: 'system', content: 'Interview coach. Always respond with single JSON object: {"feedback": "text"}' },
         { role: 'user', content: userPrompt }
       ],
       max_tokens: 500,
@@ -4953,13 +4955,23 @@ Q: ${question}
     });
 
     const responseContent = completion.choices[0].message.content;
+    console.log(`[INTERVIEW-FEEDBACK] 🤖 GPT 응답: ${responseContent.substring(0, 100)}...`);
+
     let feedback;
 
     try {
       const parsedResponse = JSON.parse(responseContent);
-      feedback = parsedResponse.feedback;
+      // feedback 필드가 있으면 사용, 없으면 전체 객체를 문자열로
+      if (parsedResponse.feedback) {
+        feedback = parsedResponse.feedback;
+      } else if (typeof parsedResponse === 'object') {
+        // strength, improvement 같은 다른 필드가 있을 경우 합치기
+        feedback = Object.values(parsedResponse).join('\n\n');
+      } else {
+        feedback = responseContent;
+      }
     } catch (parseError) {
-      // JSON 파싱 실패 시 텍스트 그대로 사용
+      console.warn('[INTERVIEW-FEEDBACK] JSON 파싱 실패, 텍스트 그대로 사용');
       feedback = responseContent;
     }
 
