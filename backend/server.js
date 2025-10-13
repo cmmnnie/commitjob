@@ -2277,15 +2277,37 @@ app.get("/api/main-recommendations", async (req, res) => {
             });
           });
 
-          const baseSkillScore = exactSkillMatches * 8 + partialSkillMatches * 4;
-          const skillScore = Math.min(baseSkillScore + skillWeightBonus, 40);
+          // 스킬 매칭률 계산
+          const totalUserSkills = userSkills.length;
+          const skillMatchRate = totalUserSkills > 0 ? Math.round((matchedSkills.length / totalUserSkills) * 100) : 0;
+
+          const baseSkillScore = exactSkillMatches * 10 + partialSkillMatches * 5;
+          const skillScore = Math.min(baseSkillScore + skillWeightBonus, 50);
           matchScore += skillScore;
 
           if (matchedSkills.length > 0) {
             const topSkills = matchedSkills.slice(0, 5).join(', ');
-            matchReasons.push(`보유 기술 ${matchedSkills.length}개 일치 (${topSkills}${matchedSkills.length > 5 ? ' 외' : ''})`);
+            const skillDetail = matchedSkills.length > 5 ? ` 외 ${matchedSkills.length - 5}개` : '';
+            matchReasons.push(`보유 기술 ${skillMatchRate}% 일치 (${topSkills}${skillDetail})`);
             if (exactSkillMatches > 0) {
-              matchReasons.push(`핵심 기술 ${exactSkillMatches}개 정확 매칭`);
+              const importantSkills = matchedSkills.filter(s => skillImportance[s] > 1.2);
+              if (importantSkills.length > 0) {
+                matchReasons.push(`핵심 기술 정확 매칭: ${importantSkills.slice(0, 3).join(', ')}`);
+              } else {
+                matchReasons.push(`정확 매칭 기술 ${exactSkillMatches}개 보유`);
+              }
+            }
+          } else {
+            // 스킬 매칭이 없어도 관련 기술이 있다면 부분 점수
+            const relatedSkills = [];
+            jobSkills.forEach(js => {
+              if (js.includes('개발') || js.includes('프로그래밍')) {
+                relatedSkills.push(js);
+              }
+            });
+            if (relatedSkills.length > 0) {
+              matchScore += 10;
+              matchReasons.push(`관련 기술 분야 경험 있음 (${relatedSkills.slice(0, 2).join(', ')})`);
             }
           }
 
@@ -2381,19 +2403,42 @@ app.get("/api/main-recommendations", async (req, res) => {
 
           if (isPopularCompany) {
             matchScore += 5;
-            matchReasons.push('인기 기업');
+            matchReasons.push(`인기 우량 기업 (${job.company})`);
           }
 
-          // 최종 점수를 120점 만점으로 정규화 (기존 100점 + 신선도 10점 + 인기기업 5점 + 스킬가중치 최대 5점)
-          matchScore = Math.min(matchScore, 120);
+          // 8. 기본 베이스 점수 추가 (모든 공고에 40점 기본 제공)
+          // 이렇게 하면 최소 매칭률이 보장됨
+          const baseScore = 40;
+          matchScore += baseScore;
+
+          // 최종 점수를 100점 만점으로 정규화
+          matchScore = Math.min(Math.round(matchScore * 0.8), 95); // 120점 기준을 95점 만점으로 조정
+
+          // 매칭 이유가 3개 미만이면 추가 이유 생성
+          if (matchReasons.length < 3) {
+            if (job.company) {
+              matchReasons.push(`${job.company}에서 채용 중`);
+            }
+            if (job.category === 'BIGDATA_AI') {
+              matchReasons.push('빅데이터/AI 분야 성장 기회');
+            } else if (job.category === 'IT') {
+              matchReasons.push('IT 개발 분야 전문성 강화');
+            }
+            if (matchReasons.length < 4) {
+              matchReasons.push('기술 스택 확장 및 경력 개발 기회');
+            }
+          }
 
           return {
             ...job,
             job_id: job.id,
             match_score: matchScore,
-            match_reasons: matchReasons.length > 0 ? matchReasons : ['기본 추천']
+            match_reasons: matchReasons
           };
         });
+
+        // 70점 이상인 공고만 필터링
+        rerankedJobs = rerankedJobs.filter(job => job.match_score >= 70);
 
         // 점수순 정렬 후 상위 5개
         rerankedJobs = rerankedJobs
