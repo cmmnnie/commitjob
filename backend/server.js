@@ -4937,14 +4937,15 @@ app.post('/api/interview-feedback', async (req, res) => {
 Q: ${question}
 답변: ${answer}
 
-피드백 (강점, 개선점, 추천 방향):`;
+피드백 (강점, 개선점, 추천 방향)을 JSON 형식으로:
+{"feedback": "..."}`;
 
     console.log(`[INTERVIEW-FEEDBACK] 📝 PROMPT 길이: ${userPrompt.length}자`);
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
-        { role: 'system', content: 'Interview coach. Provide concise feedback in Korean.' },
+        { role: 'system', content: 'Interview coach. Respond in JSON format only.' },
         { role: 'user', content: userPrompt }
       ],
       max_tokens: 500,
