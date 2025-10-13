@@ -6471,6 +6471,74 @@ app.get('/api/jobs', async (req, res) => {
 });
 
 // ==============================================================================
+// 회사 정보 API
+// ==============================================================================
+
+// 회사 정보 조회 (catch_companies)
+app.get('/api/company/:companyName', async (req, res) => {
+  const { companyName } = req.params;
+
+  try {
+    console.log(`[COMPANY-API] Fetching company info for: ${companyName}`);
+
+    const [results] = await pool.execute(
+      'SELECT * FROM catch_companies WHERE company_name = ? LIMIT 1',
+      [companyName]
+    );
+
+    if (results.length === 0) {
+      return res.json({ success: false, message: '회사 정보를 찾을 수 없습니다.' });
+    }
+
+    const company = results[0];
+    res.json({ success: true, company });
+  } catch (error) {
+    console.error('[ERROR] Company API error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 회사 리뷰 조회 (catch_reviews)
+app.get('/api/company/:companyName/reviews', async (req, res) => {
+  const { companyName } = req.params;
+  const limit = parseInt(req.query.limit) || 10;
+
+  try {
+    console.log(`[REVIEWS-API] Fetching reviews for: ${companyName}`);
+
+    const [results] = await pool.execute(
+      'SELECT * FROM catch_reviews WHERE company_name = ? ORDER BY id DESC LIMIT ?',
+      [companyName, limit]
+    );
+
+    res.json({ success: true, reviews: results, total: results.length });
+  } catch (error) {
+    console.error('[ERROR] Reviews API error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 면접 기출문제 조회 (catch_interview_questions)
+app.get('/api/company/:companyName/interview-questions', async (req, res) => {
+  const { companyName } = req.params;
+  const limit = parseInt(req.query.limit) || 10;
+
+  try {
+    console.log(`[INTERVIEW-API] Fetching interview questions for: ${companyName}`);
+
+    const [results] = await pool.execute(
+      'SELECT * FROM catch_interview_questions WHERE company_name = ? ORDER BY id DESC LIMIT ?',
+      [companyName, limit]
+    );
+
+    res.json({ success: true, questions: results, total: results.length });
+  } catch (error) {
+    console.error('[ERROR] Interview Questions API error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ==============================================================================
 // 최신 공고 스크래핑 API
 // ==============================================================================
 

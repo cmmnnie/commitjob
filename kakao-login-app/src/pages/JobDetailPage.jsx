@@ -1,11 +1,55 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4001';
 
 export default function JobDetailPage() {
     const navigate = useNavigate();
     const location = useLocation();
     const { id } = useParams();
     const job = location.state?.job;
+
+    const [companyInfo, setCompanyInfo] = useState(null);
+    const [reviews, setReviews] = useState([]);
+    const [interviewQuestions, setInterviewQuestions] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (job?.company) {
+            fetchCompanyData(job.company);
+        }
+    }, [job]);
+
+    const fetchCompanyData = async (companyName) => {
+        try {
+            setLoading(true);
+
+            // 회사 정보 조회
+            const companyRes = await fetch(`${API_BASE_URL}/api/company/${encodeURIComponent(companyName)}`);
+            const companyData = await companyRes.json();
+            if (companyData.success) {
+                setCompanyInfo(companyData.company);
+            }
+
+            // 회사 리뷰 조회
+            const reviewsRes = await fetch(`${API_BASE_URL}/api/company/${encodeURIComponent(companyName)}/reviews?limit=5`);
+            const reviewsData = await reviewsRes.json();
+            if (reviewsData.success) {
+                setReviews(reviewsData.reviews);
+            }
+
+            // 면접 기출문제 조회
+            const questionsRes = await fetch(`${API_BASE_URL}/api/company/${encodeURIComponent(companyName)}/interview-questions?limit=5`);
+            const questionsData = await questionsRes.json();
+            if (questionsData.success) {
+                setInterviewQuestions(questionsData.questions);
+            }
+        } catch (error) {
+            console.error('Error fetching company data:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     if (!job) {
         return (
@@ -279,6 +323,206 @@ export default function JobDetailPage() {
                         </div>
                     )}
                 </div>
+
+                {/* 회사 정보 */}
+                {companyInfo && (
+                    <div style={{
+                        background: 'white',
+                        borderRadius: '16px',
+                        padding: '30px',
+                        marginTop: '20px',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                    }}>
+                        <h3 style={{
+                            fontSize: '1.3rem',
+                            fontWeight: '700',
+                            color: '#333',
+                            marginBottom: '20px',
+                            paddingBottom: '12px',
+                            borderBottom: '2px solid #667eea',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                        }}>
+                            🏢 회사 정보
+                        </h3>
+                        <div style={{
+                            display: 'grid',
+                            gap: '12px'
+                        }}>
+                            {companyInfo.industry && (
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '80px' }}>업종:</span>
+                                    <span style={{ color: '#555' }}>{companyInfo.industry}</span>
+                                </div>
+                            )}
+                            {companyInfo.employee_count && (
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '80px' }}>직원 수:</span>
+                                    <span style={{ color: '#555' }}>{companyInfo.employee_count}</span>
+                                </div>
+                            )}
+                            {companyInfo.established_year && (
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '80px' }}>설립년도:</span>
+                                    <span style={{ color: '#555' }}>{companyInfo.established_year}</span>
+                                </div>
+                            )}
+                            {companyInfo.sales && (
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '80px' }}>매출액:</span>
+                                    <span style={{ color: '#555' }}>{companyInfo.sales}</span>
+                                </div>
+                            )}
+                            {companyInfo.website && (
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '80px' }}>웹사이트:</span>
+                                    <a href={companyInfo.website} target="_blank" rel="noopener noreferrer"
+                                       style={{ color: '#667eea', textDecoration: 'underline' }}>
+                                        {companyInfo.website}
+                                    </a>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* 회사 리뷰 */}
+                {reviews.length > 0 && (
+                    <div style={{
+                        background: 'white',
+                        borderRadius: '16px',
+                        padding: '30px',
+                        marginTop: '20px',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                    }}>
+                        <h3 style={{
+                            fontSize: '1.3rem',
+                            fontWeight: '700',
+                            color: '#333',
+                            marginBottom: '20px',
+                            paddingBottom: '12px',
+                            borderBottom: '2px solid #667eea',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                        }}>
+                            ⭐ 회사 리뷰 ({reviews.length}건)
+                        </h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            {reviews.map((review, index) => (
+                                <div key={index} style={{
+                                    background: '#f8f9fa',
+                                    padding: '16px',
+                                    borderRadius: '12px',
+                                    borderLeft: '4px solid #667eea'
+                                }}>
+                                    {review.rating && (
+                                        <div style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            marginBottom: '8px'
+                                        }}>
+                                            <span style={{ fontSize: '1.1rem', fontWeight: '600', color: '#667eea' }}>
+                                                {'⭐'.repeat(Math.round(parseFloat(review.rating)))}
+                                            </span>
+                                            <span style={{ color: '#666', fontSize: '0.9rem' }}>{review.rating}점</span>
+                                        </div>
+                                    )}
+                                    {review.position && (
+                                        <div style={{ fontSize: '0.9rem', color: '#888', marginBottom: '8px' }}>
+                                            {review.position}
+                                        </div>
+                                    )}
+                                    {review.pros && (
+                                        <div style={{ marginBottom: '8px' }}>
+                                            <span style={{ fontWeight: '600', color: '#28a745' }}>장점: </span>
+                                            <span style={{ color: '#555' }}>{review.pros}</span>
+                                        </div>
+                                    )}
+                                    {review.cons && (
+                                        <div>
+                                            <span style={{ fontWeight: '600', color: '#dc3545' }}>단점: </span>
+                                            <span style={{ color: '#555' }}>{review.cons}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* 면접 기출문제 */}
+                {interviewQuestions.length > 0 && (
+                    <div style={{
+                        background: 'white',
+                        borderRadius: '16px',
+                        padding: '30px',
+                        marginTop: '20px',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                    }}>
+                        <h3 style={{
+                            fontSize: '1.3rem',
+                            fontWeight: '700',
+                            color: '#333',
+                            marginBottom: '20px',
+                            paddingBottom: '12px',
+                            borderBottom: '2px solid #667eea',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                        }}>
+                            💬 면접 기출문제 ({interviewQuestions.length}건)
+                        </h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            {interviewQuestions.map((item, index) => (
+                                <div key={index} style={{
+                                    background: '#f8f9fa',
+                                    padding: '16px',
+                                    borderRadius: '12px',
+                                    borderLeft: '4px solid #764ba2'
+                                }}>
+                                    {item.position && (
+                                        <div style={{
+                                            fontSize: '0.9rem',
+                                            color: '#888',
+                                            marginBottom: '8px',
+                                            fontWeight: '600'
+                                        }}>
+                                            📌 {item.position}
+                                        </div>
+                                    )}
+                                    {item.question && (
+                                        <div style={{
+                                            fontSize: '1rem',
+                                            color: '#333',
+                                            lineHeight: '1.6',
+                                            marginBottom: '8px'
+                                        }}>
+                                            <span style={{ fontWeight: '600', color: '#764ba2' }}>Q. </span>
+                                            {item.question}
+                                        </div>
+                                    )}
+                                    {item.difficulty && (
+                                        <div style={{
+                                            display: 'inline-block',
+                                            background: item.difficulty === '어려움' ? '#dc3545' :
+                                                       item.difficulty === '보통' ? '#ffc107' : '#28a745',
+                                            color: 'white',
+                                            padding: '4px 12px',
+                                            borderRadius: '12px',
+                                            fontSize: '0.85rem',
+                                            fontWeight: '600'
+                                        }}>
+                                            난이도: {item.difficulty}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
