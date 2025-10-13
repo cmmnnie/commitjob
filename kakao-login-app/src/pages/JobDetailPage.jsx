@@ -366,36 +366,48 @@ export default function JobDetailPage() {
                             display: 'grid',
                             gap: '12px'
                         }}>
-                            {companyInfo.industry && (
+                            {companyInfo.company_type && (
                                 <div style={{ display: 'flex', gap: '8px' }}>
-                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '80px' }}>업종:</span>
-                                    <span style={{ color: '#555' }}>{companyInfo.industry}</span>
+                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '100px' }}>기업형태:</span>
+                                    <span style={{ color: '#555' }}>{companyInfo.company_type}</span>
                                 </div>
                             )}
                             {companyInfo.employee_count && (
                                 <div style={{ display: 'flex', gap: '8px' }}>
-                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '80px' }}>직원 수:</span>
+                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '100px' }}>직원 수:</span>
                                     <span style={{ color: '#555' }}>{companyInfo.employee_count}</span>
                                 </div>
                             )}
-                            {companyInfo.established_year && (
+                            {companyInfo.establishment_date && (
                                 <div style={{ display: 'flex', gap: '8px' }}>
-                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '80px' }}>설립년도:</span>
-                                    <span style={{ color: '#555' }}>{companyInfo.established_year}</span>
+                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '100px' }}>설립일:</span>
+                                    <span style={{ color: '#555' }}>{companyInfo.establishment_date}</span>
                                 </div>
                             )}
-                            {companyInfo.sales && (
+                            {companyInfo.revenue && (
                                 <div style={{ display: 'flex', gap: '8px' }}>
-                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '80px' }}>매출액:</span>
-                                    <span style={{ color: '#555' }}>{companyInfo.sales}</span>
+                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '100px' }}>매출액:</span>
+                                    <span style={{ color: '#555' }}>{companyInfo.revenue}</span>
                                 </div>
                             )}
-                            {companyInfo.website && (
+                            {companyInfo.ceo && (
                                 <div style={{ display: 'flex', gap: '8px' }}>
-                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '80px' }}>웹사이트:</span>
-                                    <a href={companyInfo.website} target="_blank" rel="noopener noreferrer"
+                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '100px' }}>대표이사:</span>
+                                    <span style={{ color: '#555' }}>{companyInfo.ceo}</span>
+                                </div>
+                            )}
+                            {companyInfo.location && (
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '100px' }}>주소:</span>
+                                    <span style={{ color: '#555' }}>{companyInfo.location}</span>
+                                </div>
+                            )}
+                            {companyInfo.company_url && (
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '100px' }}>상세정보:</span>
+                                    <a href={companyInfo.company_url} target="_blank" rel="noopener noreferrer"
                                        style={{ color: '#667eea', textDecoration: 'underline' }}>
-                                        {companyInfo.website}
+                                        Catch에서 보기 →
                                     </a>
                                 </div>
                             )}
