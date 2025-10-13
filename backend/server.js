@@ -4420,86 +4420,77 @@ app.post('/api/interview-questions', async (req, res) => {
         needsScraping = true;
       }
 
-      // 2. DB에 없을 때 스크래핑 (타임아웃 없음)
+      // 2. DB에 없을 때 백그라운드 스크래핑 (GPT 응답 속도 우선)
       if (needsScraping) {
-        console.log(`[INTERVIEW-QUESTIONS] 🔄 ${custom_company} 기출질문 스크래핑 시작`);
+        console.log(`[INTERVIEW-QUESTIONS] 🔄 ${custom_company} 기출질문 백그라운드 스크래핑 시작`);
 
-        try {
-          const startTime = Date.now();
+        // 스크래핑을 완전히 백그라운드로 실행 (await 없이)
+        (async () => {
+          try {
+            const startTime = Date.now();
+            console.log(`[INTERVIEW-BG] ${custom_company} 스크래핑 시작`);
 
-          // 2-1. Catch Scraper 초기화 (타임아웃 없음)
-          console.log('[INTERVIEW-QUESTIONS] Catch Scraper 초기화 중...');
-          await axios.post(`${CATCH_SCRAPER_URL}/api/init`, {});
-          console.log('[INTERVIEW-QUESTIONS] ✅ 초기화 완료');
+            // 초기화
+            await axios.post(`${CATCH_SCRAPER_URL}/api/init`, {});
+            console.log(`[INTERVIEW-BG] 초기화 완료`);
 
-          // 2-2. Catch.co.kr 로그인 (타임아웃 없음)
-          console.log('[INTERVIEW-QUESTIONS] 로그인 중...');
-          await axios.post(`${CATCH_SCRAPER_URL}/api/login`, {
-            username: 'test0137',
-            password: '#test0808'
-          });
-          console.log('[INTERVIEW-QUESTIONS] ✅ 로그인 완료');
+            // 로그인
+            await axios.post(`${CATCH_SCRAPER_URL}/api/login`, {
+              username: 'test0137',
+              password: '#test0808'
+            });
+            console.log(`[INTERVIEW-BG] 로그인 완료`);
 
-          // 2-3. 실시간 스크래핑 (3개만 요청, 타임아웃 없음)
-          console.log('[INTERVIEW-QUESTIONS] 스크래핑 중...');
-          const interviewResponse = await axios.post(`${CATCH_SCRAPER_URL}/api/search-interview-questions`, {
-            company_name: custom_company,
-            max_questions: 3
-          });
+            // 스크래핑 (3개)
+            const interviewResponse = await axios.post(`${CATCH_SCRAPER_URL}/api/search-interview-questions`, {
+              company_name: custom_company,
+              max_questions: 3
+            });
 
-          let scrapedQuestions = [];
-          if (interviewResponse.data && interviewResponse.data.success) {
-            scrapedQuestions = interviewResponse.data.questions || [];
-          }
+            let scrapedQuestions = [];
+            if (interviewResponse.data && interviewResponse.data.success) {
+              scrapedQuestions = interviewResponse.data.questions || [];
+            }
 
-          const elapsed = Date.now() - startTime;
-          console.log(`[INTERVIEW-QUESTIONS] 스크래핑 완료 (${elapsed}ms, ${scrapedQuestions.length}개)`);
+            const elapsed = Date.now() - startTime;
+            console.log(`[INTERVIEW-BG] ${custom_company} 스크래핑 완료 (${elapsed}ms, ${scrapedQuestions.length}개)`);
 
-          // 2-4. DB에 저장 (중복 제거 - 백그라운드 처리)
-          if (scrapedQuestions.length > 0) {
-            interviewQuestions = scrapedQuestions;
+            // DB 저장
+            if (scrapedQuestions.length > 0) {
+              let insertCount = 0;
 
-            // DB insert를 백그라운드로 실행 (응답 속도에 영향 안 줌)
-            (async () => {
-              try {
-                console.log(`[INTERVIEW-QUESTIONS-DB] ${custom_company} 기출질문 DB 저장 시작 (${scrapedQuestions.length}개)`);
-                let insertCount = 0;
+              for (const q of scrapedQuestions) {
+                try {
+                  const [duplicate] = await pool.execute(`
+                    SELECT id FROM catch_interview_questions
+                    WHERE company = ? AND question = ?
+                    LIMIT 1
+                  `, [custom_company, q.question]);
 
-                for (const q of scrapedQuestions) {
-                  try {
-                    const [duplicate] = await pool.execute(`
-                      SELECT id FROM catch_interview_questions
-                      WHERE company = ? AND question = ?
-                      LIMIT 1
-                    `, [custom_company, q.question]);
-
-                    if (duplicate.length === 0) {
-                      await pool.execute(`
-                        INSERT INTO catch_interview_questions
-                        (company, question, position, period, experience)
-                        VALUES (?, ?, ?, ?, ?)
-                      `, [
-                        custom_company,
-                        q.question,
-                        q.position || null,
-                        q.period || null,
-                        q.experience || null
-                      ]);
-                      insertCount++;
-                    }
-                  } catch (insertError) {
-                    console.warn(`[INTERVIEW-QUESTIONS-DB] 질문 저장 실패:`, insertError.message);
+                  if (duplicate.length === 0) {
+                    await pool.execute(`
+                      INSERT INTO catch_interview_questions
+                      (company, question, position, period, experience)
+                      VALUES (?, ?, ?, ?, ?)
+                    `, [
+                      custom_company,
+                      q.question,
+                      q.position || null,
+                      q.period || null,
+                      q.experience || null
+                    ]);
+                    insertCount++;
                   }
+                } catch (insertError) {
+                  console.warn(`[INTERVIEW-BG] 질문 저장 실패:`, insertError.message);
                 }
-                console.log(`[INTERVIEW-QUESTIONS-DB] ✅ ${custom_company} 기출질문 DB 저장 완료 (${insertCount}개 insert)`);
-              } catch (dbError) {
-                console.error(`[INTERVIEW-QUESTIONS-DB] DB 저장 중 오류:`, dbError.message);
               }
-            })(); // 백그라운드 실행
+              console.log(`[INTERVIEW-BG] ✅ ${custom_company} DB 저장 완료 (${insertCount}개 insert, 총 ${Date.now() - startTime}ms)`);
+            }
+          } catch (scrapingError) {
+            console.warn(`[INTERVIEW-BG] ${custom_company} 스크래핑 실패:`, scrapingError.message);
           }
-        } catch (scrapingError) {
-          console.warn(`[INTERVIEW-QUESTIONS] 스크래핑 실패:`, scrapingError.message);
-        }
+        })(); // 즉시 실행, await 없이 백그라운드 실행
       }
 
       jobInfo = {
@@ -4556,90 +4547,79 @@ app.post('/api/interview-questions', async (req, res) => {
           needsScraping = true;
         }
 
-        // 2. DB에 없을 때 스크래핑 (타임아웃 없음)
+        // 2. DB에 없을 때 백그라운드 스크래핑 (GPT 응답 속도 우선)
         if (needsScraping) {
-          console.log(`[INTERVIEW-QUESTIONS] 🔄 ${jobInfo.company_name} 기출질문 스크래핑 시작`);
+          const companyName = jobInfo.company_name;
+          console.log(`[INTERVIEW-QUESTIONS] 🔄 ${companyName} 기출질문 백그라운드 스크래핑 시작`);
+          jobInfo.interview_questions = []; // 빈 배열로 초기화
 
-          try {
-            const startTime = Date.now();
-            const companyName = jobInfo.company_name;
+          // 스크래핑을 완전히 백그라운드로 실행 (await 없이)
+          (async () => {
+            try {
+              const startTime = Date.now();
+              console.log(`[INTERVIEW-BG] ${companyName} 스크래핑 시작`);
 
-            // 2-1. Catch Scraper 초기화 (타임아웃 없음)
-            console.log('[INTERVIEW-QUESTIONS] Catch Scraper 초기화 중...');
-            await axios.post(`${CATCH_SCRAPER_URL}/api/init`, {});
-            console.log('[INTERVIEW-QUESTIONS] ✅ 초기화 완료');
+              // 초기화
+              await axios.post(`${CATCH_SCRAPER_URL}/api/init`, {});
+              console.log(`[INTERVIEW-BG] 초기화 완료`);
 
-            // 2-2. Catch.co.kr 로그인 (타임아웃 없음)
-            console.log('[INTERVIEW-QUESTIONS] 로그인 중...');
-            await axios.post(`${CATCH_SCRAPER_URL}/api/login`, {
-              username: 'test0137',
-              password: '#test0808'
-            });
-            console.log('[INTERVIEW-QUESTIONS] ✅ 로그인 완료');
+              // 로그인
+              await axios.post(`${CATCH_SCRAPER_URL}/api/login`, {
+                username: 'test0137',
+                password: '#test0808'
+              });
+              console.log(`[INTERVIEW-BG] 로그인 완료`);
 
-            // 2-3. 실시간 스크래핑 (3개만 요청, 타임아웃 없음)
-            console.log('[INTERVIEW-QUESTIONS] 스크래핑 중...');
-            const interviewResponse = await axios.post(`${CATCH_SCRAPER_URL}/api/search-interview-questions`, {
-              company_name: companyName,
-              max_questions: 3
-            });
+              // 스크래핑 (3개)
+              const interviewResponse = await axios.post(`${CATCH_SCRAPER_URL}/api/search-interview-questions`, {
+                company_name: companyName,
+                max_questions: 3
+              });
 
-            let scrapedQuestions = [];
-            if (interviewResponse.data && interviewResponse.data.success) {
-              scrapedQuestions = interviewResponse.data.questions || [];
-            }
+              let scrapedQuestions = [];
+              if (interviewResponse.data && interviewResponse.data.success) {
+                scrapedQuestions = interviewResponse.data.questions || [];
+              }
 
-            const elapsed = Date.now() - startTime;
-            console.log(`[INTERVIEW-QUESTIONS] 스크래핑 완료 (${elapsed}ms, ${scrapedQuestions.length}개)`);
+              const elapsed = Date.now() - startTime;
+              console.log(`[INTERVIEW-BG] ${companyName} 스크래핑 완료 (${elapsed}ms, ${scrapedQuestions.length}개)`);
 
-            // 2-4. DB에 저장 (중복 제거 - 백그라운드 처리)
-            if (scrapedQuestions.length > 0) {
-              jobInfo.interview_questions = scrapedQuestions;
+              // DB 저장
+              if (scrapedQuestions.length > 0) {
+                let insertCount = 0;
 
-              // DB insert를 백그라운드로 실행 (응답 속도에 영향 안 줌)
-              (async () => {
-                try {
-                  console.log(`[INTERVIEW-QUESTIONS-DB] ${companyName} 기출질문 DB 저장 시작 (${scrapedQuestions.length}개)`);
-                  let insertCount = 0;
+                for (const q of scrapedQuestions) {
+                  try {
+                    const [duplicate] = await pool.execute(`
+                      SELECT id FROM catch_interview_questions
+                      WHERE company = ? AND question = ?
+                      LIMIT 1
+                    `, [companyName, q.question]);
 
-                  for (const q of scrapedQuestions) {
-                    try {
-                      const [duplicate] = await pool.execute(`
-                        SELECT id FROM catch_interview_questions
-                        WHERE company = ? AND question = ?
-                        LIMIT 1
-                      `, [companyName, q.question]);
-
-                      if (duplicate.length === 0) {
-                        await pool.execute(`
-                          INSERT INTO catch_interview_questions
-                          (company, question, position, period, experience)
-                          VALUES (?, ?, ?, ?, ?)
-                        `, [
-                          companyName,
-                          q.question,
-                          q.position || null,
-                          q.period || null,
-                          q.experience || null
-                        ]);
-                        insertCount++;
-                      }
-                    } catch (insertError) {
-                      console.warn(`[INTERVIEW-QUESTIONS-DB] 질문 저장 실패:`, insertError.message);
+                    if (duplicate.length === 0) {
+                      await pool.execute(`
+                        INSERT INTO catch_interview_questions
+                        (company, question, position, period, experience)
+                        VALUES (?, ?, ?, ?, ?)
+                      `, [
+                        companyName,
+                        q.question,
+                        q.position || null,
+                        q.period || null,
+                        q.experience || null
+                      ]);
+                      insertCount++;
                     }
+                  } catch (insertError) {
+                    console.warn(`[INTERVIEW-BG] 질문 저장 실패:`, insertError.message);
                   }
-                  console.log(`[INTERVIEW-QUESTIONS-DB] ✅ ${companyName} 기출질문 DB 저장 완료 (${insertCount}개 insert)`);
-                } catch (dbError) {
-                  console.error(`[INTERVIEW-QUESTIONS-DB] DB 저장 중 오류:`, dbError.message);
                 }
-              })(); // 백그라운드 실행
-            } else {
-              jobInfo.interview_questions = [];
+                console.log(`[INTERVIEW-BG] ✅ ${companyName} DB 저장 완료 (${insertCount}개 insert, 총 ${Date.now() - startTime}ms)`);
+              }
+            } catch (scrapingError) {
+              console.warn(`[INTERVIEW-BG] ${companyName} 스크래핑 실패:`, scrapingError.message);
             }
-          } catch (scrapingError) {
-            console.warn(`[INTERVIEW-QUESTIONS] 스크래핑 실패:`, scrapingError.message);
-            jobInfo.interview_questions = [];
-          }
+          })(); // 즉시 실행, await 없이 백그라운드 실행
         }
       } else {
         jobInfo.interview_questions = [];
