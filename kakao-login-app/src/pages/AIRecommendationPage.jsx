@@ -646,7 +646,7 @@ export default function AIRecommendationPage() {
                                             fontSize: '1.2rem',
                                             fontWeight: '700',
                                             color: '#333',
-                                            marginBottom: 0,
+                                            marginBottom: '8px',
                                             display: 'flex',
                                             alignItems: 'center',
                                             gap: '8px'
@@ -654,6 +654,9 @@ export default function AIRecommendationPage() {
                                             <span style={{ fontSize: '1.5rem' }}>💼</span>
                                             <span>CommitJob 최근 채용공고 조회</span>
                                         </h4>
+                                        <p style={{ fontSize: '0.95rem', color: '#555', margin: 0, fontWeight: '700' }}>
+                                            CommitJob에 등록된 최신 빅데이터/AI, IT개발 채용공고를 조회합니다
+                                        </p>
                                     </div>
                                 </div>
 
@@ -697,7 +700,7 @@ export default function AIRecommendationPage() {
                                             <span>AI 매칭 및 추천</span>
                                         </h4>
                                         <p style={{ fontSize: '0.95rem', color: '#555', margin: 0, fontWeight: '700' }}>
-                                            GPT가 이력서와 최근 채용공고 20건을 분석하여 가장 적합한 5개 공고를 추천합니다
+                                            GPT가 이력서와 채용공고의 매칭률을 분석하여 가장 적합한 공고를 추천합니다
                                         </p>
                                     </div>
                                 </div>
