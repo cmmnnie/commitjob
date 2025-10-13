@@ -4739,8 +4739,10 @@ ${userProfileSection}${interviewQuestionsSection}
 면접질문 5개
 {"questions":[{"id":1,"question":"..."}]}`;
 
-          // 프롬프트 생성 (로그 최소화)
+          // 프롬프트 로깅
           console.log(`[INTERVIEW-QUESTIONS] GPT-5-mini 질문 생성 시작 (${jobInfo.company_name})`);
+          console.log(`[INTERVIEW-QUESTIONS] 📝 PROMPT:\n${prompt}`);
+          console.log(`[INTERVIEW-QUESTIONS] PROMPT 길이: ${prompt.length}자`);
 
           const completion = await openai.chat.completions.create({
             model: 'gpt-5-mini',
@@ -4759,6 +4761,7 @@ ${userProfileSection}${interviewQuestionsSection}
           });
 
           const gptResponse = completion.choices[0].message.content;
+          console.log(`[INTERVIEW-QUESTIONS] 🤖 GPT 응답:\n${gptResponse}`);
 
           const parsedResponse = JSON.parse(gptResponse);
           if (parsedResponse.questions && Array.isArray(parsedResponse.questions)) {
@@ -4790,7 +4793,12 @@ ${userProfileSection}${interviewQuestionsSection}
             });
           }
         } catch (gptError) {
-          console.error('[INTERVIEW-QUESTIONS] GPT-5-mini 오류:', gptError.message);
+          console.error('[INTERVIEW-QUESTIONS] ❌ GPT-5-mini 오류:', gptError.message);
+          console.error('[INTERVIEW-QUESTIONS] 오류 상세:', gptError);
+          if (gptError.response) {
+            console.error('[INTERVIEW-QUESTIONS] GPT 응답 상태:', gptError.response.status);
+            console.error('[INTERVIEW-QUESTIONS] GPT 응답 데이터:', gptError.response.data);
+          }
         }
       }
 
