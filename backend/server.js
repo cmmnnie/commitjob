@@ -2158,14 +2158,7 @@ app.get("/api/main-recommendations", async (req, res) => {
       if (openai) {
         try {
           console.log('[MAIN-RECS] GPT-4o-mini 기반 추천 시작 (프로필 유사 20건 → 상위 5건 선택)');
-          // 20초 타임아웃 설정
-          const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('GPT 타임아웃 (20초 초과)')), 20000)
-          );
-          rerankedJobs = await Promise.race([
-            generateGPT4Recommendations(userProfile, allJobs, 5),
-            timeoutPromise
-          ]);
+          rerankedJobs = await generateGPT4Recommendations(userProfile, allJobs, 5);
           console.log(`[MAIN-RECS] ✅ GPT-4o-mini로 ${rerankedJobs.length}개 공고 추천 완료`);
         } catch (gptError) {
           console.error('[MAIN-RECS] ❌ GPT-4o-mini 추천 실패:', gptError.message);
@@ -6737,58 +6730,17 @@ async function generateGPT4Recommendations(userProfile, jobCandidates, limit) {
     return String(arr);
   };
 
-  const prompt = `
-당신은 전문 IT 채용 컨설턴트입니다. 아래 회원의 이력서와 채용공고를 분석하여 최적의 매칭을 찾아주세요.
+  const prompt = `회원 프로필과 ${jobCandidates.length}개 채용공고를 매칭하여 상위 ${limit}개를 추천하세요.
 
-## 회원 프로필
-- 보유 기술: ${formatSkills(userProfile.skills)}
-- 경력 수준: ${userProfile.experience || '정보 없음'}
-- 희망 지역: ${formatArray(userProfile.preferred_regions)}
-- 희망 직무: ${formatArray(userProfile.jobs)}
-- 희망 연봉: ${userProfile.expected_salary || '정보 없음'}
+프로필: 기술=${formatSkills(userProfile.skills)} | 경력=${userProfile.experience || '정보없음'} | 지역=${formatArray(userProfile.preferred_regions)} | 직무=${formatArray(userProfile.jobs)}
 
-## 채용공고 목록 (${jobCandidates.length}개)
-${jobCandidates.map((job, idx) => `
-${idx + 1}. [${job.company}] ${job.title}
-   - 요구 기술: ${formatSkills(job.skills)}
-   - 경력 요건: ${job.experience || '정보 없음'}
-   - 근무 지역: ${job.location || '정보 없음'}
-   - 공고 ID: ${job.id}
-`).join('\n')}
+공고목록:
+${jobCandidates.map((job, idx) => `${idx + 1}. [${job.company}] ${job.title} | 기술:${formatSkills(job.skills)} | 경력:${job.experience || '정보없음'} | 지역:${job.location || '정보없음'} | ID:${job.id}`).join('\n')}
 
-## 매칭 평가 기준
-1. **기술 스킬 매칭 (50점)**: 회원 보유 기술과 공고 요구 기술의 일치도
-   - 정확히 일치하는 기술이 많을수록 높은 점수
-   - 핵심 기술(Python, React, Java 등)은 가중치 높게
+평가기준: 기술50점+경력25점+지역15점+직무10점=100점
+70-95점 범위, 상위 ${limit}개만, 각 공고당 구체적인 매칭이유 3개
 
-2. **경력 수준 적합성 (25점)**: 회원 경력과 공고 요구 경력의 적합도
-   - 정확히 일치: 25점
-   - 1-2년 차이: 20점
-   - 3년 이상 차이: 10점 이하
-
-3. **지역 매칭 (15점)**: 희망 근무지와 공고 지역 일치도
-   - 완전 일치: 15점
-   - 인접 지역: 10점
-
-4. **직무 적합성 (10점)**: 희망 직무와 공고 직무 일치도
-   - 완전 일치: 10점
-   - 유사 직무: 5-7점
-
-## 지시사항
-- 상위 ${limit}개 공고를 **매칭률 높은 순**으로 추천
-- **매칭률 범위: 70-95점** (너무 낮으면 추천 의미 없음)
-- 각 공고마다 **구체적이고 상세한 매칭 이유 4-5개** 작성
-- 매칭 이유는 **구체적인 기술명, 경력, 직무명 포함**
-
-## 응답 형식 (JSON)
-{"recommendations":[{"job_id":"공고ID","match_score":85,"match_reasons":["보유기술 Python, React, Node.js가 요구기술과 정확히 일치 (3/3)","경력 3-5년으로 요구사항(3년 이상)에 적합","서울 강남 근무지가 희망지역 서울과 일치","백엔드 개발 직무가 희망직무와 정확히 매칭","대기업으로 안정적이고 복지 우수"]}]}
-`;
-
-  console.log('\n' + '='.repeat(80));
-  console.log('[AI추천] GPT-4o-mini Prompt:');
-  console.log('='.repeat(80));
-  console.log(prompt);
-  console.log('='.repeat(80) + '\n');
+JSON형식: {"recommendations":[{"job_id":"ID","match_score":85,"match_reasons":["이유1","이유2","이유3"]}]}`;
 
   try {
     const completion = await openai.chat.completions.create({
@@ -6796,29 +6748,17 @@ ${idx + 1}. [${job.company}] ${job.title}
       messages: [
         {
           role: 'system',
-          content: `당신은 15년 경력의 IT 채용 전문 컨설턴트입니다.
-회원의 이력서와 채용공고를 정밀하게 분석하여 최적의 매칭을 찾아냅니다.
-
-매칭 점수 기준:
-- 90-95점: 완벽한 매칭 (기술, 경력, 지역 모두 일치)
-- 80-89점: 매우 우수한 매칭 (핵심 조건 대부분 일치)
-- 70-79점: 좋은 매칭 (주요 조건 일치, 일부 차이)
-- 70점 미만: 추천하지 않음
-
-매칭 이유는 구체적으로:
-- "Python 보유" (X) → "보유기술 Python, Django가 요구기술 Python, Flask와 일치" (O)
-- "경력 적합" (X) → "3-5년 경력이 요구사항 3년 이상과 정확히 부합" (O)
-- "지역 일치" (X) → "서울 강남 근무가 희망지역 서울과 일치" (O)
-
-반드시 JSON 형식으로만 응답하세요.`
+          content: `IT 채용 매칭 전문가. 프로필과 공고를 분석하여 최적 매칭 찾기.
+점수: 90-95(완벽), 80-89(우수), 70-79(양호). 70점 미만은 제외.
+매칭이유는 구체적으로 기술명, 경력, 지역 명시. JSON만 응답.`
         },
         {
           role: 'user',
           content: prompt
         }
       ],
-      max_completion_tokens: 1800,
-      temperature: 0.3,
+      max_completion_tokens: 1000,
+      temperature: 0.1,
       response_format: { type: "json_object" }
     });
 
