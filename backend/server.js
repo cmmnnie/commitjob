@@ -4737,14 +4737,14 @@ app.post('/api/interview-questions', async (req, res) => {
         try {
           console.log('\n[INTERVIEW-QUESTIONS] 🤖 GPT-4o-mini 직접 호출 시작\n');
 
-          // 면접 기출질문 섹션 (2개로 제한 - 속도 개선)
+          // 면접 기출질문 섹션 (3개로 확대)
           const interviewQuestionsSection = jobInfo.interview_questions && jobInfo.interview_questions.length > 0
-            ? `기출:${jobInfo.interview_questions.slice(0, 2).map(q => q.question).join('|')}`
+            ? `기출:${jobInfo.interview_questions.slice(0, 3).map(q => q.question).join('|')}`
             : '';
 
-          // 사용자 프로필 섹션 (1개 스킬만 - 속도 개선)
+          // 사용자 프로필 섹션 (3개 스킬로 확대)
           const userProfileSection = finalUserProfile.skills.length > 0 || finalUserProfile.experience
-            ? `프로필:${finalUserProfile.skills.slice(0, 1).join(',')}/${finalUserProfile.experience || '신입'}`
+            ? `프로필:${finalUserProfile.skills.slice(0, 3).join(',')}/${finalUserProfile.experience || '신입'}`
             : '';
 
           const prompt = `회사:${jobInfo.company_name}
