@@ -51,14 +51,18 @@ export default function JobDetailPage() {
 
             // 면접 기출문제 조회
             console.log('[JobDetail] Fetching interview questions...');
+            console.log('[JobDetail] Company name:', companyName);
+            console.log('[JobDetail] API URL:', `${API_BASE_URL}/api/company/${encodeURIComponent(companyName)}/interview-questions?limit=5`);
             const questionsRes = await fetch(`${API_BASE_URL}/api/company/${encodeURIComponent(companyName)}/interview-questions?limit=5`);
             const questionsData = await questionsRes.json();
-            console.log('[JobDetail] Questions data:', questionsData);
+            console.log('[JobDetail] Questions response:', JSON.stringify(questionsData, null, 2));
             if (questionsData.success && questionsData.questions) {
                 setInterviewQuestions(questionsData.questions);
                 console.log('[JobDetail] Questions set:', questionsData.questions.length);
             } else {
-                console.log('[JobDetail] No interview questions found');
+                console.log('[JobDetail] No interview questions found or error occurred');
+                console.log('[JobDetail] Response success:', questionsData.success);
+                console.log('[JobDetail] Questions array:', questionsData.questions);
             }
         } catch (error) {
             console.error('[JobDetail] Error fetching company data:', error);
@@ -482,7 +486,7 @@ export default function JobDetailPage() {
                 )}
 
                 {/* 면접 기출문제 */}
-                {interviewQuestions.length > 0 && (
+                {!loading && (
                     <div style={{
                         background: 'white',
                         borderRadius: '16px',
@@ -503,52 +507,65 @@ export default function JobDetailPage() {
                         }}>
                             💬 면접 기출문제 ({interviewQuestions.length}건)
                         </h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            {interviewQuestions.map((item, index) => (
-                                <div key={index} style={{
-                                    background: '#f8f9fa',
-                                    padding: '16px',
-                                    borderRadius: '12px',
-                                    borderLeft: '4px solid #764ba2'
-                                }}>
-                                    {item.position && (
-                                        <div style={{
-                                            fontSize: '0.9rem',
-                                            color: '#888',
-                                            marginBottom: '8px',
-                                            fontWeight: '600'
-                                        }}>
-                                            📌 {item.position}
-                                        </div>
-                                    )}
-                                    {item.question && (
-                                        <div style={{
-                                            fontSize: '1rem',
-                                            color: '#333',
-                                            lineHeight: '1.6',
-                                            marginBottom: '8px'
-                                        }}>
-                                            <span style={{ fontWeight: '600', color: '#764ba2' }}>Q. </span>
-                                            {item.question}
-                                        </div>
-                                    )}
-                                    {item.difficulty && (
-                                        <div style={{
-                                            display: 'inline-block',
-                                            background: item.difficulty === '어려움' ? '#dc3545' :
-                                                       item.difficulty === '보통' ? '#ffc107' : '#28a745',
-                                            color: 'white',
-                                            padding: '4px 12px',
-                                            borderRadius: '12px',
-                                            fontSize: '0.85rem',
-                                            fontWeight: '600'
-                                        }}>
-                                            난이도: {item.difficulty}
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
+                        {interviewQuestions.length > 0 ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                {interviewQuestions.map((item, index) => (
+                                    <div key={index} style={{
+                                        background: '#f8f9fa',
+                                        padding: '16px',
+                                        borderRadius: '12px',
+                                        borderLeft: '4px solid #764ba2'
+                                    }}>
+                                        {item.position && (
+                                            <div style={{
+                                                fontSize: '0.9rem',
+                                                color: '#888',
+                                                marginBottom: '8px',
+                                                fontWeight: '600'
+                                            }}>
+                                                📌 {item.position}
+                                            </div>
+                                        )}
+                                        {item.question && (
+                                            <div style={{
+                                                fontSize: '1rem',
+                                                color: '#333',
+                                                lineHeight: '1.6',
+                                                marginBottom: '8px'
+                                            }}>
+                                                <span style={{ fontWeight: '600', color: '#764ba2' }}>Q. </span>
+                                                {item.question}
+                                            </div>
+                                        )}
+                                        {item.difficulty && (
+                                            <div style={{
+                                                display: 'inline-block',
+                                                background: item.difficulty === '어려움' ? '#dc3545' :
+                                                           item.difficulty === '보통' ? '#ffc107' : '#28a745',
+                                                color: 'white',
+                                                padding: '4px 12px',
+                                                borderRadius: '12px',
+                                                fontSize: '0.85rem',
+                                                fontWeight: '600'
+                                            }}>
+                                                난이도: {item.difficulty}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div style={{
+                                textAlign: 'center',
+                                padding: '40px 20px',
+                                color: '#999'
+                            }}>
+                                <p style={{ fontSize: '1rem' }}>아직 등록된 면접 기출문제가 없습니다.</p>
+                                <p style={{ fontSize: '0.9rem', marginTop: '8px' }}>
+                                    회사명: {job.company}
+                                </p>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

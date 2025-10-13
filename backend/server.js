@@ -2157,8 +2157,10 @@ app.get("/api/main-recommendations", async (req, res) => {
 
       if (openai) {
         try {
-          console.log('[MAIN-RECS] GPT-4o-mini 기반 추천 시작 (프로필 유사 20건 → 상위 5건 선택)');
-          rerankedJobs = await generateGPT4Recommendations(userProfile, allJobs, 5);
+          console.log('[MAIN-RECS] GPT-4o-mini 기반 추천 시작 (상위 15개 공고 전달 → 10개 선택)');
+          // 상위 15개 공고만 GPT에 전달하여 속도 개선
+          const topCandidates = allJobs.slice(0, 15);
+          rerankedJobs = await generateGPT4Recommendations(userProfile, topCandidates, 10);
           console.log(`[MAIN-RECS] ✅ GPT-4o-mini로 ${rerankedJobs.length}개 공고 추천 완료`);
         } catch (gptError) {
           console.error('[MAIN-RECS] ❌ GPT-4o-mini 추천 실패:', gptError.message);
@@ -4737,9 +4739,9 @@ app.post('/api/interview-questions', async (req, res) => {
         try {
           console.log('\n[INTERVIEW-QUESTIONS] 🤖 GPT-4o-mini 직접 호출 시작\n');
 
-          // 면접 기출질문 섹션 (3개로 확대)
+          // 면접 기출질문 섹션 (5개로 확대)
           const interviewQuestionsSection = jobInfo.interview_questions && jobInfo.interview_questions.length > 0
-            ? `기출:${jobInfo.interview_questions.slice(0, 3).map(q => q.question).join('|')}`
+            ? `기출:${jobInfo.interview_questions.slice(0, 5).map(q => q.question).join('|')}`
             : '';
 
           // 사용자 프로필 섹션 (3개 스킬로 확대)
@@ -6535,11 +6537,26 @@ app.get('/api/company/:companyName/reviews', async (req, res) => {
   try {
     console.log(`[REVIEWS-API] Fetching reviews for: ${companyName}`);
 
+    // 회사명 정규화 (catch_companies 테이블에서 표준 회사명 찾기)
+    let normalizedCompanyName = companyName;
+    try {
+      const [companyResults] = await pool.execute(
+        'SELECT company FROM catch_companies WHERE company = ? OR company LIKE ? LIMIT 1',
+        [companyName, `%${companyName}%`]
+      );
+      if (companyResults.length > 0) {
+        normalizedCompanyName = companyResults[0].company;
+        console.log(`[REVIEWS-API] Normalized company name: ${companyName} -> ${normalizedCompanyName}`);
+      }
+    } catch (err) {
+      console.log(`[REVIEWS-API] Company normalization failed, using original name:`, err.message);
+    }
+
     // 모든 catch 테이블은 'company' 컬럼 사용
-    // 정확한 일치 먼저 시도
+    // 정규화된 이름으로 정확한 일치 먼저 시도
     let [results] = await pool.execute(
       'SELECT * FROM catch_reviews WHERE company = ? ORDER BY id DESC LIMIT ?',
-      [companyName, limit]
+      [normalizedCompanyName, limit]
     );
 
     // 정확한 일치가 없으면 LIKE 검색
@@ -6547,7 +6564,7 @@ app.get('/api/company/:companyName/reviews', async (req, res) => {
       console.log(`[REVIEWS-API] No exact match, trying LIKE search...`);
       [results] = await pool.execute(
         'SELECT * FROM catch_reviews WHERE company LIKE ? ORDER BY id DESC LIMIT ?',
-        [`%${companyName}%`, limit]
+        [`%${normalizedCompanyName}%`, limit]
       );
     }
 
@@ -6565,29 +6582,63 @@ app.get('/api/company/:companyName/interview-questions', async (req, res) => {
   const limit = parseInt(req.query.limit) || 10;
 
   try {
-    console.log(`[INTERVIEW-API] Fetching interview questions for: ${companyName}`);
+    console.log(`[INTERVIEW-API] ========================================`);
+    console.log(`[INTERVIEW-API] 요청 회사명: "${companyName}"`);
+    console.log(`[INTERVIEW-API] Limit: ${limit}`);
+
+    // 회사명 정규화 (catch_companies 테이블에서 표준 회사명 찾기)
+    let normalizedCompanyName = companyName;
+    try {
+      console.log(`[INTERVIEW-API] catch_companies에서 표준 회사명 검색 중...`);
+      const [companyResults] = await pool.execute(
+        'SELECT company FROM catch_companies WHERE company = ? OR company LIKE ? LIMIT 1',
+        [companyName, `%${companyName}%`]
+      );
+      console.log(`[INTERVIEW-API] catch_companies 검색 결과: ${companyResults.length}개`);
+      if (companyResults.length > 0) {
+        normalizedCompanyName = companyResults[0].company;
+        console.log(`[INTERVIEW-API] ✅ 정규화: "${companyName}" -> "${normalizedCompanyName}"`);
+      } else {
+        console.log(`[INTERVIEW-API] ⚠️ catch_companies에 없음, 원본 이름 사용`);
+      }
+    } catch (err) {
+      console.log(`[INTERVIEW-API] ❌ 정규화 실패:`, err.message);
+    }
 
     // 모든 catch 테이블은 'company' 컬럼 사용
-    // 정확한 일치 먼저 시도
+    // 정규화된 이름으로 정확한 일치 먼저 시도
+    console.log(`[INTERVIEW-API] 정확 매칭 시도: company = "${normalizedCompanyName}"`);
     let [results] = await pool.execute(
       'SELECT * FROM catch_interview_questions WHERE company = ? ORDER BY id DESC LIMIT ?',
-      [companyName, limit]
+      [normalizedCompanyName, limit]
     );
+    console.log(`[INTERVIEW-API] 정확 매칭 결과: ${results.length}개`);
 
     // 정확한 일치가 없으면 LIKE 검색
     if (results.length === 0) {
-      console.log(`[INTERVIEW-API] No exact match, trying LIKE search...`);
+      console.log(`[INTERVIEW-API] LIKE 검색 시도: company LIKE "%${normalizedCompanyName}%"`);
       [results] = await pool.execute(
         'SELECT * FROM catch_interview_questions WHERE company LIKE ? ORDER BY id DESC LIMIT ?',
-        [`%${companyName}%`, limit]
+        [`%${normalizedCompanyName}%`, limit]
       );
+      console.log(`[INTERVIEW-API] LIKE 검색 결과: ${results.length}개`);
     }
 
-    console.log(`[INTERVIEW-API] Found ${results.length} questions`);
+    if (results.length > 0) {
+      console.log(`[INTERVIEW-API] ✅ 총 ${results.length}개 기출질문 발견`);
+      results.forEach((q, idx) => {
+        console.log(`[INTERVIEW-API]   [${idx+1}] ${q.position}: ${q.question.substring(0, 50)}...`);
+      });
+    } else {
+      console.log(`[INTERVIEW-API] ⚠️ 기출질문 없음`);
+    }
+
+    console.log(`[INTERVIEW-API] ========================================`);
     res.json({ success: true, questions: results, total: results.length });
   } catch (error) {
-    console.error('[ERROR] Interview Questions API error:', error);
-    res.status(500).json({ success: false, error: 'Internal server error' });
+    console.error('[INTERVIEW-API] ❌ 에러:', error.message);
+    console.error('[INTERVIEW-API] Stack:', error.stack);
+    res.status(500).json({ success: false, error: 'Internal server error', message: error.message });
   }
 });
 
@@ -6740,27 +6791,18 @@ async function generateGPT4Recommendations(userProfile, jobCandidates, limit) {
   }
 
   const formatSkills = (skills) => {
-    if (!skills) return '정보 없음';
+    if (!skills) return '';
     if (typeof skills === 'string') return skills;
-    if (Array.isArray(skills)) return skills.join(', ');
+    if (Array.isArray(skills)) return skills.slice(0, 3).join(','); // 최대 3개 스킬만
     return String(skills);
   };
 
-  const formatArray = (arr) => {
-    if (!arr) return '정보 없음';
-    if (typeof arr === 'string') return arr;
-    if (Array.isArray(arr)) return arr.join(', ');
-    return String(arr);
-  };
+  // 간결한 프롬프트로 토큰 절약 및 응답 속도 개선
+  const userSkills = formatSkills(userProfile.skills);
+  const prompt = `기술:${userSkills}|경력:${userProfile.experience||'무관'}
+공고:${jobCandidates.map((job, idx) => `${idx+1}.${job.title}|${formatSkills(job.skills)}|${job.id}`).join('\n')}
+상위${limit}개추천,JSON:{"recommendations":[{"job_id":"ID","match_score":85,"match_reasons":["이유1","이유2"]}]}`;
 
-  const prompt = `프로필기술:${formatSkills(userProfile.skills)}|경력:${userProfile.experience||'무관'}
-
-공고${jobCandidates.length}개:
-${jobCandidates.map((job, idx) => `${idx+1}.${job.title}|${formatSkills(job.skills)}|ID:${job.id}`).join('\n')}
-
-상위${limit}개,70-95점,이유2개.JSON:{"recommendations":[{"job_id":"ID","match_score":85,"match_reasons":["이유1","이유2"]}]}`;
-
-  console.log(`[AI-RECOMMENDATION] 📝 PROMPT:\n${prompt}`);
   console.log(`[AI-RECOMMENDATION] 📝 PROMPT 길이: ${prompt.length}자`);
 
   try {
@@ -6772,7 +6814,7 @@ ${jobCandidates.map((job, idx) => `${idx+1}.${job.title}|${formatSkills(job.skil
           content: prompt
         }
       ],
-      max_completion_tokens: 400,
+      max_completion_tokens: 300, // 400 -> 300으로 줄여서 속도 개선
       temperature: 0,
       response_format: { type: "json_object" }
     });
