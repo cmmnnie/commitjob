@@ -3450,7 +3450,7 @@ app.get("/session/interview", async (req, res) => {
         difficulty: difficulty
       },
       {
-        timeout: 30000,
+        timeout: 10000,
         headers: {
           'Content-Type': 'application/json'
         }
