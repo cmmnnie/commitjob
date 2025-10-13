@@ -13,8 +13,6 @@ export default function AIInterviewPage() {
     const [selectedQuestion, setSelectedQuestion] = useState(null);
     const [answer, setAnswer] = useState('');
     const [feedback, setFeedback] = useState(null);
-    const [answerScore, setAnswerScore] = useState(null);
-    const [previousScore, setPreviousScore] = useState(null); // 이전 점수 저장
     const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
     const [modelAnswer, setModelAnswer] = useState(null);
     const [isModelAnswerLoading, setIsModelAnswerLoading] = useState(false);
@@ -155,7 +153,6 @@ export default function AIInterviewPage() {
         setSelectedQuestion(question);
         setAnswer('');
         setFeedback(null);
-        setAnswerScore(null);
         setModelAnswer(null);
         setRevisedAnswer(null);
     };
@@ -204,15 +201,8 @@ export default function AIInterviewPage() {
             return;
         }
 
-        console.log('[피드백 요청] 답변 길이:', answer.trim().length, '문자');
-        console.log('[피드백 요청] 이전 점수:', answerScore);
-
-        // 현재 점수를 이전 점수로 저장
-        const currentPreviousScore = answerScore;
-
         setIsFeedbackLoading(true);
         setFeedback(null);
-        setAnswerScore(null);
         setRevisedAnswer(null);
 
         try {
@@ -227,8 +217,7 @@ export default function AIInterviewPage() {
                 body: JSON.stringify({
                     question: selectedQuestion.question,
                     answer: answer.trim(),
-                    company: generatedCompanyName,
-                    previous_score: currentPreviousScore // 이전 점수 전달
+                    company: generatedCompanyName
                 })
             });
 
@@ -237,11 +226,8 @@ export default function AIInterviewPage() {
             }
 
             const data = await response.json();
-            console.log('[피드백 응답] 점수:', data.score, '피드백 길이:', data.feedback?.length);
             if (data.success && data.feedback) {
                 setFeedback(data.feedback);
-                setAnswerScore(data.score);
-                console.log('[피드백 설정] 점수가', data.score, '점으로 업데이트되었습니다');
             } else {
                 alert('피드백을 받을 수 없습니다.');
             }
@@ -270,7 +256,6 @@ export default function AIInterviewPage() {
                     question: selectedQuestion.question,
                     original_answer: answer.trim(),
                     feedback: feedback,
-                    original_score: answerScore,
                     company: generatedCompanyName,
                     user_id: currentUser?.id
                 })
@@ -286,13 +271,11 @@ export default function AIInterviewPage() {
                 setRevisedAnswer(data.revisedAnswer);
                 // 수정된 답변을 textarea에 자동으로 채우기
                 setAnswer(data.revisedAnswer);
-                // 기존 피드백과 점수 초기화 (새로운 답변이므로 다시 피드백 받아야 함)
+                // 기존 피드백 초기화 (새로운 답변이므로 다시 피드백 받아야 함)
                 setFeedback(null);
-                setAnswerScore(null);
-                console.log('[수정된 답변] 피드백과 점수 초기화 완료');
                 // 사용자에게 다음 단계 안내
                 setTimeout(() => {
-                    alert('✨ 개선된 답변이 답변란에 입력되었습니다!\n\n새로운 답변에 대해 "AI 피드백 받기" 버튼을 다시 클릭하여 개선된 점수를 확인해보세요!');
+                    alert('✨ 개선된 답변이 답변란에 입력되었습니다!\n\n새로운 답변에 대해 "AI 피드백 받기" 버튼을 다시 클릭하여 개선 내용을 확인해보세요!');
                 }, 500);
             } else {
                 alert('수정된 답변을 받을 수 없습니다.');
@@ -538,7 +521,7 @@ export default function AIInterviewPage() {
                                         borderRadius: '12px',
                                         fontWeight: '600',
                                         color: '#7b1fa2'
-                                    }}>www.catch.co.kr에서 기출질문 10건 스크래핑</span>
+                                    }}>CommitJob의 면접 기출질문 조회 또는 catch.co.kr에서 실시간 스크래핑</span>
                                     <span style={{ fontSize: '1.2rem', color: '#999' }}>→</span>
                                     <span style={{
                                         background: '#e8f5e9',
@@ -641,10 +624,10 @@ export default function AIInterviewPage() {
                                     gap: '8px'
                                 }}>
                                     <span style={{ fontSize: '1.5rem' }}>✍️</span>
-                                    <span>AI 피드백 및 점수 제시</span>
+                                    <span>AI 피드백 제시</span>
                                 </h4>
                                 <p style={{ fontSize: '0.95rem', color: '#555', margin: 0, fontWeight: '700' }}>
-                                    회원님이 입력한 답변을 GPT가 분석하여 상세한 피드백과 점수를 제공합니다
+                                    회원님이 입력한 답변을 GPT가 분석하여 상세한 피드백을 제공합니다
                                 </p>
                             </div>
                         </div>
@@ -1089,41 +1072,19 @@ export default function AIInterviewPage() {
                             }}>
                                 <div style={{
                                     display: 'flex',
-                                    justifyContent: 'space-between',
                                     alignItems: 'center',
+                                    gap: '10px',
                                     marginBottom: '16px'
                                 }}>
-                                    <div style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '10px'
+                                    <span style={{ fontSize: '1.8rem' }}>🎯</span>
+                                    <h3 style={{
+                                        fontSize: '1.2rem',
+                                        color: '#065f46',
+                                        fontWeight: '700',
+                                        margin: 0
                                     }}>
-                                        <span style={{ fontSize: '1.8rem' }}>🎯</span>
-                                        <h3 style={{
-                                            fontSize: '1.2rem',
-                                            color: '#065f46',
-                                            fontWeight: '700',
-                                            margin: 0
-                                        }}>
-                                            AI 피드백
-                                        </h3>
-                                    </div>
-                                    {answerScore && (
-                                        <div style={{
-                                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                            color: 'white',
-                                            padding: '8px 16px',
-                                            borderRadius: '16px',
-                                            fontSize: '1rem',
-                                            fontWeight: '800',
-                                            boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',
-                                            border: '2px solid rgba(255, 255, 255, 0.3)',
-                                            textShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                                            letterSpacing: '-0.3px'
-                                        }}>
-                                            답변 점수: {answerScore}점
-                                        </div>
-                                    )}
+                                        AI 피드백
+                                    </h3>
                                 </div>
                                 <div style={{
                                     fontSize: '1rem',
