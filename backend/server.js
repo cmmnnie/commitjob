@@ -6481,20 +6481,32 @@ app.get('/api/company/:companyName', async (req, res) => {
   try {
     console.log(`[COMPANY-API] Fetching company info for: ${companyName}`);
 
-    const [results] = await pool.execute(
+    // 정확한 일치 먼저 시도
+    let [results] = await pool.execute(
       'SELECT * FROM catch_companies WHERE company_name = ? LIMIT 1',
       [companyName]
     );
 
+    // 정확한 일치가 없으면 LIKE 검색
     if (results.length === 0) {
+      console.log(`[COMPANY-API] No exact match, trying LIKE search...`);
+      [results] = await pool.execute(
+        'SELECT * FROM catch_companies WHERE company_name LIKE ? LIMIT 1',
+        [`%${companyName}%`]
+      );
+    }
+
+    if (results.length === 0) {
+      console.log(`[COMPANY-API] No company info found for: ${companyName}`);
       return res.json({ success: false, message: '회사 정보를 찾을 수 없습니다.' });
     }
 
     const company = results[0];
+    console.log(`[COMPANY-API] Found company: ${company.company_name}`);
     res.json({ success: true, company });
   } catch (error) {
     console.error('[ERROR] Company API error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
 
@@ -6506,15 +6518,26 @@ app.get('/api/company/:companyName/reviews', async (req, res) => {
   try {
     console.log(`[REVIEWS-API] Fetching reviews for: ${companyName}`);
 
-    const [results] = await pool.execute(
+    // 정확한 일치 먼저 시도
+    let [results] = await pool.execute(
       'SELECT * FROM catch_reviews WHERE company_name = ? ORDER BY id DESC LIMIT ?',
       [companyName, limit]
     );
 
+    // 정확한 일치가 없으면 LIKE 검색
+    if (results.length === 0) {
+      console.log(`[REVIEWS-API] No exact match, trying LIKE search...`);
+      [results] = await pool.execute(
+        'SELECT * FROM catch_reviews WHERE company_name LIKE ? ORDER BY id DESC LIMIT ?',
+        [`%${companyName}%`, limit]
+      );
+    }
+
+    console.log(`[REVIEWS-API] Found ${results.length} reviews`);
     res.json({ success: true, reviews: results, total: results.length });
   } catch (error) {
     console.error('[ERROR] Reviews API error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
 
@@ -6526,15 +6549,26 @@ app.get('/api/company/:companyName/interview-questions', async (req, res) => {
   try {
     console.log(`[INTERVIEW-API] Fetching interview questions for: ${companyName}`);
 
-    const [results] = await pool.execute(
+    // 정확한 일치 먼저 시도
+    let [results] = await pool.execute(
       'SELECT * FROM catch_interview_questions WHERE company_name = ? ORDER BY id DESC LIMIT ?',
       [companyName, limit]
     );
 
+    // 정확한 일치가 없으면 LIKE 검색
+    if (results.length === 0) {
+      console.log(`[INTERVIEW-API] No exact match, trying LIKE search...`);
+      [results] = await pool.execute(
+        'SELECT * FROM catch_interview_questions WHERE company_name LIKE ? ORDER BY id DESC LIMIT ?',
+        [`%${companyName}%`, limit]
+      );
+    }
+
+    console.log(`[INTERVIEW-API] Found ${results.length} questions`);
     res.json({ success: true, questions: results, total: results.length });
   } catch (error) {
     console.error('[ERROR] Interview Questions API error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
 
