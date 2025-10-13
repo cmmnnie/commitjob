@@ -6730,27 +6730,23 @@ async function generateGPT4Recommendations(userProfile, jobCandidates, limit) {
     return String(arr);
   };
 
-  const prompt = `프로필: 기술=${formatSkills(userProfile.skills)}|경력=${userProfile.experience||'정보없음'}|지역=${formatArray(userProfile.preferred_regions)}
+  const prompt = `프로필기술:${formatSkills(userProfile.skills)}|경력:${userProfile.experience||'무관'}
 
-공고(${jobCandidates.length}개):
-${jobCandidates.map((job, idx) => `${idx+1}.[${job.company}]${job.title}|기술:${formatSkills(job.skills)}|ID:${job.id}`).join('\n')}
+공고${jobCandidates.length}개:
+${jobCandidates.map((job, idx) => `${idx+1}.${job.title}|${formatSkills(job.skills)}|ID:${job.id}`).join('\n')}
 
-상위${limit}개 추천. 70-95점. 매칭이유 3개. JSON: {"recommendations":[{"job_id":"ID","match_score":85,"match_reasons":["이유1","이유2","이유3"]}]}`;
+상위${limit}개,70-95점,이유2개.JSON:{"recommendations":[{"job_id":"ID","match_score":85,"match_reasons":["이유1","이유2"]}]}`;
 
   try {
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         {
-          role: 'system',
-          content: `IT채용 매칭. 기술+경력 중심 평가. 70-95점. JSON만 응답.`
-        },
-        {
           role: 'user',
           content: prompt
         }
       ],
-      max_completion_tokens: 600,
+      max_completion_tokens: 400,
       temperature: 0,
       response_format: { type: "json_object" }
     });
