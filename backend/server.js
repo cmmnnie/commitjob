@@ -2251,27 +2251,38 @@ app.get("/api/main-recommendations", async (req, res) => {
           const jobTitle = (job.title || '').toLowerCase();
           const jobCareerLevel = getUserCareerLevel(job.experience);
 
-          // 1. 스킬 매칭 (가중치: 40점)
+          // userSkills도 소문자로 변환하여 매칭 정확도 향상
+          const userSkillsLower = userSkills.map(s => s.toLowerCase().trim());
+
+          // 1. 스킬 매칭 (가중치: 50점)
           // 정확 매칭 vs 부분 매칭 구분 + 스킬 중요도 반영
           let exactSkillMatches = 0;
           let partialSkillMatches = 0;
           const matchedSkills = [];
+          const matchedSkillsOriginal = []; // 원본 스킬명 유지
           let skillWeightBonus = 0;
 
           jobSkills.forEach(jobSkill => {
-            userSkills.forEach(userSkill => {
-              const importance = skillImportance[userSkill] || 1.0;
+            userSkillsLower.forEach((userSkillLower, idx) => {
+              const userSkillOriginal = userSkills[idx];
+              const importance = skillImportance[userSkillLower] || 1.0;
 
-              if (jobSkill === userSkill) {
+              if (jobSkill === userSkillLower) {
+                // 정확 매칭
                 exactSkillMatches++;
-                matchedSkills.push(userSkill);
-                // 중요 스킬 매칭 시 추가 보너스
-                skillWeightBonus += (importance - 1.0) * 2;
-              } else if (jobSkill.includes(userSkill) || userSkill.includes(jobSkill)) {
+                if (!matchedSkills.includes(userSkillLower)) {
+                  matchedSkills.push(userSkillLower);
+                  matchedSkillsOriginal.push(userSkillOriginal);
+                  // 중요 스킬 매칭 시 추가 보너스
+                  skillWeightBonus += (importance - 1.0) * 3;
+                }
+              } else if (jobSkill.includes(userSkillLower) || userSkillLower.includes(jobSkill)) {
+                // 부분 매칭
                 partialSkillMatches++;
-                if (!matchedSkills.includes(userSkill)) {
-                  matchedSkills.push(userSkill);
-                  skillWeightBonus += (importance - 1.0) * 1;
+                if (!matchedSkills.includes(userSkillLower)) {
+                  matchedSkills.push(userSkillLower);
+                  matchedSkillsOriginal.push(userSkillOriginal);
+                  skillWeightBonus += (importance - 1.0) * 1.5;
                 }
               }
             });
@@ -2281,77 +2292,94 @@ app.get("/api/main-recommendations", async (req, res) => {
           const totalUserSkills = userSkills.length;
           const skillMatchRate = totalUserSkills > 0 ? Math.round((matchedSkills.length / totalUserSkills) * 100) : 0;
 
-          const baseSkillScore = exactSkillMatches * 10 + partialSkillMatches * 5;
+          // 스킬 점수 계산 (최대 50점)
+          const baseSkillScore = exactSkillMatches * 12 + partialSkillMatches * 6;
           const skillScore = Math.min(baseSkillScore + skillWeightBonus, 50);
           matchScore += skillScore;
 
           if (matchedSkills.length > 0) {
-            const topSkills = matchedSkills.slice(0, 5).join(', ');
-            const skillDetail = matchedSkills.length > 5 ? ` 외 ${matchedSkills.length - 5}개` : '';
-            matchReasons.push(`보유 기술 ${skillMatchRate}% 일치 (${topSkills}${skillDetail})`);
+            // 원본 스킬명으로 표시
+            const topSkills = matchedSkillsOriginal.slice(0, 5).join(', ');
+            const skillDetail = matchedSkillsOriginal.length > 5 ? ` 외 ${matchedSkillsOriginal.length - 5}개` : '';
+
+            // 매칭 이유 1: 전체 스킬 매칭률
+            matchReasons.push(`💡 보유 기술 ${skillMatchRate}% 일치 (${topSkills}${skillDetail})`);
+
+            // 매칭 이유 2: 정확 매칭된 중요 스킬
             if (exactSkillMatches > 0) {
-              const importantSkills = matchedSkills.filter(s => skillImportance[s] > 1.2);
+              const importantSkills = matchedSkillsOriginal.filter((_, idx) =>
+                skillImportance[matchedSkills[idx]] > 1.2
+              );
               if (importantSkills.length > 0) {
-                matchReasons.push(`핵심 기술 정확 매칭: ${importantSkills.slice(0, 3).join(', ')}`);
+                matchReasons.push(`⭐ 핵심 기술 정확 매칭 (${importantSkills.slice(0, 3).join(', ')})`);
               } else {
-                matchReasons.push(`정확 매칭 기술 ${exactSkillMatches}개 보유`);
+                matchReasons.push(`✅ 요구 기술 ${exactSkillMatches}개 보유`);
               }
+            }
+
+            // 매칭 이유 3: 부분 매칭 스킬
+            if (partialSkillMatches > 0) {
+              matchReasons.push(`🔧 관련 기술 ${partialSkillMatches}개 보유 (확장 가능)`);
             }
           } else {
             // 스킬 매칭이 없어도 관련 기술이 있다면 부분 점수
             const relatedSkills = [];
             jobSkills.forEach(js => {
-              if (js.includes('개발') || js.includes('프로그래밍')) {
+              if (js.includes('개발') || js.includes('프로그래밍') || js.includes('엔지니어')) {
                 relatedSkills.push(js);
               }
             });
             if (relatedSkills.length > 0) {
-              matchScore += 10;
-              matchReasons.push(`관련 기술 분야 경험 있음 (${relatedSkills.slice(0, 2).join(', ')})`);
+              matchScore += 15;
+              matchReasons.push(`📚 관련 기술 분야 경험 보유 (${relatedSkills.slice(0, 2).join(', ')})`);
             }
           }
 
-          // 2. 경력 매칭 (가중치: 25점)
-          // 경력 레벨 차이에 따른 감점
+          // 2. 경력 매칭 (가중치: 20점)
           const careerDiff = Math.abs(userCareerLevel - jobCareerLevel);
-          let careerScore = 25;
+          let careerScore = 20;
           const careerLevelNames = ['신입', '1-2년', '3-5년', '6-8년', '9년+'];
           if (careerDiff === 0) {
-            careerScore = 25;
-            matchReasons.push(`경력 수준 정확 일치 (${careerLevelNames[userCareerLevel]})`);
-          } else if (careerDiff === 1) {
             careerScore = 20;
-            matchReasons.push(`경력 수준 적합 (회원: ${careerLevelNames[userCareerLevel]}, 공고: ${careerLevelNames[jobCareerLevel]})`);
+            matchReasons.push(`🎯 경력 수준 정확 일치 (${careerLevelNames[userCareerLevel]})`);
+          } else if (careerDiff === 1) {
+            careerScore = 15;
+            matchReasons.push(`👔 경력 수준 적합 (본인 ${careerLevelNames[userCareerLevel]}, 요구 ${careerLevelNames[jobCareerLevel]})`);
           } else if (careerDiff === 2) {
             careerScore = 10;
-            matchReasons.push(`경력 차이 있지만 지원 가능 (회원: ${careerLevelNames[userCareerLevel]}, 공고: ${careerLevelNames[jobCareerLevel]})`);
+            matchReasons.push(`📋 경력 차이 있으나 지원 가능 (본인 ${careerLevelNames[userCareerLevel]}, 요구 ${careerLevelNames[jobCareerLevel]})`);
           } else {
             careerScore = 5;
           }
           matchScore += careerScore;
 
-          // 3. 지역 매칭 (가중치: 20점)
+          // 3. 지역 매칭 (가중치: 15점)
           let regionScore = 0;
           const matchedRegions = [];
           jobLocation.forEach(jloc => {
             userRegions.forEach(ureg => {
-              if (jloc.includes(ureg) || ureg.includes(jloc)) {
-                regionScore = 20;
-                matchedRegions.push(ureg);
+              const uregLower = ureg.toLowerCase();
+              if (jloc.includes(uregLower) || uregLower.includes(jloc)) {
+                regionScore = 15;
+                if (!matchedRegions.includes(ureg)) {
+                  matchedRegions.push(ureg);
+                }
               }
             });
           });
           matchScore += regionScore;
           if (matchedRegions.length > 0) {
-            matchReasons.push(`희망 근무지역 일치 (${matchedRegions.join(', ')})`);
+            matchReasons.push(`📍 희망 근무지역 일치 (${matchedRegions.join(', ')})`);
           }
 
-          // 4. 직무 키워드 매칭 (가중치: 15점)
+          // 4. 직무 키워드 매칭 (가중치: 10점)
           let jobTypeScore = 0;
+          const jobTitleLower = jobTitle.toLowerCase();
           userJobs.forEach(ujob => {
-            if (jobTitle.includes(ujob) || ujob.includes(jobTitle.split(' ')[0])) {
-              jobTypeScore = 15;
-              matchReasons.push(`희망 직무 일치 (${job.title})`);
+            const ujobLower = ujob.toLowerCase();
+            if (jobTitleLower.includes(ujobLower) || ujobLower.includes(jobTitleLower.split(' ')[0])) {
+              jobTypeScore = 10;
+              matchReasons.push(`💼 희망 직무 일치 (${job.title})`);
             }
           });
           matchScore += jobTypeScore;
@@ -2369,8 +2397,7 @@ app.get("/api/main-recommendations", async (req, res) => {
             matchScore += 5;
           }
 
-          // 6. 공고 신선도 보너스 (최대 10점)
-          // 최근 공고일수록 높은 점수
+          // 6. 공고 신선도 보너스 (최대 8점)
           if (job.scraped_at) {
             const scrapedDate = new Date(job.scraped_at);
             const now = new Date();
@@ -2378,55 +2405,52 @@ app.get("/api/main-recommendations", async (req, res) => {
 
             let freshnessBonus = 0;
             if (daysOld <= 1) {
-              freshnessBonus = 10; // 1일 이내: 만점
-              matchReasons.push('최신 공고 (1일 이내)');
+              freshnessBonus = 8;
+              matchReasons.push('🆕 최신 공고 (1일 이내)');
             } else if (daysOld <= 3) {
-              freshnessBonus = 8; // 3일 이내: 8점
-              matchReasons.push('최신 공고 (3일 이내)');
+              freshnessBonus = 6;
+              matchReasons.push('🆕 최신 공고 (3일 이내)');
             } else if (daysOld <= 7) {
-              freshnessBonus = 5; // 1주일 이내: 5점
+              freshnessBonus = 4;
             } else if (daysOld <= 14) {
-              freshnessBonus = 3; // 2주일 이내: 3점
+              freshnessBonus = 2;
             } else if (daysOld <= 30) {
-              freshnessBonus = 1; // 1개월 이내: 1점
+              freshnessBonus = 1;
             }
-            // 1개월 초과: 0점
 
             matchScore += freshnessBonus;
           }
 
-          // 7. 인기 기업 보너스 (최대 5점)
+          // 7. 인기 기업 보너스 (최대 7점)
           const companyLower = (job.company || '').toLowerCase();
           const isPopularCompany = popularCompanies.some(pc =>
             companyLower.includes(pc.toLowerCase()) || pc.toLowerCase().includes(companyLower)
           );
 
           if (isPopularCompany) {
-            matchScore += 5;
-            matchReasons.push(`인기 우량 기업 (${job.company})`);
+            matchScore += 7;
+            matchReasons.push(`🏢 우량 인기 기업 (${job.company})`);
           }
 
-          // 8. 기본 베이스 점수 추가 (모든 공고에 40점 기본 제공)
-          // 이렇게 하면 최소 매칭률이 보장됨
-          const baseScore = 40;
-          matchScore += baseScore;
-
+          // 현재까지 점수: 최대 110점 (스킬50 + 경력20 + 지역15 + 직무10 + 카테고리5 + 신선도8 + 기업7)
           // 최종 점수를 100점 만점으로 정규화
-          matchScore = Math.min(Math.round(matchScore * 0.8), 95); // 120점 기준을 95점 만점으로 조정
+          const normalizedScore = Math.round((matchScore / 110) * 100);
+          matchScore = Math.min(normalizedScore, 100);
 
-          // 매칭 이유가 3개 미만이면 추가 이유 생성
+          // 매칭 이유가 부족하면 추가 이유 생성
           if (matchReasons.length < 3) {
-            if (job.company) {
-              matchReasons.push(`${job.company}에서 채용 중`);
+            if (job.company && !isPopularCompany) {
+              matchReasons.push(`🏢 ${job.company}에서 채용 중`);
             }
             if (job.category === 'BIGDATA_AI') {
-              matchReasons.push('빅데이터/AI 분야 성장 기회');
+              matchReasons.push('📈 빅데이터/AI 분야 성장 기회');
             } else if (job.category === 'IT') {
-              matchReasons.push('IT 개발 분야 전문성 강화');
+              matchReasons.push('💻 IT 개발 분야 전문성 강화');
             }
-            if (matchReasons.length < 4) {
-              matchReasons.push('기술 스택 확장 및 경력 개발 기회');
-            }
+          }
+
+          if (matchReasons.length < 4) {
+            matchReasons.push('🚀 기술 스택 확장 및 경력 개발 기회');
           }
 
           return {
@@ -2437,8 +2461,8 @@ app.get("/api/main-recommendations", async (req, res) => {
           };
         });
 
-        // 70점 이상인 공고만 필터링
-        rerankedJobs = rerankedJobs.filter(job => job.match_score >= 70);
+        // 60점 이상인 공고만 필터링 (실용적인 매칭률)
+        rerankedJobs = rerankedJobs.filter(job => job.match_score >= 60);
 
         // 점수순 정렬 후 상위 5개
         rerankedJobs = rerankedJobs
