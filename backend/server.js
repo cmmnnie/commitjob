@@ -4718,11 +4718,11 @@ app.post('/api/interview-questions', async (req, res) => {
       //const expandedTitle = expandJobTitle(jobInfo.title);
       // console.log(`[INTERVIEW-QUESTIONS] Job title expanded: "${jobInfo.title}" → "${expandedTitle}"`);
 
-      // GPT-5-mini 직접 호출 (MCP 서비스 없이)
+      // GPT-4o-mini 직접 호출 (MCP 서비스 없이)
       console.log('[INTERVIEW-QUESTIONS] openai 객체 존재 여부:', !!openai);
       if (openai) {
         try {
-          console.log('\n[INTERVIEW-QUESTIONS] 🤖 GPT-5-mini 직접 호출 시작\n');
+          console.log('\n[INTERVIEW-QUESTIONS] 🤖 GPT-4o-mini 직접 호출 시작\n');
 
           // 면접 기출질문 섹션 (3개로 제한)
           const interviewQuestionsSection = jobInfo.interview_questions && jobInfo.interview_questions.length > 0
@@ -4743,12 +4743,12 @@ ${userProfileSection ? `프로필: ${userProfileSection}` : ''}${interviewQuesti
 {"questions":[{"id":1,"question":"질문내용"},{"id":2,"question":"질문내용"},{"id":3,"question":"질문내용"},{"id":4,"question":"질문내용"},{"id":5,"question":"질문내용"}]}`;
 
           // 프롬프트 로깅
-          console.log(`[INTERVIEW-QUESTIONS] GPT-5-mini 질문 생성 시작 (${jobInfo.company_name})`);
+          console.log(`[INTERVIEW-QUESTIONS] GPT-4o-mini 질문 생성 시작 (${jobInfo.company_name})`);
           console.log(`[INTERVIEW-QUESTIONS] 📝 PROMPT:\n${prompt}`);
           console.log(`[INTERVIEW-QUESTIONS] PROMPT 길이: ${prompt.length}자`);
 
           const completion = await openai.chat.completions.create({
-            model: 'gpt-5-mini',
+            model: 'gpt-4o-mini',
             messages: [
               {
                 role: 'system',
@@ -4768,7 +4768,7 @@ ${userProfileSection ? `프로필: ${userProfileSection}` : ''}${interviewQuesti
 
           const parsedResponse = JSON.parse(gptResponse);
           if (parsedResponse.questions && Array.isArray(parsedResponse.questions)) {
-            console.log(`[INTERVIEW-QUESTIONS] ✅ GPT-5-mini로 ${parsedResponse.questions.length}개 질문 생성 완료`);
+            console.log(`[INTERVIEW-QUESTIONS] ✅ GPT-4o-mini로 ${parsedResponse.questions.length}개 질문 생성 완료`);
 
             // category와 difficulty 기본값 추가
             const enhancedQuestions = parsedResponse.questions.map((q, idx) => ({
@@ -4792,11 +4792,11 @@ ${userProfileSection ? `프로필: ${userProfileSection}` : ''}${interviewQuesti
               company: jobInfo.company_name,
               questions: enhancedQuestions,
               total_questions: enhancedQuestions.length,
-              powered_by: "GPT-5-mini"
+              powered_by: "GPT-4o-mini"
             });
           }
         } catch (gptError) {
-          console.error('[INTERVIEW-QUESTIONS] ❌ GPT-5-mini 오류:', gptError.message);
+          console.error('[INTERVIEW-QUESTIONS] ❌ GPT-4o-mini 오류:', gptError.message);
           console.error('[INTERVIEW-QUESTIONS] 오류 상세:', gptError);
           if (gptError.response) {
             console.error('[INTERVIEW-QUESTIONS] GPT 응답 상태:', gptError.response.status);
@@ -4805,7 +4805,7 @@ ${userProfileSection ? `프로필: ${userProfileSection}` : ''}${interviewQuesti
         }
       }
 
-      // GPT-5-mini도 실패 시 폴백 질문 생성
+      // GPT-4o-mini도 실패 시 폴백 질문 생성
       console.log('[INTERVIEW-QUESTIONS] 폴백 질문 생성 시작');
       const fallbackQuestions = [
         {
