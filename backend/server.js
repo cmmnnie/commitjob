@@ -2158,9 +2158,9 @@ app.get("/api/main-recommendations", async (req, res) => {
       if (openai) {
         try {
           console.log('[MAIN-RECS] GPT-4o-mini 기반 추천 시작 (프로필 유사 20건 → 상위 5건 선택)');
-          // 15초 타임아웃 설정
+          // 20초 타임아웃 설정
           const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('GPT 타임아웃 (15초 초과)')), 15000)
+            setTimeout(() => reject(new Error('GPT 타임아웃 (20초 초과)')), 20000)
           );
           rerankedJobs = await Promise.race([
             generateGPT4Recommendations(userProfile, allJobs, 5),
