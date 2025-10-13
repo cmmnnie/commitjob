@@ -4420,36 +4420,34 @@ app.post('/api/interview-questions', async (req, res) => {
         needsScraping = true;
       }
 
-      // 2. DB에 없을 때 빠른 스크래핑 시도 (최대 8초 대기)
+      // 2. DB에 없을 때 빠른 스크래핑 시도 (최대 5초 대기)
       if (needsScraping) {
-        console.log(`[INTERVIEW-QUESTIONS] 🔄 ${custom_company} 기출질문 스크래핑 시작 (최대 8초)`);
+        console.log(`[INTERVIEW-QUESTIONS] 🔄 ${custom_company} 기출질문 스크래핑 시작 (최대 5초)`);
 
         try {
           const startTime = Date.now();
 
-          // Promise.race로 8초 타임아웃 설정
+          // Promise.race로 5초 타임아웃 설정
           const scrapingPromise = (async () => {
-            // 2-1. Catch Scraper 초기화 (timeout 3초)
+            // 2-1. Catch Scraper 초기화 + 로그인 + 스크래핑 (각 단계별 타임아웃 짧게)
             console.log('[INTERVIEW-QUESTIONS] Catch Scraper 초기화 중...');
-            await axios.post(`${CATCH_SCRAPER_URL}/api/init`, {}, { timeout: 3000 });
-            console.log('[INTERVIEW-QUESTIONS] ✅ Catch Scraper 초기화 완료');
+            await axios.post(`${CATCH_SCRAPER_URL}/api/init`, {}, { timeout: 2000 });
+            console.log('[INTERVIEW-QUESTIONS] ✅ 초기화 완료');
 
-            // 2-2. Catch.co.kr 로그인 (timeout 3초)
-            console.log('[INTERVIEW-QUESTIONS] Catch.co.kr 로그인 중...');
-            const loginResponse = await axios.post(`${CATCH_SCRAPER_URL}/api/login`, {
+            // 2-2. Catch.co.kr 로그인
+            console.log('[INTERVIEW-QUESTIONS] 로그인 중...');
+            await axios.post(`${CATCH_SCRAPER_URL}/api/login`, {
               username: 'test0137',
               password: '#test0808'
-            }, { timeout: 3000 });
+            }, { timeout: 2000 });
+            console.log('[INTERVIEW-QUESTIONS] ✅ 로그인 완료');
 
-            if (loginResponse.data && loginResponse.data.success) {
-              console.log('[INTERVIEW-QUESTIONS] ✅ Catch.co.kr 로그인 성공');
-            }
-
-            // 2-3. 실시간 스크래핑 (timeout 5초)
+            // 2-3. 실시간 스크래핑
+            console.log('[INTERVIEW-QUESTIONS] 스크래핑 중...');
             const interviewResponse = await axios.post(`${CATCH_SCRAPER_URL}/api/search-interview-questions`, {
               company_name: custom_company,
               max_questions: 10
-            }, { timeout: 5000 });
+            }, { timeout: 3000 });
 
             if (interviewResponse.data && interviewResponse.data.success) {
               return interviewResponse.data.questions || [];
@@ -4458,10 +4456,10 @@ app.post('/api/interview-questions', async (req, res) => {
           })();
 
           const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('8초 타임아웃')), 8000)
+            setTimeout(() => reject(new Error('5초 타임아웃')), 5000)
           );
 
-          // 8초 내에 스크래핑 완료되면 결과 사용, 아니면 빈 배열
+          // 5초 내에 스크래핑 완료되면 결과 사용, 아니면 빈 배열
           const scrapedQuestions = await Promise.race([scrapingPromise, timeoutPromise])
             .catch(err => {
               console.warn(`[INTERVIEW-QUESTIONS] 스크래핑 ${err.message} - 기출질문 없이 진행`);
@@ -4471,36 +4469,47 @@ app.post('/api/interview-questions', async (req, res) => {
           const elapsed = Date.now() - startTime;
           console.log(`[INTERVIEW-QUESTIONS] 스크래핑 완료 (${elapsed}ms, ${scrapedQuestions.length}개)`);
 
-          // 2-4. DB에 저장 (중복 제거)
+          // 2-4. DB에 저장 (중복 제거 - 백그라운드 처리)
           if (scrapedQuestions.length > 0) {
             interviewQuestions = scrapedQuestions;
 
-            for (const q of scrapedQuestions) {
+            // DB insert를 백그라운드로 실행 (응답 속도에 영향 안 줌)
+            (async () => {
               try {
-                const [duplicate] = await pool.execute(`
-                  SELECT id FROM catch_interview_questions
-                  WHERE company = ? AND question = ?
-                  LIMIT 1
-                `, [custom_company, q.question]);
+                console.log(`[INTERVIEW-QUESTIONS-DB] ${custom_company} 기출질문 DB 저장 시작 (${scrapedQuestions.length}개)`);
+                let insertCount = 0;
 
-                if (duplicate.length === 0) {
-                  await pool.execute(`
-                    INSERT INTO catch_interview_questions
-                    (company, question, position, period, experience)
-                    VALUES (?, ?, ?, ?, ?)
-                  `, [
-                    custom_company,
-                    q.question,
-                    q.position || null,
-                    q.period || null,
-                    q.experience || null
-                  ]);
+                for (const q of scrapedQuestions) {
+                  try {
+                    const [duplicate] = await pool.execute(`
+                      SELECT id FROM catch_interview_questions
+                      WHERE company = ? AND question = ?
+                      LIMIT 1
+                    `, [custom_company, q.question]);
+
+                    if (duplicate.length === 0) {
+                      await pool.execute(`
+                        INSERT INTO catch_interview_questions
+                        (company, question, position, period, experience)
+                        VALUES (?, ?, ?, ?, ?)
+                      `, [
+                        custom_company,
+                        q.question,
+                        q.position || null,
+                        q.period || null,
+                        q.experience || null
+                      ]);
+                      insertCount++;
+                    }
+                  } catch (insertError) {
+                    console.warn(`[INTERVIEW-QUESTIONS-DB] 질문 저장 실패:`, insertError.message);
+                  }
                 }
-              } catch (insertError) {
-                console.warn(`[INTERVIEW-QUESTIONS] 질문 저장 실패:`, insertError.message);
+                console.log(`[INTERVIEW-QUESTIONS-DB] ✅ ${custom_company} 기출질문 DB 저장 완료 (${insertCount}개 insert)`);
+              } catch (dbError) {
+                console.error(`[INTERVIEW-QUESTIONS-DB] DB 저장 중 오류:`, dbError.message);
               }
-            }
-            console.log(`[INTERVIEW-QUESTIONS] ✅ ${custom_company} 기출질문 DB 저장 완료`);
+            })(); // 백그라운드 실행
           }
         } catch (scrapingError) {
           console.warn(`[INTERVIEW-QUESTIONS] 스크래핑 실패:`, scrapingError.message);
@@ -4561,37 +4570,35 @@ app.post('/api/interview-questions', async (req, res) => {
           needsScraping = true;
         }
 
-        // 2. DB에 없을 때 빠른 스크래핑 시도 (최대 8초 대기)
+        // 2. DB에 없을 때 빠른 스크래핑 시도 (최대 5초 대기)
         if (needsScraping) {
-          console.log(`[INTERVIEW-QUESTIONS] 🔄 ${jobInfo.company_name} 기출질문 스크래핑 시작 (최대 8초)`);
+          console.log(`[INTERVIEW-QUESTIONS] 🔄 ${jobInfo.company_name} 기출질문 스크래핑 시작 (최대 5초)`);
 
           try {
             const startTime = Date.now();
             const companyName = jobInfo.company_name;
 
-            // Promise.race로 8초 타임아웃 설정
+            // Promise.race로 5초 타임아웃 설정
             const scrapingPromise = (async () => {
-              // 2-1. Catch Scraper 초기화 (timeout 3초)
+              // 2-1. Catch Scraper 초기화 + 로그인 + 스크래핑
               console.log('[INTERVIEW-QUESTIONS] Catch Scraper 초기화 중...');
-              await axios.post(`${CATCH_SCRAPER_URL}/api/init`, {}, { timeout: 3000 });
-              console.log('[INTERVIEW-QUESTIONS] ✅ Catch Scraper 초기화 완료');
+              await axios.post(`${CATCH_SCRAPER_URL}/api/init`, {}, { timeout: 2000 });
+              console.log('[INTERVIEW-QUESTIONS] ✅ 초기화 완료');
 
-              // 2-2. Catch.co.kr 로그인 (timeout 3초)
-              console.log('[INTERVIEW-QUESTIONS] Catch.co.kr 로그인 중...');
-              const loginResponse = await axios.post(`${CATCH_SCRAPER_URL}/api/login`, {
+              // 2-2. Catch.co.kr 로그인
+              console.log('[INTERVIEW-QUESTIONS] 로그인 중...');
+              await axios.post(`${CATCH_SCRAPER_URL}/api/login`, {
                 username: 'test0137',
                 password: '#test0808'
-              }, { timeout: 3000 });
+              }, { timeout: 2000 });
+              console.log('[INTERVIEW-QUESTIONS] ✅ 로그인 완료');
 
-              if (loginResponse.data && loginResponse.data.success) {
-                console.log('[INTERVIEW-QUESTIONS] ✅ Catch.co.kr 로그인 성공');
-              }
-
-              // 2-3. 실시간 스크래핑 (timeout 5초)
+              // 2-3. 실시간 스크래핑
+              console.log('[INTERVIEW-QUESTIONS] 스크래핑 중...');
               const interviewResponse = await axios.post(`${CATCH_SCRAPER_URL}/api/search-interview-questions`, {
                 company_name: companyName,
                 max_questions: 10
-              }, { timeout: 5000 });
+              }, { timeout: 3000 });
 
               if (interviewResponse.data && interviewResponse.data.success) {
                 return interviewResponse.data.questions || [];
@@ -4600,10 +4607,10 @@ app.post('/api/interview-questions', async (req, res) => {
             })();
 
             const timeoutPromise = new Promise((_, reject) =>
-              setTimeout(() => reject(new Error('8초 타임아웃')), 8000)
+              setTimeout(() => reject(new Error('5초 타임아웃')), 5000)
             );
 
-            // 8초 내에 스크래핑 완료되면 결과 사용, 아니면 빈 배열
+            // 5초 내에 스크래핑 완료되면 결과 사용, 아니면 빈 배열
             const scrapedQuestions = await Promise.race([scrapingPromise, timeoutPromise])
               .catch(err => {
                 console.warn(`[INTERVIEW-QUESTIONS] 스크래핑 ${err.message} - 기출질문 없이 진행`);
@@ -4613,36 +4620,47 @@ app.post('/api/interview-questions', async (req, res) => {
             const elapsed = Date.now() - startTime;
             console.log(`[INTERVIEW-QUESTIONS] 스크래핑 완료 (${elapsed}ms, ${scrapedQuestions.length}개)`);
 
-            // 2-4. DB에 저장 (중복 제거)
+            // 2-4. DB에 저장 (중복 제거 - 백그라운드 처리)
             if (scrapedQuestions.length > 0) {
               jobInfo.interview_questions = scrapedQuestions;
 
-              for (const q of scrapedQuestions) {
+              // DB insert를 백그라운드로 실행 (응답 속도에 영향 안 줌)
+              (async () => {
                 try {
-                  const [duplicate] = await pool.execute(`
-                    SELECT id FROM catch_interview_questions
-                    WHERE company = ? AND question = ?
-                    LIMIT 1
-                  `, [companyName, q.question]);
+                  console.log(`[INTERVIEW-QUESTIONS-DB] ${companyName} 기출질문 DB 저장 시작 (${scrapedQuestions.length}개)`);
+                  let insertCount = 0;
 
-                  if (duplicate.length === 0) {
-                    await pool.execute(`
-                      INSERT INTO catch_interview_questions
-                      (company, question, position, period, experience)
-                      VALUES (?, ?, ?, ?, ?)
-                    `, [
-                      companyName,
-                      q.question,
-                      q.position || null,
-                      q.period || null,
-                      q.experience || null
-                    ]);
+                  for (const q of scrapedQuestions) {
+                    try {
+                      const [duplicate] = await pool.execute(`
+                        SELECT id FROM catch_interview_questions
+                        WHERE company = ? AND question = ?
+                        LIMIT 1
+                      `, [companyName, q.question]);
+
+                      if (duplicate.length === 0) {
+                        await pool.execute(`
+                          INSERT INTO catch_interview_questions
+                          (company, question, position, period, experience)
+                          VALUES (?, ?, ?, ?, ?)
+                        `, [
+                          companyName,
+                          q.question,
+                          q.position || null,
+                          q.period || null,
+                          q.experience || null
+                        ]);
+                        insertCount++;
+                      }
+                    } catch (insertError) {
+                      console.warn(`[INTERVIEW-QUESTIONS-DB] 질문 저장 실패:`, insertError.message);
+                    }
                   }
-                } catch (insertError) {
-                  console.warn(`[INTERVIEW-QUESTIONS] 질문 저장 실패:`, insertError.message);
+                  console.log(`[INTERVIEW-QUESTIONS-DB] ✅ ${companyName} 기출질문 DB 저장 완료 (${insertCount}개 insert)`);
+                } catch (dbError) {
+                  console.error(`[INTERVIEW-QUESTIONS-DB] DB 저장 중 오류:`, dbError.message);
                 }
-              }
-              console.log(`[INTERVIEW-QUESTIONS] ✅ ${companyName} 기출질문 DB 저장 완료`);
+              })(); // 백그라운드 실행
             } else {
               jobInfo.interview_questions = [];
             }
