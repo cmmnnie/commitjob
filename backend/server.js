@@ -4755,7 +4755,6 @@ ${userProfileSection}${interviewQuestionsSection}
               }
             ],
             max_completion_tokens: 500,
-            temperature: 0.3,
             response_format: { type: "json_object" }
           });
 
