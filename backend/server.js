@@ -4932,38 +4932,22 @@ app.post('/api/interview-feedback', async (req, res) => {
       });
     }
 
-    // GPT-5-mini에게 피드백 요청
-    const systemPrompt = `당신은 전문 면접 코치입니다. 면접 답변에 대해 건설적이고 구체적인 피드백을 제공해주세요.
+    // GPT-4o-mini에게 피드백 요청
+    const userPrompt = `${company || '회사'} 면접
+Q: ${question}
+답변: ${answer}
 
-피드백 구조:
-1. 강점 (잘한 점)
-2. 개선점 (보완할 점)
-3. 추천 답변 방향
+피드백 (강점, 개선점, 추천 방향):`;
 
-응답 형식:
-{
-  "feedback": "피드백 내용"
-}
-
-피드백은 친절하고 격려하는 톤으로 작성하되, 구체적인 개선 방안을 제시해주세요.`;
-
-    const userPrompt = `${company ? `[${company} 면접]` : '[면접]'}
-
-질문: ${question}
-
-지원자 답변:
-${answer}
-
-위 답변에 대해 전문적인 피드백을 JSON 형식으로 제공해주세요.`;
+    console.log(`[INTERVIEW-FEEDBACK] 📝 PROMPT 길이: ${userPrompt.length}자`);
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
-        { role: 'system', content: systemPrompt },
+        { role: 'system', content: 'Interview coach. Provide concise feedback in Korean.' },
         { role: 'user', content: userPrompt }
       ],
-      temperature: 0.7,
-      max_tokens: 1000,
+      max_tokens: 500,
       response_format: { type: "json_object" }
     });
 
@@ -5087,42 +5071,28 @@ app.post('/api/interview-model-answer', async (req, res) => {
       }
     }
 
-    // GPT-5-mini에게 모범답변 요청
-    let systemPrompt = `당신은 취업 전문가이자 면접 코치입니다. 면접 질문에 대한 모범답변을 제공해주세요.
-
-모범답변 작성 가이드:
-1. STAR 기법 활용 (Situation, Task, Action, Result)
-2. 구체적인 예시와 수치 포함
-3. 긍정적이고 적극적인 태도 표현
-4. 회사와 직무에 대한 이해도 표현
-5. 답변 길이: 2-3분 분량 (약 300-500자)
-
-모범답변은 실제 면접에서 사용할 수 있도록 자연스럽고 진정성 있게 작성해주세요.`;
-
-    let userPrompt = `${company ? `[${company} 면접]` : '[면접]'}
-
-질문: ${question}`;
+    // GPT-4o-mini에게 모범답변 요청
+    let userPrompt = `${company || '회사'} 면접
+Q: ${question}`;
 
     if (userProfile) {
-      userPrompt += `\n\n지원자 프로필:
-- 직무: ${userProfile.jobs || '미기재'}
-- 경력: ${userProfile.career_type || '미기재'}${userProfile.career_years ? ` (${userProfile.career_years}년)` : ''}
-- 기술스택: ${userProfile.skills && userProfile.skills.length > 0 ? userProfile.skills.join(', ') : '미기재'}
-- 학력: ${userProfile.education || '미기재'}
-
-위 프로필을 참고하여 지원자에게 맞는 모범답변을 작성해주세요.`;
-    } else {
-      userPrompt += `\n\n일반적인 지원자를 위한 모범답변을 작성해주세요.`;
+      const skills = userProfile.skills && userProfile.skills.length > 0
+        ? userProfile.skills.slice(0, 3).join(',')
+        : '';
+      userPrompt += `\n프로필: ${userProfile.jobs || ''}/${userProfile.career_years || '0'}년${skills ? '/' + skills : ''}`;
     }
+
+    userPrompt += `\n\nSTAR 기법 모범답변 (300자):`;
+
+    console.log(`[INTERVIEW-MODEL-ANSWER] 📝 PROMPT 길이: ${userPrompt.length}자`);
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
-        { role: 'system', content: systemPrompt },
+        { role: 'system', content: 'Interview expert. Provide concise model answer in Korean using STAR method.' },
         { role: 'user', content: userPrompt }
       ],
-      temperature: 0.7,
-      max_tokens: 1000
+      max_tokens: 500
     });
 
     const modelAnswer = completion.choices[0].message.content;
