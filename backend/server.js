@@ -4734,10 +4734,13 @@ app.post('/api/interview-questions', async (req, res) => {
             ? `${finalUserProfile.skills.slice(0, 2).join(',')}/${finalUserProfile.experience || '신입'}\n`
             : '';
 
-          const prompt = `${jobInfo.company_name}
-${userProfileSection}${interviewQuestionsSection}
-면접질문 5개
-{"questions":[{"id":1,"question":"..."}]}`;
+          const prompt = `회사: ${jobInfo.company_name}
+${userProfileSection ? `프로필: ${userProfileSection}` : ''}${interviewQuestionsSection ? `\n기출질문:\n${interviewQuestionsSection}` : ''}
+
+위 정보를 바탕으로 면접 질문 5개를 생성하세요.
+
+응답 형식 (JSON만):
+{"questions":[{"id":1,"question":"질문내용"},{"id":2,"question":"질문내용"},{"id":3,"question":"질문내용"},{"id":4,"question":"질문내용"},{"id":5,"question":"질문내용"}]}`;
 
           // 프롬프트 로깅
           console.log(`[INTERVIEW-QUESTIONS] GPT-5-mini 질문 생성 시작 (${jobInfo.company_name})`);
@@ -4749,14 +4752,14 @@ ${userProfileSection}${interviewQuestionsSection}
             messages: [
               {
                 role: 'system',
-                content: 'JSON only.'
+                content: 'You are an interview question generator. Always respond with valid JSON only.'
               },
               {
                 role: 'user',
                 content: prompt
               }
             ],
-            max_completion_tokens: 500,
+            max_completion_tokens: 800,
             response_format: { type: "json_object" }
           });
 
