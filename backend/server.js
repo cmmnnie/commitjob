@@ -2005,16 +2005,54 @@ app.get("/api/main-recommendations", async (req, res) => {
       let allJobs = [];
 
       // jobs 테이블에서 공고 가져오기 (스크래퍼 사용 안 함)
-      console.log('[MAIN-RECS] DB에서 채용공고 조회 중...');
+      console.log('[MAIN-RECS] DB에서 회원 프로필과 유사한 채용공고 조회 중...');
+
+      // 사용자 스킬 기반 검색 쿼리 생성
+      const userSkills = userProfile?.skills || [];
+      const userHasAISkills = userSkills.some(s =>
+        ['Python', 'TensorFlow', 'PyTorch', 'Keras', 'Machine Learning', 'AI', 'Deep Learning'].includes(s)
+      );
+      const userHasITSkills = userSkills.some(s =>
+        ['JavaScript', 'React', 'Vue', 'Node.js', 'Java', 'Spring', 'Django', 'Flask'].includes(s)
+      );
+
+      // 사용자 스킬에 맞는 카테고리 우선순위 설정
+      let categoryOrder = '';
+      if (userHasAISkills && !userHasITSkills) {
+        categoryOrder = "category = 'BIGDATA_AI' DESC, category = 'IT' DESC";
+      } else if (userHasITSkills && !userHasAISkills) {
+        categoryOrder = "category = 'IT' DESC, category = 'BIGDATA_AI' DESC";
+      } else {
+        categoryOrder = "category IN ('BIGDATA_AI', 'IT') DESC";
+      }
+
+      // 스킬 매칭 점수 계산을 위한 CASE WHEN 생성
+      let skillMatchScore = '0';
+      if (userSkills.length > 0) {
+        const skillConditions = userSkills.map(skill =>
+          `WHEN job_info LIKE '%${skill.replace(/'/g, "''")}%' THEN 1`
+        ).join(' ');
+        skillMatchScore = `(CASE ${skillConditions} ELSE 0 END)`;
+      }
 
       try {
-        const [dbJobs] = await pool.execute(
-          `SELECT id, company, title, category, url, job_info, conditions, company_search_key, registration_info
-           FROM jobs
-           WHERE category IN ('BIGDATA_AI', 'IT')
-           ORDER BY scraped_at DESC
-           LIMIT 20`
-        );
+        const query = `
+          SELECT id, company, title, category, url, job_info, conditions, company_search_key, registration_info,
+                 ${skillMatchScore} as skill_match_score
+          FROM jobs
+          WHERE category IN ('BIGDATA_AI', 'IT')
+          ORDER BY
+            skill_match_score DESC,
+            ${categoryOrder},
+            scraped_at DESC
+          LIMIT 20
+        `;
+
+        console.log('[MAIN-RECS] 사용자 스킬:', userSkills.join(', '));
+        console.log('[MAIN-RECS] AI 관련 스킬 보유:', userHasAISkills);
+        console.log('[MAIN-RECS] IT 관련 스킬 보유:', userHasITSkills);
+
+        const [dbJobs] = await pool.execute(query);
 
         if (dbJobs.length > 0) {
           allJobs = dbJobs.map(job => {
@@ -2069,7 +2107,10 @@ app.get("/api/main-recommendations", async (req, res) => {
               source: 'Database'
             };
           });
-          console.log(`[MAIN-RECS] DB에서 ${allJobs.length}개 공고 가져옴 (IT/빅데이터AI)`);
+
+          const skillMatchedCount = dbJobs.filter(j => j.skill_match_score > 0).length;
+          console.log(`[MAIN-RECS] ✅ 회원 프로필 기반 매칭 완료`);
+          console.log(`[MAIN-RECS]    총 ${allJobs.length}개 공고 (스킬 매칭: ${skillMatchedCount}개, 기타: ${allJobs.length - skillMatchedCount}개)`);
         } else {
           console.error('[MAIN-RECS] DB에 채용공고가 없습니다');
           return res.status(404).json({
@@ -2116,7 +2157,7 @@ app.get("/api/main-recommendations", async (req, res) => {
 
       if (openai) {
         try {
-          console.log('[MAIN-RECS] GPT-4o-mini 기반 추천 시작 (최신 20건 중 5건 선택)');
+          console.log('[MAIN-RECS] GPT-4o-mini 기반 추천 시작 (프로필 유사 20건 → 상위 5건 선택)');
           // 15초 타임아웃 설정
           const timeoutPromise = new Promise((_, reject) =>
             setTimeout(() => reject(new Error('GPT 타임아웃 (15초 초과)')), 15000)
