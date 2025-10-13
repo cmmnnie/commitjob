@@ -4420,51 +4420,37 @@ app.post('/api/interview-questions', async (req, res) => {
         needsScraping = true;
       }
 
-      // 2. DB에 없을 때 빠른 스크래핑 시도 (최대 5초 대기)
+      // 2. DB에 없을 때 스크래핑 (타임아웃 없음)
       if (needsScraping) {
-        console.log(`[INTERVIEW-QUESTIONS] 🔄 ${custom_company} 기출질문 스크래핑 시작 (최대 5초)`);
+        console.log(`[INTERVIEW-QUESTIONS] 🔄 ${custom_company} 기출질문 스크래핑 시작`);
 
         try {
           const startTime = Date.now();
 
-          // Promise.race로 5초 타임아웃 설정
-          const scrapingPromise = (async () => {
-            // 2-1. Catch Scraper 초기화 + 로그인 + 스크래핑 (각 단계별 타임아웃 짧게)
-            console.log('[INTERVIEW-QUESTIONS] Catch Scraper 초기화 중...');
-            await axios.post(`${CATCH_SCRAPER_URL}/api/init`, {}, { timeout: 2000 });
-            console.log('[INTERVIEW-QUESTIONS] ✅ 초기화 완료');
+          // 2-1. Catch Scraper 초기화 (타임아웃 없음)
+          console.log('[INTERVIEW-QUESTIONS] Catch Scraper 초기화 중...');
+          await axios.post(`${CATCH_SCRAPER_URL}/api/init`, {});
+          console.log('[INTERVIEW-QUESTIONS] ✅ 초기화 완료');
 
-            // 2-2. Catch.co.kr 로그인
-            console.log('[INTERVIEW-QUESTIONS] 로그인 중...');
-            await axios.post(`${CATCH_SCRAPER_URL}/api/login`, {
-              username: 'test0137',
-              password: '#test0808'
-            }, { timeout: 2000 });
-            console.log('[INTERVIEW-QUESTIONS] ✅ 로그인 완료');
+          // 2-2. Catch.co.kr 로그인 (타임아웃 없음)
+          console.log('[INTERVIEW-QUESTIONS] 로그인 중...');
+          await axios.post(`${CATCH_SCRAPER_URL}/api/login`, {
+            username: 'test0137',
+            password: '#test0808'
+          });
+          console.log('[INTERVIEW-QUESTIONS] ✅ 로그인 완료');
 
-            // 2-3. 실시간 스크래핑
-            console.log('[INTERVIEW-QUESTIONS] 스크래핑 중...');
-            const interviewResponse = await axios.post(`${CATCH_SCRAPER_URL}/api/search-interview-questions`, {
-              company_name: custom_company,
-              max_questions: 10
-            }, { timeout: 3000 });
+          // 2-3. 실시간 스크래핑 (3개만 요청, 타임아웃 없음)
+          console.log('[INTERVIEW-QUESTIONS] 스크래핑 중...');
+          const interviewResponse = await axios.post(`${CATCH_SCRAPER_URL}/api/search-interview-questions`, {
+            company_name: custom_company,
+            max_questions: 3
+          });
 
-            if (interviewResponse.data && interviewResponse.data.success) {
-              return interviewResponse.data.questions || [];
-            }
-            return [];
-          })();
-
-          const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('5초 타임아웃')), 5000)
-          );
-
-          // 5초 내에 스크래핑 완료되면 결과 사용, 아니면 빈 배열
-          const scrapedQuestions = await Promise.race([scrapingPromise, timeoutPromise])
-            .catch(err => {
-              console.warn(`[INTERVIEW-QUESTIONS] 스크래핑 ${err.message} - 기출질문 없이 진행`);
-              return [];
-            });
+          let scrapedQuestions = [];
+          if (interviewResponse.data && interviewResponse.data.success) {
+            scrapedQuestions = interviewResponse.data.questions || [];
+          }
 
           const elapsed = Date.now() - startTime;
           console.log(`[INTERVIEW-QUESTIONS] 스크래핑 완료 (${elapsed}ms, ${scrapedQuestions.length}개)`);
@@ -4570,52 +4556,38 @@ app.post('/api/interview-questions', async (req, res) => {
           needsScraping = true;
         }
 
-        // 2. DB에 없을 때 빠른 스크래핑 시도 (최대 5초 대기)
+        // 2. DB에 없을 때 스크래핑 (타임아웃 없음)
         if (needsScraping) {
-          console.log(`[INTERVIEW-QUESTIONS] 🔄 ${jobInfo.company_name} 기출질문 스크래핑 시작 (최대 5초)`);
+          console.log(`[INTERVIEW-QUESTIONS] 🔄 ${jobInfo.company_name} 기출질문 스크래핑 시작`);
 
           try {
             const startTime = Date.now();
             const companyName = jobInfo.company_name;
 
-            // Promise.race로 5초 타임아웃 설정
-            const scrapingPromise = (async () => {
-              // 2-1. Catch Scraper 초기화 + 로그인 + 스크래핑
-              console.log('[INTERVIEW-QUESTIONS] Catch Scraper 초기화 중...');
-              await axios.post(`${CATCH_SCRAPER_URL}/api/init`, {}, { timeout: 2000 });
-              console.log('[INTERVIEW-QUESTIONS] ✅ 초기화 완료');
+            // 2-1. Catch Scraper 초기화 (타임아웃 없음)
+            console.log('[INTERVIEW-QUESTIONS] Catch Scraper 초기화 중...');
+            await axios.post(`${CATCH_SCRAPER_URL}/api/init`, {});
+            console.log('[INTERVIEW-QUESTIONS] ✅ 초기화 완료');
 
-              // 2-2. Catch.co.kr 로그인
-              console.log('[INTERVIEW-QUESTIONS] 로그인 중...');
-              await axios.post(`${CATCH_SCRAPER_URL}/api/login`, {
-                username: 'test0137',
-                password: '#test0808'
-              }, { timeout: 2000 });
-              console.log('[INTERVIEW-QUESTIONS] ✅ 로그인 완료');
+            // 2-2. Catch.co.kr 로그인 (타임아웃 없음)
+            console.log('[INTERVIEW-QUESTIONS] 로그인 중...');
+            await axios.post(`${CATCH_SCRAPER_URL}/api/login`, {
+              username: 'test0137',
+              password: '#test0808'
+            });
+            console.log('[INTERVIEW-QUESTIONS] ✅ 로그인 완료');
 
-              // 2-3. 실시간 스크래핑
-              console.log('[INTERVIEW-QUESTIONS] 스크래핑 중...');
-              const interviewResponse = await axios.post(`${CATCH_SCRAPER_URL}/api/search-interview-questions`, {
-                company_name: companyName,
-                max_questions: 10
-              }, { timeout: 3000 });
+            // 2-3. 실시간 스크래핑 (3개만 요청, 타임아웃 없음)
+            console.log('[INTERVIEW-QUESTIONS] 스크래핑 중...');
+            const interviewResponse = await axios.post(`${CATCH_SCRAPER_URL}/api/search-interview-questions`, {
+              company_name: companyName,
+              max_questions: 3
+            });
 
-              if (interviewResponse.data && interviewResponse.data.success) {
-                return interviewResponse.data.questions || [];
-              }
-              return [];
-            })();
-
-            const timeoutPromise = new Promise((_, reject) =>
-              setTimeout(() => reject(new Error('5초 타임아웃')), 5000)
-            );
-
-            // 5초 내에 스크래핑 완료되면 결과 사용, 아니면 빈 배열
-            const scrapedQuestions = await Promise.race([scrapingPromise, timeoutPromise])
-              .catch(err => {
-                console.warn(`[INTERVIEW-QUESTIONS] 스크래핑 ${err.message} - 기출질문 없이 진행`);
-                return [];
-              });
+            let scrapedQuestions = [];
+            if (interviewResponse.data && interviewResponse.data.success) {
+              scrapedQuestions = interviewResponse.data.questions || [];
+            }
 
             const elapsed = Date.now() - startTime;
             console.log(`[INTERVIEW-QUESTIONS] 스크래핑 완료 (${elapsed}ms, ${scrapedQuestions.length}개)`);
