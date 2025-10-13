@@ -2116,11 +2116,18 @@ app.get("/api/main-recommendations", async (req, res) => {
 
       if (openai) {
         try {
-          console.log('[MAIN-RECS] GPT-5-mini 기반 추천 시작 (최신 20건 중 5건 선택)');
-          rerankedJobs = await generateGPT4Recommendations(userProfile, allJobs, 5);
-          console.log(`[MAIN-RECS] ✅ GPT-5-mini로 ${rerankedJobs.length}개 공고 추천 완료`);
+          console.log('[MAIN-RECS] GPT-4o-mini 기반 추천 시작 (최신 20건 중 5건 선택)');
+          // 10초 타임아웃 설정
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('GPT 타임아웃 (10초 초과)')), 10000)
+          );
+          rerankedJobs = await Promise.race([
+            generateGPT4Recommendations(userProfile, allJobs, 5),
+            timeoutPromise
+          ]);
+          console.log(`[MAIN-RECS] ✅ GPT-4o-mini로 ${rerankedJobs.length}개 공고 추천 완료`);
         } catch (gptError) {
-          console.error('[MAIN-RECS] ❌ GPT-5-mini 추천 실패:', gptError.message);
+          console.error('[MAIN-RECS] ❌ GPT-4o-mini 추천 실패:', gptError.message);
         }
       }
 
@@ -6355,13 +6362,9 @@ async function generateGPT4Recommendations(userProfile, jobCandidates, limit) {
 - 희망 연봉: ${userProfile.expected_salary || '정보 없음'}
 
 **채용공고 목록: ${jobCandidates.length} 개 **
-${jobCandidates.slice(0, 20).map((job, idx) => `
-${idx + 1}. ${job.title} at ${job.company}
-   - 요구 기술: ${formatSkills(job.skills)}
-   - 경력 요건: ${job.experience}
-   - 위치: ${job.location}
-   - 급여: ${job.salary}
-   - Job ID: ${job.id}
+${jobCandidates.map((job, idx) => `
+${idx + 1}. ${job.title} - ${job.company}
+   기술: ${formatSkills(job.skills)} | 경력: ${job.experience} | 위치: ${job.location} | ID: ${job.id}
 `).join('')}
 
 각 공고에 대해 매칭도를 분석하고, 상위 ${limit}개를 추천해주세요.
@@ -6381,14 +6384,14 @@ ${idx + 1}. ${job.title} at ${job.company}
 `;
 
   console.log('\n' + '='.repeat(80));
-  console.log('[AI추천] GPT-5-mini Prompt:');
+  console.log('[AI추천] GPT-4o-mini Prompt:');
   console.log('='.repeat(80));
   console.log(prompt);
   console.log('='.repeat(80) + '\n');
 
   try {
     const completion = await openai.chat.completions.create({
-      model: 'gpt-5-mini',
+      model: 'gpt-4o-mini',
       messages: [
         {
           role: 'system',
@@ -6399,13 +6402,13 @@ ${idx + 1}. ${job.title} at ${job.company}
           content: prompt
         }
       ],
-      max_completion_tokens: 16000,
-      temperature: 1,
+      max_completion_tokens: 4000,
+      temperature: 0.7,
       response_format: { type: "json_object" }
     });
 
     const chatGPTResponse = completion.choices[0].message.content;
-    console.log('[GPT-5] 응답 받음:', chatGPTResponse.substring(0, 500));
+    console.log('[GPT-4o-mini] 응답 받음:', chatGPTResponse.substring(0, 500));
 
     // JSON 파싱 시도
     let recommendations = [];
