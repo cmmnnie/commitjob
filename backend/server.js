@@ -2013,7 +2013,7 @@ app.get("/api/main-recommendations", async (req, res) => {
            FROM jobs
            WHERE category IN ('BIGDATA_AI', 'IT')
            ORDER BY scraped_at DESC
-           LIMIT 100`
+           LIMIT 20`
         );
 
         if (dbJobs.length > 0) {
@@ -2116,8 +2116,8 @@ app.get("/api/main-recommendations", async (req, res) => {
 
       if (openai) {
         try {
-          console.log('[MAIN-RECS] GPT-5-mini 기반 추천 시작');
-          rerankedJobs = await generateGPT4Recommendations(userProfile, allJobs, 6);
+          console.log('[MAIN-RECS] GPT-5-mini 기반 추천 시작 (최신 20건 중 5건 선택)');
+          rerankedJobs = await generateGPT4Recommendations(userProfile, allJobs, 5);
           console.log(`[MAIN-RECS] ✅ GPT-5-mini로 ${rerankedJobs.length}개 공고 추천 완료`);
         } catch (gptError) {
           console.error('[MAIN-RECS] ❌ GPT-5-mini 추천 실패:', gptError.message);
