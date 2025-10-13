@@ -2117,9 +2117,9 @@ app.get("/api/main-recommendations", async (req, res) => {
       if (openai) {
         try {
           console.log('[MAIN-RECS] GPT-4o-mini 기반 추천 시작 (최신 20건 중 5건 선택)');
-          // 10초 타임아웃 설정
+          // 15초 타임아웃 설정
           const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('GPT 타임아웃 (10초 초과)')), 10000)
+            setTimeout(() => reject(new Error('GPT 타임아웃 (15초 초과)')), 15000)
           );
           rerankedJobs = await Promise.race([
             generateGPT4Recommendations(userProfile, allJobs, 5),
@@ -6522,8 +6522,8 @@ async function generateGPT4Recommendations(userProfile, jobCandidates, limit) {
 공고(${jobCandidates.length}개):
 ${jobCandidates.map((job, idx) => `${idx + 1}. ${job.title}@${job.company} | 기술=${formatSkills(job.skills)} | 경력=${job.experience || '없음'} | 위치=${job.location || '없음'} | ID=${job.id}`).join('\n')}
 
-상위 ${limit}개 추천. 응답 형식:
-{"recommendations":[{"job_id":"1","match_score":85,"match_reasons":["이유1","이유2"]}]}
+상위 ${limit}개 추천. 간단히 응답:
+{"recommendations":[{"job_id":"1","match_score":85,"match_reasons":["핵심이유"]}]}
 `;
 
   console.log('\n' + '='.repeat(80));
@@ -6538,15 +6538,15 @@ ${jobCandidates.map((job, idx) => `${idx + 1}. ${job.title}@${job.company} | 기
       messages: [
         {
           role: 'system',
-          content: 'Job matching AI. Return JSON only: {"recommendations":[{"job_id":"ID","match_score":0-100,"match_reasons":["reason"]}]}'
+          content: 'Job matching AI. Return JSON: {"recommendations":[{"job_id":"ID","match_score":85,"match_reasons":["reason"]}]}'
         },
         {
           role: 'user',
           content: prompt
         }
       ],
-      max_completion_tokens: 1500,
-      temperature: 0.3,
+      max_completion_tokens: 800,
+      temperature: 0.1,
       response_format: { type: "json_object" }
     });
 
