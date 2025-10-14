@@ -205,10 +205,10 @@ export default function Navigation() {
                             color: '#333',
                             marginBottom: '20px',
                             fontWeight: '700',
-                            lineHeight: '1.4'
+                            lineHeight: '1.5'
                         }}>
-                            AI 채용 추천과 AI 면접은<br/>
-                            이력서 작성 후 이용 가능하십니다.
+                            AI 채용 추천과 AI 면접은 이력서 작성 후<br/>
+                            이용 가능하십니다.
                         </h2>
                         <p style={{
                             color: '#666',
