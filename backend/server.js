@@ -6875,7 +6875,8 @@ async function generateGPT4Recommendations(userProfile, jobCandidates, limit) {
 공고:
 ${jobCandidates.map((job, idx) => `${idx+1}.${job.title}|${job.company}|${formatSkills(job.skills)}|ID:${job.id}`).join('\n')}
 
-매칭률 높은 상위${limit}개 추천.JSON:{"recommendations":[{"job_id":"ID","match_score":85,"match_reasons":["이유1","이유2"]}]}`;
+매칭률 높은 상위${limit}개 추천. 매칭 이유는 구체적으로 3개 작성(기술스택 일치, 직무 적합성, 경력 매칭 등을 상세히 분석).
+JSON:{"recommendations":[{"job_id":"ID","match_score":85,"match_reasons":["구체적 이유1 (예: Java, SQL 등 3개 기술스택 완벽 일치)","구체적 이유2 (예: 백엔드 개발자 희망직무와 정확히 일치)","구체적 이유3 (예: 경력 12년 요구사항과 부합)"]}]}`;
 
   console.log(`\n[AI-RECOMMENDATION] ========================================`);
   console.log(`[AI-RECOMMENDATION] 👤 사용자 프로필:`);
