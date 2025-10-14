@@ -889,7 +889,59 @@ app.get("/api/me", async (req, res) => {
     const user = await findUserById(payload.uid);
     if (!user) return res.status(401).json({ user: null });
 
-    res.json({ user: { ...user, provider: payload.provider } });
+    // user_profiles 테이블에서 이력서 정보 조회
+    try {
+      const [profileRows] = await pool.execute(
+        'SELECT skills, preferred_jobs AS jobs, experience, preferred_regions AS regions FROM user_profiles WHERE user_id = ?',
+        [user.id]
+      );
+
+      if (profileRows.length > 0) {
+        const profile = profileRows[0];
+        // skills와 jobs를 배열로 파싱
+        if (profile.skills) {
+          try {
+            profile.skills = typeof profile.skills === 'string' ? JSON.parse(profile.skills) : profile.skills;
+          } catch (e) {
+            profile.skills = [];
+          }
+        }
+        if (profile.jobs) {
+          try {
+            // jobs가 콤마로 구분된 문자열인 경우 배열로 변환
+            profile.jobs = typeof profile.jobs === 'string'
+              ? profile.jobs.split(',').map(j => j.trim()).filter(j => j)
+              : profile.jobs;
+          } catch (e) {
+            profile.jobs = [];
+          }
+        }
+        if (profile.regions) {
+          try {
+            profile.regions = typeof profile.regions === 'string' ? JSON.parse(profile.regions) : profile.regions;
+          } catch (e) {
+            profile.regions = [];
+          }
+        }
+
+        // user 객체에 프로필 정보 병합
+        res.json({
+          user: {
+            ...user,
+            provider: payload.provider,
+            skills: profile.skills || [],
+            jobs: profile.jobs || [],
+            experience: profile.experience || null,
+            regions: profile.regions || []
+          }
+        });
+      } else {
+        res.json({ user: { ...user, provider: payload.provider } });
+      }
+    } catch (profileError) {
+      console.error('[API-ME] 프로필 조회 오류:', profileError);
+      res.json({ user: { ...user, provider: payload.provider } });
+    }
   } catch {
     res.status(401).json({ user: null });
   }

@@ -370,51 +370,81 @@ export default function JobDetailPage() {
                             display: 'grid',
                             gap: '12px'
                         }}>
+                            {companyInfo.industry && (
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '120px' }}>산업:</span>
+                                    <span style={{ color: '#555' }}>{companyInfo.industry}</span>
+                                </div>
+                            )}
                             {companyInfo.company_type && (
                                 <div style={{ display: 'flex', gap: '8px' }}>
-                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '100px' }}>기업형태:</span>
+                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '120px' }}>기업형태:</span>
                                     <span style={{ color: '#555' }}>{companyInfo.company_type}</span>
+                                </div>
+                            )}
+                            {companyInfo.company_form && (
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '120px' }}>기업형태:</span>
+                                    <span style={{ color: '#555' }}>{companyInfo.company_form}</span>
                                 </div>
                             )}
                             {companyInfo.employee_count && (
                                 <div style={{ display: 'flex', gap: '8px' }}>
-                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '100px' }}>직원 수:</span>
+                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '120px' }}>직원 수:</span>
                                     <span style={{ color: '#555' }}>{companyInfo.employee_count}</span>
                                 </div>
                             )}
                             {companyInfo.establishment_date && (
                                 <div style={{ display: 'flex', gap: '8px' }}>
-                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '100px' }}>설립일:</span>
+                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '120px' }}>설립일:</span>
                                     <span style={{ color: '#555' }}>{companyInfo.establishment_date}</span>
-                                </div>
-                            )}
-                            {companyInfo.revenue && (
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '100px' }}>매출액:</span>
-                                    <span style={{ color: '#555' }}>{companyInfo.revenue}</span>
                                 </div>
                             )}
                             {companyInfo.ceo && (
                                 <div style={{ display: 'flex', gap: '8px' }}>
-                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '100px' }}>대표이사:</span>
+                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '120px' }}>대표이사:</span>
                                     <span style={{ color: '#555' }}>{companyInfo.ceo}</span>
                                 </div>
                             )}
                             {companyInfo.location && (
                                 <div style={{ display: 'flex', gap: '8px' }}>
-                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '100px' }}>주소:</span>
+                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '120px' }}>주소:</span>
                                     <span style={{ color: '#555' }}>{companyInfo.location}</span>
+                                </div>
+                            )}
+                            {companyInfo.revenue && (
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '120px' }}>매출액:</span>
+                                    <span style={{ color: '#555' }}>{companyInfo.revenue}</span>
                                 </div>
                             )}
                             {companyInfo.credit_rating && (
                                 <div style={{ display: 'flex', gap: '8px' }}>
-                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '100px' }}>신용등급:</span>
+                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '120px' }}>신용등급:</span>
                                     <span style={{ color: '#555' }}>{companyInfo.credit_rating}</span>
+                                </div>
+                            )}
+                            {companyInfo.starting_salary && (
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '120px' }}>초봉:</span>
+                                    <span style={{ color: '#555' }}>{companyInfo.starting_salary}</span>
+                                </div>
+                            )}
+                            {companyInfo.average_salary && (
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '120px' }}>평균연봉:</span>
+                                    <span style={{ color: '#555' }}>{companyInfo.average_salary}</span>
+                                </div>
+                            )}
+                            {companyInfo.industry_average_salary && (
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '120px' }}>업계 평균연봉:</span>
+                                    <span style={{ color: '#555' }}>{companyInfo.industry_average_salary}</span>
                                 </div>
                             )}
                             {companyInfo.tags && companyInfo.tags.length > 0 && (
                                 <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '100px' }}>태그:</span>
+                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '120px' }}>태그:</span>
                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                                         {companyInfo.tags.map((tag, idx) => (
                                             <span key={idx} style={{
@@ -426,6 +456,25 @@ export default function JobDetailPage() {
                                                 fontWeight: '500'
                                             }}>
                                                 {tag}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                            {companyInfo.recommendation_keywords && companyInfo.recommendation_keywords.length > 0 && (
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '120px' }}>추천 키워드:</span>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                        {companyInfo.recommendation_keywords.map((keyword, idx) => (
+                                            <span key={idx} style={{
+                                                background: '#f3e5f5',
+                                                color: '#7b1fa2',
+                                                padding: '4px 12px',
+                                                borderRadius: '12px',
+                                                fontSize: '0.85rem',
+                                                fontWeight: '500'
+                                            }}>
+                                                {keyword}
                                             </span>
                                         ))}
                                     </div>
