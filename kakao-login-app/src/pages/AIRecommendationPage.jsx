@@ -233,41 +233,76 @@ export default function AIRecommendationPage() {
 
             {job.match_reasons && job.match_reasons.length > 0 && (
                 <div style={{
-                    background: 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)',
-                    color: '#075985',
-                    padding: '16px 18px',
-                    borderRadius: '12px',
-                    marginTop: '16px',
-                    fontSize: '0.95rem',
-                    lineHeight: '1.7',
-                    border: '2px solid #38bdf8',
-                    boxShadow: '0 4px 12px rgba(56, 189, 248, 0.2)'
+                    background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                    color: '#0c4a6e',
+                    padding: '24px',
+                    borderRadius: '16px',
+                    marginTop: '20px',
+                    border: '3px solid #0ea5e9',
+                    boxShadow: '0 8px 24px rgba(14, 165, 233, 0.25)'
                 }}>
                     <div style={{
                         fontWeight: '800',
-                        fontSize: '1rem',
-                        marginBottom: '12px',
+                        fontSize: '1.15rem',
+                        marginBottom: '18px',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '6px',
-                        textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                        gap: '10px',
+                        textShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                        paddingBottom: '12px',
+                        borderBottom: '2px solid #38bdf8'
                     }}>
-                        <span style={{ fontSize: '1.2rem' }}>🤖</span>
-                        AI 매칭 이유
+                        <span style={{ fontSize: '1.5rem' }}>🤖</span>
+                        <span style={{ color: '#0369a1' }}>GPT AI 매칭 분석</span>
                     </div>
                     <div style={{
-                        fontWeight: '600',
-                        letterSpacing: '-0.2px'
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '12px'
                     }}>
                         {job.match_reasons.map((reason, idx) => (
                             <div key={idx} style={{
                                 display: 'flex',
                                 alignItems: 'flex-start',
-                                gap: '8px',
-                                marginBottom: idx < job.match_reasons.length - 1 ? '6px' : '0'
+                                gap: '12px',
+                                padding: '14px 16px',
+                                background: 'white',
+                                borderRadius: '12px',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                                border: '1px solid #bae6fd',
+                                transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(14, 165, 233, 0.15)';
+                                e.currentTarget.style.transform = 'translateX(4px)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)';
+                                e.currentTarget.style.transform = 'translateX(0)';
                             }}>
-                                <span style={{ color: '#0369a1', fontWeight: '700' }}>•</span>
-                                <span style={{ flex: 1 }}>{reason}</span>
+                                <div style={{
+                                    minWidth: '28px',
+                                    height: '28px',
+                                    borderRadius: '50%',
+                                    background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)',
+                                    color: 'white',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontWeight: '800',
+                                    fontSize: '0.9rem',
+                                    boxShadow: '0 2px 8px rgba(14, 165, 233, 0.3)'
+                                }}>
+                                    {idx + 1}
+                                </div>
+                                <span style={{
+                                    flex: 1,
+                                    fontSize: '1rem',
+                                    lineHeight: '1.7',
+                                    fontWeight: '600',
+                                    color: '#0c4a6e',
+                                    letterSpacing: '-0.2px'
+                                }}>{reason}</span>
                             </div>
                         ))}
                     </div>
@@ -715,6 +750,31 @@ export default function AIRecommendationPage() {
                         }
                     `}</style>
                 </div>
+
+                {/* 추천 공고 안내 문구 */}
+                {allJobs.length > 0 && (
+                    <div style={{
+                        background: 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)',
+                        borderRadius: '16px',
+                        padding: '20px 24px',
+                        marginBottom: '20px',
+                        boxShadow: '0 4px 16px rgba(56, 189, 248, 0.2)',
+                        border: '2px solid #38bdf8'
+                    }}>
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px',
+                            color: '#075985',
+                            fontSize: '1.05rem',
+                            fontWeight: '700',
+                            lineHeight: '1.6'
+                        }}>
+                            <span style={{ fontSize: '1.5rem' }}>🤖</span>
+                            <span>GPT가 회원님의 이력서와 최신 채용공고 20건을 분석하여 적합률이 높은 채용공고 5건을 추천합니다</span>
+                        </div>
+                    </div>
+                )}
 
                 {/* 추천 공고 목록 */}
                 {allJobs.length === 0 ? (

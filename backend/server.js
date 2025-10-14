@@ -6284,16 +6284,16 @@ app.get('/api/jobs/search', async (req, res) => {
       return res.json({ success: true, jobs: [], total: 0 });
     }
 
-    // company 완전 일치 또는 title/job_info에 포함된 경우 검색
+    // company, title, job_info에 검색어가 포함된 경우 검색
     const query = `
       SELECT * FROM jobs
-      WHERE company = ? OR title LIKE ? OR job_info LIKE ?
+      WHERE company LIKE ? OR title LIKE ? OR job_info LIKE ?
       ORDER BY scraped_at DESC
       LIMIT 100
     `;
 
     const likePattern = `%${searchQuery}%`;
-    const [results] = await pool.execute(query, [searchQuery, likePattern, likePattern]);
+    const [results] = await pool.execute(query, [likePattern, likePattern, likePattern]);
 
     console.log(`[JOBS-SEARCH] Query completed in ${Date.now() - startTime}ms, found ${results.length} jobs`);
 
