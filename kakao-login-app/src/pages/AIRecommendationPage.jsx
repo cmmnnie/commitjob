@@ -751,31 +751,6 @@ export default function AIRecommendationPage() {
                     `}</style>
                 </div>
 
-                {/* 추천 공고 안내 문구 */}
-                {allJobs.length > 0 && (
-                    <div style={{
-                        background: 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)',
-                        borderRadius: '16px',
-                        padding: '20px 24px',
-                        marginBottom: '20px',
-                        boxShadow: '0 4px 16px rgba(56, 189, 248, 0.2)',
-                        border: '2px solid #38bdf8'
-                    }}>
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '10px',
-                            color: '#075985',
-                            fontSize: '1.05rem',
-                            fontWeight: '700',
-                            lineHeight: '1.6'
-                        }}>
-                            <span style={{ fontSize: '1.5rem' }}>🤖</span>
-                            <span>GPT가 회원님의 이력서와 최신 채용공고 20건을 분석하여 적합률이 높은 채용공고 5건을 추천합니다</span>
-                        </div>
-                    </div>
-                )}
-
                 {/* 추천 공고 목록 */}
                 {allJobs.length === 0 ? (
                     <div style={{

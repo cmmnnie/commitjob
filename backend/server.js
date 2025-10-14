@@ -6567,21 +6567,38 @@ app.get('/api/company/:companyName', async (req, res) => {
       [companyName]
     );
 
-    // 정확한 일치가 없으면 LIKE 검색
+    // 정확히 일치하는 경우에만 회사정보 제공 (LIKE 검색 제거)
     if (results.length === 0) {
-      console.log(`[COMPANY-API] No exact match, trying LIKE search...`);
-      [results] = await pool.execute(
-        'SELECT * FROM catch_companies WHERE company LIKE ? LIMIT 1',
-        [`%${companyName}%`]
-      );
-    }
-
-    if (results.length === 0) {
-      console.log(`[COMPANY-API] No company info found for: ${companyName}`);
+      console.log(`[COMPANY-API] No exact match found for: ${companyName}`);
       return res.json({ success: false, message: '회사 정보를 찾을 수 없습니다.' });
     }
 
     const company = results[0];
+
+    // tags와 recommendation_keywords를 배열로 파싱
+    if (company.tags) {
+      try {
+        company.tags = typeof company.tags === 'string' ? JSON.parse(company.tags) : company.tags;
+      } catch (e) {
+        // JSON 파싱 실패시 쉼표로 구분된 문자열로 간주
+        company.tags = company.tags.split(',').map(t => t.trim()).filter(t => t);
+      }
+    } else {
+      company.tags = [];
+    }
+
+    if (company.recommendation_keywords) {
+      try {
+        company.recommendation_keywords = typeof company.recommendation_keywords === 'string'
+          ? JSON.parse(company.recommendation_keywords)
+          : company.recommendation_keywords;
+      } catch (e) {
+        company.recommendation_keywords = company.recommendation_keywords.split(',').map(k => k.trim()).filter(k => k);
+      }
+    } else {
+      company.recommendation_keywords = [];
+    }
+
     console.log(`[COMPANY-API] Found company: ${company.company}`);
     res.json({ success: true, company });
   } catch (error) {
@@ -6598,42 +6615,16 @@ app.get('/api/company/:companyName/reviews', async (req, res) => {
   try {
     console.log(`[REVIEWS-API] Fetching reviews for: ${companyName}`);
 
-    // 회사명 정규화 (catch_companies 테이블에서 표준 회사명 찾기)
-    let normalizedCompanyName = companyName;
-    try {
-      const [companyResults] = await pool.execute(
-        'SELECT company FROM catch_companies WHERE company = ? OR company LIKE ? LIMIT 1',
-        [companyName, `%${companyName}%`]
-      );
-      if (companyResults.length > 0) {
-        normalizedCompanyName = companyResults[0].company;
-        console.log(`[REVIEWS-API] Normalized company name: ${companyName} -> ${normalizedCompanyName}`);
-      }
-    } catch (err) {
-      console.log(`[REVIEWS-API] Company normalization failed, using original name:`, err.message);
-    }
-
-    // 모든 catch 테이블은 'company' 컬럼 사용
-    // 정규화된 이름으로 정확한 일치 먼저 시도
-    let [results] = await pool.execute(
-      'SELECT * FROM catch_reviews WHERE company = ? ORDER BY id DESC LIMIT ?',
-      [normalizedCompanyName, limit]
-    );
-
-    // 정확한 일치가 없으면 LIKE 검색
-    if (results.length === 0) {
-      console.log(`[REVIEWS-API] No exact match, trying LIKE search...`);
-      [results] = await pool.execute(
-        'SELECT * FROM catch_reviews WHERE company LIKE ? ORDER BY id DESC LIMIT ?',
-        [`%${normalizedCompanyName}%`, limit]
-      );
-    }
+    // jobs 테이블의 company와 정확히 일치하는 경우에만 리뷰 제공
+    // LIMIT은 문자열 템플릿으로 처리 (prepared statement에서 LIMIT은 숫자만 허용)
+    const query = `SELECT * FROM catch_reviews WHERE company = ? ORDER BY id DESC LIMIT ${limit}`;
+    const [results] = await pool.execute(query, [companyName]);
 
     console.log(`[REVIEWS-API] Found ${results.length} reviews`);
     res.json({ success: true, reviews: results, total: results.length });
   } catch (error) {
     console.error('[ERROR] Reviews API error:', error);
-    res.status(500).json({ success: false, error: 'Internal server error' });
+    res.status(500).json({ success: false, error: 'Internal server error', message: error.message });
   }
 });
 
@@ -6647,43 +6638,12 @@ app.get('/api/company/:companyName/interview-questions', async (req, res) => {
     console.log(`[INTERVIEW-API] 요청 회사명: "${companyName}"`);
     console.log(`[INTERVIEW-API] Limit: ${limit}`);
 
-    // 회사명 정규화 (catch_companies 테이블에서 표준 회사명 찾기)
-    let normalizedCompanyName = companyName;
-    try {
-      console.log(`[INTERVIEW-API] catch_companies에서 표준 회사명 검색 중...`);
-      const [companyResults] = await pool.execute(
-        'SELECT company FROM catch_companies WHERE company = ? OR company LIKE ? LIMIT 1',
-        [companyName, `%${companyName}%`]
-      );
-      console.log(`[INTERVIEW-API] catch_companies 검색 결과: ${companyResults.length}개`);
-      if (companyResults.length > 0) {
-        normalizedCompanyName = companyResults[0].company;
-        console.log(`[INTERVIEW-API] ✅ 정규화: "${companyName}" -> "${normalizedCompanyName}"`);
-      } else {
-        console.log(`[INTERVIEW-API] ⚠️ catch_companies에 없음, 원본 이름 사용`);
-      }
-    } catch (err) {
-      console.log(`[INTERVIEW-API] ❌ 정규화 실패:`, err.message);
-    }
-
-    // 모든 catch 테이블은 'company' 컬럼 사용
-    // 정규화된 이름으로 정확한 일치 먼저 시도
-    console.log(`[INTERVIEW-API] 정확 매칭 시도: company = "${normalizedCompanyName}"`);
-    let [results] = await pool.execute(
-      'SELECT * FROM catch_interview_questions WHERE company = ? ORDER BY id DESC LIMIT ?',
-      [normalizedCompanyName, limit]
-    );
+    // jobs 테이블의 company와 정확히 일치하는 경우에만 기출질문 제공
+    // LIMIT은 문자열 템플릿으로 처리 (prepared statement에서 LIMIT은 숫자만 허용)
+    console.log(`[INTERVIEW-API] 정확 매칭 시도: company = "${companyName}"`);
+    const query = `SELECT * FROM catch_interview_questions WHERE company = ? ORDER BY id DESC LIMIT ${limit}`;
+    const [results] = await pool.execute(query, [companyName]);
     console.log(`[INTERVIEW-API] 정확 매칭 결과: ${results.length}개`);
-
-    // 정확한 일치가 없으면 LIKE 검색
-    if (results.length === 0) {
-      console.log(`[INTERVIEW-API] LIKE 검색 시도: company LIKE "%${normalizedCompanyName}%"`);
-      [results] = await pool.execute(
-        'SELECT * FROM catch_interview_questions WHERE company LIKE ? ORDER BY id DESC LIMIT ?',
-        [`%${normalizedCompanyName}%`, limit]
-      );
-      console.log(`[INTERVIEW-API] LIKE 검색 결과: ${results.length}개`);
-    }
 
     if (results.length > 0) {
       console.log(`[INTERVIEW-API] ✅ 총 ${results.length}개 기출질문 발견`);

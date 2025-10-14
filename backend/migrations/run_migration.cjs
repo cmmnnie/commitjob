@@ -16,6 +16,15 @@ async function runMigration() {
 
   try {
     console.log('🔄 데이터베이스 연결 중...');
+    console.log('DB_HOST:', process.env.DB_HOST);
+    console.log('DB_USER:', process.env.DB_USER);
+    console.log('DB_PASSWORD:', process.env.DB_PASSWORD ? '***설정됨***' : '❌ 없음');
+    console.log('DB_NAME:', process.env.DB_NAME);
+
+    if (!process.env.DB_HOST || !process.env.DB_USER || !process.env.DB_PASSWORD || !process.env.DB_NAME) {
+      throw new Error('환경변수가 제대로 설정되지 않았습니다. .env 파일을 확인하세요.');
+    }
+
     connection = await mysql.createConnection({
       host: process.env.DB_HOST,
       user: process.env.DB_USER,
