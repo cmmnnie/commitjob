@@ -406,13 +406,29 @@ export default function JobDetailPage() {
                                     <span style={{ color: '#555' }}>{companyInfo.location}</span>
                                 </div>
                             )}
-                            {companyInfo.company_url && (
+                            {companyInfo.credit_rating && (
                                 <div style={{ display: 'flex', gap: '8px' }}>
-                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '100px' }}>상세정보:</span>
-                                    <a href={companyInfo.company_url} target="_blank" rel="noopener noreferrer"
-                                       style={{ color: '#667eea', textDecoration: 'underline' }}>
-                                        Catch에서 보기 →
-                                    </a>
+                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '100px' }}>신용등급:</span>
+                                    <span style={{ color: '#555' }}>{companyInfo.credit_rating}</span>
+                                </div>
+                            )}
+                            {companyInfo.tags && companyInfo.tags.length > 0 && (
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '100px' }}>태그:</span>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                        {companyInfo.tags.map((tag, idx) => (
+                                            <span key={idx} style={{
+                                                background: '#e3f2fd',
+                                                color: '#1976d2',
+                                                padding: '4px 12px',
+                                                borderRadius: '12px',
+                                                fontSize: '0.85rem',
+                                                fontWeight: '500'
+                                            }}>
+                                                {tag}
+                                            </span>
+                                        ))}
+                                    </div>
                                 </div>
                             )}
                         </div>
