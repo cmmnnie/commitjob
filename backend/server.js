@@ -42,8 +42,10 @@ let openai = null;
 if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your_openai_api_key_here') {
   openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
+    timeout: 60000, // 60초 타임아웃
+    maxRetries: 2, // 재시도 2회
   });
-  console.log('✅ OpenAI API 연결됨');
+  console.log('✅ OpenAI API 연결됨 (timeout: 60초)');
 } else {
   console.log('⚠️ OpenAI API 키가 설정되지 않았습니다. 기본 매칭 알고리즘을 사용합니다.');
 }
@@ -4776,8 +4778,7 @@ ${interviewQuestionsSection}
               }
             ],
             max_completion_tokens: 400,
-            response_format: { type: "json_object" },
-            timeout: 60000 // 60초 타임아웃
+            response_format: { type: "json_object" }
           });
 
           const gptResponse = completion.choices[0].message.content;
@@ -6845,8 +6846,7 @@ ${jobCandidates.map((job, idx) => `${idx+1}.${job.title}|${job.company}|${format
       ],
       max_completion_tokens: 300,
       temperature: 0,
-      response_format: { type: "json_object" },
-      timeout: 60000 // 60초 타임아웃
+      response_format: { type: "json_object" }
     });
 
     const chatGPTResponse = completion.choices[0].message.content;
