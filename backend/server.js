@@ -2045,7 +2045,7 @@ app.get("/api/main-recommendations", async (req, res) => {
             skill_match_score DESC,
             ${categoryOrder},
             scraped_at DESC
-          LIMIT 20
+          LIMIT 15
         `;
 
         console.log('[MAIN-RECS] 사용자 스킬:', userSkills.join(', '));
@@ -2157,10 +2157,10 @@ app.get("/api/main-recommendations", async (req, res) => {
 
       if (openai) {
         try {
-          console.log('[MAIN-RECS] GPT-4o-mini 기반 추천 시작 (상위 15개 공고 전달 → 10개 선택)');
+          console.log('[MAIN-RECS] GPT-4o-mini 기반 추천 시작 (상위 15개 공고 전달 → 3개 선택)');
           // 상위 15개 공고만 GPT에 전달하여 속도 개선
           const topCandidates = allJobs.slice(0, 15);
-          rerankedJobs = await generateGPT4Recommendations(userProfile, topCandidates, 10);
+          rerankedJobs = await generateGPT4Recommendations(userProfile, topCandidates, 3);
           console.log(`[MAIN-RECS] ✅ GPT-4o-mini로 ${rerankedJobs.length}개 공고 추천 완료`);
         } catch (gptError) {
           console.error('[MAIN-RECS] ❌ GPT-4o-mini 추천 실패:', gptError.message);
@@ -4756,9 +4756,12 @@ ${interviewQuestionsSection}
 면접질문 5개 생성.JSON:{"questions":[{"id":1,"question":"Q1"},{"id":2,"question":"Q2"},{"id":3,"question":"Q3"},{"id":4,"question":"Q4"},{"id":5,"question":"Q5"}]}`;
 
           // 프롬프트 로깅
-          console.log(`[INTERVIEW-QUESTIONS] GPT-4o-mini 질문 생성 시작 (${jobInfo.company_name})`);
-          console.log(`[INTERVIEW-QUESTIONS] 📝 PROMPT:\n${prompt}`);
-          console.log(`[INTERVIEW-QUESTIONS] PROMPT 길이: ${prompt.length}자`);
+          console.log(`\n[INTERVIEW-QUESTIONS] ========================================`);
+          console.log(`[INTERVIEW-QUESTIONS] 📝 GPT PROMPT (${jobInfo.company_name}):`);
+          console.log(prompt);
+          console.log(`[INTERVIEW-QUESTIONS] 📝 PROMPT 길이: ${prompt.length}자`);
+          console.log(`[INTERVIEW-QUESTIONS] 📝 기출질문 개수: ${jobInfo.interview_questions?.length || 0}개`);
+          console.log(`[INTERVIEW-QUESTIONS] ========================================\n`);
 
           const completion = await openai.chat.completions.create({
             model: 'gpt-4o-mini',
@@ -4774,6 +4777,8 @@ ${interviewQuestionsSection}
             ],
             max_completion_tokens: 400,
             response_format: { type: "json_object" }
+          }, {
+            timeout: 0 // 타임아웃 제거 - 항상 GPT 응답 대기
           });
 
           const gptResponse = completion.choices[0].message.content;
@@ -6793,17 +6798,44 @@ async function generateGPT4Recommendations(userProfile, jobCandidates, limit) {
   const formatSkills = (skills) => {
     if (!skills) return '';
     if (typeof skills === 'string') return skills;
-    if (Array.isArray(skills)) return skills.slice(0, 3).join(','); // 최대 3개 스킬만
+    if (Array.isArray(skills)) return skills.join(',');
     return String(skills);
   };
 
-  // 간결한 프롬프트로 토큰 절약 및 응답 속도 개선
-  const userSkills = formatSkills(userProfile.skills);
-  const prompt = `기술:${userSkills}|경력:${userProfile.experience||'무관'}
-공고:${jobCandidates.map((job, idx) => `${idx+1}.${job.title}|${formatSkills(job.skills)}|${job.id}`).join('\n')}
-상위${limit}개추천,JSON:{"recommendations":[{"job_id":"ID","match_score":85,"match_reasons":["이유1","이유2"]}]}`;
+  const formatArray = (arr) => {
+    if (!arr) return '';
+    if (typeof arr === 'string') return arr;
+    if (Array.isArray(arr)) return arr.join(',');
+    return String(arr);
+  };
 
-  console.log(`[AI-RECOMMENDATION] 📝 PROMPT 길이: ${prompt.length}자`);
+  // 사용자 프로필 정보를 상세하게 포함한 프롬프트
+  const userSkills = formatSkills(userProfile.skills);
+  const userRegions = formatArray(userProfile.preferred_regions);
+  const userJobs = formatArray(userProfile.jobs);
+  const userSalary = userProfile.expected_salary || '무관';
+  const userExperience = userProfile.experience || '무관';
+
+  const prompt = `희망직무:${userJobs}|기술스택:${userSkills}|경력:${userExperience}|희망지역:${userRegions}|희망연봉:${userSalary}
+공고:
+${jobCandidates.map((job, idx) => `${idx+1}.${job.title}|${job.company}|${formatSkills(job.skills)}|ID:${job.id}`).join('\n')}
+
+매칭률 높은 상위${limit}개 추천.JSON:{"recommendations":[{"job_id":"ID","match_score":85,"match_reasons":["이유1","이유2"]}]}`;
+
+  console.log(`\n[AI-RECOMMENDATION] ========================================`);
+  console.log(`[AI-RECOMMENDATION] 👤 사용자 프로필:`);
+  console.log(`   희망직무: ${userJobs || '미설정'}`);
+  console.log(`   기술스택: ${userSkills || '미설정'}`);
+  console.log(`   경력: ${userExperience}`);
+  console.log(`   희망지역: ${userRegions || '미설정'}`);
+  console.log(`   희망연봉: ${userSalary}`);
+  console.log(`\n[AI-RECOMMENDATION] 📝 GPT PROMPT:`);
+  console.log(prompt);
+  console.log(`\n[AI-RECOMMENDATION] 📊 요약:`);
+  console.log(`   PROMPT 길이: ${prompt.length}자`);
+  console.log(`   전달 공고 수: ${jobCandidates.length}개`);
+  console.log(`   요청 추천 수: ${limit}개`);
+  console.log(`[AI-RECOMMENDATION] ========================================\n`);
 
   try {
     const completion = await openai.chat.completions.create({
@@ -6814,9 +6846,11 @@ async function generateGPT4Recommendations(userProfile, jobCandidates, limit) {
           content: prompt
         }
       ],
-      max_completion_tokens: 300, // 400 -> 300으로 줄여서 속도 개선
+      max_completion_tokens: 300,
       temperature: 0,
       response_format: { type: "json_object" }
+    }, {
+      timeout: 0 // 타임아웃 제거 - 항상 GPT 추천 사용
     });
 
     const chatGPTResponse = completion.choices[0].message.content;
