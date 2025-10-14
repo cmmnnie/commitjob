@@ -4776,9 +4776,8 @@ ${interviewQuestionsSection}
               }
             ],
             max_completion_tokens: 400,
-            response_format: { type: "json_object" }
-          }, {
-            timeout: 0 // 타임아웃 제거 - 항상 GPT 응답 대기
+            response_format: { type: "json_object" },
+            timeout: 60000 // 60초 타임아웃
           });
 
           const gptResponse = completion.choices[0].message.content;
@@ -6809,14 +6808,13 @@ async function generateGPT4Recommendations(userProfile, jobCandidates, limit) {
     return String(arr);
   };
 
-  // 사용자 프로필 정보를 상세하게 포함한 프롬프트
+  // 사용자 프로필 정보를 상세하게 포함한 프롬프트 (희망연봉 제외)
   const userSkills = formatSkills(userProfile.skills);
   const userRegions = formatArray(userProfile.preferred_regions);
   const userJobs = formatArray(userProfile.jobs);
-  const userSalary = userProfile.expected_salary || '무관';
   const userExperience = userProfile.experience || '무관';
 
-  const prompt = `희망직무:${userJobs}|기술스택:${userSkills}|경력:${userExperience}|희망지역:${userRegions}|희망연봉:${userSalary}
+  const prompt = `희망직무:${userJobs}|기술스택:${userSkills}|경력:${userExperience}|희망지역:${userRegions}
 공고:
 ${jobCandidates.map((job, idx) => `${idx+1}.${job.title}|${job.company}|${formatSkills(job.skills)}|ID:${job.id}`).join('\n')}
 
@@ -6828,7 +6826,6 @@ ${jobCandidates.map((job, idx) => `${idx+1}.${job.title}|${job.company}|${format
   console.log(`   기술스택: ${userSkills || '미설정'}`);
   console.log(`   경력: ${userExperience}`);
   console.log(`   희망지역: ${userRegions || '미설정'}`);
-  console.log(`   희망연봉: ${userSalary}`);
   console.log(`\n[AI-RECOMMENDATION] 📝 GPT PROMPT:`);
   console.log(prompt);
   console.log(`\n[AI-RECOMMENDATION] 📊 요약:`);
@@ -6848,9 +6845,8 @@ ${jobCandidates.map((job, idx) => `${idx+1}.${job.title}|${job.company}|${format
       ],
       max_completion_tokens: 300,
       temperature: 0,
-      response_format: { type: "json_object" }
-    }, {
-      timeout: 0 // 타임아웃 제거 - 항상 GPT 추천 사용
+      response_format: { type: "json_object" },
+      timeout: 60000 // 60초 타임아웃
     });
 
     const chatGPTResponse = completion.choices[0].message.content;
@@ -6901,7 +6897,11 @@ ${jobCandidates.map((job, idx) => `${idx+1}.${job.title}|${job.company}|${format
     return enrichedRecommendations.slice(0, limit);
 
   } catch (error) {
-    console.error('[GPT-5] API 오류:', error.message);
+    console.error('[AI-RECOMMENDATION] ❌ GPT API 오류:', error.message);
+    console.error('[AI-RECOMMENDATION] 오류 상세:', error);
+    if (error.code === 'ETIMEDOUT' || error.message.includes('timeout')) {
+      console.error('[AI-RECOMMENDATION] ⏱️ 타임아웃 발생 - 프롬프트 길이나 공고 수를 줄이세요');
+    }
     return [];
   }
 }
