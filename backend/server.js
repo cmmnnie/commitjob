@@ -2047,7 +2047,7 @@ app.get("/api/main-recommendations", async (req, res) => {
             skill_match_score DESC,
             ${categoryOrder},
             scraped_at DESC
-          LIMIT 15
+          LIMIT 25
         `;
 
         console.log('[MAIN-RECS] 사용자 스킬:', userSkills.join(', '));
@@ -2159,9 +2159,9 @@ app.get("/api/main-recommendations", async (req, res) => {
 
       if (openai) {
         try {
-          console.log('[MAIN-RECS] GPT-4o-mini 기반 추천 시작 (상위 15개 공고 전달 → 3개 선택)');
-          // 상위 15개 공고만 GPT에 전달하여 속도 개선
-          const topCandidates = allJobs.slice(0, 15);
+          console.log('[MAIN-RECS] GPT-4o-mini 기반 추천 시작 (최근 25개 공고 전달 → 3개 선택)');
+          // 최근 25개 공고를 GPT에 전달
+          const topCandidates = allJobs.slice(0, 25);
           rerankedJobs = await generateGPT4Recommendations(userProfile, topCandidates, 3);
           console.log(`[MAIN-RECS] ✅ GPT-4o-mini로 ${rerankedJobs.length}개 공고 추천 완료`);
         } catch (gptError) {
@@ -4746,16 +4746,20 @@ app.post('/api/interview-questions', async (req, res) => {
             ? `기출:${jobInfo.interview_questions.slice(0, 5).map(q => q.question).join('|')}`
             : '';
 
-          // 사용자 프로필 섹션 (3개 스킬로 확대)
-          const userProfileSection = finalUserProfile.skills.length > 0 || finalUserProfile.experience
-            ? `프로필:${finalUserProfile.skills.slice(0, 3).join(',')}/${finalUserProfile.experience || '신입'}`
+          // 사용자 프로필 섹션 (희망직무, 스킬 3개, 경력)
+          const userJobs = finalUserProfile.jobs && finalUserProfile.jobs.length > 0
+            ? finalUserProfile.jobs.join(',')
+            : '';
+
+          const userProfileSection = finalUserProfile.skills.length > 0 || finalUserProfile.experience || userJobs
+            ? `프로필:희망직무=${userJobs || '미지정'}|스킬=${finalUserProfile.skills.slice(0, 3).join(',')}|경력=${finalUserProfile.experience || '신입'}`
             : '';
 
           const prompt = `회사:${jobInfo.company_name}
 ${userProfileSection}
 ${interviewQuestionsSection}
 
-면접질문 5개 생성.JSON:{"questions":[{"id":1,"question":"Q1"},{"id":2,"question":"Q2"},{"id":3,"question":"Q3"},{"id":4,"question":"Q4"},{"id":5,"question":"Q5"}]}`;
+면접질문 3개 생성.JSON:{"questions":[{"id":1,"question":"Q1"},{"id":2,"question":"Q2"},{"id":3,"question":"Q3"}]}`;
 
           // 프롬프트 로깅
           console.log(`\n[INTERVIEW-QUESTIONS] ========================================`);
