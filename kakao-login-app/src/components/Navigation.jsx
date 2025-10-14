@@ -43,11 +43,60 @@ export default function Navigation() {
             const userData = await userResponse.json();
             const user = userData.user;
 
-            // 이력서 작성 여부 확인 (skills가 있고 비어있지 않은지 확인)
-            const hasResume = user.skills && (
-                (Array.isArray(user.skills) && user.skills.length > 0) ||
-                (typeof user.skills === 'string' && user.skills.trim() !== '' && user.skills !== '[]')
-            );
+            // 이력서 작성 여부 확인 로그
+            console.log('[Navigation] 사용자 정보:', {
+                skills: user.skills,
+                skillsType: typeof user.skills,
+                skillsLength: Array.isArray(user.skills) ? user.skills.length : 'not array',
+                jobs: user.jobs,
+                experience: user.experience
+            });
+
+            // 이력서 작성 여부 확인 (skills, jobs, experience 중 하나라도 있으면 이력서 있음으로 간주)
+            let hasResume = false;
+
+            // skills 확인
+            if (user.skills) {
+                if (Array.isArray(user.skills) && user.skills.length > 0) {
+                    hasResume = true;
+                } else if (typeof user.skills === 'string') {
+                    const trimmed = user.skills.trim();
+                    if (trimmed !== '' && trimmed !== '[]' && trimmed !== 'null') {
+                        // 문자열을 파싱해서 배열인지 확인
+                        try {
+                            const parsed = JSON.parse(trimmed);
+                            if (Array.isArray(parsed) && parsed.length > 0) {
+                                hasResume = true;
+                            }
+                        } catch {
+                            // JSON 파싱 실패하면 일반 문자열로 간주
+                            hasResume = true;
+                        }
+                    }
+                }
+            }
+
+            // jobs 확인
+            if (!hasResume && user.jobs) {
+                if (Array.isArray(user.jobs) && user.jobs.length > 0) {
+                    hasResume = true;
+                } else if (typeof user.jobs === 'string') {
+                    const trimmed = user.jobs.trim();
+                    if (trimmed !== '' && trimmed !== '[]' && trimmed !== 'null') {
+                        hasResume = true;
+                    }
+                }
+            }
+
+            // experience 확인
+            if (!hasResume && user.experience) {
+                const exp = user.experience.trim();
+                if (exp !== '' && exp !== 'null') {
+                    hasResume = true;
+                }
+            }
+
+            console.log('[Navigation] 이력서 작성 여부:', hasResume);
 
             if (!hasResume) {
                 setShowResumeModal(true);
