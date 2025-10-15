@@ -294,62 +294,33 @@ export default function ITJobsPage() {
                     marginBottom: '20px',
                     boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
                 }}>
-                    <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
-                    }}>
-                        <div>
-                            <h1 style={{
-                                fontSize: '2rem',
-                                fontWeight: '700',
-                                color: '#333',
-                                marginBottom: '8px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '12px'
-                            }}>
-                                <span style={{ fontSize: '2rem' }}>💻</span>
-                                IT 채용공고
-                                <span style={{
-                                    fontSize: '1.2rem',
-                                    color: '#1976d2',
-                                    fontWeight: '600',
-                                    marginLeft: '8px'
-                                }}>
-                                    ({jobs.length}건)
-                                </span>
-                            </h1>
-                            <p style={{
-                                fontSize: '1rem',
-                                color: '#666'
-                            }}>
-                                IT 분야 채용정보를 확인하세요
-                            </p>
-                        </div>
-                        <button
-                            onClick={() => navigate('/jobs')}
-                            style={{
-                                background: 'transparent',
-                                border: '2px solid #667eea',
-                                color: '#667eea',
-                                padding: '10px 24px',
-                                borderRadius: '24px',
-                                fontSize: '1rem',
+                    <div>
+                        <h1 style={{
+                            fontSize: '2rem',
+                            fontWeight: '700',
+                            color: '#333',
+                            marginBottom: '8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px'
+                        }}>
+                            <span style={{ fontSize: '2rem' }}>💻</span>
+                            IT 채용공고
+                            <span style={{
+                                fontSize: '1.2rem',
+                                color: '#1976d2',
                                 fontWeight: '600',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s'
-                            }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.background = '#667eea';
-                                e.currentTarget.style.color = 'white';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.background = 'transparent';
-                                e.currentTarget.style.color = '#667eea';
+                                marginLeft: '8px'
                             }}>
-                            뒤로가기
-                        </button>
+                                ({jobs.length}건)
+                            </span>
+                        </h1>
+                        <p style={{
+                            fontSize: '1rem',
+                            color: '#666'
+                        }}>
+                            IT 분야 채용정보를 확인하세요
+                        </p>
                     </div>
                 </div>
 
