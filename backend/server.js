@@ -6716,135 +6716,124 @@ app.get('/api/company/:companyName/interview-questions', async (req, res) => {
 app.post('/api/scrape-latest-jobs', async (req, res) => {
   console.log('[SCRAPE-JOBS] 최신 공고 스크래핑 요청 받음');
 
-  try {
-    // 통합 스크래핑 API 호출 (init, login, recruit, filter, extract 모두 한 번에)
-    console.log('[SCRAPE-JOBS] 통합 스크래핑 API 호출 중...');
-    console.log('[SCRAPE-JOBS] CATCH_SCRAPER_URL:', CATCH_SCRAPER_URL);
+  // 즉시 응답을 반환하여 사용자가 다른 메뉴를 사용할 수 있도록 함
+  res.json({
+    success: true,
+    message: '백그라운드에서 스크래핑을 시작했습니다. 잠시 후 새로운 공고가 추가됩니다.'
+  });
 
-    const scrapeResponse = await axios.post(
-      `${CATCH_SCRAPER_URL}/api/scrape-integrated`,
-      { max_jobs: 15 },
-      { timeout: 180000 } // 3분 타임아웃
-    );
+  // 백그라운드에서 스크래핑 작업 실행
+  (async () => {
+    try {
+      console.log('[SCRAPE-JOBS-BG] 🔄 백그라운드 스크래핑 시작');
 
-    if (!scrapeResponse.data.success) {
-      console.error('[SCRAPE-JOBS] ❌ 통합 스크래핑 실패:', scrapeResponse.data);
-      return res.status(500).json({
-        success: false,
-        message: scrapeResponse.data.message || '스크래핑에 실패했습니다.'
-      });
-    }
+      // 통합 스크래핑 API 호출 (init, login, recruit, filter, extract 모두 한 번에)
+      console.log('[SCRAPE-JOBS-BG] 통합 스크래핑 API 호출 중...');
+      console.log('[SCRAPE-JOBS-BG] CATCH_SCRAPER_URL:', CATCH_SCRAPER_URL);
 
-    // IT 공고와 BigData/AI 공고 통합
-    const itJobs = (scrapeResponse.data.it_jobs || []).map(job => ({
-      ...job,
-      category: 'IT'
-    }));
+      const scrapeResponse = await axios.post(
+        `${CATCH_SCRAPER_URL}/api/scrape-integrated`,
+        { max_jobs: 15 },
+        { timeout: 180000 } // 3분 타임아웃
+      );
 
-    const bigdataJobs = (scrapeResponse.data.bigdata_ai_jobs || []).map(job => ({
-      ...job,
-      category: 'BIGDATA_AI'
-    }));
+      if (!scrapeResponse.data.success) {
+        console.error('[SCRAPE-JOBS-BG] ❌ 통합 스크래핑 실패:', scrapeResponse.data);
+        return;
+      }
 
-    let scrapedJobs = [...itJobs, ...bigdataJobs];
-    console.log(`[SCRAPE-JOBS] 총 ${scrapedJobs.length}개 공고 스크래핑 완료 (IT: ${itJobs.length}개, BIGDATA/AI: ${bigdataJobs.length}개)`);
+      // IT 공고와 BigData/AI 공고 통합
+      const itJobs = (scrapeResponse.data.it_jobs || []).map(job => ({
+        ...job,
+        category: 'IT'
+      }));
 
-    // 스크래핑된 공고가 없으면 오류 반환
-    if (scrapedJobs.length === 0) {
-      console.error('[SCRAPE-JOBS] ❌ 스크래핑된 공고가 없습니다.');
-      return res.status(500).json({
-        success: false,
-        message: 'Catch 사이트에서 공고를 가져오지 못했습니다.'
-      });
-    }
+      const bigdataJobs = (scrapeResponse.data.bigdata_ai_jobs || []).map(job => ({
+        ...job,
+        category: 'BIGDATA_AI'
+      }));
 
-    // DB에 삽입 (중복 체크)
-    console.log('\n' + '='.repeat(80));
-    console.log('[SCRAPE-JOBS] 📊 DB 삽입 시작');
-    console.log('[SCRAPE-JOBS] 총 스크래핑된 공고 수:', scrapedJobs.length);
-    console.log('='.repeat(80) + '\n');
+      let scrapedJobs = [...itJobs, ...bigdataJobs];
+      console.log(`[SCRAPE-JOBS-BG] 총 ${scrapedJobs.length}개 공고 스크래핑 완료 (IT: ${itJobs.length}개, BIGDATA/AI: ${bigdataJobs.length}개)`);
 
-    let newJobs = 0;
-    let duplicates = 0;
+      // 스크래핑된 공고가 없으면 종료
+      if (scrapedJobs.length === 0) {
+        console.error('[SCRAPE-JOBS-BG] ❌ 스크래핑된 공고가 없습니다.');
+        return;
+      }
 
-    for (const job of scrapedJobs) {
-      try {
-        // 제목과 회사명으로 중복 체크
-        const [existing] = await pool.execute(
-          'SELECT id FROM jobs WHERE title = ? AND company = ?',
-          [job.title, job.company]
-        );
+      // DB에 삽입 (중복 체크)
+      console.log('\n' + '='.repeat(80));
+      console.log('[SCRAPE-JOBS-BG] 📊 DB 삽입 시작');
+      console.log('[SCRAPE-JOBS-BG] 총 스크래핑된 공고 수:', scrapedJobs.length);
+      console.log('='.repeat(80) + '\n');
 
-        if (existing.length > 0) {
-          duplicates++;
-          console.log(`[SCRAPE-JOBS] ⏭️  중복 제외 [${duplicates}]: ${job.title} | ${job.company} | 카테고리: ${job.category}`);
-          continue;
+      let newJobs = 0;
+      let duplicates = 0;
+
+      for (const job of scrapedJobs) {
+        try {
+          // 제목과 회사명으로 중복 체크
+          const [existing] = await pool.execute(
+            'SELECT id FROM jobs WHERE title = ? AND company = ?',
+            [job.title, job.company]
+          );
+
+          if (existing.length > 0) {
+            duplicates++;
+            console.log(`[SCRAPE-JOBS-BG] ⏭️  중복 제외 [${duplicates}]: ${job.title} | ${job.company} | 카테고리: ${job.category}`);
+            continue;
+          }
+
+          // 새 공고 insert
+          const insertQuery = `
+            INSERT INTO jobs (title, company, url, job_info, conditions, registration_info, category, scraped_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+          `;
+
+          const [result] = await pool.execute(insertQuery, [
+            job.title,
+            job.company,
+            job.url,
+            JSON.stringify(job.job_info || []),
+            JSON.stringify(job.conditions || []),
+            JSON.stringify(job.registration_info || []),
+            job.category
+          ]);
+
+          newJobs++;
+          console.log(`[SCRAPE-JOBS-BG] ✅ INSERT 성공 [${newJobs}]:`);
+          console.log(`[SCRAPE-JOBS-BG]    - ID: ${result.insertId}`);
+          console.log(`[SCRAPE-JOBS-BG]    - 제목: ${job.title}`);
+          console.log(`[SCRAPE-JOBS-BG]    - 회사: ${job.company}`);
+          console.log(`[SCRAPE-JOBS-BG]    - 카테고리: ${job.category}`);
+          console.log(`[SCRAPE-JOBS-BG]    - URL: ${job.url}`);
+          console.log(`[SCRAPE-JOBS-BG]    - 직무정보: ${job.job_info?.length || 0}개`);
+          console.log(`[SCRAPE-JOBS-BG]    - 지원조건: ${job.conditions?.length || 0}개`);
+          console.log(`[SCRAPE-JOBS-BG]    - 등록정보: ${job.registration_info?.length || 0}개`);
+        } catch (insertError) {
+          console.error(`[SCRAPE-JOBS-BG] ❌ INSERT 실패: ${job.title} (${job.company})`);
+          console.error(`[SCRAPE-JOBS-BG]    오류 메시지: ${insertError.message}`);
+          console.error(`[SCRAPE-JOBS-BG]    오류 코드: ${insertError.code}`);
         }
+      }
 
-        // 새 공고 insert
-        const insertQuery = `
-          INSERT INTO jobs (title, company, url, job_info, conditions, registration_info, category, scraped_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
-        `;
+      console.log('\n' + '='.repeat(80));
+      console.log('[SCRAPE-JOBS-BG] 📊 DB 삽입 완료');
+      console.log(`[SCRAPE-JOBS-BG] ✅ 새로 추가된 공고: ${newJobs}개`);
+      console.log(`[SCRAPE-JOBS-BG] ⏭️  중복 제외된 공고: ${duplicates}개`);
+      console.log(`[SCRAPE-JOBS-BG] 📈 총 처리된 공고: ${scrapedJobs.length}개`);
+      console.log('='.repeat(80) + '\n');
+    } catch (error) {
+      console.error('[SCRAPE-JOBS-BG] 예상치 못한 오류:', error);
+      console.error('[SCRAPE-JOBS-BG] 오류 스택:', error.stack);
 
-        const [result] = await pool.execute(insertQuery, [
-          job.title,
-          job.company,
-          job.url,
-          JSON.stringify(job.job_info || []),
-          JSON.stringify(job.conditions || []),
-          JSON.stringify(job.registration_info || []),
-          job.category
-        ]);
-
-        newJobs++;
-        console.log(`[SCRAPE-JOBS] ✅ INSERT 성공 [${newJobs}]:`);
-        console.log(`[SCRAPE-JOBS]    - ID: ${result.insertId}`);
-        console.log(`[SCRAPE-JOBS]    - 제목: ${job.title}`);
-        console.log(`[SCRAPE-JOBS]    - 회사: ${job.company}`);
-        console.log(`[SCRAPE-JOBS]    - 카테고리: ${job.category}`);
-        console.log(`[SCRAPE-JOBS]    - URL: ${job.url}`);
-        console.log(`[SCRAPE-JOBS]    - 직무정보: ${job.job_info?.length || 0}개`);
-        console.log(`[SCRAPE-JOBS]    - 지원조건: ${job.conditions?.length || 0}개`);
-        console.log(`[SCRAPE-JOBS]    - 등록정보: ${job.registration_info?.length || 0}개`);
-      } catch (insertError) {
-        console.error(`[SCRAPE-JOBS] ❌ INSERT 실패: ${job.title} (${job.company})`);
-        console.error(`[SCRAPE-JOBS]    오류 메시지: ${insertError.message}`);
-        console.error(`[SCRAPE-JOBS]    오류 코드: ${insertError.code}`);
+      // Axios 오류인 경우 더 상세한 정보 제공
+      if (error.code === 'ECONNREFUSED') {
+        console.error('[SCRAPE-JOBS-BG] Catch Scraper 서비스에 연결할 수 없습니다.');
       }
     }
-
-    console.log('\n' + '='.repeat(80));
-    console.log('[SCRAPE-JOBS] 📊 DB 삽입 완료');
-    console.log(`[SCRAPE-JOBS] ✅ 새로 추가된 공고: ${newJobs}개`);
-    console.log(`[SCRAPE-JOBS] ⏭️  중복 제외된 공고: ${duplicates}개`);
-    console.log(`[SCRAPE-JOBS] 📈 총 처리된 공고: ${scrapedJobs.length}개`);
-    console.log('='.repeat(80) + '\n');
-
-    res.json({
-      success: true,
-      total_scraped: scrapedJobs.length,
-      new_jobs: newJobs,
-      duplicates: duplicates
-    });
-  } catch (error) {
-    console.error('[SCRAPE-JOBS] 예상치 못한 오류:', error);
-    console.error('[SCRAPE-JOBS] 오류 스택:', error.stack);
-
-    // Axios 오류인 경우 더 상세한 정보 제공
-    if (error.code === 'ECONNREFUSED') {
-      return res.status(503).json({
-        success: false,
-        message: 'Catch Scraper 서비스에 연결할 수 없습니다.'
-      });
-    }
-
-    res.status(500).json({
-      success: false,
-      message: '스크래핑 중 오류가 발생했습니다.',
-      error: error.message
-    });
-  }
+  })(); // 백그라운드 실행
 });
 
 // ==============================================================================
