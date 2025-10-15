@@ -207,116 +207,110 @@ export default function JobDetailPage() {
                         </div>
                     )}
 
-                    {/* 제목 */}
-                    <h1 style={{
-                        fontSize: '2.2rem',
-                        fontWeight: '800',
-                        background: 'linear-gradient(135deg, #333 0%, #555 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        marginBottom: '20px',
-                        lineHeight: '1.4',
-                        position: 'relative',
-                        zIndex: 1
-                    }}>{job.title}</h1>
-
-                    {/* 회사명 */}
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        marginBottom: '20px',
-                        padding: '16px 20px',
-                        background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.05) 100%)',
-                        borderRadius: '16px',
-                        border: '1px solid rgba(102, 126, 234, 0.15)',
-                        position: 'relative',
-                        zIndex: 1
-                    }}>
+                    {/* 회사명 + 제목 */}
+                    <div style={{ position: 'relative', zIndex: 1, marginBottom: '0' }}>
                         <div style={{
-                            fontSize: '2rem',
-                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                            borderRadius: '12px',
-                            padding: '8px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                        }}>🏢</div>
-                        <h2 style={{
-                            fontSize: '1.5rem',
-                            fontWeight: '700',
-                            color: '#333'
-                        }}>{job.company}</h2>
-                    </div>
-
-                    {/* 카테고리 */}
-                    <div style={{ position: 'relative', zIndex: 1 }}>
-                        <span style={{
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '8px',
-                            background: job.category === 'BIGDATA_AI'
-                                ? 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)'
-                                : 'linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%)',
-                            color: job.category === 'BIGDATA_AI' ? '#1565c0' : '#6a1b9a',
-                            padding: '10px 20px',
-                            borderRadius: '24px',
-                            fontSize: '1rem',
-                            fontWeight: '700',
-                            border: job.category === 'BIGDATA_AI' ? '2px solid #2196f3' : '2px solid #9c27b0',
-                            boxShadow: job.category === 'BIGDATA_AI'
-                                ? '0 4px 12px rgba(33, 150, 243, 0.3)'
-                                : '0 4px 12px rgba(156, 39, 176, 0.3)'
+                            gap: '10px',
+                            marginBottom: '16px',
+                            padding: '8px 18px',
+                            background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.12) 0%, rgba(118, 75, 162, 0.08) 100%)',
+                            borderRadius: '20px',
+                            border: '2px solid rgba(102, 126, 234, 0.25)'
                         }}>
-                            <span style={{ fontSize: '1.2rem' }}>{job.category === 'BIGDATA_AI' ? '🤖' : '💻'}</span>
-                            {job.category === 'BIGDATA_AI' ? '빅데이터/AI' : 'IT개발'}
-                        </span>
+                            <span style={{ fontSize: '1.4rem' }}>🏢</span>
+                            <span style={{
+                                fontSize: '1.3rem',
+                                fontWeight: '800',
+                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                WebkitBackgroundClip: 'text',
+                                WebkitTextFillColor: 'transparent'
+                            }}>{job.company}</span>
+                        </div>
+                        <h1 style={{
+                            fontSize: '2.2rem',
+                            fontWeight: '800',
+                            color: '#222',
+                            marginBottom: '0',
+                            lineHeight: '1.4'
+                        }}>{job.title}</h1>
                     </div>
                 </div>
 
                 {/* 탭 네비게이션 */}
                 <div style={{
-                    background: 'white',
-                    borderRadius: '20px',
-                    padding: '8px',
-                    marginBottom: '24px',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                    background: 'linear-gradient(135deg, #ffffff 0%, #fafafa 100%)',
+                    borderRadius: '24px',
+                    padding: '10px',
+                    marginBottom: '28px',
+                    boxShadow: '0 8px 30px rgba(102, 126, 234, 0.15), 0 2px 8px rgba(0,0,0,0.05)',
                     display: 'flex',
-                    gap: '8px'
+                    gap: '10px',
+                    border: '1px solid rgba(102, 126, 234, 0.1)',
+                    position: 'relative',
+                    overflow: 'hidden'
                 }}>
+                    {/* 장식 배경 요소 */}
+                    <div style={{
+                        position: 'absolute',
+                        top: '-20px',
+                        right: '-20px',
+                        width: '100px',
+                        height: '100px',
+                        background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.04) 100%)',
+                        borderRadius: '50%',
+                        filter: 'blur(30px)',
+                        pointerEvents: 'none'
+                    }}></div>
+
                     <button
                         onClick={() => setActiveTab('job')}
                         style={{
                             flex: 1,
                             background: activeTab === 'job'
                                 ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                                : 'transparent',
-                            color: activeTab === 'job' ? 'white' : '#666',
-                            border: 'none',
-                            padding: '16px 24px',
-                            borderRadius: '16px',
+                                : 'white',
+                            color: activeTab === 'job' ? 'white' : '#555',
+                            border: activeTab === 'job' ? 'none' : '2px solid #e0e0e0',
+                            padding: '18px 26px',
+                            borderRadius: '18px',
                             fontSize: '1.1rem',
-                            fontWeight: '700',
+                            fontWeight: '800',
                             cursor: 'pointer',
-                            transition: 'all 0.3s',
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            gap: '8px',
-                            boxShadow: activeTab === 'job' ? '0 4px 12px rgba(102, 126, 234, 0.4)' : 'none'
+                            gap: '10px',
+                            boxShadow: activeTab === 'job'
+                                ? '0 6px 20px rgba(102, 126, 234, 0.5), 0 2px 8px rgba(0,0,0,0.1)'
+                                : '0 2px 6px rgba(0,0,0,0.05)',
+                            position: 'relative',
+                            zIndex: 1,
+                            transform: activeTab === 'job' ? 'scale(1.02) translateY(-2px)' : 'scale(1)'
                         }}
                         onMouseEnter={(e) => {
                             if (activeTab !== 'job') {
-                                e.currentTarget.style.background = '#f5f5f5';
+                                e.currentTarget.style.background = 'linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%)';
+                                e.currentTarget.style.borderColor = '#667eea';
+                                e.currentTarget.style.transform = 'scale(1.02) translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 4px 16px rgba(102, 126, 234, 0.15)';
                             }
                         }}
                         onMouseLeave={(e) => {
                             if (activeTab !== 'job') {
-                                e.currentTarget.style.background = 'transparent';
+                                e.currentTarget.style.background = 'white';
+                                e.currentTarget.style.borderColor = '#e0e0e0';
+                                e.currentTarget.style.transform = 'scale(1)';
+                                e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.05)';
                             }
                         }}>
-                        <span style={{ fontSize: '1.3rem' }}>📋</span>
-                        채용공고
+                        <span style={{
+                            fontSize: '1.4rem',
+                            filter: activeTab === 'job' ? 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' : 'none'
+                        }}>📋</span>
+                        <span style={{ letterSpacing: '-0.5px' }}>채용공고</span>
                     </button>
                     <button
                         onClick={() => setActiveTab('company')}
@@ -324,33 +318,47 @@ export default function JobDetailPage() {
                             flex: 1,
                             background: activeTab === 'company'
                                 ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                                : 'transparent',
-                            color: activeTab === 'company' ? 'white' : '#666',
-                            border: 'none',
-                            padding: '16px 24px',
-                            borderRadius: '16px',
+                                : 'white',
+                            color: activeTab === 'company' ? 'white' : '#555',
+                            border: activeTab === 'company' ? 'none' : '2px solid #e0e0e0',
+                            padding: '18px 26px',
+                            borderRadius: '18px',
                             fontSize: '1.1rem',
-                            fontWeight: '700',
+                            fontWeight: '800',
                             cursor: 'pointer',
-                            transition: 'all 0.3s',
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            gap: '8px',
-                            boxShadow: activeTab === 'company' ? '0 4px 12px rgba(102, 126, 234, 0.4)' : 'none'
+                            gap: '10px',
+                            boxShadow: activeTab === 'company'
+                                ? '0 6px 20px rgba(102, 126, 234, 0.5), 0 2px 8px rgba(0,0,0,0.1)'
+                                : '0 2px 6px rgba(0,0,0,0.05)',
+                            position: 'relative',
+                            zIndex: 1,
+                            transform: activeTab === 'company' ? 'scale(1.02) translateY(-2px)' : 'scale(1)'
                         }}
                         onMouseEnter={(e) => {
                             if (activeTab !== 'company') {
-                                e.currentTarget.style.background = '#f5f5f5';
+                                e.currentTarget.style.background = 'linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%)';
+                                e.currentTarget.style.borderColor = '#667eea';
+                                e.currentTarget.style.transform = 'scale(1.02) translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 4px 16px rgba(102, 126, 234, 0.15)';
                             }
                         }}
                         onMouseLeave={(e) => {
                             if (activeTab !== 'company') {
-                                e.currentTarget.style.background = 'transparent';
+                                e.currentTarget.style.background = 'white';
+                                e.currentTarget.style.borderColor = '#e0e0e0';
+                                e.currentTarget.style.transform = 'scale(1)';
+                                e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.05)';
                             }
                         }}>
-                        <span style={{ fontSize: '1.3rem' }}>🏢</span>
-                        기업정보
+                        <span style={{
+                            fontSize: '1.4rem',
+                            filter: activeTab === 'company' ? 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' : 'none'
+                        }}>🏢</span>
+                        <span style={{ letterSpacing: '-0.5px' }}>기업정보</span>
                     </button>
                     <button
                         onClick={() => setActiveTab('interview')}
@@ -358,33 +366,47 @@ export default function JobDetailPage() {
                             flex: 1,
                             background: activeTab === 'interview'
                                 ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                                : 'transparent',
-                            color: activeTab === 'interview' ? 'white' : '#666',
-                            border: 'none',
-                            padding: '16px 24px',
-                            borderRadius: '16px',
+                                : 'white',
+                            color: activeTab === 'interview' ? 'white' : '#555',
+                            border: activeTab === 'interview' ? 'none' : '2px solid #e0e0e0',
+                            padding: '18px 26px',
+                            borderRadius: '18px',
                             fontSize: '1.1rem',
-                            fontWeight: '700',
+                            fontWeight: '800',
                             cursor: 'pointer',
-                            transition: 'all 0.3s',
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            gap: '8px',
-                            boxShadow: activeTab === 'interview' ? '0 4px 12px rgba(102, 126, 234, 0.4)' : 'none'
+                            gap: '10px',
+                            boxShadow: activeTab === 'interview'
+                                ? '0 6px 20px rgba(102, 126, 234, 0.5), 0 2px 8px rgba(0,0,0,0.1)'
+                                : '0 2px 6px rgba(0,0,0,0.05)',
+                            position: 'relative',
+                            zIndex: 1,
+                            transform: activeTab === 'interview' ? 'scale(1.02) translateY(-2px)' : 'scale(1)'
                         }}
                         onMouseEnter={(e) => {
                             if (activeTab !== 'interview') {
-                                e.currentTarget.style.background = '#f5f5f5';
+                                e.currentTarget.style.background = 'linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%)';
+                                e.currentTarget.style.borderColor = '#667eea';
+                                e.currentTarget.style.transform = 'scale(1.02) translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 4px 16px rgba(102, 126, 234, 0.15)';
                             }
                         }}
                         onMouseLeave={(e) => {
                             if (activeTab !== 'interview') {
-                                e.currentTarget.style.background = 'transparent';
+                                e.currentTarget.style.background = 'white';
+                                e.currentTarget.style.borderColor = '#e0e0e0';
+                                e.currentTarget.style.transform = 'scale(1)';
+                                e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.05)';
                             }
                         }}>
-                        <span style={{ fontSize: '1.3rem' }}>💬</span>
-                        면접문제
+                        <span style={{
+                            fontSize: '1.4rem',
+                            filter: activeTab === 'interview' ? 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' : 'none'
+                        }}>💬</span>
+                        <span style={{ letterSpacing: '-0.5px' }}>면접문제</span>
                     </button>
                 </div>
 
