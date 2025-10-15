@@ -347,140 +347,321 @@ export default function JobDetailPage() {
                 {/* 회사 정보 */}
                 {companyInfo && (
                     <div style={{
-                        background: 'white',
-                        borderRadius: '16px',
-                        padding: '30px',
+                        background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+                        borderRadius: '20px',
+                        padding: '35px',
                         marginTop: '20px',
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                        border: '1px solid rgba(102, 126, 234, 0.1)'
                     }}>
-                        <h3 style={{
-                            fontSize: '1.3rem',
-                            fontWeight: '700',
-                            color: '#333',
-                            marginBottom: '20px',
-                            paddingBottom: '12px',
-                            borderBottom: '2px solid #667eea',
+                        <div style={{
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '8px'
+                            gap: '12px',
+                            marginBottom: '28px',
+                            paddingBottom: '16px',
+                            borderBottom: '3px solid',
+                            borderImage: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%) 1'
                         }}>
-                            🏢 회사 정보
-                        </h3>
+                            <div style={{
+                                fontSize: '2rem',
+                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                borderRadius: '12px',
+                                padding: '8px 12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}>🏢</div>
+                            <h3 style={{
+                                fontSize: '1.5rem',
+                                fontWeight: '800',
+                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                WebkitBackgroundClip: 'text',
+                                WebkitTextFillColor: 'transparent',
+                                margin: 0
+                            }}>
+                                회사 정보
+                            </h3>
+                        </div>
                         <div style={{
                             display: 'grid',
-                            gap: '12px'
+                            gridTemplateColumns: 'repeat(2, 1fr)',
+                            gap: '16px'
                         }}>
                             {companyInfo.industry && (
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '120px' }}>산업:</span>
-                                    <span style={{ color: '#555' }}>{companyInfo.industry}</span>
+                                <div style={{
+                                    background: 'white',
+                                    padding: '16px',
+                                    borderRadius: '12px',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.15)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
+                                }}>
+                                    <div style={{ fontSize: '0.85rem', color: '#999', marginBottom: '6px', fontWeight: '600' }}>🏭 산업</div>
+                                    <div style={{ fontSize: '1.05rem', color: '#333', fontWeight: '600' }}>{companyInfo.industry}</div>
                                 </div>
                             )}
-                            {companyInfo.company_type && (
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '120px' }}>기업형태:</span>
-                                    <span style={{ color: '#555' }}>{companyInfo.company_type}</span>
-                                </div>
-                            )}
-                            {companyInfo.company_form && (
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '120px' }}>기업형태:</span>
-                                    <span style={{ color: '#555' }}>{companyInfo.company_form}</span>
+                            {(companyInfo.company_type || companyInfo.company_form) && (
+                                <div style={{
+                                    background: 'white',
+                                    padding: '16px',
+                                    borderRadius: '12px',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.15)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
+                                }}>
+                                    <div style={{ fontSize: '0.85rem', color: '#999', marginBottom: '6px', fontWeight: '600' }}>🏛️ 기업형태</div>
+                                    <div style={{ fontSize: '1.05rem', color: '#333', fontWeight: '600' }}>{companyInfo.company_type || companyInfo.company_form}</div>
                                 </div>
                             )}
                             {companyInfo.employee_count && (
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '120px' }}>직원 수:</span>
-                                    <span style={{ color: '#555' }}>{companyInfo.employee_count}</span>
+                                <div style={{
+                                    background: 'white',
+                                    padding: '16px',
+                                    borderRadius: '12px',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.15)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
+                                }}>
+                                    <div style={{ fontSize: '0.85rem', color: '#999', marginBottom: '6px', fontWeight: '600' }}>👥 직원 수</div>
+                                    <div style={{ fontSize: '1.05rem', color: '#333', fontWeight: '600' }}>{companyInfo.employee_count}</div>
                                 </div>
                             )}
                             {companyInfo.establishment_date && (
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '120px' }}>설립일:</span>
-                                    <span style={{ color: '#555' }}>{companyInfo.establishment_date}</span>
+                                <div style={{
+                                    background: 'white',
+                                    padding: '16px',
+                                    borderRadius: '12px',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.15)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
+                                }}>
+                                    <div style={{ fontSize: '0.85rem', color: '#999', marginBottom: '6px', fontWeight: '600' }}>📅 설립일</div>
+                                    <div style={{ fontSize: '1.05rem', color: '#333', fontWeight: '600' }}>{companyInfo.establishment_date}</div>
                                 </div>
                             )}
                             {companyInfo.ceo && (
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '120px' }}>대표이사:</span>
-                                    <span style={{ color: '#555' }}>{companyInfo.ceo}</span>
+                                <div style={{
+                                    background: 'white',
+                                    padding: '16px',
+                                    borderRadius: '12px',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.15)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
+                                }}>
+                                    <div style={{ fontSize: '0.85rem', color: '#999', marginBottom: '6px', fontWeight: '600' }}>👔 대표이사</div>
+                                    <div style={{ fontSize: '1.05rem', color: '#333', fontWeight: '600' }}>{companyInfo.ceo}</div>
                                 </div>
                             )}
                             {companyInfo.location && (
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '120px' }}>주소:</span>
-                                    <span style={{ color: '#555' }}>{companyInfo.location}</span>
+                                <div style={{
+                                    background: 'white',
+                                    padding: '16px',
+                                    borderRadius: '12px',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                                    transition: 'all 0.2s',
+                                    gridColumn: '1 / -1'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.15)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
+                                }}>
+                                    <div style={{ fontSize: '0.85rem', color: '#999', marginBottom: '6px', fontWeight: '600' }}>📍 주소</div>
+                                    <div style={{ fontSize: '1.05rem', color: '#333', fontWeight: '600' }}>{companyInfo.location}</div>
                                 </div>
                             )}
                             {companyInfo.revenue && (
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '120px' }}>매출액:</span>
-                                    <span style={{ color: '#555' }}>{companyInfo.revenue}</span>
+                                <div style={{
+                                    background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
+                                    padding: '16px',
+                                    borderRadius: '12px',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                                    border: '1px solid #2196f3',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(33, 150, 243, 0.3)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
+                                }}>
+                                    <div style={{ fontSize: '0.85rem', color: '#1565c0', marginBottom: '6px', fontWeight: '600' }}>💰 매출액</div>
+                                    <div style={{ fontSize: '1.05rem', color: '#0d47a1', fontWeight: '700' }}>{companyInfo.revenue}</div>
                                 </div>
                             )}
                             {companyInfo.credit_rating && (
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '120px' }}>신용등급:</span>
-                                    <span style={{ color: '#555' }}>{companyInfo.credit_rating}</span>
+                                <div style={{
+                                    background: 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)',
+                                    padding: '16px',
+                                    borderRadius: '12px',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                                    border: '1px solid #ff9800',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 152, 0, 0.3)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
+                                }}>
+                                    <div style={{ fontSize: '0.85rem', color: '#e65100', marginBottom: '6px', fontWeight: '600' }}>⭐ 신용등급</div>
+                                    <div style={{ fontSize: '1.05rem', color: '#e65100', fontWeight: '700' }}>{companyInfo.credit_rating}</div>
                                 </div>
                             )}
                             {companyInfo.starting_salary && (
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '120px' }}>초봉:</span>
-                                    <span style={{ color: '#555' }}>{companyInfo.starting_salary}</span>
+                                <div style={{
+                                    background: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
+                                    padding: '16px',
+                                    borderRadius: '12px',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                                    border: '1px solid #4caf50',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(76, 175, 80, 0.3)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
+                                }}>
+                                    <div style={{ fontSize: '0.85rem', color: '#2e7d32', marginBottom: '6px', fontWeight: '600' }}>💵 초봉</div>
+                                    <div style={{ fontSize: '1.05rem', color: '#1b5e20', fontWeight: '700' }}>{companyInfo.starting_salary}</div>
                                 </div>
                             )}
                             {companyInfo.average_salary && (
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '120px' }}>평균연봉:</span>
-                                    <span style={{ color: '#555' }}>{companyInfo.average_salary}</span>
+                                <div style={{
+                                    background: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
+                                    padding: '16px',
+                                    borderRadius: '12px',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                                    border: '1px solid #4caf50',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(76, 175, 80, 0.3)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
+                                }}>
+                                    <div style={{ fontSize: '0.85rem', color: '#2e7d32', marginBottom: '6px', fontWeight: '600' }}>💵 평균연봉</div>
+                                    <div style={{ fontSize: '1.05rem', color: '#1b5e20', fontWeight: '700' }}>{companyInfo.average_salary}</div>
                                 </div>
                             )}
                             {companyInfo.industry_average_salary && (
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '120px' }}>업계 평균연봉:</span>
-                                    <span style={{ color: '#555' }}>{companyInfo.industry_average_salary}</span>
-                                </div>
-                            )}
-                            {companyInfo.tags && companyInfo.tags.length > 0 && (
-                                <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '120px' }}>태그:</span>
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                                        {companyInfo.tags.map((tag, idx) => (
-                                            <span key={idx} style={{
-                                                background: '#e3f2fd',
-                                                color: '#1976d2',
-                                                padding: '4px 12px',
-                                                borderRadius: '12px',
-                                                fontSize: '0.85rem',
-                                                fontWeight: '500'
-                                            }}>
-                                                {tag}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                            {companyInfo.recommendation_keywords && companyInfo.recommendation_keywords.length > 0 && (
-                                <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                                    <span style={{ fontWeight: '600', color: '#667eea', minWidth: '120px' }}>추천 키워드:</span>
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                                        {companyInfo.recommendation_keywords.map((keyword, idx) => (
-                                            <span key={idx} style={{
-                                                background: '#f3e5f5',
-                                                color: '#7b1fa2',
-                                                padding: '4px 12px',
-                                                borderRadius: '12px',
-                                                fontSize: '0.85rem',
-                                                fontWeight: '500'
-                                            }}>
-                                                {keyword}
-                                            </span>
-                                        ))}
-                                    </div>
+                                <div style={{
+                                    background: 'linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%)',
+                                    padding: '16px',
+                                    borderRadius: '12px',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                                    border: '1px solid #e91e63',
+                                    transition: 'all 0.2s',
+                                    gridColumn: '1 / -1'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(233, 30, 99, 0.3)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
+                                }}>
+                                    <div style={{ fontSize: '0.85rem', color: '#ad1457', marginBottom: '6px', fontWeight: '600' }}>📊 업계 평균연봉</div>
+                                    <div style={{ fontSize: '1.05rem', color: '#880e4f', fontWeight: '700' }}>{companyInfo.industry_average_salary}</div>
                                 </div>
                             )}
                         </div>
+                        {(companyInfo.tags && companyInfo.tags.length > 0) && (
+                            <div style={{ marginTop: '24px', padding: '20px', background: 'white', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                                <div style={{ fontSize: '0.9rem', color: '#667eea', marginBottom: '12px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <span>🏷️</span> 회사 태그
+                                </div>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                    {companyInfo.tags.map((tag, idx) => (
+                                        <span key={idx} style={{
+                                            background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
+                                            color: '#1565c0',
+                                            padding: '8px 16px',
+                                            borderRadius: '20px',
+                                            fontSize: '0.9rem',
+                                            fontWeight: '600',
+                                            border: '1px solid #2196f3',
+                                            boxShadow: '0 2px 4px rgba(33, 150, 243, 0.2)'
+                                        }}>
+                                            {tag}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        {(companyInfo.recommendation_keywords && companyInfo.recommendation_keywords.length > 0) && (
+                            <div style={{ marginTop: '16px', padding: '20px', background: 'white', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                                <div style={{ fontSize: '0.9rem', color: '#7b1fa2', marginBottom: '12px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <span>✨</span> 추천 키워드
+                                </div>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                    {companyInfo.recommendation_keywords.map((keyword, idx) => (
+                                        <span key={idx} style={{
+                                            background: 'linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%)',
+                                            color: '#6a1b9a',
+                                            padding: '8px 16px',
+                                            borderRadius: '20px',
+                                            fontSize: '0.9rem',
+                                            fontWeight: '600',
+                                            border: '1px solid #9c27b0',
+                                            boxShadow: '0 2px 4px rgba(156, 39, 176, 0.2)'
+                                        }}>
+                                            {keyword}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -553,81 +734,206 @@ export default function JobDetailPage() {
                 {/* 면접 기출문제 */}
                 {!loading && (
                     <div style={{
-                        background: 'white',
-                        borderRadius: '16px',
-                        padding: '30px',
+                        background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+                        borderRadius: '20px',
+                        padding: '35px',
                         marginTop: '20px',
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                        border: '1px solid rgba(118, 75, 162, 0.1)'
                     }}>
-                        <h3 style={{
-                            fontSize: '1.3rem',
-                            fontWeight: '700',
-                            color: '#333',
-                            marginBottom: '20px',
-                            paddingBottom: '12px',
-                            borderBottom: '2px solid #667eea',
+                        <div style={{
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '8px'
+                            gap: '12px',
+                            marginBottom: '28px',
+                            paddingBottom: '16px',
+                            borderBottom: '3px solid',
+                            borderImage: 'linear-gradient(90deg, #764ba2 0%, #667eea 100%) 1'
                         }}>
-                            💬 면접 기출문제 ({interviewQuestions.length}건)
-                        </h3>
+                            <div style={{
+                                fontSize: '2rem',
+                                background: 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)',
+                                borderRadius: '12px',
+                                padding: '8px 12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}>💬</div>
+                            <h3 style={{
+                                fontSize: '1.5rem',
+                                fontWeight: '800',
+                                background: 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)',
+                                WebkitBackgroundClip: 'text',
+                                WebkitTextFillColor: 'transparent',
+                                margin: 0
+                            }}>
+                                면접 기출문제
+                            </h3>
+                            <span style={{
+                                background: 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)',
+                                color: 'white',
+                                padding: '6px 14px',
+                                borderRadius: '20px',
+                                fontSize: '0.9rem',
+                                fontWeight: '700',
+                                marginLeft: 'auto'
+                            }}>
+                                {interviewQuestions.length}건
+                            </span>
+                        </div>
                         {interviewQuestions.length > 0 ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                                 {interviewQuestions.map((item, index) => (
                                     <div key={index} style={{
-                                        background: '#f8f9fa',
-                                        padding: '16px',
-                                        borderRadius: '12px',
-                                        borderLeft: '4px solid #764ba2'
+                                        background: 'white',
+                                        padding: '24px',
+                                        borderRadius: '16px',
+                                        boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                                        border: '2px solid transparent',
+                                        transition: 'all 0.3s',
+                                        position: 'relative',
+                                        overflow: 'hidden'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.transform = 'translateY(-4px)';
+                                        e.currentTarget.style.boxShadow = '0 8px 24px rgba(118, 75, 162, 0.2)';
+                                        e.currentTarget.style.borderColor = '#764ba2';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.transform = 'translateY(0)';
+                                        e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.08)';
+                                        e.currentTarget.style.borderColor = 'transparent';
                                     }}>
-                                        {item.position && (
+                                        <div style={{
+                                            position: 'absolute',
+                                            top: '0',
+                                            left: '0',
+                                            width: '5px',
+                                            height: '100%',
+                                            background: 'linear-gradient(180deg, #764ba2 0%, #667eea 100%)'
+                                        }}></div>
+                                        <div style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '12px',
+                                            marginBottom: '16px',
+                                            marginLeft: '10px'
+                                        }}>
                                             <div style={{
-                                                fontSize: '0.9rem',
-                                                color: '#888',
-                                                marginBottom: '8px',
-                                                fontWeight: '600'
+                                                background: 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)',
+                                                color: 'white',
+                                                width: '32px',
+                                                height: '32px',
+                                                borderRadius: '50%',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                fontSize: '1rem',
+                                                fontWeight: '800',
+                                                flexShrink: 0
                                             }}>
-                                                📌 {item.position}
+                                                {index + 1}
                                             </div>
-                                        )}
+                                            {item.position && (
+                                                <span style={{
+                                                    background: 'linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%)',
+                                                    color: '#6a1b9a',
+                                                    padding: '6px 14px',
+                                                    borderRadius: '16px',
+                                                    fontSize: '0.85rem',
+                                                    fontWeight: '700',
+                                                    border: '1px solid #9c27b0'
+                                                }}>
+                                                    📌 {item.position}
+                                                </span>
+                                            )}
+                                        </div>
                                         {item.question && (
                                             <div style={{
-                                                fontSize: '1rem',
+                                                fontSize: '1.1rem',
                                                 color: '#333',
-                                                lineHeight: '1.6',
-                                                marginBottom: '8px'
+                                                lineHeight: '1.8',
+                                                marginBottom: '16px',
+                                                marginLeft: '10px',
+                                                fontWeight: '500',
+                                                padding: '16px',
+                                                background: 'linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%)',
+                                                borderRadius: '12px',
+                                                borderLeft: '4px solid #764ba2'
                                             }}>
-                                                <span style={{ fontWeight: '600', color: '#764ba2' }}>Q. </span>
+                                                <span style={{ fontWeight: '800', color: '#764ba2', fontSize: '1.2rem' }}>Q. </span>
                                                 {item.question}
                                             </div>
                                         )}
-                                        {item.difficulty && (
-                                            <div style={{
-                                                display: 'inline-block',
-                                                background: item.difficulty === '어려움' ? '#dc3545' :
-                                                           item.difficulty === '보통' ? '#ffc107' : '#28a745',
-                                                color: 'white',
-                                                padding: '4px 12px',
-                                                borderRadius: '12px',
-                                                fontSize: '0.85rem',
-                                                fontWeight: '600'
-                                            }}>
-                                                난이도: {item.difficulty}
-                                            </div>
-                                        )}
+                                        <div style={{
+                                            display: 'flex',
+                                            gap: '10px',
+                                            alignItems: 'center',
+                                            marginLeft: '10px'
+                                        }}>
+                                            {item.difficulty && (
+                                                <div style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '6px',
+                                                    background: item.difficulty === '어려움'
+                                                        ? 'linear-gradient(135deg, #f44336 0%, #e91e63 100%)'
+                                                        : item.difficulty === '보통'
+                                                        ? 'linear-gradient(135deg, #ff9800 0%, #ffc107 100%)'
+                                                        : 'linear-gradient(135deg, #4caf50 0%, #8bc34a 100%)',
+                                                    color: 'white',
+                                                    padding: '8px 16px',
+                                                    borderRadius: '20px',
+                                                    fontSize: '0.9rem',
+                                                    fontWeight: '700',
+                                                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                                                }}>
+                                                    <span>{item.difficulty === '어려움' ? '🔥' : item.difficulty === '보통' ? '⚡' : '✨'}</span>
+                                                    난이도: {item.difficulty}
+                                                </div>
+                                            )}
+                                            {item.period && (
+                                                <span style={{
+                                                    background: '#e3f2fd',
+                                                    color: '#1976d2',
+                                                    padding: '6px 12px',
+                                                    borderRadius: '16px',
+                                                    fontSize: '0.85rem',
+                                                    fontWeight: '600'
+                                                }}>
+                                                    📅 {item.period}
+                                                </span>
+                                            )}
+                                            {item.experience && (
+                                                <span style={{
+                                                    background: '#fff3e0',
+                                                    color: '#f57c00',
+                                                    padding: '6px 12px',
+                                                    borderRadius: '16px',
+                                                    fontSize: '0.85rem',
+                                                    fontWeight: '600'
+                                                }}>
+                                                    👤 {item.experience}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
                                 ))}
                             </div>
                         ) : (
                             <div style={{
                                 textAlign: 'center',
-                                padding: '40px 20px',
-                                color: '#999'
+                                padding: '60px 20px',
+                                background: 'white',
+                                borderRadius: '16px',
+                                border: '2px dashed #ddd'
                             }}>
-                                <p style={{ fontSize: '1rem' }}>아직 등록된 면접 기출문제가 없습니다.</p>
-                                <p style={{ fontSize: '0.9rem', marginTop: '8px' }}>
-                                    회사명: {job.company}
+                                <div style={{ fontSize: '3rem', marginBottom: '16px' }}>💭</div>
+                                <p style={{ fontSize: '1.1rem', color: '#666', marginBottom: '8px', fontWeight: '600' }}>
+                                    아직 등록된 면접 기출문제가 없습니다
+                                </p>
+                                <p style={{ fontSize: '0.95rem', color: '#999' }}>
+                                    {job.company}의 면접 질문이 곧 업데이트될 예정입니다
                                 </p>
                             </div>
                         )}
