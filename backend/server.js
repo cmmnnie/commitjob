@@ -4799,9 +4799,7 @@ app.post('/api/interview-questions', async (req, res) => {
             : '';
 
           // 사용자 프로필 섹션 (희망직무, 스킬 3개, 경력)
-          const userJobs = finalUserProfile.jobs && finalUserProfile.jobs.length > 0
-            ? finalUserProfile.jobs.join(',')
-            : '';
+          const userJobs = finalUserProfile.preferred_jobs || finalUserProfile.jobs || '';
 
           const userProfileSection = finalUserProfile.skills.length > 0 || finalUserProfile.experience || userJobs
             ? `프로필:희망직무=${userJobs || '미지정'}|스킬=${finalUserProfile.skills.slice(0, 3).join(',')}|경력=${finalUserProfile.experience || '신입'}`
@@ -4985,7 +4983,7 @@ ${interviewQuestionsSection}
  */
 app.post('/api/interview-feedback', async (req, res) => {
   try {
-    const { question, answer, company, previous_score } = req.body;
+    const { question, answer, company, previous_score, user_id } = req.body;
 
     if (!question || !answer) {
       return res.status(400).json({
@@ -5006,10 +5004,58 @@ app.post('/api/interview-feedback', async (req, res) => {
       });
     }
 
+    // 사용자 프로필 정보 조회 (있을 경우)
+    let userProfile = null;
+    if (user_id) {
+      try {
+        const [userRows] = await pool.execute(`
+          SELECT up.*, u.name as user_name
+          FROM user_profiles up
+          JOIN users u ON up.user_id = u.id
+          WHERE u.id = ?
+        `, [user_id]);
+
+        if (userRows.length > 0) {
+          const profile = userRows[0];
+
+          // JSON 필드 파싱
+          let skills = [];
+          if (profile.skills) {
+            try {
+              skills = typeof profile.skills === 'string'
+                ? JSON.parse(profile.skills)
+                : profile.skills;
+            } catch (e) {
+              skills = [];
+            }
+          }
+
+          userProfile = {
+            jobs: profile.preferred_jobs || profile.jobs,
+            career_type: profile.career_type,
+            career_years: profile.career_years,
+            skills: skills,
+            education: profile.education
+          };
+        }
+      } catch (profileError) {
+        console.warn('[INTERVIEW-FEEDBACK] Failed to load user profile:', profileError);
+      }
+    }
+
     // GPT-4o-mini에게 피드백 요청
-    const userPrompt = `${company || '회사'} 면접
+    let userPrompt = `${company || '회사'} 면접
 Q: ${question}
-답변: ${answer}
+답변: ${answer}`;
+
+    if (userProfile) {
+      const skills = userProfile.skills && userProfile.skills.length > 0
+        ? userProfile.skills.slice(0, 3).join(',')
+        : '';
+      userPrompt += `\n프로필: ${userProfile.jobs || ''}/${userProfile.career_years || '0'}년${skills ? '/' + skills : ''}`;
+    }
+
+    userPrompt += `
 
 답변에 대한 피드백을 다음 JSON 형식으로만 작성:
 {"feedback": "강점: ...\n\n개선점: ...\n\n추천 방향: ..."}
@@ -5146,7 +5192,7 @@ app.post('/api/interview-model-answer', async (req, res) => {
           }
 
           userProfile = {
-            jobs: profile.jobs,
+            jobs: profile.preferred_jobs || profile.jobs,
             career_type: profile.career_type,
             career_years: profile.career_years,
             skills: skills,
@@ -5291,7 +5337,7 @@ app.post('/api/interview-revised-answer', async (req, res) => {
           }
 
           userProfile = {
-            jobs: profile.jobs,
+            jobs: profile.preferred_jobs || profile.jobs,
             career_type: profile.career_type,
             career_years: profile.career_years,
             skills: skills,

@@ -217,7 +217,8 @@ export default function AIInterviewPage() {
                 body: JSON.stringify({
                     question: selectedQuestion.question,
                     answer: answer.trim(),
-                    company: generatedCompanyName
+                    company: generatedCompanyName,
+                    user_id: currentUser?.id
                 })
             });
 
