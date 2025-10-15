@@ -13,6 +13,7 @@ export default function JobDetailPage() {
     const [reviews, setReviews] = useState([]);
     const [interviewQuestions, setInterviewQuestions] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState('job'); // 'job', 'company', 'interview'
 
     useEffect(() => {
         if (job?.company) {
@@ -273,7 +274,122 @@ export default function JobDetailPage() {
                     </div>
                 </div>
 
-                {/* 상세 정보 */}
+                {/* 탭 네비게이션 */}
+                <div style={{
+                    background: 'white',
+                    borderRadius: '20px',
+                    padding: '8px',
+                    marginBottom: '24px',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                    display: 'flex',
+                    gap: '8px'
+                }}>
+                    <button
+                        onClick={() => setActiveTab('job')}
+                        style={{
+                            flex: 1,
+                            background: activeTab === 'job'
+                                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                                : 'transparent',
+                            color: activeTab === 'job' ? 'white' : '#666',
+                            border: 'none',
+                            padding: '16px 24px',
+                            borderRadius: '16px',
+                            fontSize: '1.1rem',
+                            fontWeight: '700',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            boxShadow: activeTab === 'job' ? '0 4px 12px rgba(102, 126, 234, 0.4)' : 'none'
+                        }}
+                        onMouseEnter={(e) => {
+                            if (activeTab !== 'job') {
+                                e.currentTarget.style.background = '#f5f5f5';
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            if (activeTab !== 'job') {
+                                e.currentTarget.style.background = 'transparent';
+                            }
+                        }}>
+                        <span style={{ fontSize: '1.3rem' }}>📋</span>
+                        채용공고
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('company')}
+                        style={{
+                            flex: 1,
+                            background: activeTab === 'company'
+                                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                                : 'transparent',
+                            color: activeTab === 'company' ? 'white' : '#666',
+                            border: 'none',
+                            padding: '16px 24px',
+                            borderRadius: '16px',
+                            fontSize: '1.1rem',
+                            fontWeight: '700',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            boxShadow: activeTab === 'company' ? '0 4px 12px rgba(102, 126, 234, 0.4)' : 'none'
+                        }}
+                        onMouseEnter={(e) => {
+                            if (activeTab !== 'company') {
+                                e.currentTarget.style.background = '#f5f5f5';
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            if (activeTab !== 'company') {
+                                e.currentTarget.style.background = 'transparent';
+                            }
+                        }}>
+                        <span style={{ fontSize: '1.3rem' }}>🏢</span>
+                        기업정보
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('interview')}
+                        style={{
+                            flex: 1,
+                            background: activeTab === 'interview'
+                                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                                : 'transparent',
+                            color: activeTab === 'interview' ? 'white' : '#666',
+                            border: 'none',
+                            padding: '16px 24px',
+                            borderRadius: '16px',
+                            fontSize: '1.1rem',
+                            fontWeight: '700',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            boxShadow: activeTab === 'interview' ? '0 4px 12px rgba(102, 126, 234, 0.4)' : 'none'
+                        }}
+                        onMouseEnter={(e) => {
+                            if (activeTab !== 'interview') {
+                                e.currentTarget.style.background = '#f5f5f5';
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            if (activeTab !== 'interview') {
+                                e.currentTarget.style.background = 'transparent';
+                            }
+                        }}>
+                        <span style={{ fontSize: '1.3rem' }}>💬</span>
+                        면접문제
+                    </button>
+                </div>
+
+                {/* 채용공고 탭 */}
+                {activeTab === 'job' && (
                 <div style={{
                     background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
                     borderRadius: '24px',
@@ -505,7 +621,11 @@ export default function JobDetailPage() {
                         </div>
                     )}
                 </div>
+                )}
 
+                {/* 기업정보 탭 */}
+                {activeTab === 'company' && (
+                <>
                 {/* 회사 정보 */}
                 {companyInfo && (
                     <div style={{
@@ -833,7 +953,7 @@ export default function JobDetailPage() {
                         background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
                         borderRadius: '20px',
                         padding: '35px',
-                        marginTop: '20px',
+                        marginTop: '24px',
                         boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
                         border: '1px solid rgba(255, 193, 7, 0.1)'
                     }}>
@@ -996,14 +1116,15 @@ export default function JobDetailPage() {
                         </div>
                     </div>
                 )}
+                </>
+                )}
 
-                {/* 면접 기출문제 */}
-                {!loading && (
+                {/* 면접문제 탭 */}
+                {activeTab === 'interview' && !loading && (
                     <div style={{
                         background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
                         borderRadius: '20px',
                         padding: '35px',
-                        marginTop: '20px',
                         boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
                         border: '1px solid rgba(118, 75, 162, 0.1)'
                     }}>
