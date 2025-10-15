@@ -96,24 +96,19 @@ export default function JobsPage() {
 
             const response = await axios.post(`${API_BASE_URL}/api/scrape-latest-jobs`, {}, {
                 withCredentials: true
-                // timeout 제거: 스크래핑은 시간이 오래 걸릴 수 있으며, 느린 WiFi 환경 지원
             });
 
             console.log('[SCRAPE] Response:', response.data);
 
             if (response.data.success) {
-                const { total_scraped, new_jobs, duplicates } = response.data;
+                // 백그라운드 스크래핑 시작 알림만 표시하고 팝업창은 표시하지 않음
+                console.log('[SCRAPE] Background scraping started:', response.data.message);
 
-                if (new_jobs === 0) {
-                    alert(`스크래핑 완료!\n\n총 ${total_scraped}개 공고를 확인했으나,\n모두 이미 DB에 등록된 공고입니다.\n\n새로운 공고가 없습니다.`);
-                } else if (new_jobs === 1) {
-                    alert(`스크래핑 완료!\n\n총 ${total_scraped}개 공고 중\n새로 추가된 공고: ${new_jobs}개\n(기존 공고 ${duplicates}개 제외)`);
-                } else {
-                    alert(`스크래핑 완료!\n\n총 ${total_scraped}개 공고 중\n새로 추가된 공고: ${new_jobs}개\n(기존 공고 ${duplicates}개 제외)`);
-                }
-
-                // 스크래핑 후 공고 목록 새로고침
-                fetchJobs();
+                // 30초 후 공고 목록 자동 새로고침
+                setTimeout(() => {
+                    console.log('[SCRAPE] Auto-refreshing job list after background scraping...');
+                    fetchJobs();
+                }, 30000);
             } else {
                 alert(`스크래핑 실패: ${response.data.message || '알 수 없는 오류'}`);
             }
