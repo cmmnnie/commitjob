@@ -6638,8 +6638,14 @@ JSON:{"recommendations":[{"job_id":"ID","match_score":85,"match_reasons":["구�
 
     // 원본 job 데이터와 합치기
     const enrichedRecommendations = recommendations.map(rec => {
-      const originalJob = jobCandidates.find(job => job.id === rec.job_id);
-      if (!originalJob) return null;
+      // job_id를 숫자로 변환하여 비교 (GPT가 문자열로 반환할 수 있음)
+      const jobId = typeof rec.job_id === 'string' ? parseInt(rec.job_id) : rec.job_id;
+      const originalJob = jobCandidates.find(job => job.id == jobId); // == 사용하여 타입 변환 허용
+      if (!originalJob) {
+        console.log(`[GPT-MATCH] ⚠️ 추천된 job_id ${rec.job_id}를 찾을 수 없음`);
+        return null;
+      }
+      console.log(`[GPT-MATCH] ✅ 매칭 성공: ${originalJob.company} - ${originalJob.title} (${rec.match_score}점)`);
 
       return {
         ...originalJob,
