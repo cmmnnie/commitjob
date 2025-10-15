@@ -121,35 +121,60 @@ export default function JobDetailPage() {
             }}>
                 {/* 헤더 */}
                 <div style={{
-                    background: 'white',
-                    borderRadius: '16px',
-                    padding: '30px',
-                    marginBottom: '20px',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                    background: 'linear-gradient(135deg, #ffffff 0%, #fafafa 100%)',
+                    borderRadius: '24px',
+                    padding: '40px',
+                    marginBottom: '24px',
+                    boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
+                    border: '1px solid rgba(102, 126, 234, 0.1)',
+                    position: 'relative',
+                    overflow: 'hidden'
                 }}>
+                    {/* 장식 배경 요소 */}
+                    <div style={{
+                        position: 'absolute',
+                        top: '-50px',
+                        right: '-50px',
+                        width: '200px',
+                        height: '200px',
+                        background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.05) 100%)',
+                        borderRadius: '50%',
+                        filter: 'blur(40px)'
+                    }}></div>
+
                     <button
                         onClick={() => navigate(-1)}
                         style={{
                             background: 'transparent',
                             border: '2px solid #667eea',
                             color: '#667eea',
-                            padding: '8px 20px',
-                            borderRadius: '20px',
-                            fontSize: '0.9rem',
-                            fontWeight: '600',
+                            padding: '10px 24px',
+                            borderRadius: '24px',
+                            fontSize: '1rem',
+                            fontWeight: '700',
                             cursor: 'pointer',
-                            marginBottom: '20px',
-                            transition: 'all 0.2s'
+                            marginBottom: '24px',
+                            transition: 'all 0.3s',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            boxShadow: '0 2px 8px rgba(102, 126, 234, 0.2)',
+                            position: 'relative',
+                            zIndex: 1
                         }}
                         onMouseEnter={(e) => {
-                            e.currentTarget.style.background = '#667eea';
+                            e.currentTarget.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
                             e.currentTarget.style.color = 'white';
+                            e.currentTarget.style.transform = 'translateX(-4px)';
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
                         }}
                         onMouseLeave={(e) => {
                             e.currentTarget.style.background = 'transparent';
                             e.currentTarget.style.color = '#667eea';
+                            e.currentTarget.style.transform = 'translateX(0)';
+                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(102, 126, 234, 0.2)';
                         }}>
-                        ← 뒤로가기
+                        <span style={{ fontSize: '1.2rem' }}>←</span> 뒤로가기
                     </button>
 
                     {/* 등록/마감일시 */}
@@ -157,17 +182,24 @@ export default function JobDetailPage() {
                         <div style={{
                             display: 'flex',
                             gap: '12px',
-                            marginBottom: '20px',
-                            padding: '12px',
-                            background: '#f5f5f5',
-                            borderRadius: '8px'
+                            marginBottom: '24px',
+                            padding: '16px 20px',
+                            background: 'linear-gradient(135deg, #f5f5f5 0%, #ebebeb 100%)',
+                            borderRadius: '16px',
+                            border: '1px solid #e0e0e0',
+                            position: 'relative',
+                            zIndex: 1
                         }}>
                             {job.registration_info.map((info, index) => (
                                 <span key={index} style={{
-                                    color: info.includes('D-') ? '#d32f2f' : '#666',
-                                    fontSize: '0.95rem',
-                                    fontWeight: info.includes('D-') ? '700' : '500'
+                                    color: info.includes('D-') ? '#d32f2f' : '#555',
+                                    fontSize: '1rem',
+                                    fontWeight: info.includes('D-') ? '800' : '600',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '4px'
                                 }}>
+                                    {info.includes('D-') && <span style={{ fontSize: '1.2rem' }}>⏰</span>}
                                     {info}
                                 </span>
                             ))}
@@ -176,38 +208,66 @@ export default function JobDetailPage() {
 
                     {/* 제목 */}
                     <h1 style={{
-                        fontSize: '1.8rem',
-                        fontWeight: '700',
-                        color: '#333',
-                        marginBottom: '16px',
-                        lineHeight: '1.4'
+                        fontSize: '2.2rem',
+                        fontWeight: '800',
+                        background: 'linear-gradient(135deg, #333 0%, #555 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        marginBottom: '20px',
+                        lineHeight: '1.4',
+                        position: 'relative',
+                        zIndex: 1
                     }}>{job.title}</h1>
 
                     {/* 회사명 */}
                     <div style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '8px',
-                        marginBottom: '16px'
+                        gap: '12px',
+                        marginBottom: '20px',
+                        padding: '16px 20px',
+                        background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.05) 100%)',
+                        borderRadius: '16px',
+                        border: '1px solid rgba(102, 126, 234, 0.15)',
+                        position: 'relative',
+                        zIndex: 1
                     }}>
-                        <span style={{ fontSize: '1.5rem' }}>🏢</span>
+                        <div style={{
+                            fontSize: '2rem',
+                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                            borderRadius: '12px',
+                            padding: '8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}>🏢</div>
                         <h2 style={{
-                            fontSize: '1.3rem',
-                            fontWeight: '600',
-                            color: '#555'
+                            fontSize: '1.5rem',
+                            fontWeight: '700',
+                            color: '#333'
                         }}>{job.company}</h2>
                     </div>
 
                     {/* 카테고리 */}
-                    <div style={{ marginBottom: '20px' }}>
+                    <div style={{ position: 'relative', zIndex: 1 }}>
                         <span style={{
-                            background: job.category === 'BIGDATA_AI' ? '#e3f2fd' : '#f3e5f5',
-                            color: job.category === 'BIGDATA_AI' ? '#1976d2' : '#7b1fa2',
-                            padding: '6px 16px',
-                            borderRadius: '20px',
-                            fontSize: '0.9rem',
-                            fontWeight: '600'
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            background: job.category === 'BIGDATA_AI'
+                                ? 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)'
+                                : 'linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%)',
+                            color: job.category === 'BIGDATA_AI' ? '#1565c0' : '#6a1b9a',
+                            padding: '10px 20px',
+                            borderRadius: '24px',
+                            fontSize: '1rem',
+                            fontWeight: '700',
+                            border: job.category === 'BIGDATA_AI' ? '2px solid #2196f3' : '2px solid #9c27b0',
+                            boxShadow: job.category === 'BIGDATA_AI'
+                                ? '0 4px 12px rgba(33, 150, 243, 0.3)'
+                                : '0 4px 12px rgba(156, 39, 176, 0.3)'
                         }}>
+                            <span style={{ fontSize: '1.2rem' }}>{job.category === 'BIGDATA_AI' ? '🤖' : '💻'}</span>
                             {job.category === 'BIGDATA_AI' ? '빅데이터/AI' : 'IT개발'}
                         </span>
                     </div>
@@ -215,37 +275,70 @@ export default function JobDetailPage() {
 
                 {/* 상세 정보 */}
                 <div style={{
-                    background: 'white',
-                    borderRadius: '16px',
-                    padding: '30px',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                    background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+                    borderRadius: '24px',
+                    padding: '40px',
+                    boxShadow: '0 10px 40px rgba(0,0,0,0.12)',
+                    border: '1px solid rgba(102, 126, 234, 0.1)'
                 }}>
                     {/* 직무 정보 */}
                     {job.job_info && job.job_info.length > 0 && (
-                        <div style={{ marginBottom: '30px' }}>
-                            <h3 style={{
-                                fontSize: '1.2rem',
-                                fontWeight: '700',
-                                color: '#333',
-                                marginBottom: '12px',
-                                paddingBottom: '8px',
-                                borderBottom: '2px solid #667eea'
+                        <div style={{ marginBottom: '36px' }}>
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '12px',
+                                marginBottom: '20px',
+                                paddingBottom: '12px',
+                                borderBottom: '3px solid',
+                                borderImage: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%) 1'
                             }}>
-                                📋 직무 정보
-                            </h3>
+                                <div style={{
+                                    fontSize: '1.5rem',
+                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                    borderRadius: '10px',
+                                    padding: '6px 10px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}>📋</div>
+                                <h3 style={{
+                                    fontSize: '1.4rem',
+                                    fontWeight: '800',
+                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                    WebkitBackgroundClip: 'text',
+                                    WebkitTextFillColor: 'transparent',
+                                    margin: 0
+                                }}>
+                                    직무 정보
+                                </h3>
+                            </div>
                             <div style={{
                                 display: 'flex',
                                 flexWrap: 'wrap',
-                                gap: '10px'
+                                gap: '12px'
                             }}>
                                 {job.job_info.map((info, index) => (
                                     <span key={index} style={{
-                                        background: '#f5f5f5',
+                                        background: 'white',
                                         color: '#333',
-                                        padding: '8px 16px',
-                                        borderRadius: '8px',
-                                        fontSize: '0.95rem',
-                                        fontWeight: '500'
+                                        padding: '12px 20px',
+                                        borderRadius: '16px',
+                                        fontSize: '1rem',
+                                        fontWeight: '600',
+                                        boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                                        border: '1px solid #e0e0e0',
+                                        transition: 'all 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.transform = 'translateY(-2px)';
+                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.2)';
+                                        e.currentTarget.style.borderColor = '#667eea';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.transform = 'translateY(0)';
+                                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
+                                        e.currentTarget.style.borderColor = '#e0e0e0';
                                     }}>
                                         {info}
                                     </span>
@@ -256,32 +349,72 @@ export default function JobDetailPage() {
 
                     {/* 채용 조건 */}
                     {job.conditions && job.conditions.length > 0 && (
-                        <div style={{ marginBottom: '30px' }}>
-                            <h3 style={{
-                                fontSize: '1.2rem',
-                                fontWeight: '700',
-                                color: '#333',
-                                marginBottom: '12px',
-                                paddingBottom: '8px',
-                                borderBottom: '2px solid #667eea'
+                        <div style={{ marginBottom: '36px' }}>
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '12px',
+                                marginBottom: '20px',
+                                paddingBottom: '12px',
+                                borderBottom: '3px solid',
+                                borderImage: 'linear-gradient(90deg, #4caf50 0%, #8bc34a 100%) 1'
                             }}>
-                                ✅ 채용 조건
-                            </h3>
+                                <div style={{
+                                    fontSize: '1.5rem',
+                                    background: 'linear-gradient(135deg, #4caf50 0%, #8bc34a 100%)',
+                                    borderRadius: '10px',
+                                    padding: '6px 10px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}>✅</div>
+                                <h3 style={{
+                                    fontSize: '1.4rem',
+                                    fontWeight: '800',
+                                    background: 'linear-gradient(135deg, #4caf50 0%, #8bc34a 100%)',
+                                    WebkitBackgroundClip: 'text',
+                                    WebkitTextFillColor: 'transparent',
+                                    margin: 0
+                                }}>
+                                    채용 조건
+                                </h3>
+                            </div>
                             <div style={{
                                 display: 'flex',
                                 flexDirection: 'column',
-                                gap: '8px'
+                                gap: '12px'
                             }}>
                                 {job.conditions.map((condition, index) => (
                                     <div key={index} style={{
                                         display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '8px',
-                                        fontSize: '1rem',
-                                        color: '#555'
+                                        alignItems: 'flex-start',
+                                        gap: '12px',
+                                        fontSize: '1.05rem',
+                                        color: '#333',
+                                        background: 'white',
+                                        padding: '16px 20px',
+                                        borderRadius: '12px',
+                                        boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                                        transition: 'all 0.2s',
+                                        border: '1px solid transparent'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.transform = 'translateX(4px)';
+                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(76, 175, 80, 0.15)';
+                                        e.currentTarget.style.borderColor = '#4caf50';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.transform = 'translateX(0)';
+                                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
+                                        e.currentTarget.style.borderColor = 'transparent';
                                     }}>
-                                        <span style={{ color: '#667eea', fontWeight: '700' }}>•</span>
-                                        {condition}
+                                        <span style={{
+                                            color: '#4caf50',
+                                            fontWeight: '900',
+                                            fontSize: '1.3rem',
+                                            lineHeight: '1'
+                                        }}>•</span>
+                                        <span style={{ fontWeight: '500', flex: 1 }}>{condition}</span>
                                     </div>
                                 ))}
                             </div>
@@ -290,23 +423,45 @@ export default function JobDetailPage() {
 
                     {/* 회사명 검색키 */}
                     {job.company_search_key && (
-                        <div style={{ marginBottom: '30px' }}>
-                            <h3 style={{
-                                fontSize: '1.2rem',
-                                fontWeight: '700',
-                                color: '#333',
-                                marginBottom: '12px',
-                                paddingBottom: '8px',
-                                borderBottom: '2px solid #667eea'
+                        <div style={{ marginBottom: '36px' }}>
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '12px',
+                                marginBottom: '20px',
+                                paddingBottom: '12px',
+                                borderBottom: '3px solid',
+                                borderImage: 'linear-gradient(90deg, #ff9800 0%, #ffc107 100%) 1'
                             }}>
-                                🔍 회사명 검색키
-                            </h3>
+                                <div style={{
+                                    fontSize: '1.5rem',
+                                    background: 'linear-gradient(135deg, #ff9800 0%, #ffc107 100%)',
+                                    borderRadius: '10px',
+                                    padding: '6px 10px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}>🔍</div>
+                                <h3 style={{
+                                    fontSize: '1.4rem',
+                                    fontWeight: '800',
+                                    background: 'linear-gradient(135deg, #ff9800 0%, #ffc107 100%)',
+                                    WebkitBackgroundClip: 'text',
+                                    WebkitTextFillColor: 'transparent',
+                                    margin: 0
+                                }}>
+                                    회사명 검색키
+                                </h3>
+                            </div>
                             <p style={{
-                                fontSize: '1rem',
-                                color: '#555',
-                                background: '#f5f5f5',
-                                padding: '12px 16px',
-                                borderRadius: '8px'
+                                fontSize: '1.05rem',
+                                color: '#333',
+                                background: 'white',
+                                padding: '20px 24px',
+                                borderRadius: '16px',
+                                fontWeight: '600',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                                border: '1px solid #e0e0e0'
                             }}>
                                 {job.company_search_key}
                             </p>
@@ -315,30 +470,37 @@ export default function JobDetailPage() {
 
                     {/* 원본 공고 링크 */}
                     {job.url && (
-                        <div style={{ marginTop: '30px', textAlign: 'center' }}>
+                        <div style={{ marginTop: '40px', textAlign: 'center' }}>
                             <button
                                 onClick={() => window.open(job.url, '_blank')}
                                 style={{
                                     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                                     color: 'white',
                                     border: 'none',
-                                    padding: '14px 32px',
-                                    borderRadius: '24px',
-                                    fontSize: '1.1rem',
-                                    fontWeight: '600',
+                                    padding: '18px 40px',
+                                    borderRadius: '30px',
+                                    fontSize: '1.15rem',
+                                    fontWeight: '700',
                                     cursor: 'pointer',
                                     transition: 'all 0.3s',
-                                    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)'
+                                    boxShadow: '0 6px 20px rgba(102, 126, 234, 0.4)',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '10px',
+                                    position: 'relative',
+                                    overflow: 'hidden'
                                 }}
                                 onMouseEnter={(e) => {
-                                    e.currentTarget.style.transform = 'scale(1.05)';
-                                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.6)';
+                                    e.currentTarget.style.transform = 'translateY(-3px) scale(1.03)';
+                                    e.currentTarget.style.boxShadow = '0 10px 30px rgba(102, 126, 234, 0.6)';
                                 }}
                                 onMouseLeave={(e) => {
-                                    e.currentTarget.style.transform = 'scale(1)';
-                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
+                                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.4)';
                                 }}>
-                                원본 채용공고 보기 →
+                                <span style={{ fontSize: '1.3rem' }}>🔗</span>
+                                원본 채용공고 보기
+                                <span style={{ fontSize: '1.3rem' }}>→</span>
                             </button>
                         </div>
                     )}
@@ -668,61 +830,165 @@ export default function JobDetailPage() {
                 {/* 회사 리뷰 */}
                 {reviews.length > 0 && (
                     <div style={{
-                        background: 'white',
-                        borderRadius: '16px',
-                        padding: '30px',
+                        background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+                        borderRadius: '20px',
+                        padding: '35px',
                         marginTop: '20px',
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                        border: '1px solid rgba(255, 193, 7, 0.1)'
                     }}>
-                        <h3 style={{
-                            fontSize: '1.3rem',
-                            fontWeight: '700',
-                            color: '#333',
-                            marginBottom: '20px',
-                            paddingBottom: '12px',
-                            borderBottom: '2px solid #667eea',
+                        <div style={{
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '8px'
+                            gap: '12px',
+                            marginBottom: '28px',
+                            paddingBottom: '16px',
+                            borderBottom: '3px solid',
+                            borderImage: 'linear-gradient(90deg, #ffc107 0%, #ff9800 100%) 1'
                         }}>
-                            ⭐ 회사 리뷰 ({reviews.length}건)
-                        </h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            <div style={{
+                                fontSize: '2rem',
+                                background: 'linear-gradient(135deg, #ffc107 0%, #ff9800 100%)',
+                                borderRadius: '12px',
+                                padding: '8px 12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}>⭐</div>
+                            <h3 style={{
+                                fontSize: '1.5rem',
+                                fontWeight: '800',
+                                background: 'linear-gradient(135deg, #ffc107 0%, #ff9800 100%)',
+                                WebkitBackgroundClip: 'text',
+                                WebkitTextFillColor: 'transparent',
+                                margin: 0
+                            }}>
+                                회사 리뷰
+                            </h3>
+                            <span style={{
+                                background: 'linear-gradient(135deg, #ffc107 0%, #ff9800 100%)',
+                                color: 'white',
+                                padding: '6px 14px',
+                                borderRadius: '20px',
+                                fontSize: '0.9rem',
+                                fontWeight: '700',
+                                marginLeft: 'auto'
+                            }}>
+                                {reviews.length}건
+                            </span>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                             {reviews.map((review, index) => (
                                 <div key={index} style={{
-                                    background: '#f8f9fa',
-                                    padding: '16px',
-                                    borderRadius: '12px',
-                                    borderLeft: '4px solid #667eea'
+                                    background: 'white',
+                                    padding: '24px',
+                                    borderRadius: '16px',
+                                    boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                                    border: '2px solid transparent',
+                                    transition: 'all 0.3s',
+                                    position: 'relative',
+                                    overflow: 'hidden'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(-4px)';
+                                    e.currentTarget.style.boxShadow = '0 8px 24px rgba(255, 193, 7, 0.2)';
+                                    e.currentTarget.style.borderColor = '#ffc107';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.08)';
+                                    e.currentTarget.style.borderColor = 'transparent';
                                 }}>
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '0',
+                                        left: '0',
+                                        width: '5px',
+                                        height: '100%',
+                                        background: 'linear-gradient(180deg, #ffc107 0%, #ff9800 100%)'
+                                    }}></div>
                                     {review.rating && (
                                         <div style={{
                                             display: 'flex',
                                             alignItems: 'center',
-                                            gap: '8px',
-                                            marginBottom: '8px'
+                                            gap: '10px',
+                                            marginBottom: '12px',
+                                            marginLeft: '10px'
                                         }}>
-                                            <span style={{ fontSize: '1.1rem', fontWeight: '600', color: '#667eea' }}>
+                                            <span style={{ fontSize: '1.3rem', fontWeight: '600' }}>
                                                 {'⭐'.repeat(Math.round(parseFloat(review.rating)))}
                                             </span>
-                                            <span style={{ color: '#666', fontSize: '0.9rem' }}>{review.rating}점</span>
+                                            <span style={{
+                                                background: 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)',
+                                                color: '#f57c00',
+                                                padding: '6px 14px',
+                                                borderRadius: '16px',
+                                                fontSize: '0.95rem',
+                                                fontWeight: '700',
+                                                border: '1px solid #ff9800'
+                                            }}>{review.rating}점</span>
                                         </div>
                                     )}
                                     {review.position && (
-                                        <div style={{ fontSize: '0.9rem', color: '#888', marginBottom: '8px' }}>
-                                            {review.position}
+                                        <div style={{
+                                            fontSize: '0.95rem',
+                                            color: '#666',
+                                            marginBottom: '16px',
+                                            marginLeft: '10px',
+                                            fontWeight: '600',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                            background: '#f5f5f5',
+                                            padding: '6px 12px',
+                                            borderRadius: '12px'
+                                        }}>
+                                            <span>👤</span> {review.position}
                                         </div>
                                     )}
                                     {review.pros && (
-                                        <div style={{ marginBottom: '8px' }}>
-                                            <span style={{ fontWeight: '600', color: '#28a745' }}>장점: </span>
-                                            <span style={{ color: '#555' }}>{review.pros}</span>
+                                        <div style={{
+                                            marginBottom: '12px',
+                                            padding: '16px',
+                                            background: 'linear-gradient(135deg, #e8f5e9 0%, #f1f8f4 100%)',
+                                            borderRadius: '12px',
+                                            border: '1px solid #4caf50',
+                                            marginLeft: '10px'
+                                        }}>
+                                            <div style={{
+                                                fontWeight: '700',
+                                                color: '#2e7d32',
+                                                marginBottom: '8px',
+                                                fontSize: '1rem',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px'
+                                            }}>
+                                                <span style={{ fontSize: '1.2rem' }}>👍</span> 장점
+                                            </div>
+                                            <span style={{ color: '#333', fontSize: '1rem', lineHeight: '1.6' }}>{review.pros}</span>
                                         </div>
                                     )}
                                     {review.cons && (
-                                        <div>
-                                            <span style={{ fontWeight: '600', color: '#dc3545' }}>단점: </span>
-                                            <span style={{ color: '#555' }}>{review.cons}</span>
+                                        <div style={{
+                                            padding: '16px',
+                                            background: 'linear-gradient(135deg, #ffebee 0%, #fce4ec 100%)',
+                                            borderRadius: '12px',
+                                            border: '1px solid #f44336',
+                                            marginLeft: '10px'
+                                        }}>
+                                            <div style={{
+                                                fontWeight: '700',
+                                                color: '#c62828',
+                                                marginBottom: '8px',
+                                                fontSize: '1rem',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px'
+                                            }}>
+                                                <span style={{ fontSize: '1.2rem' }}>👎</span> 단점
+                                            </div>
+                                            <span style={{ color: '#333', fontSize: '1rem', lineHeight: '1.6' }}>{review.cons}</span>
                                         </div>
                                     )}
                                 </div>
