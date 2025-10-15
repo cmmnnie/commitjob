@@ -77,7 +77,7 @@ export default function MenuPage() {
                         <span style={menuIconStyle}>🤖</span>
                         <div style={menuContentStyle}>
                             <div style={menuTitleStyle}>AI 채용 추천</div>
-                            <div style={menuDescStyle}>GPT가 회원님 이력서와 CommitJob 채용공고를 매칭하여 매칭률 높은 6개 채용공고를 추천해드립니다.</div>
+                            <div style={menuDescStyle}>GPT가 회원님 이력서와 CommitJob 채용공고를 매칭하여 매칭률 높은 채용공고를 추천해드립니다.</div>
                         </div>
                     </Link>
 
