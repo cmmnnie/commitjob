@@ -143,41 +143,6 @@ export default function JobDetailPage() {
                         filter: 'blur(40px)'
                     }}></div>
 
-                    <button
-                        onClick={() => navigate(-1)}
-                        style={{
-                            background: 'transparent',
-                            border: '2px solid #667eea',
-                            color: '#667eea',
-                            padding: '10px 24px',
-                            borderRadius: '24px',
-                            fontSize: '1rem',
-                            fontWeight: '700',
-                            cursor: 'pointer',
-                            marginBottom: '24px',
-                            transition: 'all 0.3s',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            boxShadow: '0 2px 8px rgba(102, 126, 234, 0.2)',
-                            position: 'relative',
-                            zIndex: 1
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-                            e.currentTarget.style.color = 'white';
-                            e.currentTarget.style.transform = 'translateX(-4px)';
-                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.background = 'transparent';
-                            e.currentTarget.style.color = '#667eea';
-                            e.currentTarget.style.transform = 'translateX(0)';
-                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(102, 126, 234, 0.2)';
-                        }}>
-                        <span style={{ fontSize: '1.2rem' }}>←</span> 뒤로가기
-                    </button>
-
                     {/* 등록/마감일시 */}
                     {job.registration_info && job.registration_info.length > 0 && (
                         <div style={{
