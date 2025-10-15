@@ -613,6 +613,26 @@ export default function JobDetailPage() {
                 {/* 기업정보 탭 */}
                 {activeTab === 'company' && (
                 <>
+                {/* 기업정보 없음 메시지 */}
+                {!companyInfo && !loading && (
+                    <div style={{
+                        background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+                        borderRadius: '20px',
+                        padding: '60px 35px',
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                        border: '2px dashed #ddd',
+                        textAlign: 'center'
+                    }}>
+                        <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🏢</div>
+                        <p style={{ fontSize: '1.2rem', color: '#666', marginBottom: '8px', fontWeight: '700' }}>
+                            등록된 기업정보가 없습니다
+                        </p>
+                        <p style={{ fontSize: '1rem', color: '#999' }}>
+                            {job.company}의 기업정보가 곧 업데이트될 예정입니다
+                        </p>
+                    </div>
+                )}
+
                 {/* 회사 정보 */}
                 {companyInfo && (
                     <div style={{
