@@ -16,6 +16,8 @@ export default function AICoverLetterPage() {
     const [userCoverLetter, setUserCoverLetter] = useState('');
     const [feedback, setFeedback] = useState(null);
     const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
+    const [selectedJobForView, setSelectedJobForView] = useState(null);
+    const [isJobPopupOpen, setIsJobPopupOpen] = useState(false);
 
     useEffect(() => {
         checkLogin();
@@ -197,6 +199,16 @@ export default function AICoverLetterPage() {
         } finally {
             setIsFeedbackLoading(false);
         }
+    };
+
+    const openJobPopup = (job) => {
+        setSelectedJobForView(job);
+        setIsJobPopupOpen(true);
+    };
+
+    const closeJobPopup = () => {
+        setIsJobPopupOpen(false);
+        setSelectedJobForView(null);
     };
 
     if (isLoading && !currentUser) {
@@ -579,7 +591,7 @@ export default function AICoverLetterPage() {
                     <div style={{ marginBottom: '18px' }}>
                         <label style={{
                             display: 'block',
-                            marginBottom: '6px',
+                            marginBottom: '8px',
                             fontWeight: '600',
                             color: '#2d3748',
                             fontSize: '0.95rem'
@@ -588,59 +600,170 @@ export default function AICoverLetterPage() {
                         </label>
                         {isLoadingJobs ? (
                             <div style={{
-                                padding: '12px 14px',
+                                padding: '16px 14px',
                                 border: '2px solid #e2e8f0',
                                 borderRadius: '10px',
                                 fontSize: '0.95rem',
                                 color: '#666',
-                                textAlign: 'center'
+                                textAlign: 'center',
+                                background: '#f7fafc'
                             }}>
-                                채용공고 조회 중...
+                                📋 채용공고 조회 중...
                             </div>
-                        ) : (
-                            <select
-                                value={selectedJobId}
-                                onChange={(e) => setSelectedJobId(e.target.value)}
-                                disabled={!companyName.trim() || jobPostings.length === 0}
-                                style={{
-                                    width: '100%',
-                                    padding: '12px 14px',
+                        ) : jobPostings.length > 0 ? (
+                            <div>
+                                {/* 선택 안함 옵션 */}
+                                <div
+                                    onClick={() => setSelectedJobId('')}
+                                    style={{
+                                        padding: '14px',
+                                        border: selectedJobId === '' ? '2px solid #667eea' : '2px solid #e2e8f0',
+                                        borderRadius: '10px',
+                                        fontSize: '0.95rem',
+                                        marginBottom: '8px',
+                                        cursor: 'pointer',
+                                        background: selectedJobId === '' ? '#f0f4ff' : 'white',
+                                        transition: 'all 0.2s',
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        if (selectedJobId !== '') {
+                                            e.currentTarget.style.background = '#f7fafc';
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (selectedJobId !== '') {
+                                            e.currentTarget.style.background = 'white';
+                                        }
+                                    }}
+                                >
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        fontWeight: selectedJobId === '' ? '600' : '500'
+                                    }}>
+                                        <input
+                                            type="radio"
+                                            checked={selectedJobId === ''}
+                                            onChange={() => setSelectedJobId('')}
+                                            style={{ cursor: 'pointer' }}
+                                        />
+                                        <span style={{ color: '#2d3748' }}>선택 안함 (회사명만 사용)</span>
+                                    </div>
+                                </div>
+
+                                {/* 채용공고 목록 */}
+                                <div style={{
+                                    maxHeight: '300px',
+                                    overflowY: 'auto',
                                     border: '2px solid #e2e8f0',
                                     borderRadius: '10px',
-                                    fontSize: '1rem',
-                                    boxSizing: 'border-box',
-                                    transition: 'all 0.2s',
-                                    backgroundColor: (!companyName.trim() || jobPostings.length === 0) ? '#f7fafc' : 'white',
-                                    cursor: (!companyName.trim() || jobPostings.length === 0) ? 'not-allowed' : 'pointer'
-                                }}
-                                onFocus={(e) => {
-                                    if (companyName.trim() && jobPostings.length > 0) {
-                                        e.currentTarget.style.borderColor = '#667eea';
-                                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.1)';
-                                    }
-                                }}
-                                onBlur={(e) => {
-                                    e.currentTarget.style.borderColor = '#e2e8f0';
-                                    e.currentTarget.style.boxShadow = 'none';
-                                }}
-                            >
-                                <option value="">선택 안함 (회사명만 사용)</option>
-                                {jobPostings.map((job) => (
-                                    <option key={job.id} value={job.id}>
-                                        {job.title} {job.category ? `- ${job.category}` : ''}
-                                    </option>
-                                ))}
-                            </select>
-                        )}
-                        {companyName.trim() && jobPostings.length === 0 && !isLoadingJobs && (
-                            <div style={{
-                                marginTop: '8px',
-                                fontSize: '0.85rem',
-                                color: '#718096',
-                                fontStyle: 'italic'
-                            }}>
-                                해당 회사의 채용공고를 찾을 수 없습니다. 회사명만으로 자기소개서를 생성할 수 있습니다.
+                                    padding: '8px'
+                                }}>
+                                    {jobPostings.map((job) => (
+                                        <div
+                                            key={job.id}
+                                            style={{
+                                                padding: '12px',
+                                                border: selectedJobId === job.id.toString() ? '2px solid #667eea' : '1px solid #e2e8f0',
+                                                borderRadius: '8px',
+                                                fontSize: '0.95rem',
+                                                marginBottom: '8px',
+                                                background: selectedJobId === job.id.toString() ? '#f0f4ff' : 'white',
+                                                transition: 'all 0.2s',
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'center',
+                                                gap: '12px'
+                                            }}
+                                        >
+                                            <div
+                                                onClick={() => setSelectedJobId(job.id.toString())}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '8px',
+                                                    flex: 1,
+                                                    cursor: 'pointer'
+                                                }}
+                                            >
+                                                <input
+                                                    type="radio"
+                                                    checked={selectedJobId === job.id.toString()}
+                                                    onChange={() => setSelectedJobId(job.id.toString())}
+                                                    style={{ cursor: 'pointer' }}
+                                                />
+                                                <div style={{ flex: 1 }}>
+                                                    <div style={{
+                                                        color: '#2d3748',
+                                                        fontWeight: selectedJobId === job.id.toString() ? '600' : '500',
+                                                        marginBottom: '2px'
+                                                    }}>
+                                                        {job.title}
+                                                    </div>
+                                                    {job.category && (
+                                                        <div style={{
+                                                            fontSize: '0.85rem',
+                                                            color: '#718096'
+                                                        }}>
+                                                            {job.category}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    openJobPopup(job);
+                                                }}
+                                                style={{
+                                                    background: 'linear-gradient(135deg, #4299e1 0%, #3182ce 100%)',
+                                                    color: 'white',
+                                                    border: 'none',
+                                                    padding: '8px 16px',
+                                                    borderRadius: '6px',
+                                                    fontSize: '0.85rem',
+                                                    fontWeight: '600',
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s',
+                                                    whiteSpace: 'nowrap',
+                                                    flexShrink: 0
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    e.currentTarget.style.transform = 'translateY(-1px)';
+                                                    e.currentTarget.style.boxShadow = '0 4px 8px rgba(66, 153, 225, 0.4)';
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.currentTarget.style.transform = 'translateY(0)';
+                                                    e.currentTarget.style.boxShadow = 'none';
+                                                }}
+                                            >
+                                                📄 상세보기
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
+                        ) : (
+                            companyName.trim() && (
+                                <div style={{
+                                    padding: '16px',
+                                    border: '2px solid #feebc8',
+                                    borderRadius: '10px',
+                                    fontSize: '0.9rem',
+                                    color: '#744210',
+                                    background: '#fffaf0',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px'
+                                }}>
+                                    <span>⚠️</span>
+                                    <span>해당 회사의 채용공고를 찾을 수 없습니다. 회사명만으로 자기소개서를 생성할 수 있습니다.</span>
+                                </div>
+                            )
                         )}
                     </div>
 
@@ -865,6 +988,256 @@ export default function AICoverLetterPage() {
                     )}
                 </div>
             </div>
+
+            {/* 채용공고 상세보기 팝업 */}
+            {isJobPopupOpen && selectedJobForView && (
+                <div
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0, 0, 0, 0.6)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 9999,
+                        padding: '20px'
+                    }}
+                    onClick={closeJobPopup}
+                >
+                    <div
+                        style={{
+                            background: 'white',
+                            borderRadius: '20px',
+                            maxWidth: '700px',
+                            width: '100%',
+                            maxHeight: '80vh',
+                            overflow: 'hidden',
+                            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+                            display: 'flex',
+                            flexDirection: 'column'
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* 팝업 헤더 */}
+                        <div style={{
+                            padding: '24px',
+                            borderBottom: '2px solid #e2e8f0',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'flex-start',
+                            gap: '16px'
+                        }}>
+                            <div style={{ flex: 1 }}>
+                                <h2 style={{
+                                    color: '#2d3748',
+                                    fontSize: '1.4rem',
+                                    fontWeight: '700',
+                                    marginBottom: '8px',
+                                    lineHeight: '1.4'
+                                }}>
+                                    {selectedJobForView.title}
+                                </h2>
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '12px',
+                                    flexWrap: 'wrap',
+                                    fontSize: '0.9rem',
+                                    color: '#718096'
+                                }}>
+                                    <span style={{
+                                        background: '#e6fffa',
+                                        color: '#047857',
+                                        padding: '4px 12px',
+                                        borderRadius: '6px',
+                                        fontWeight: '600'
+                                    }}>
+                                        {selectedJobForView.company}
+                                    </span>
+                                    {selectedJobForView.category && (
+                                        <span style={{
+                                            background: '#f0f4ff',
+                                            color: '#4c51bf',
+                                            padding: '4px 12px',
+                                            borderRadius: '6px',
+                                            fontWeight: '600'
+                                        }}>
+                                            {selectedJobForView.category}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                            <button
+                                onClick={closeJobPopup}
+                                style={{
+                                    background: '#f7fafc',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    width: '36px',
+                                    height: '36px',
+                                    cursor: 'pointer',
+                                    fontSize: '1.3rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    transition: 'all 0.2s',
+                                    flexShrink: 0
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.background = '#e2e8f0';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = '#f7fafc';
+                                }}
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        {/* 팝업 내용 */}
+                        <div style={{
+                            padding: '24px',
+                            overflowY: 'auto',
+                            flex: 1
+                        }}>
+                            {/* 채용 정보 */}
+                            {selectedJobForView.job_info && (
+                                <div style={{ marginBottom: '24px' }}>
+                                    <h3 style={{
+                                        color: '#2d3748',
+                                        fontSize: '1.1rem',
+                                        fontWeight: '700',
+                                        marginBottom: '12px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px'
+                                    }}>
+                                        <span>📋</span>
+                                        <span>채용 정보</span>
+                                    </h3>
+                                    <div style={{
+                                        background: '#f7fafc',
+                                        borderRadius: '12px',
+                                        padding: '16px',
+                                        fontSize: '0.95rem',
+                                        color: '#2d3748',
+                                        lineHeight: '1.8',
+                                        whiteSpace: 'pre-wrap'
+                                    }}>
+                                        {selectedJobForView.job_info}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* 지원 조건 */}
+                            {selectedJobForView.conditions && (
+                                <div style={{ marginBottom: '24px' }}>
+                                    <h3 style={{
+                                        color: '#2d3748',
+                                        fontSize: '1.1rem',
+                                        fontWeight: '700',
+                                        marginBottom: '12px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px'
+                                    }}>
+                                        <span>✅</span>
+                                        <span>지원 조건</span>
+                                    </h3>
+                                    <div style={{
+                                        background: '#fffaf0',
+                                        borderRadius: '12px',
+                                        padding: '16px',
+                                        fontSize: '0.95rem',
+                                        color: '#2d3748',
+                                        lineHeight: '1.8',
+                                        whiteSpace: 'pre-wrap'
+                                    }}>
+                                        {selectedJobForView.conditions}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* 등록 정보 */}
+                            {selectedJobForView.registration_info && (
+                                <div style={{ marginBottom: '24px' }}>
+                                    <h3 style={{
+                                        color: '#2d3748',
+                                        fontSize: '1.1rem',
+                                        fontWeight: '700',
+                                        marginBottom: '12px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px'
+                                    }}>
+                                        <span>📝</span>
+                                        <span>등록 정보</span>
+                                    </h3>
+                                    <div style={{
+                                        background: '#f0f9ff',
+                                        borderRadius: '12px',
+                                        padding: '16px',
+                                        fontSize: '0.95rem',
+                                        color: '#2d3748',
+                                        lineHeight: '1.8',
+                                        whiteSpace: 'pre-wrap'
+                                    }}>
+                                        {selectedJobForView.registration_info}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* 채용 공고 URL */}
+                            {selectedJobForView.url && (
+                                <div style={{ marginBottom: '16px' }}>
+                                    <h3 style={{
+                                        color: '#2d3748',
+                                        fontSize: '1.1rem',
+                                        fontWeight: '700',
+                                        marginBottom: '12px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px'
+                                    }}>
+                                        <span>🔗</span>
+                                        <span>채용 공고 링크</span>
+                                    </h3>
+                                    <a
+                                        href={selectedJobForView.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{
+                                            display: 'inline-block',
+                                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                            color: 'white',
+                                            padding: '12px 24px',
+                                            borderRadius: '10px',
+                                            textDecoration: 'none',
+                                            fontWeight: '600',
+                                            fontSize: '0.95rem',
+                                            transition: 'all 0.2s',
+                                            boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.transform = 'translateY(-2px)';
+                                            e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.4)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.transform = 'translateY(0)';
+                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
+                                        }}
+                                    >
+                                        🌐 원본 공고 보러가기
+                                    </a>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
