@@ -581,7 +581,7 @@ export default function AICoverLetterPage() {
                                 <option value="">선택 안함 (회사명만 사용)</option>
                                 {jobPostings.map((job) => (
                                     <option key={job.id} value={job.id}>
-                                        {job.title} - {job.location || '위치 미정'} ({job.experience_level || '경력 무관'})
+                                        {job.title} {job.category ? `- ${job.category}` : ''}
                                     </option>
                                 ))}
                             </select>

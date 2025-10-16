@@ -5024,15 +5024,15 @@ app.get('/api/jobs-by-company', async (req, res) => {
         id,
         title,
         company,
-        location,
-        description,
-        requirements,
-        experience_level,
-        employment_type,
-        deadline
+        url,
+        category,
+        job_info,
+        conditions,
+        registration_info,
+        scraped_at
       FROM jobs
       WHERE company LIKE ?
-      ORDER BY created_at DESC
+      ORDER BY scraped_at DESC
       LIMIT 20
     `, [`%${company}%`]);
 
