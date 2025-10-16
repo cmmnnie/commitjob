@@ -5280,6 +5280,140 @@ app.post('/api/cover-letter', async (req, res) => {
   }
 });
 
+/* ==================== AI 자소서 피드백 API ==================== */
+/**
+ * @swagger
+ * /api/cover-letter-feedback:
+ *   post:
+ *     summary: 작성한 자기소개서에 대한 AI 피드백 제공
+ *     description: 사용자가 작성한 자기소개서를 분석하여 강점, 개선점, 추천사항을 제공합니다.
+ *     tags: [AI 자소서]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               user_id:
+ *                 type: integer
+ *                 description: 사용자 ID
+ *               company:
+ *                 type: string
+ *                 description: 지원 회사명
+ *               cover_letter:
+ *                 type: string
+ *                 description: 작성한 자기소개서 내용
+ *     responses:
+ *       200:
+ *         description: AI 피드백 생성 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 feedback:
+ *                   type: string
+ */
+app.post('/api/cover-letter-feedback', async (req, res) => {
+  try {
+    const { user_id, company, cover_letter } = req.body;
+
+    console.log('[COVER-LETTER-FEEDBACK] 피드백 요청:', { user_id, company, coverLetterLength: cover_letter?.length });
+
+    if (!user_id || !company || !cover_letter) {
+      return res.status(400).json({
+        success: false,
+        error: '사용자 ID, 회사명, 자기소개서 내용을 모두 입력해주세요.'
+      });
+    }
+
+    // 1. 사용자 프로필 조회
+    let userProfile = null;
+    try {
+      const [profileRows] = await pool.execute(`
+        SELECT
+          up.name,
+          up.preferred_jobs,
+          up.experience,
+          up.skills,
+          up.education
+        FROM user_profiles up
+        WHERE up.user_id = ?
+      `, [user_id]);
+
+      if (profileRows.length > 0) {
+        userProfile = profileRows[0];
+        console.log(`[COVER-LETTER-FEEDBACK] 프로필 로드 완료: ${userProfile.name}`);
+      }
+    } catch (profileError) {
+      console.warn('[COVER-LETTER-FEEDBACK] 프로필 조회 실패:', profileError);
+    }
+
+    // 2. GPT 피드백 프롬프트 생성
+    let prompt = `다음은 ${company}에 지원하기 위해 작성한 자기소개서입니다. 전문적인 관점에서 피드백을 제공해주세요.\n\n`;
+
+    prompt += `[작성된 자기소개서]\n${cover_letter}\n\n`;
+
+    // 사용자 프로필 정보 추가 (있는 경우)
+    if (userProfile) {
+      prompt += `[지원자 배경 정보]\n`;
+      prompt += `- 이름: ${userProfile.name}\n`;
+      if (userProfile.preferred_jobs) {
+        prompt += `- 희망 직무: ${userProfile.preferred_jobs}\n`;
+      }
+      if (userProfile.experience) {
+        prompt += `- 경력: ${userProfile.experience}\n`;
+      }
+      if (userProfile.skills && userProfile.skills.length > 0) {
+        prompt += `- 보유 스킬: ${userProfile.skills.join(', ')}\n`;
+      }
+      prompt += `\n`;
+    }
+
+    prompt += `다음 형식으로 피드백을 제공해주세요:\n\n`;
+    prompt += `**강점**\n- (구체적인 강점 3-4가지)\n\n`;
+    prompt += `**개선할 점**\n- (구체적인 개선 방향 3-4가지)\n\n`;
+    prompt += `**추천사항**\n- (더 효과적인 자기소개서를 위한 조언 2-3가지)`;
+
+    // 3. OpenAI API 호출
+    console.log('[COVER-LETTER-FEEDBACK] OpenAI API 호출 중...');
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: '당신은 인사담당자 관점에서 자기소개서를 분석하는 전문 컨설턴트입니다. 건설적이고 구체적인 피드백을 제공하여 지원자가 더 나은 자기소개서를 작성할 수 있도록 돕습니다.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      max_tokens: 1500,
+      temperature: 0.7
+    });
+
+    const feedback = completion.choices[0].message.content;
+    console.log(`[COVER-LETTER-FEEDBACK] ✅ 피드백 생성 완료 (${feedback.length}자)`);
+
+    res.json({
+      success: true,
+      feedback: feedback
+    });
+
+  } catch (error) {
+    console.error('[COVER-LETTER-FEEDBACK] Error generating feedback:', error);
+    res.status(500).json({
+      success: false,
+      error: '피드백 생성 중 오류가 발생했습니다.',
+      message: error.message
+    });
+  }
+});
+
 /* ==================== 면접 수정된 답변 API ==================== */
 /**
  * @swagger

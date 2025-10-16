@@ -13,6 +13,9 @@ export default function AICoverLetterPage() {
     const [isLoadingJobs, setIsLoadingJobs] = useState(false);
     const [coverLetter, setCoverLetter] = useState(null);
     const [isCoverLetterLoading, setIsCoverLetterLoading] = useState(false);
+    const [userCoverLetter, setUserCoverLetter] = useState('');
+    const [feedback, setFeedback] = useState(null);
+    const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
 
     useEffect(() => {
         checkLogin();
@@ -150,6 +153,49 @@ export default function AICoverLetterPage() {
         if (coverLetter) {
             navigator.clipboard.writeText(coverLetter);
             alert('자기소개서가 클립보드에 복사되었습니다!');
+        }
+    };
+
+    const getFeedback = async () => {
+        if (!userCoverLetter.trim()) {
+            alert('자기소개서 내용을 입력해주세요.');
+            return;
+        }
+
+        setIsFeedbackLoading(true);
+        setFeedback(null);
+
+        try {
+            const token = localStorage.getItem('app_session');
+            const response = await fetch(`${CONFIG.BACKEND_URL}/api/cover-letter-feedback`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    user_id: currentUser?.id,
+                    company: companyName.trim(),
+                    cover_letter: userCoverLetter.trim()
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('피드백 생성에 실패했습니다.');
+            }
+
+            const data = await response.json();
+            if (data.success && data.feedback) {
+                setFeedback(data.feedback);
+            } else {
+                alert('피드백을 생성할 수 없습니다.');
+            }
+        } catch (err) {
+            console.error('[피드백 생성] 오류:', err);
+            alert('피드백 생성에 실패했습니다. 다시 시도해주세요.');
+        } finally {
+            setIsFeedbackLoading(false);
         }
     };
 
@@ -628,7 +674,7 @@ export default function AICoverLetterPage() {
                                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
                             }
                         }}>
-                        {isCoverLetterLoading ? '자기소개서 생성 중...' : '자기소개서 생성하기'}
+                        {isCoverLetterLoading ? 'AI 자소서 생성 중...' : 'AI 자소서 생성'}
                     </button>
                 </div>
 
@@ -638,6 +684,7 @@ export default function AICoverLetterPage() {
                         background: 'white',
                         borderRadius: '20px',
                         padding: '30px',
+                        marginBottom: '20px',
                         boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)'
                     }}>
                         <div style={{
@@ -693,6 +740,130 @@ export default function AICoverLetterPage() {
                         </div>
                     </div>
                 )}
+
+                {/* 자소서 작성 및 피드백 섹션 */}
+                <div style={{
+                    background: 'white',
+                    borderRadius: '20px',
+                    padding: '30px',
+                    boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)'
+                }}>
+                    <h3 style={{
+                        color: '#2d3748',
+                        fontSize: '1.3rem',
+                        fontWeight: '700',
+                        marginBottom: '20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                    }}>
+                        <span style={{ fontSize: '1.5rem' }}>✍️</span>
+                        <span>자소서 작성 및 피드백</span>
+                    </h3>
+
+                    <div style={{ marginBottom: '18px' }}>
+                        <label style={{
+                            display: 'block',
+                            marginBottom: '8px',
+                            fontWeight: '600',
+                            color: '#2d3748',
+                            fontSize: '0.95rem'
+                        }}>
+                            자기소개서 내용
+                        </label>
+                        <textarea
+                            value={userCoverLetter}
+                            onChange={(e) => setUserCoverLetter(e.target.value)}
+                            placeholder="작성하신 자기소개서를 입력하세요. AI가 피드백을 제공합니다."
+                            style={{
+                                width: '100%',
+                                minHeight: '200px',
+                                padding: '14px',
+                                border: '2px solid #e2e8f0',
+                                borderRadius: '10px',
+                                fontSize: '1rem',
+                                boxSizing: 'border-box',
+                                transition: 'all 0.2s',
+                                fontFamily: 'inherit',
+                                lineHeight: '1.6',
+                                resize: 'vertical'
+                            }}
+                            onFocus={(e) => {
+                                e.currentTarget.style.borderColor = '#667eea';
+                                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.1)';
+                            }}
+                            onBlur={(e) => {
+                                e.currentTarget.style.borderColor = '#e2e8f0';
+                                e.currentTarget.style.boxShadow = 'none';
+                            }}
+                        />
+                    </div>
+
+                    <button
+                        onClick={getFeedback}
+                        disabled={isFeedbackLoading}
+                        style={{
+                            width: '100%',
+                            background: isFeedbackLoading
+                                ? '#cbd5e0'
+                                : 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                            color: 'white',
+                            border: 'none',
+                            padding: '13px 20px',
+                            borderRadius: '10px',
+                            fontSize: '1rem',
+                            fontWeight: '600',
+                            cursor: isFeedbackLoading ? 'not-allowed' : 'pointer',
+                            transition: 'all 0.2s',
+                            boxShadow: isFeedbackLoading ? 'none' : '0 4px 12px rgba(240, 147, 251, 0.3)'
+                        }}
+                        onMouseEnter={(e) => {
+                            if (!isFeedbackLoading) {
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 6px 16px rgba(240, 147, 251, 0.4)';
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            if (!isFeedbackLoading) {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(240, 147, 251, 0.3)';
+                            }
+                        }}>
+                        {isFeedbackLoading ? 'AI 피드백 생성 중...' : 'AI 피드백 받기'}
+                    </button>
+
+                    {/* 피드백 결과 */}
+                    {feedback && (
+                        <div style={{
+                            marginTop: '24px',
+                            background: '#f0f9ff',
+                            borderRadius: '12px',
+                            padding: '24px',
+                            border: '2px solid #bfdbfe'
+                        }}>
+                            <h4 style={{
+                                color: '#1e40af',
+                                fontSize: '1.1rem',
+                                fontWeight: '700',
+                                marginBottom: '12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px'
+                            }}>
+                                <span>💡</span>
+                                <span>AI 피드백</span>
+                            </h4>
+                            <div style={{
+                                fontSize: '0.95rem',
+                                color: '#1e3a8a',
+                                lineHeight: '1.8',
+                                whiteSpace: 'pre-wrap'
+                            }}>
+                                {feedback}
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
