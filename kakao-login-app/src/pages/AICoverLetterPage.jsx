@@ -657,140 +657,241 @@ export default function AICoverLetterPage() {
                             </div>
                         ) : jobPostings.length > 0 ? (
                             <div>
-                                {/* 선택 안함 옵션 */}
-                                <div
-                                    onClick={() => setSelectedJobId('')}
-                                    style={{
-                                        padding: '14px',
-                                        border: selectedJobId === '' ? '2px solid #667eea' : '2px solid #e2e8f0',
-                                        borderRadius: '10px',
-                                        fontSize: '0.95rem',
-                                        marginBottom: '8px',
-                                        cursor: 'pointer',
-                                        background: selectedJobId === '' ? '#f0f4ff' : 'white',
-                                        transition: 'all 0.2s',
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center'
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        if (selectedJobId !== '') {
-                                            e.currentTarget.style.background = '#f7fafc';
-                                        }
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        if (selectedJobId !== '') {
-                                            e.currentTarget.style.background = 'white';
-                                        }
-                                    }}
-                                >
-                                    <div style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '8px',
-                                        fontWeight: selectedJobId === '' ? '600' : '500'
-                                    }}>
-                                        <input
-                                            type="radio"
-                                            checked={selectedJobId === ''}
-                                            onChange={() => setSelectedJobId('')}
-                                            style={{ cursor: 'pointer' }}
-                                        />
-                                        <span style={{ color: '#2d3748' }}>선택 안함 (회사명만 사용)</span>
-                                    </div>
-                                </div>
-
-                                {/* 채용공고 목록 */}
-                                <div style={{
-                                    maxHeight: '300px',
-                                    overflowY: 'auto',
-                                    border: '2px solid #e2e8f0',
-                                    borderRadius: '10px',
-                                    padding: '8px'
-                                }}>
-                                    {jobPostings.map((job) => (
-                                        <div
-                                            key={job.id}
-                                            style={{
-                                                padding: '12px',
-                                                border: selectedJobId === job.id.toString() ? '2px solid #667eea' : '1px solid #e2e8f0',
-                                                borderRadius: '8px',
-                                                fontSize: '0.95rem',
-                                                marginBottom: '8px',
-                                                background: selectedJobId === job.id.toString() ? '#f0f4ff' : 'white',
-                                                transition: 'all 0.2s',
-                                                display: 'flex',
-                                                justifyContent: 'space-between',
-                                                alignItems: 'center',
-                                                gap: '12px'
-                                            }}
-                                        >
-                                            <div
-                                                onClick={() => setSelectedJobId(job.id.toString())}
-                                                style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '8px',
-                                                    flex: 1,
-                                                    cursor: 'pointer'
-                                                }}
-                                            >
-                                                <input
-                                                    type="radio"
-                                                    checked={selectedJobId === job.id.toString()}
-                                                    onChange={() => setSelectedJobId(job.id.toString())}
-                                                    style={{ cursor: 'pointer' }}
-                                                />
-                                                <div style={{ flex: 1 }}>
-                                                    <div style={{
-                                                        color: '#2d3748',
-                                                        fontWeight: selectedJobId === job.id.toString() ? '600' : '500',
-                                                        marginBottom: '2px'
-                                                    }}>
-                                                        [{job.company}] {job.title}
-                                                    </div>
-                                                    {job.category && (
-                                                        <div style={{
-                                                            fontSize: '0.85rem',
-                                                            color: '#718096'
-                                                        }}>
-                                                            {job.category}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    openJobPopup(job);
-                                                }}
-                                                style={{
-                                                    background: 'linear-gradient(135deg, #4299e1 0%, #3182ce 100%)',
-                                                    color: 'white',
-                                                    border: 'none',
-                                                    padding: '8px 16px',
-                                                    borderRadius: '6px',
-                                                    fontSize: '0.85rem',
-                                                    fontWeight: '600',
-                                                    cursor: 'pointer',
-                                                    transition: 'all 0.2s',
-                                                    whiteSpace: 'nowrap',
-                                                    flexShrink: 0
-                                                }}
-                                                onMouseEnter={(e) => {
-                                                    e.currentTarget.style.transform = 'translateY(-1px)';
-                                                    e.currentTarget.style.boxShadow = '0 4px 8px rgba(66, 153, 225, 0.4)';
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    e.currentTarget.style.transform = 'translateY(0)';
-                                                    e.currentTarget.style.boxShadow = 'none';
-                                                }}
-                                            >
-                                                📄 상세보기
-                                            </button>
+                                {/* 선택 안함 옵션 - 항상 표시 */}
+                                {!selectedJobId && (
+                                    <div
+                                        onClick={() => setSelectedJobId('')}
+                                        style={{
+                                            padding: '14px',
+                                            border: selectedJobId === '' ? '2px solid #667eea' : '2px solid #e2e8f0',
+                                            borderRadius: '10px',
+                                            fontSize: '0.95rem',
+                                            marginBottom: '8px',
+                                            cursor: 'pointer',
+                                            background: selectedJobId === '' ? '#f0f4ff' : 'white',
+                                            transition: 'all 0.2s',
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            if (selectedJobId !== '') {
+                                                e.currentTarget.style.background = '#f7fafc';
+                                            }
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            if (selectedJobId !== '') {
+                                                e.currentTarget.style.background = 'white';
+                                            }
+                                        }}
+                                    >
+                                        <div style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            fontWeight: selectedJobId === '' ? '600' : '500'
+                                        }}>
+                                            <input
+                                                type="radio"
+                                                checked={selectedJobId === ''}
+                                                onChange={() => setSelectedJobId('')}
+                                                style={{ cursor: 'pointer' }}
+                                            />
+                                            <span style={{ color: '#2d3748' }}>선택 안함 (회사명만 사용)</span>
                                         </div>
-                                    ))}
-                                </div>
+                                    </div>
+                                )}
+
+                                {/* 채용공고가 선택된 경우: 선택된 항목만 표시 */}
+                                {selectedJobId && selectedJobId !== '' ? (
+                                    <div>
+                                        {jobPostings
+                                            .filter(job => job.id.toString() === selectedJobId)
+                                            .map((job) => (
+                                                <div
+                                                    key={job.id}
+                                                    style={{
+                                                        padding: '14px',
+                                                        border: '2px solid #667eea',
+                                                        borderRadius: '10px',
+                                                        fontSize: '0.95rem',
+                                                        background: '#f0f4ff',
+                                                        transition: 'all 0.2s',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                    onClick={() => setSelectedJobId('')}
+                                                >
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        alignItems: 'center',
+                                                        gap: '12px'
+                                                    }}>
+                                                        <div style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '8px',
+                                                            flex: 1
+                                                        }}>
+                                                            <input
+                                                                type="radio"
+                                                                checked={true}
+                                                                readOnly
+                                                                style={{ cursor: 'pointer' }}
+                                                            />
+                                                            <div style={{ flex: 1 }}>
+                                                                <div style={{
+                                                                    color: '#2d3748',
+                                                                    fontWeight: '600',
+                                                                    marginBottom: '2px'
+                                                                }}>
+                                                                    [{job.company}] {job.title}
+                                                                </div>
+                                                                {job.category && (
+                                                                    <div style={{
+                                                                        fontSize: '0.85rem',
+                                                                        color: '#718096'
+                                                                    }}>
+                                                                        {job.category}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                openJobPopup(job);
+                                                            }}
+                                                            style={{
+                                                                background: 'linear-gradient(135deg, #4299e1 0%, #3182ce 100%)',
+                                                                color: 'white',
+                                                                border: 'none',
+                                                                padding: '8px 16px',
+                                                                borderRadius: '6px',
+                                                                fontSize: '0.85rem',
+                                                                fontWeight: '600',
+                                                                cursor: 'pointer',
+                                                                transition: 'all 0.2s',
+                                                                whiteSpace: 'nowrap',
+                                                                flexShrink: 0
+                                                            }}
+                                                            onMouseEnter={(e) => {
+                                                                e.currentTarget.style.transform = 'translateY(-1px)';
+                                                                e.currentTarget.style.boxShadow = '0 4px 8px rgba(66, 153, 225, 0.4)';
+                                                            }}
+                                                            onMouseLeave={(e) => {
+                                                                e.currentTarget.style.transform = 'translateY(0)';
+                                                                e.currentTarget.style.boxShadow = 'none';
+                                                            }}
+                                                        >
+                                                            📄 상세보기
+                                                        </button>
+                                                    </div>
+                                                    <div style={{
+                                                        marginTop: '8px',
+                                                        fontSize: '0.85rem',
+                                                        color: '#667eea',
+                                                        textAlign: 'center',
+                                                        fontWeight: '600'
+                                                    }}>
+                                                        ↑ 클릭하여 다른 공고 선택하기
+                                                    </div>
+                                                </div>
+                                            ))}
+                                    </div>
+                                ) : (
+                                    /* 채용공고 목록 - 아무것도 선택되지 않은 경우 */
+                                    <div style={{
+                                        maxHeight: '300px',
+                                        overflowY: 'auto',
+                                        border: '2px solid #e2e8f0',
+                                        borderRadius: '10px',
+                                        padding: '8px'
+                                    }}>
+                                        {jobPostings.map((job) => (
+                                            <div
+                                                key={job.id}
+                                                style={{
+                                                    padding: '12px',
+                                                    border: '1px solid #e2e8f0',
+                                                    borderRadius: '8px',
+                                                    fontSize: '0.95rem',
+                                                    marginBottom: '8px',
+                                                    background: 'white',
+                                                    transition: 'all 0.2s',
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    gap: '12px'
+                                                }}
+                                            >
+                                                <div
+                                                    onClick={() => setSelectedJobId(job.id.toString())}
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '8px',
+                                                        flex: 1,
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    <input
+                                                        type="radio"
+                                                        checked={false}
+                                                        onChange={() => setSelectedJobId(job.id.toString())}
+                                                        style={{ cursor: 'pointer' }}
+                                                    />
+                                                    <div style={{ flex: 1 }}>
+                                                        <div style={{
+                                                            color: '#2d3748',
+                                                            fontWeight: '500',
+                                                            marginBottom: '2px'
+                                                        }}>
+                                                            [{job.company}] {job.title}
+                                                        </div>
+                                                        {job.category && (
+                                                            <div style={{
+                                                                fontSize: '0.85rem',
+                                                                color: '#718096'
+                                                            }}>
+                                                                {job.category}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        openJobPopup(job);
+                                                    }}
+                                                    style={{
+                                                        background: 'linear-gradient(135deg, #4299e1 0%, #3182ce 100%)',
+                                                        color: 'white',
+                                                        border: 'none',
+                                                        padding: '8px 16px',
+                                                        borderRadius: '6px',
+                                                        fontSize: '0.85rem',
+                                                        fontWeight: '600',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s',
+                                                        whiteSpace: 'nowrap',
+                                                        flexShrink: 0
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.transform = 'translateY(-1px)';
+                                                        e.currentTarget.style.boxShadow = '0 4px 8px rgba(66, 153, 225, 0.4)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.transform = 'translateY(0)';
+                                                        e.currentTarget.style.boxShadow = 'none';
+                                                    }}
+                                                >
+                                                    📄 상세보기
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         ) : (
                             companyName.trim() && (
