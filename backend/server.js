@@ -5079,15 +5079,24 @@ app.get('/api/jobs-by-company', async (req, res) => {
       }
     });
 
-    // 회사명 + 채용공고 제목 기준으로 중복 제거
+    // 회사명 + 채용공고 제목 기준으로 중복 제거 (최신 공고 우선)
     const uniqueJobsMap = new Map();
     activeJobs.forEach(job => {
       const key = `${job.company.trim()}_${job.title.trim()}`;
+      // 이미 존재하는 경우, scraped_at을 비교하여 더 최신 것으로 교체
       if (!uniqueJobsMap.has(key)) {
         uniqueJobsMap.set(key, job);
+      } else {
+        const existingJob = uniqueJobsMap.get(key);
+        if (new Date(job.scraped_at) > new Date(existingJob.scraped_at)) {
+          uniqueJobsMap.set(key, job);
+        }
       }
     });
     const uniqueJobs = Array.from(uniqueJobsMap.values());
+
+    // 최신 공고 순으로 정렬
+    uniqueJobs.sort((a, b) => new Date(b.scraped_at) - new Date(a.scraped_at));
 
     // 상위 20개만 반환
     const limitedJobs = uniqueJobs.slice(0, 20);
