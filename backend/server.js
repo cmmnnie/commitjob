@@ -5079,10 +5079,20 @@ app.get('/api/jobs-by-company', async (req, res) => {
       }
     });
 
-    // 상위 20개만 반환
-    const limitedJobs = activeJobs.slice(0, 20);
+    // 회사명 + 채용공고 제목 기준으로 중복 제거
+    const uniqueJobsMap = new Map();
+    activeJobs.forEach(job => {
+      const key = `${job.company.trim()}_${job.title.trim()}`;
+      if (!uniqueJobsMap.has(key)) {
+        uniqueJobsMap.set(key, job);
+      }
+    });
+    const uniqueJobs = Array.from(uniqueJobsMap.values());
 
-    console.log(`[JOBS-BY-COMPANY] Found ${jobRows.length} total jobs, ${activeJobs.length} active jobs (returning ${limitedJobs.length}) for ${company}`);
+    // 상위 20개만 반환
+    const limitedJobs = uniqueJobs.slice(0, 20);
+
+    console.log(`[JOBS-BY-COMPANY] Found ${jobRows.length} total jobs, ${activeJobs.length} active jobs, ${uniqueJobs.length} unique jobs (returning ${limitedJobs.length}) for ${company}`);
 
     res.json({
       success: true,

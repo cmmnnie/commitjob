@@ -812,40 +812,51 @@ export default function AICoverLetterPage() {
                                         {jobPostings.map((job) => (
                                             <div
                                                 key={job.id}
+                                                onClick={() => setSelectedJobId(job.id.toString())}
                                                 style={{
                                                     padding: '12px',
-                                                    border: '1px solid #e2e8f0',
+                                                    border: selectedJobId === job.id.toString() ? '2px solid #667eea' : '1px solid #e2e8f0',
                                                     borderRadius: '8px',
                                                     fontSize: '0.95rem',
                                                     marginBottom: '8px',
-                                                    background: 'white',
+                                                    background: selectedJobId === job.id.toString() ? '#f0f4ff' : 'white',
                                                     transition: 'all 0.2s',
                                                     display: 'flex',
                                                     justifyContent: 'space-between',
                                                     alignItems: 'center',
-                                                    gap: '12px'
+                                                    gap: '12px',
+                                                    cursor: 'pointer'
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    if (selectedJobId !== job.id.toString()) {
+                                                        e.currentTarget.style.background = '#f7fafc';
+                                                    }
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    if (selectedJobId !== job.id.toString()) {
+                                                        e.currentTarget.style.background = 'white';
+                                                    }
                                                 }}
                                             >
                                                 <div
-                                                    onClick={() => setSelectedJobId(job.id.toString())}
                                                     style={{
                                                         display: 'flex',
                                                         alignItems: 'center',
                                                         gap: '8px',
-                                                        flex: 1,
-                                                        cursor: 'pointer'
+                                                        flex: 1
                                                     }}
                                                 >
                                                     <input
                                                         type="radio"
-                                                        checked={false}
+                                                        checked={selectedJobId === job.id.toString()}
                                                         onChange={() => setSelectedJobId(job.id.toString())}
                                                         style={{ cursor: 'pointer' }}
+                                                        onClick={(e) => e.stopPropagation()}
                                                     />
                                                     <div style={{ flex: 1 }}>
                                                         <div style={{
                                                             color: '#2d3748',
-                                                            fontWeight: '500',
+                                                            fontWeight: selectedJobId === job.id.toString() ? '600' : '500',
                                                             marginBottom: '2px'
                                                         }}>
                                                             [{job.company}] {job.title}
