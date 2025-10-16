@@ -5033,15 +5033,55 @@ app.get('/api/jobs-by-company', async (req, res) => {
       FROM jobs
       WHERE company LIKE ?
       ORDER BY scraped_at DESC
-      LIMIT 20
+      LIMIT 50
     `, [`%${company}%`]);
 
-    console.log(`[JOBS-BY-COMPANY] Found ${jobRows.length} jobs for ${company}`);
+    // 마감되지 않은 공고만 필터링
+    const now = new Date();
+    const activeJobs = jobRows.filter(job => {
+      if (!job.registration_info) return true;
+
+      try {
+        // registration_info는 JSON 배열 형태: ["~11.02(일)", "3일 전 등록"]
+        const regInfo = JSON.parse(job.registration_info);
+        if (!Array.isArray(regInfo) || regInfo.length === 0) return true;
+
+        const deadlineStr = regInfo[0]; // "~11.02(일)" 형식
+        if (!deadlineStr || !deadlineStr.startsWith('~')) return true;
+
+        // 마감일 파싱: "~11.02(일)" -> "11.02"
+        const dateMatch = deadlineStr.match(/~(\d+)\.(\d+)/);
+        if (!dateMatch) return true;
+
+        const month = parseInt(dateMatch[1]);
+        const day = parseInt(dateMatch[2]);
+
+        // 현재 연도 사용 (올해 또는 내년)
+        let year = now.getFullYear();
+        const deadlineDate = new Date(year, month - 1, day, 23, 59, 59);
+
+        // 만약 마감일이 과거라면 내년으로 설정
+        if (deadlineDate < now) {
+          deadlineDate.setFullYear(year + 1);
+        }
+
+        // 마감일이 지났는지 확인
+        return deadlineDate >= now;
+      } catch (e) {
+        console.warn(`[JOBS-BY-COMPANY] Failed to parse deadline for job ${job.id}:`, e);
+        return true; // 파싱 실패 시 포함
+      }
+    });
+
+    // 상위 20개만 반환
+    const limitedJobs = activeJobs.slice(0, 20);
+
+    console.log(`[JOBS-BY-COMPANY] Found ${jobRows.length} total jobs, ${activeJobs.length} active jobs (returning ${limitedJobs.length}) for ${company}`);
 
     res.json({
       success: true,
-      jobs: jobRows,
-      total: jobRows.length
+      jobs: limitedJobs,
+      total: limitedJobs.length
     });
 
   } catch (error) {
