@@ -97,6 +97,14 @@ export default function MenuPage() {
                         </div>
                     </Link>
 
+                    <Link to="/ai-cover-letter" style={menuItemStyle}>
+                        <span style={menuIconStyle}>📝</span>
+                        <div style={menuContentStyle}>
+                            <div style={menuTitleStyle}>AI 자소서 관리</div>
+                            <div style={menuDescStyle}>GPT가 회원님의 이력서를 분석하여 맞춤형 자기소개서를 작성하고 피드백을 제공합니다.</div>
+                        </div>
+                    </Link>
+
                     <Link to="/resume" style={menuItemStyle}>
                         <span style={menuIconStyle}>📋</span>
                         <div style={menuContentStyle}>
