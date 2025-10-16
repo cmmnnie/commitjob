@@ -596,7 +596,7 @@ export default function AICoverLetterPage() {
                             color: '#2d3748',
                             fontSize: '0.95rem'
                         }}>
-                            채용공고 선택 (선택사항)
+                            {companyName.trim() ? `[${companyName.trim()}] 채용공고` : '채용공고 선택 (선택사항)'}
                         </label>
                         {isLoadingJobs ? (
                             <div style={{
