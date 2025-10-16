@@ -5454,6 +5454,102 @@ app.post('/api/cover-letter-feedback', async (req, res) => {
   }
 });
 
+/* ==================== AI 피드백 반영 자소서 생성 API ==================== */
+app.post('/api/cover-letter-revised', async (req, res) => {
+  try {
+    const { user_id, company, cover_letter, feedback } = req.body;
+
+    console.log('[COVER-LETTER-REVISED] 수정 자소서 요청:', { user_id, company, coverLetterLength: cover_letter?.length, feedbackLength: feedback?.length });
+
+    if (!user_id || !company || !cover_letter || !feedback) {
+      return res.status(400).json({
+        success: false,
+        error: '사용자 ID, 회사명, 자기소개서, 피드백을 모두 입력해주세요.'
+      });
+    }
+
+    // 1. 사용자 프로필 조회
+    let userProfile = null;
+    try {
+      const [profileRows] = await pool.execute(`
+        SELECT
+          up.name,
+          up.preferred_jobs,
+          up.experience,
+          up.skills,
+          up.education
+        FROM user_profiles up
+        WHERE up.user_id = ?
+      `, [user_id]);
+
+      if (profileRows.length > 0) {
+        userProfile = profileRows[0];
+        console.log(`[COVER-LETTER-REVISED] 프로필 로드 완료: ${userProfile.name}`);
+      }
+    } catch (profileError) {
+      console.warn('[COVER-LETTER-REVISED] 프로필 조회 실패:', profileError);
+    }
+
+    // 2. GPT 수정 자소서 프롬프트 생성
+    let prompt = `다음은 ${company}에 지원하기 위해 작성한 자기소개서와 받은 피드백입니다. 피드백을 반영하여 자기소개서를 개선해주세요.\n\n`;
+
+    prompt += `[원본 자기소개서]\n${cover_letter}\n\n`;
+    prompt += `[받은 피드백]\n${feedback}\n\n`;
+
+    // 사용자 프로필 정보 추가 (있는 경우)
+    if (userProfile) {
+      prompt += `[지원자 배경 정보]\n`;
+      prompt += `- 이름: ${userProfile.name}\n`;
+      if (userProfile.preferred_jobs) {
+        prompt += `- 희망 직무: ${userProfile.preferred_jobs}\n`;
+      }
+      if (userProfile.experience) {
+        prompt += `- 경력: ${userProfile.experience}\n`;
+      }
+      if (userProfile.skills && userProfile.skills.length > 0) {
+        prompt += `- 보유 스킬: ${userProfile.skills.join(', ')}\n`;
+      }
+      prompt += `\n`;
+    }
+
+    prompt += `위의 피드백을 반영하여 자기소개서를 수정해주세요. 원본의 좋은 점은 유지하면서, 개선할 점을 반영하고, 추천사항을 적용해주세요. 수정된 자기소개서만 출력해주세요 (다른 설명 없이).`;
+
+    // 3. OpenAI API 호출
+    console.log('[COVER-LETTER-REVISED] OpenAI API 호출 중...');
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: '당신은 자기소개서 작성 전문가입니다. 피드백을 반영하여 더 효과적인 자기소개서를 작성합니다. 원본의 좋은 점은 유지하면서 개선점을 반영하고, 자연스럽고 진정성 있는 문체로 작성합니다.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      max_tokens: 2000,
+      temperature: 0.7
+    });
+
+    const revisedCoverLetter = completion.choices[0].message.content;
+    console.log(`[COVER-LETTER-REVISED] ✅ 수정 자소서 생성 완료 (${revisedCoverLetter.length}자)`);
+
+    res.json({
+      success: true,
+      revisedCoverLetter: revisedCoverLetter
+    });
+
+  } catch (error) {
+    console.error('[COVER-LETTER-REVISED] Error generating revised cover letter:', error);
+    res.status(500).json({
+      success: false,
+      error: '수정된 자소서 생성 중 오류가 발생했습니다.',
+      message: error.message
+    });
+  }
+});
+
 /* ==================== 면접 수정된 답변 API ==================== */
 /**
  * @swagger

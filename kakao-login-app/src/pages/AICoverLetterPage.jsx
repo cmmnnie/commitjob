@@ -16,6 +16,7 @@ export default function AICoverLetterPage() {
     const [userCoverLetter, setUserCoverLetter] = useState('');
     const [feedback, setFeedback] = useState(null);
     const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
+    const [isRevisedCoverLetterLoading, setIsRevisedCoverLetterLoading] = useState(false);
     const [selectedJobForView, setSelectedJobForView] = useState(null);
     const [isJobPopupOpen, setIsJobPopupOpen] = useState(false);
 
@@ -209,6 +210,50 @@ export default function AICoverLetterPage() {
     const closeJobPopup = () => {
         setIsJobPopupOpen(false);
         setSelectedJobForView(null);
+    };
+
+    const generateRevisedCoverLetter = async () => {
+        if (!userCoverLetter.trim() || !feedback) {
+            alert('자기소개서 내용과 피드백이 필요합니다.');
+            return;
+        }
+
+        setIsRevisedCoverLetterLoading(true);
+
+        try {
+            const token = localStorage.getItem('app_session');
+            const response = await fetch(`${CONFIG.BACKEND_URL}/api/cover-letter-revised`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    user_id: currentUser?.id,
+                    company: companyName.trim(),
+                    cover_letter: userCoverLetter.trim(),
+                    feedback: feedback
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('수정된 자소서 생성에 실패했습니다.');
+            }
+
+            const data = await response.json();
+            if (data.success && data.revisedCoverLetter) {
+                setUserCoverLetter(data.revisedCoverLetter);
+                alert('수정된 자소서 내용이 입력되었습니다.');
+            } else {
+                alert('수정된 자소서를 생성할 수 없습니다.');
+            }
+        } catch (err) {
+            console.error('[수정된 자소서 생성] 오류:', err);
+            alert('수정된 자소서 생성에 실패했습니다. 다시 시도해주세요.');
+        } finally {
+            setIsRevisedCoverLetterLoading(false);
+        }
     };
 
     if (isLoading && !currentUser) {
@@ -702,7 +747,7 @@ export default function AICoverLetterPage() {
                                                         fontWeight: selectedJobId === job.id.toString() ? '600' : '500',
                                                         marginBottom: '2px'
                                                     }}>
-                                                        {job.title}
+                                                        [{job.company}] {job.title}
                                                     </div>
                                                     {job.category && (
                                                         <div style={{
@@ -980,10 +1025,43 @@ export default function AICoverLetterPage() {
                                 fontSize: '0.95rem',
                                 color: '#1e3a8a',
                                 lineHeight: '1.8',
-                                whiteSpace: 'pre-wrap'
+                                whiteSpace: 'pre-wrap',
+                                marginBottom: '16px'
                             }}>
                                 {feedback}
                             </div>
+                            <button
+                                onClick={generateRevisedCoverLetter}
+                                disabled={isRevisedCoverLetterLoading}
+                                style={{
+                                    width: '100%',
+                                    background: isRevisedCoverLetterLoading
+                                        ? '#cbd5e0'
+                                        : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '13px 20px',
+                                    borderRadius: '10px',
+                                    fontSize: '1rem',
+                                    fontWeight: '600',
+                                    cursor: isRevisedCoverLetterLoading ? 'not-allowed' : 'pointer',
+                                    transition: 'all 0.2s',
+                                    boxShadow: isRevisedCoverLetterLoading ? 'none' : '0 4px 12px rgba(16, 185, 129, 0.3)'
+                                }}
+                                onMouseEnter={(e) => {
+                                    if (!isRevisedCoverLetterLoading) {
+                                        e.currentTarget.style.transform = 'translateY(-2px)';
+                                        e.currentTarget.style.boxShadow = '0 6px 16px rgba(16, 185, 129, 0.4)';
+                                    }
+                                }}
+                                onMouseLeave={(e) => {
+                                    if (!isRevisedCoverLetterLoading) {
+                                        e.currentTarget.style.transform = 'translateY(0)';
+                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
+                                    }
+                                }}>
+                                {isRevisedCoverLetterLoading ? 'AI 피드백 반영한 자소서 생성 중...' : 'AI 피드백 반영한 자소서 생성'}
+                            </button>
                         </div>
                     )}
                 </div>
