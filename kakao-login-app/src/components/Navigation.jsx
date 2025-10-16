@@ -199,6 +199,16 @@ export default function Navigation() {
                         </Link>
                     </li>
                     <li style={{ flex: 1 }}>
+                        <a
+                            href="/ai-cover-letter"
+                            onClick={(e) => handleAIMenuClick(e, '/ai-cover-letter')}
+                            style={linkStyle(location.pathname === '/ai-cover-letter')}
+                        >
+                            <span style={iconStyle(location.pathname === '/ai-cover-letter')}>📝</span>
+                            <span>AI자소서</span>
+                        </a>
+                    </li>
+                    <li style={{ flex: 1 }}>
                         <Link
                             to="/resume"
                             style={linkStyle(location.pathname === '/resume')}
@@ -256,7 +266,8 @@ export default function Navigation() {
                             fontWeight: '700',
                             lineHeight: '1.5'
                         }}>
-                            AI 채용 추천과 AI 면접은<br/>
+                            AI 채용 추천, AI 면접,<br/>
+                            AI 자소서는<br/>
                             이력서 작성 후<br/>
                             이용 가능하십니다.
                         </h2>

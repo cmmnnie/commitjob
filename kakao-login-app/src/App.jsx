@@ -5,6 +5,7 @@ import MainPage from './pages/MainPage';
 import CallbackPage from './pages/CallbackPage';
 import AIRecommendationPage from './pages/AIRecommendationPage';
 import AIInterviewPage from './pages/AIInterviewPage';
+import AICoverLetterPage from './pages/AICoverLetterPage';
 import JobsPage from './pages/JobsPage';
 import AIJobsPage from './pages/AIJobsPage';
 import ITJobsPage from './pages/ITJobsPage';
@@ -25,6 +26,7 @@ function App() {
                 <Route path="/auth/kakao/callback" element={<CallbackPage />} />
                 <Route path="/ai-recommendation" element={<AIRecommendationPage />} />
                 <Route path="/ai-interview" element={<AIInterviewPage />} />
+                <Route path="/ai-cover-letter" element={<AICoverLetterPage />} />
                 <Route path="/jobs" element={<JobsPage />} />
                 <Route path="/jobs/ai" element={<AIJobsPage />} />
                 <Route path="/jobs/it" element={<ITJobsPage />} />
