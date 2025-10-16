@@ -244,7 +244,7 @@ export default function AICoverLetterPage() {
             const data = await response.json();
             if (data.success && data.revisedCoverLetter) {
                 setUserCoverLetter(data.revisedCoverLetter);
-                alert('수정된 자소서 내용이 입력되었습니다.');
+                alert('개선된 자소서가 자기소개서 입력란에 입력되었습니다.\n\n새로운 자기소개서에 대해 "AI 피드백 받기" 버튼을 다시 클릭하실 수 있습니다.');
             } else {
                 alert('수정된 자소서를 생성할 수 없습니다.');
             }
