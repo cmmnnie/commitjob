@@ -4953,6 +4953,333 @@ Q: ${question}`;
   }
 });
 
+/* ==================== 회사별 채용공고 조회 API ==================== */
+/**
+ * @swagger
+ * /api/jobs-by-company:
+ *   get:
+ *     summary: 회사별 채용공고 조회
+ *     description: 특정 회사의 채용공고 목록을 조회합니다.
+ *     tags: [Jobs]
+ *     parameters:
+ *       - in: query
+ *         name: company
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 회사명
+ *         example: "네이버"
+ *     responses:
+ *       200:
+ *         description: 채용공고 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 jobs:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 1
+ *                       title:
+ *                         type: string
+ *                         example: "백엔드 개발자"
+ *                       company:
+ *                         type: string
+ *                         example: "네이버"
+ *                       location:
+ *                         type: string
+ *                         example: "서울"
+ *                       experience_level:
+ *                         type: string
+ *                         example: "경력 3년 이상"
+ *       400:
+ *         description: 잘못된 요청
+ *       500:
+ *         description: 서버 오류
+ */
+app.get('/api/jobs-by-company', async (req, res) => {
+  try {
+    const { company } = req.query;
+
+    if (!company) {
+      return res.status(400).json({
+        success: false,
+        error: '회사명이 필요합니다.'
+      });
+    }
+
+    console.log(`[JOBS-BY-COMPANY] Fetching jobs for company: ${company}`);
+
+    // jobs 테이블에서 회사명으로 검색
+    const [jobRows] = await pool.execute(`
+      SELECT
+        id,
+        title,
+        company,
+        location,
+        description,
+        requirements,
+        experience_level,
+        employment_type,
+        deadline
+      FROM jobs
+      WHERE company LIKE ?
+      ORDER BY created_at DESC
+      LIMIT 20
+    `, [`%${company}%`]);
+
+    console.log(`[JOBS-BY-COMPANY] Found ${jobRows.length} jobs for ${company}`);
+
+    res.json({
+      success: true,
+      jobs: jobRows,
+      total: jobRows.length
+    });
+
+  } catch (error) {
+    console.error('[JOBS-BY-COMPANY] Error fetching jobs:', error);
+    res.status(500).json({
+      success: false,
+      error: '채용공고 조회 중 오류가 발생했습니다.',
+      message: error.message
+    });
+  }
+});
+
+/* ==================== AI 자기소개서 생성 API ==================== */
+/**
+ * @swagger
+ * /api/cover-letter:
+ *   post:
+ *     summary: AI 자기소개서 생성
+ *     description: 사용자의 이력서 정보를 바탕으로 회사명과 선택한 채용공고로 맞춤형 자기소개서를 생성합니다.
+ *     tags: [Cover Letter]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - user_id
+ *               - company
+ *             properties:
+ *               user_id:
+ *                 type: integer
+ *                 description: 사용자 ID
+ *                 example: 1
+ *               company:
+ *                 type: string
+ *                 description: 회사명
+ *                 example: "네이버"
+ *               job_id:
+ *                 type: string
+ *                 description: 선택한 채용공고 ID (선택사항)
+ *                 example: "job_001"
+ *     responses:
+ *       200:
+ *         description: 자기소개서 생성 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 coverLetter:
+ *                   type: string
+ *                   example: "저는..."
+ *       400:
+ *         description: 잘못된 요청
+ *       500:
+ *         description: 서버 오류
+ */
+app.post('/api/cover-letter', async (req, res) => {
+  try {
+    const { user_id, company, job_id } = req.body;
+
+    if (!user_id || !company) {
+      return res.status(400).json({
+        success: false,
+        error: '사용자 ID와 회사명이 필요합니다.'
+      });
+    }
+
+    console.log(`[COVER-LETTER] Generating cover letter for user ${user_id}, company: ${company}, job_id: ${job_id || 'none'}`);
+
+    // OpenAI 사용 가능 확인
+    if (!openai) {
+      return res.status(500).json({
+        success: false,
+        error: 'OpenAI API가 설정되지 않았습니다.'
+      });
+    }
+
+    // 1. 사용자 프로필 조회
+    let userProfile = null;
+    try {
+      const [profileRows] = await pool.execute(`
+        SELECT
+          u.name as user_name,
+          up.preferred_jobs,
+          up.experience,
+          up.preferred_regions,
+          up.skills,
+          up.education,
+          up.expected_salary
+        FROM users u
+        LEFT JOIN user_profiles up ON u.id = up.user_id
+        WHERE u.id = ?
+      `, [user_id]);
+
+      if (profileRows.length > 0) {
+        const profile = profileRows[0];
+
+        // skills 파싱
+        let skills = [];
+        if (profile.skills) {
+          try {
+            skills = typeof profile.skills === 'string'
+              ? JSON.parse(profile.skills)
+              : profile.skills;
+          } catch (e) {
+            console.warn('[COVER-LETTER] skills 파싱 실패:', e);
+            skills = [];
+          }
+        }
+
+        userProfile = {
+          name: profile.user_name || '지원자',
+          preferred_jobs: profile.preferred_jobs || '',
+          experience: profile.experience || '',
+          skills: skills,
+          education: profile.education || '',
+          expected_salary: profile.expected_salary || ''
+        };
+        console.log(`[COVER-LETTER] 사용자 프로필 로드 완료: ${userProfile.name}`);
+      }
+    } catch (profileError) {
+      console.warn('[COVER-LETTER] 프로필 조회 실패:', profileError);
+    }
+
+    // 2. 채용공고 정보 조회 (job_id가 있는 경우)
+    let jobInfo = null;
+    if (job_id) {
+      try {
+        const [jobRows] = await pool.execute(`
+          SELECT
+            j.id,
+            j.title,
+            j.company,
+            j.location,
+            j.description,
+            j.requirements,
+            j.experience_level,
+            j.employment_type
+          FROM jobs j
+          WHERE j.id = ?
+        `, [job_id]);
+
+        if (jobRows.length > 0) {
+          jobInfo = jobRows[0];
+          console.log(`[COVER-LETTER] 채용공고 정보 로드 완료: ${jobInfo.title}`);
+        }
+      } catch (jobError) {
+        console.warn('[COVER-LETTER] 채용공고 조회 실패:', jobError);
+      }
+    }
+
+    // 3. GPT 프롬프트 생성
+    let prompt = `다음 정보를 바탕으로 ${company}에 지원하는 자기소개서를 작성해주세요.\n\n`;
+
+    // 사용자 프로필 추가
+    if (userProfile) {
+      prompt += `[지원자 정보]\n`;
+      prompt += `- 이름: ${userProfile.name}\n`;
+      if (userProfile.preferred_jobs) {
+        prompt += `- 희망 직무: ${userProfile.preferred_jobs}\n`;
+      }
+      if (userProfile.experience) {
+        prompt += `- 경력: ${userProfile.experience}\n`;
+      }
+      if (userProfile.skills && userProfile.skills.length > 0) {
+        prompt += `- 보유 스킬: ${userProfile.skills.join(', ')}\n`;
+      }
+      if (userProfile.education) {
+        prompt += `- 학력: ${userProfile.education}\n`;
+      }
+      prompt += `\n`;
+    }
+
+    // 채용공고 정보 추가
+    if (jobInfo) {
+      prompt += `[채용 공고 정보]\n`;
+      prompt += `- 직무: ${jobInfo.title}\n`;
+      if (jobInfo.description) {
+        prompt += `- 업무 내용: ${jobInfo.description}\n`;
+      }
+      if (jobInfo.requirements) {
+        prompt += `- 자격 요건: ${jobInfo.requirements}\n`;
+      }
+      if (jobInfo.experience_level) {
+        prompt += `- 경력 요건: ${jobInfo.experience_level}\n`;
+      }
+      prompt += `\n`;
+    }
+
+    prompt += `[요청사항]\n`;
+    prompt += `1. 지원자의 강점과 경험을 ${company}${jobInfo ? '의 ' + jobInfo.title + ' 직무' : ''}에 맞춰 작성해주세요.\n`;
+    prompt += `2. 구체적인 경험과 성과를 포함해주세요.\n`;
+    prompt += `3. ${company}에 대한 관심과 입사 의지를 표현해주세요.\n`;
+    prompt += `4. 자연스럽고 진정성 있는 문체로 작성해주세요.\n`;
+    prompt += `5. 분량은 800-1000자 내외로 작성해주세요.\n`;
+
+    console.log(`[COVER-LETTER] 📝 PROMPT 길이: ${prompt.length}자`);
+
+    // 4. GPT API 호출
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: '당신은 전문적인 자기소개서 작성 컨설턴트입니다. 지원자의 배경과 회사의 요구사항을 분석하여 효과적인 자기소개서를 작성합니다.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      max_tokens: 1500,
+      temperature: 0.7
+    });
+
+    const coverLetter = completion.choices[0].message.content;
+    console.log(`[COVER-LETTER] ✅ 자기소개서 생성 완료 (${coverLetter.length}자)`);
+
+    res.json({
+      success: true,
+      coverLetter: coverLetter
+    });
+
+  } catch (error) {
+    console.error('[COVER-LETTER] Error generating cover letter:', error);
+    res.status(500).json({
+      success: false,
+      error: '자기소개서 생성 중 오류가 발생했습니다.',
+      message: error.message
+    });
+  }
+});
+
 /* ==================== 면접 수정된 답변 API ==================== */
 /**
  * @swagger
@@ -6309,22 +6636,30 @@ app.get('/api/company/:companyName', async (req, res) => {
   const { companyName } = req.params;
 
   try {
-    console.log(`[COMPANY-API] Fetching company info for: ${companyName}`);
+    console.log(`[COMPANY-API] ========================================`);
+    console.log(`[COMPANY-API] Fetching company info for: "${companyName}"`);
+    console.log(`[COMPANY-API] URL decoded: "${decodeURIComponent(companyName)}"`);
 
     // 모든 catch 테이블은 'company' 컬럼 사용
     // 정확한 일치 먼저 시도
+    console.log(`[COMPANY-API] Querying with: "${companyName}"`);
     let [results] = await pool.execute(
       'SELECT * FROM catch_companies WHERE company = ? LIMIT 1',
       [companyName]
     );
 
+    console.log(`[COMPANY-API] Query result count: ${results.length}`);
+
     // 정확히 일치하는 경우에만 회사정보 제공 (LIKE 검색 제거)
     if (results.length === 0) {
-      console.log(`[COMPANY-API] No exact match found for: ${companyName}`);
+      console.log(`[COMPANY-API] ❌ No exact match found for: "${companyName}"`);
+      console.log(`[COMPANY-API] ========================================`);
       return res.json({ success: false, message: '회사 정보를 찾을 수 없습니다.' });
     }
 
     const company = results[0];
+    console.log(`[COMPANY-API] ✅ Found company: "${company.company}"`);
+    console.log(`[COMPANY-API] ========================================`);
 
     // tags와 recommendation_keywords를 배열로 파싱
     if (company.tags) {
@@ -6350,10 +6685,10 @@ app.get('/api/company/:companyName', async (req, res) => {
       company.recommendation_keywords = [];
     }
 
-    console.log(`[COMPANY-API] Found company: ${company.company}`);
     res.json({ success: true, company });
   } catch (error) {
-    console.error('[ERROR] Company API error:', error);
+    console.error('[COMPANY-API] ❌ ERROR:', error);
+    console.log(`[COMPANY-API] ========================================`);
     res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });

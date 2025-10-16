@@ -8,7 +8,9 @@ export default function AICoverLetterPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [companyName, setCompanyName] = useState('');
-    const [jobTitle, setJobTitle] = useState('');
+    const [jobPostings, setJobPostings] = useState([]);
+    const [selectedJobId, setSelectedJobId] = useState('');
+    const [isLoadingJobs, setIsLoadingJobs] = useState(false);
     const [coverLetter, setCoverLetter] = useState(null);
     const [isCoverLetterLoading, setIsCoverLetterLoading] = useState(false);
 
@@ -55,13 +57,51 @@ export default function AICoverLetterPage() {
         }
     };
 
+    // 회사명 입력 시 채용공고 조회
+    const fetchJobPostings = async (company) => {
+        if (!company.trim()) {
+            setJobPostings([]);
+            setSelectedJobId('');
+            return;
+        }
+
+        setIsLoadingJobs(true);
+        try {
+            const token = localStorage.getItem('app_session');
+            const response = await fetch(
+                `${CONFIG.BACKEND_URL}/api/jobs-by-company?company=${encodeURIComponent(company.trim())}`,
+                {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                }
+            );
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.jobs) {
+                    setJobPostings(data.jobs);
+                    setSelectedJobId(''); // 초기화
+                } else {
+                    setJobPostings([]);
+                }
+            } else {
+                setJobPostings([]);
+            }
+        } catch (err) {
+            console.error('[채용공고 조회] 오류:', err);
+            setJobPostings([]);
+        } finally {
+            setIsLoadingJobs(false);
+        }
+    };
+
     const generateCoverLetter = async () => {
         if (!companyName.trim()) {
             alert('회사명을 입력해주세요.');
-            return;
-        }
-        if (!jobTitle.trim()) {
-            alert('직무/포지션을 입력해주세요.');
             return;
         }
 
@@ -80,7 +120,7 @@ export default function AICoverLetterPage() {
                 body: JSON.stringify({
                     user_id: currentUser?.id,
                     company: companyName.trim(),
-                    job_title: jobTitle.trim()
+                    job_id: selectedJobId || null
                 })
             });
 
@@ -346,7 +386,7 @@ export default function AICoverLetterPage() {
                                         borderRadius: '12px',
                                         fontWeight: '600',
                                         color: '#7b1fa2'
-                                    }}>지원 직무/포지션 입력</span>
+                                    }}>채용공고 선택 (선택사항)</span>
                                 </div>
                             </div>
                         </div>
@@ -464,7 +504,11 @@ export default function AICoverLetterPage() {
                         <input
                             type="text"
                             value={companyName}
-                            onChange={(e) => setCompanyName(e.target.value)}
+                            onChange={(e) => {
+                                setCompanyName(e.target.value);
+                                // 회사명 입력 시 채용공고 조회
+                                fetchJobPostings(e.target.value);
+                            }}
                             placeholder="예: 네이버, 카카오, 삼성전자, 쿠팡"
                             style={{
                                 width: '100%',
@@ -494,36 +538,64 @@ export default function AICoverLetterPage() {
                             color: '#2d3748',
                             fontSize: '0.95rem'
                         }}>
-                            지원 직무/포지션 <span style={{ color: '#e53e3e' }}>*</span>
+                            채용공고 선택 (선택사항)
                         </label>
-                        <input
-                            type="text"
-                            value={jobTitle}
-                            onChange={(e) => setJobTitle(e.target.value)}
-                            onKeyPress={(e) => {
-                                if (e.key === 'Enter' && !isCoverLetterLoading) {
-                                    generateCoverLetter();
-                                }
-                            }}
-                            placeholder="예: 백엔드 개발자, 프론트엔드 개발자, 데이터 분석가"
-                            style={{
-                                width: '100%',
+                        {isLoadingJobs ? (
+                            <div style={{
                                 padding: '12px 14px',
                                 border: '2px solid #e2e8f0',
                                 borderRadius: '10px',
-                                fontSize: '1rem',
-                                boxSizing: 'border-box',
-                                transition: 'all 0.2s'
-                            }}
-                            onFocus={(e) => {
-                                e.currentTarget.style.borderColor = '#667eea';
-                                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.1)';
-                            }}
-                            onBlur={(e) => {
-                                e.currentTarget.style.borderColor = '#e2e8f0';
-                                e.currentTarget.style.boxShadow = 'none';
-                            }}
-                        />
+                                fontSize: '0.95rem',
+                                color: '#666',
+                                textAlign: 'center'
+                            }}>
+                                채용공고 조회 중...
+                            </div>
+                        ) : (
+                            <select
+                                value={selectedJobId}
+                                onChange={(e) => setSelectedJobId(e.target.value)}
+                                disabled={!companyName.trim() || jobPostings.length === 0}
+                                style={{
+                                    width: '100%',
+                                    padding: '12px 14px',
+                                    border: '2px solid #e2e8f0',
+                                    borderRadius: '10px',
+                                    fontSize: '1rem',
+                                    boxSizing: 'border-box',
+                                    transition: 'all 0.2s',
+                                    backgroundColor: (!companyName.trim() || jobPostings.length === 0) ? '#f7fafc' : 'white',
+                                    cursor: (!companyName.trim() || jobPostings.length === 0) ? 'not-allowed' : 'pointer'
+                                }}
+                                onFocus={(e) => {
+                                    if (companyName.trim() && jobPostings.length > 0) {
+                                        e.currentTarget.style.borderColor = '#667eea';
+                                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.1)';
+                                    }
+                                }}
+                                onBlur={(e) => {
+                                    e.currentTarget.style.borderColor = '#e2e8f0';
+                                    e.currentTarget.style.boxShadow = 'none';
+                                }}
+                            >
+                                <option value="">선택 안함 (회사명만 사용)</option>
+                                {jobPostings.map((job) => (
+                                    <option key={job.id} value={job.id}>
+                                        {job.title} - {job.location || '위치 미정'} ({job.experience_level || '경력 무관'})
+                                    </option>
+                                ))}
+                            </select>
+                        )}
+                        {companyName.trim() && jobPostings.length === 0 && !isLoadingJobs && (
+                            <div style={{
+                                marginTop: '8px',
+                                fontSize: '0.85rem',
+                                color: '#718096',
+                                fontStyle: 'italic'
+                            }}>
+                                해당 회사의 채용공고를 찾을 수 없습니다. 회사명만으로 자기소개서를 생성할 수 있습니다.
+                            </div>
+                        )}
                     </div>
 
                     <button
