@@ -5036,7 +5036,7 @@ app.get('/api/jobs-by-company', async (req, res) => {
       LIMIT 50
     `, [`%${company}%`]);
 
-    // 마감되지 않은 공고만 필터링
+    // 마감되지 않은 공고만 필터링 + 상시채용/수시지원 제외
     const now = new Date();
     const activeJobs = jobRows.filter(job => {
       if (!job.registration_info) return true;
@@ -5047,6 +5047,12 @@ app.get('/api/jobs-by-company', async (req, res) => {
         if (!Array.isArray(regInfo) || regInfo.length === 0) return true;
 
         const deadlineStr = regInfo[0]; // "~11.02(일)" 형식
+
+        // 상시채용, 수시지원 제외
+        if (deadlineStr.includes('상시채용') || deadlineStr.includes('수시지원')) {
+          return false;
+        }
+
         if (!deadlineStr || !deadlineStr.startsWith('~')) return true;
 
         // 마감일 파싱: "~11.02(일)" -> "11.02"
