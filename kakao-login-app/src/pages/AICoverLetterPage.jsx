@@ -1046,7 +1046,6 @@ export default function AICoverLetterPage() {
                                         {jobPostings.map((job) => (
                                             <div
                                                 key={job.id}
-                                                onClick={() => setSelectedJobId(job.id.toString())}
                                                 style={{
                                                     padding: '12px',
                                                     border: selectedJobId === job.id.toString() ? '2px solid #667eea' : '1px solid #e2e8f0',
@@ -1060,6 +1059,12 @@ export default function AICoverLetterPage() {
                                                     alignItems: 'center',
                                                     gap: '12px',
                                                     cursor: 'pointer'
+                                                }}
+                                                onClick={(e) => {
+                                                    // 버튼 클릭이 아닌 경우에만 선택
+                                                    if (e.target.tagName !== 'BUTTON' && !e.target.closest('button')) {
+                                                        setSelectedJobId(job.id.toString());
+                                                    }
                                                 }}
                                                 onMouseEnter={(e) => {
                                                     if (selectedJobId !== job.id.toString()) {
