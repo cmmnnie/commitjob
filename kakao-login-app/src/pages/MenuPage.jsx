@@ -92,7 +92,7 @@ export default function MenuPage() {
             }
 
             // user_profiles 테이블에서 이력서 정보 확인
-            const profileResponse = await fetch(`${CONFIG.BACKEND_URL}/api/user-profile/${user.id}`, {
+            const profileResponse = await fetch(`${CONFIG.BACKEND_URL}/api/profile?user_id=${user.id}`, {
                 method: 'GET',
                 credentials: 'include',
                 headers: {

@@ -54,7 +54,7 @@ export default function AIInterviewPage() {
 
                 // 이력서 정보 확인
                 try {
-                    const profileResponse = await fetch(`${CONFIG.BACKEND_URL}/api/user-profile/${userData.user.id}`, {
+                    const profileResponse = await fetch(`${CONFIG.BACKEND_URL}/api/profile?user_id=${userData.user.id}`, {
                         method: 'GET',
                         credentials: 'include',
                         headers: {
