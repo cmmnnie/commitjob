@@ -5307,6 +5307,7 @@ app.post('/api/cover-letter', async (req, res) => {
     prompt += `3. ${company}에 대한 관심과 입사 의지를 표현해주세요.\n`;
     prompt += `4. 자연스럽고 진정성 있는 문체로 작성해주세요.\n`;
     prompt += `5. 분량은 800-1000자 내외로 작성해주세요.\n`;
+    prompt += `6. "인사담당자님께", "드림" 등의 형식적인 인사말이나 서명은 포함하지 마세요. 자기소개서 본문만 작성해주세요.\n`;
 
     console.log(`[COVER-LETTER] 📝 PROMPT 길이: ${prompt.length}자`);
 
