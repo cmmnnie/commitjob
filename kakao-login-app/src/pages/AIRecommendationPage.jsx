@@ -200,7 +200,7 @@ export default function AIRecommendationPage() {
             </div>
 
             <p style={{
-                fontSize: '0.95rem',
+                fontSize: '1.05rem',
                 color: '#667eea',
                 fontWeight: '600',
                 marginBottom: '12px',
@@ -208,7 +208,7 @@ export default function AIRecommendationPage() {
                 alignItems: 'center',
                 gap: '6px'
             }}>
-                <span style={{ fontSize: '1rem' }}>🏢</span>
+                <span style={{ fontSize: '1.1rem' }}>🏢</span>
                 {job.company}
             </p>
 
@@ -217,7 +217,7 @@ export default function AIRecommendationPage() {
                 flexWrap: 'wrap',
                 gap: '8px',
                 marginBottom: '12px',
-                fontSize: '0.85rem',
+                fontSize: '0.95rem',
                 color: '#666'
             }}>
                 {job.location && (
@@ -250,7 +250,7 @@ export default function AIRecommendationPage() {
                             color: '#2d3748',
                             padding: '4px 10px',
                             borderRadius: '12px',
-                            fontSize: '0.8rem'
+                            fontSize: '0.9rem'
                         }}>
                             {skill}
                         </span>
