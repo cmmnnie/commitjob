@@ -1168,9 +1168,13 @@ export default function AICoverLetterPage() {
                                                     <input
                                                         type="radio"
                                                         checked={selectedJobId === job.id.toString()}
-                                                        onChange={() => {
+                                                        onChange={(e) => {
+                                                            e.stopPropagation();
                                                             setSelectedJobId(job.id.toString());
                                                             console.log('[채용공고 라디오 선택] job_id:', job.id, 'company:', job.company);
+                                                        }}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
                                                         }}
                                                         style={{ cursor: 'pointer' }}
                                                     />
