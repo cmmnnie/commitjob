@@ -164,6 +164,17 @@ export default function AICoverLetterPage() {
 
         try {
             const token = localStorage.getItem('app_session');
+
+            // 선택한 채용공고가 있으면 해당 채용공고의 회사명 사용, 없으면 입력한 회사명 사용
+            let finalCompany = companyName.trim();
+            if (selectedJobId) {
+                const selectedJob = jobPostings.find(job => job.id.toString() === selectedJobId);
+                if (selectedJob && selectedJob.company) {
+                    finalCompany = selectedJob.company;
+                    console.log('[자소서 생성] 선택한 채용공고의 회사명 사용:', finalCompany);
+                }
+            }
+
             const response = await fetch(`${CONFIG.BACKEND_URL}/api/cover-letter`, {
                 method: 'POST',
                 credentials: 'include',
@@ -173,7 +184,7 @@ export default function AICoverLetterPage() {
                 },
                 body: JSON.stringify({
                     user_id: currentUser?.id,
-                    company: companyName.trim(),
+                    company: finalCompany,
                     job_id: selectedJobId || null
                 })
             });
@@ -405,6 +416,9 @@ export default function AICoverLetterPage() {
 
                 // 자소서 내용 설정
                 setUserCoverLetter(coverLetter.content);
+
+                // AI 생성 자소서 숨기기
+                setCoverLetter(null);
 
                 // 회사명 설정
                 const company = coverLetter.company || '';
