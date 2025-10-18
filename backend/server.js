@@ -7306,6 +7306,210 @@ JSON:{"recommendations":[{"job_id":"ID","match_score":85,"match_reasons":["구�
   }
 }
 
+/* ==================== 자소서 저장/조회/수정/삭제 API ==================== */
+
+// 자소서 저장
+app.post('/api/cover-letters/save', async (req, res) => {
+  try {
+    const { user_id, company, job_id, title, content } = req.body;
+
+    if (!user_id || !title || !content) {
+      return res.status(400).json({
+        success: false,
+        error: '사용자 ID, 제목, 내용은 필수입니다.'
+      });
+    }
+
+    console.log('[COVER-LETTER-SAVE] 자소서 저장 요청:', { user_id, company, job_id, title });
+
+    // cover_letters 테이블이 없으면 생성
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS cover_letters (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        company VARCHAR(255),
+        job_id INT,
+        title VARCHAR(500) NOT NULL,
+        content TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `);
+
+    // 자소서 저장
+    const [result] = await pool.execute(`
+      INSERT INTO cover_letters (user_id, company, job_id, title, content)
+      VALUES (?, ?, ?, ?, ?)
+    `, [user_id, company || null, job_id || null, title, content]);
+
+    console.log('[COVER-LETTER-SAVE] ✅ 자소서 저장 완료:', result.insertId);
+
+    res.json({
+      success: true,
+      cover_letter_id: result.insertId,
+      message: '자소서가 저장되었습니다.'
+    });
+
+  } catch (error) {
+    console.error('[COVER-LETTER-SAVE] Error:', error);
+    res.status(500).json({
+      success: false,
+      error: '자소서 저장 중 오류가 발생했습니다.',
+      message: error.message
+    });
+  }
+});
+
+// 자소서 목록 조회
+app.get('/api/cover-letters/:user_id', async (req, res) => {
+  try {
+    const { user_id } = req.params;
+
+    console.log('[COVER-LETTER-LIST] 자소서 목록 조회:', user_id);
+
+    const [rows] = await pool.execute(`
+      SELECT id, company, job_id, title, created_at, updated_at
+      FROM cover_letters
+      WHERE user_id = ?
+      ORDER BY updated_at DESC
+    `, [user_id]);
+
+    console.log('[COVER-LETTER-LIST] ✅ 조회 완료:', rows.length, '개');
+
+    res.json({
+      success: true,
+      cover_letters: rows
+    });
+
+  } catch (error) {
+    console.error('[COVER-LETTER-LIST] Error:', error);
+    res.status(500).json({
+      success: false,
+      error: '자소서 목록 조회 중 오류가 발생했습니다.',
+      message: error.message
+    });
+  }
+});
+
+// 자소서 상세 조회
+app.get('/api/cover-letters/detail/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    console.log('[COVER-LETTER-DETAIL] 자소서 상세 조회:', id);
+
+    const [rows] = await pool.execute(`
+      SELECT id, user_id, company, job_id, title, content, created_at, updated_at
+      FROM cover_letters
+      WHERE id = ?
+    `, [id]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: '자소서를 찾을 수 없습니다.'
+      });
+    }
+
+    console.log('[COVER-LETTER-DETAIL] ✅ 조회 완료');
+
+    res.json({
+      success: true,
+      cover_letter: rows[0]
+    });
+
+  } catch (error) {
+    console.error('[COVER-LETTER-DETAIL] Error:', error);
+    res.status(500).json({
+      success: false,
+      error: '자소서 조회 중 오류가 발생했습니다.',
+      message: error.message
+    });
+  }
+});
+
+// 자소서 수정
+app.put('/api/cover-letters/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, content, company, job_id } = req.body;
+
+    if (!title || !content) {
+      return res.status(400).json({
+        success: false,
+        error: '제목과 내용은 필수입니다.'
+      });
+    }
+
+    console.log('[COVER-LETTER-UPDATE] 자소서 수정 요청:', id);
+
+    const [result] = await pool.execute(`
+      UPDATE cover_letters
+      SET title = ?, content = ?, company = ?, job_id = ?
+      WHERE id = ?
+    `, [title, content, company || null, job_id || null, id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        error: '자소서를 찾을 수 없습니다.'
+      });
+    }
+
+    console.log('[COVER-LETTER-UPDATE] ✅ 수정 완료');
+
+    res.json({
+      success: true,
+      message: '자소서가 수정되었습니다.'
+    });
+
+  } catch (error) {
+    console.error('[COVER-LETTER-UPDATE] Error:', error);
+    res.status(500).json({
+      success: false,
+      error: '자소서 수정 중 오류가 발생했습니다.',
+      message: error.message
+    });
+  }
+});
+
+// 자소서 삭제
+app.delete('/api/cover-letters/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    console.log('[COVER-LETTER-DELETE] 자소서 삭제 요청:', id);
+
+    const [result] = await pool.execute(`
+      DELETE FROM cover_letters
+      WHERE id = ?
+    `, [id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        error: '자소서를 찾을 수 없습니다.'
+      });
+    }
+
+    console.log('[COVER-LETTER-DELETE] ✅ 삭제 완료');
+
+    res.json({
+      success: true,
+      message: '자소서가 삭제되었습니다.'
+    });
+
+  } catch (error) {
+    console.error('[COVER-LETTER-DELETE] Error:', error);
+    res.status(500).json({
+      success: false,
+      error: '자소서 삭제 중 오류가 발생했습니다.',
+      message: error.message
+    });
+  }
+});
+
 // ==== 404 핸들러 (마지막) ====
 app.use((req, res) => {
   res.status(404).json({ error: 'Not Found', path: req.originalUrl });

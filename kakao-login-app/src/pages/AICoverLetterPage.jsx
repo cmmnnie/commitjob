@@ -20,9 +20,22 @@ export default function AICoverLetterPage() {
     const [selectedJobForView, setSelectedJobForView] = useState(null);
     const [isJobPopupOpen, setIsJobPopupOpen] = useState(false);
 
+    // 자소서 저장/불러오기 관련 state
+    const [savedCoverLetters, setSavedCoverLetters] = useState([]);
+    const [showSaveModal, setShowSaveModal] = useState(false);
+    const [saveTitle, setSaveTitle] = useState('');
+    const [showLoadModal, setShowLoadModal] = useState(false);
+    const [selectedCoverLetterId, setSelectedCoverLetterId] = useState(null);
+
     useEffect(() => {
         checkLogin();
     }, []);
+
+    useEffect(() => {
+        if (currentUser) {
+            loadSavedCoverLetters();
+        }
+    }, [currentUser]);
 
     const checkLogin = async () => {
         try {
@@ -279,6 +292,144 @@ export default function AICoverLetterPage() {
             alert('수정된 자소서 생성에 실패했습니다. 다시 시도해주세요.');
         } finally {
             setIsRevisedCoverLetterLoading(false);
+        }
+    };
+
+    // 저장된 자소서 목록 불러오기
+    const loadSavedCoverLetters = async () => {
+        try {
+            const token = localStorage.getItem('app_session');
+            const response = await fetch(`${CONFIG.BACKEND_URL}/api/cover-letters/${currentUser.id}`, {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    setSavedCoverLetters(data.cover_letters);
+                }
+            }
+        } catch (err) {
+            console.error('[자소서 목록 조회] 오류:', err);
+        }
+    };
+
+    // 자소서 저장
+    const saveCoverLetter = async () => {
+        if (!userCoverLetter.trim()) {
+            alert('저장할 자소서 내용이 없습니다.');
+            return;
+        }
+
+        if (!saveTitle.trim()) {
+            alert('제목을 입력해주세요.');
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem('app_session');
+            const response = await fetch(`${CONFIG.BACKEND_URL}/api/cover-letters/save`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    user_id: currentUser.id,
+                    company: companyName.trim() || null,
+                    job_id: selectedJobId || null,
+                    title: saveTitle.trim(),
+                    content: userCoverLetter.trim()
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('자소서 저장에 실패했습니다.');
+            }
+
+            const data = await response.json();
+            if (data.success) {
+                alert('자소서가 저장되었습니다!');
+                setShowSaveModal(false);
+                setSaveTitle('');
+                loadSavedCoverLetters(); // 목록 새로고침
+            }
+        } catch (err) {
+            console.error('[자소서 저장] 오류:', err);
+            alert('자소서 저장에 실패했습니다. 다시 시도해주세요.');
+        }
+    };
+
+    // 저장된 자소서 불러오기
+    const loadCoverLetter = async (id) => {
+        try {
+            const token = localStorage.getItem('app_session');
+            const response = await fetch(`${CONFIG.BACKEND_URL}/api/cover-letters/detail/${id}`, {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('자소서 불러오기에 실패했습니다.');
+            }
+
+            const data = await response.json();
+            if (data.success && data.cover_letter) {
+                setUserCoverLetter(data.cover_letter.content);
+                setCompanyName(data.cover_letter.company || '');
+                setSelectedJobId(data.cover_letter.job_id || '');
+                setSelectedCoverLetterId(id);
+                setShowLoadModal(false);
+                alert('자소서를 불러왔습니다!');
+            }
+        } catch (err) {
+            console.error('[자소서 불러오기] 오류:', err);
+            alert('자소서 불러오기에 실패했습니다. 다시 시도해주세요.');
+        }
+    };
+
+    // 자소서 삭제
+    const deleteCoverLetter = async (id) => {
+        if (!confirm('정말 삭제하시겠습니까?')) {
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem('app_session');
+            const response = await fetch(`${CONFIG.BACKEND_URL}/api/cover-letters/${id}`, {
+                method: 'DELETE',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('자소서 삭제에 실패했습니다.');
+            }
+
+            const data = await response.json();
+            if (data.success) {
+                alert('자소서가 삭제되었습니다.');
+                loadSavedCoverLetters(); // 목록 새로고침
+                if (selectedCoverLetterId === id) {
+                    setSelectedCoverLetterId(null);
+                }
+            }
+        } catch (err) {
+            console.error('[자소서 삭제] 오류:', err);
+            alert('자소서 삭제에 실패했습니다. 다시 시도해주세요.');
         }
     };
 
@@ -1161,6 +1312,70 @@ export default function AICoverLetterPage() {
                                 e.currentTarget.style.boxShadow = 'none';
                             }}
                         />
+
+                        {/* 저장/불러오기 버튼 */}
+                        <div style={{
+                            display: 'flex',
+                            gap: '10px',
+                            marginTop: '10px'
+                        }}>
+                            <button
+                                onClick={() => setShowSaveModal(true)}
+                                disabled={!userCoverLetter.trim()}
+                                style={{
+                                    flex: 1,
+                                    background: userCoverLetter.trim() ? 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' : '#cbd5e0',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '10px 16px',
+                                    borderRadius: '8px',
+                                    fontSize: '0.9rem',
+                                    fontWeight: '600',
+                                    cursor: userCoverLetter.trim() ? 'pointer' : 'not-allowed',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    if (userCoverLetter.trim()) {
+                                        e.currentTarget.style.transform = 'translateY(-2px)';
+                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(79, 172, 254, 0.4)';
+                                    }
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = 'none';
+                                }}
+                            >
+                                💾 저장하기
+                            </button>
+                            <button
+                                onClick={() => setShowLoadModal(true)}
+                                disabled={savedCoverLetters.length === 0}
+                                style={{
+                                    flex: 1,
+                                    background: savedCoverLetters.length > 0 ? 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)' : '#cbd5e0',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '10px 16px',
+                                    borderRadius: '8px',
+                                    fontSize: '0.9rem',
+                                    fontWeight: '600',
+                                    cursor: savedCoverLetters.length > 0 ? 'pointer' : 'not-allowed',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    if (savedCoverLetters.length > 0) {
+                                        e.currentTarget.style.transform = 'translateY(-2px)';
+                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(250, 112, 154, 0.4)';
+                                    }
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = 'none';
+                                }}
+                            >
+                                📂 불러오기 ({savedCoverLetters.length})
+                            </button>
+                        </div>
                     </div>
 
                     <button
@@ -1509,6 +1724,199 @@ export default function AICoverLetterPage() {
                                 </div>
                             )}
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 저장 모달 */}
+            {showSaveModal && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0, 0, 0, 0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000,
+                    padding: '20px'
+                }}>
+                    <div style={{
+                        background: 'white',
+                        borderRadius: '20px',
+                        padding: '30px',
+                        maxWidth: '500px',
+                        width: '100%',
+                        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
+                    }}>
+                        <h2 style={{ marginBottom: '20px', fontSize: '1.5rem', color: '#333' }}>자소서 저장</h2>
+                        <input
+                            type="text"
+                            placeholder="제목을 입력하세요"
+                            value={saveTitle}
+                            onChange={(e) => setSaveTitle(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '12px',
+                                border: '2px solid #e2e8f0',
+                                borderRadius: '10px',
+                                fontSize: '1rem',
+                                marginBottom: '20px',
+                                boxSizing: 'border-box'
+                            }}
+                        />
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                            <button
+                                onClick={() => {
+                                    setShowSaveModal(false);
+                                    setSaveTitle('');
+                                }}
+                                style={{
+                                    flex: 1,
+                                    padding: '12px',
+                                    background: '#e2e8f0',
+                                    border: 'none',
+                                    borderRadius: '10px',
+                                    fontSize: '1rem',
+                                    fontWeight: '600',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                취소
+                            </button>
+                            <button
+                                onClick={saveCoverLetter}
+                                style={{
+                                    flex: 1,
+                                    padding: '12px',
+                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '10px',
+                                    fontSize: '1rem',
+                                    fontWeight: '600',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                저장
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 불러오기 모달 */}
+            {showLoadModal && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0, 0, 0, 0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000,
+                    padding: '20px'
+                }}>
+                    <div style={{
+                        background: 'white',
+                        borderRadius: '20px',
+                        padding: '30px',
+                        maxWidth: '600px',
+                        width: '100%',
+                        maxHeight: '80vh',
+                        overflow: 'auto',
+                        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
+                    }}>
+                        <h2 style={{ marginBottom: '20px', fontSize: '1.5rem', color: '#333' }}>
+                            저장된 자소서 ({savedCoverLetters.length})
+                        </h2>
+                        {savedCoverLetters.length === 0 ? (
+                            <p style={{ color: '#666', textAlign: 'center', padding: '20px' }}>
+                                저장된 자소서가 없습니다.
+                            </p>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                {savedCoverLetters.map((letter) => (
+                                    <div
+                                        key={letter.id}
+                                        style={{
+                                            padding: '15px',
+                                            border: '2px solid #e2e8f0',
+                                            borderRadius: '10px',
+                                            background: selectedCoverLetterId === letter.id ? '#f7fafc' : 'white'
+                                        }}
+                                    >
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                                            <div style={{ flex: 1 }}>
+                                                <h3 style={{ margin: '0 0 5px 0', fontSize: '1.1rem', color: '#333' }}>
+                                                    {letter.title}
+                                                </h3>
+                                                {letter.company && (
+                                                    <p style={{ margin: '0 0 5px 0', fontSize: '0.9rem', color: '#666' }}>
+                                                        📌 {letter.company}
+                                                    </p>
+                                                )}
+                                                <p style={{ margin: 0, fontSize: '0.85rem', color: '#999' }}>
+                                                    {new Date(letter.updated_at).toLocaleDateString('ko-KR')}
+                                                </p>
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '5px' }}>
+                                                <button
+                                                    onClick={() => loadCoverLetter(letter.id)}
+                                                    style={{
+                                                        padding: '8px 16px',
+                                                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                                        color: 'white',
+                                                        border: 'none',
+                                                        borderRadius: '8px',
+                                                        fontSize: '0.9rem',
+                                                        fontWeight: '600',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    불러오기
+                                                </button>
+                                                <button
+                                                    onClick={() => deleteCoverLetter(letter.id)}
+                                                    style={{
+                                                        padding: '8px 12px',
+                                                        background: '#ef4444',
+                                                        color: 'white',
+                                                        border: 'none',
+                                                        borderRadius: '8px',
+                                                        fontSize: '0.9rem',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    삭제
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        <button
+                            onClick={() => setShowLoadModal(false)}
+                            style={{
+                                width: '100%',
+                                marginTop: '20px',
+                                padding: '12px',
+                                background: '#e2e8f0',
+                                border: 'none',
+                                borderRadius: '10px',
+                                fontSize: '1rem',
+                                fontWeight: '600',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            닫기
+                        </button>
                     </div>
                 </div>
             )}
