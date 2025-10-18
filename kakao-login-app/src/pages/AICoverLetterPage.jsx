@@ -1202,7 +1202,7 @@ export default function AICoverLetterPage() {
                                     gap: '8px'
                                 }}>
                                     <span>⚠️</span>
-                                    <span>해당 회사의 채용공고를 찾을 수 없습니다. 회사명만으로 자기소개서를 생성할 수 있습니다.</span>
+                                    <span>해당 회사의 채용공고를 찾을 수 없습니다.</span>
                                 </div>
                             )
                         )}
