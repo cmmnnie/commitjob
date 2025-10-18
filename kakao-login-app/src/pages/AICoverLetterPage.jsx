@@ -1106,9 +1106,11 @@ export default function AICoverLetterPage() {
                                                     cursor: 'pointer'
                                                 }}
                                                 onClick={(e) => {
-                                                    // 버튼 클릭이 아닌 경우에만 선택
-                                                    if (e.target.tagName !== 'BUTTON' && !e.target.closest('button')) {
+                                                    // 상세보기 버튼 클릭이 아닌 경우에만 선택
+                                                    const isButton = e.target.tagName === 'BUTTON' || e.target.closest('button');
+                                                    if (!isButton) {
                                                         setSelectedJobId(job.id.toString());
+                                                        console.log('[채용공고 선택] job_id:', job.id, 'company:', job.company);
                                                     }
                                                 }}
                                                 onMouseEnter={(e) => {
@@ -1133,8 +1135,11 @@ export default function AICoverLetterPage() {
                                                     <input
                                                         type="radio"
                                                         checked={selectedJobId === job.id.toString()}
-                                                        onChange={() => {}}
-                                                        style={{ cursor: 'pointer', pointerEvents: 'none' }}
+                                                        onChange={() => {
+                                                            setSelectedJobId(job.id.toString());
+                                                            console.log('[채용공고 라디오 선택] job_id:', job.id, 'company:', job.company);
+                                                        }}
+                                                        style={{ cursor: 'pointer' }}
                                                     />
                                                     <div style={{ flex: 1 }}>
                                                         <div style={{
