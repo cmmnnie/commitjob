@@ -7408,9 +7408,20 @@ app.get('/api/cover-letters/detail/:id', async (req, res) => {
     console.log('[COVER-LETTER-DETAIL] 자소서 상세 조회:', id);
 
     const [rows] = await pool.execute(`
-      SELECT id, user_id, company, job_id, title, content, created_at, updated_at
-      FROM cover_letters
-      WHERE id = ?
+      SELECT
+        cl.id,
+        cl.user_id,
+        cl.company,
+        cl.job_id,
+        cl.title,
+        cl.content,
+        cl.created_at,
+        cl.updated_at,
+        j.title as job_title,
+        j.category as job_category
+      FROM cover_letters cl
+      LEFT JOIN jobs j ON cl.job_id = j.id
+      WHERE cl.id = ?
     `, [id]);
 
     if (rows.length === 0) {
@@ -7421,6 +7432,12 @@ app.get('/api/cover-letters/detail/:id', async (req, res) => {
     }
 
     console.log('[COVER-LETTER-DETAIL] ✅ 조회 완료');
+    console.log('[COVER-LETTER-DETAIL] 반환 데이터:', {
+      job_id: rows[0].job_id,
+      job_title: rows[0].job_title,
+      company: rows[0].company,
+      job_category: rows[0].job_category
+    });
 
     res.json({
       success: true,
