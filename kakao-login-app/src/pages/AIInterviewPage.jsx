@@ -51,6 +51,31 @@ export default function AIInterviewPage() {
             const userData = await userResponse.json();
             if (userData.user) {
                 setCurrentUser(userData.user);
+
+                // 이력서 정보 확인
+                try {
+                    const profileResponse = await fetch(`${CONFIG.BACKEND_URL}/api/user-profile/${userData.user.id}`, {
+                        method: 'GET',
+                        credentials: 'include',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+
+                    if (profileResponse.ok) {
+                        const profileData = await profileResponse.json();
+                        // 이력서 필수 정보가 없는 경우
+                        if (!profileData.profile ||
+                            (!profileData.profile.preferred_jobs &&
+                             !profileData.profile.experience &&
+                             (!profileData.profile.skills || profileData.profile.skills.length === 0))) {
+                            setError('이력서를 먼저 작성해주세요.');
+                        }
+                    }
+                } catch (profileErr) {
+                    console.warn('[AI면접] 이력서 확인 실패:', profileErr);
+                }
             } else {
                 setError('사용자 정보를 불러올 수 없습니다.');
             }
@@ -374,6 +399,65 @@ export default function AIInterviewPage() {
                             e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
                         }}>
                         로그인하러 가기
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    if (error === '이력서를 먼저 작성해주세요.') {
+        return (
+            <div style={{
+                padding: '20px',
+                paddingBottom: '80px',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                minHeight: 'calc(100vh - 60px)'
+            }}>
+                <div style={{
+                    background: 'white',
+                    borderRadius: '20px',
+                    padding: '40px',
+                    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+                    maxWidth: '500px',
+                    margin: '0 auto',
+                    textAlign: 'center'
+                }}>
+                    <div style={{ fontSize: '3rem', marginBottom: '20px' }}>📋</div>
+                    <h2 style={{
+                        fontSize: '1.5rem',
+                        color: '#333',
+                        marginBottom: '15px',
+                        fontWeight: '700'
+                    }}>이력서를 먼저 작성해주세요</h2>
+                    <p style={{ color: '#666', marginBottom: '30px', lineHeight: '1.6' }}>
+                        AI 면접 준비 서비스를 이용하려면<br/>
+                        이력서 정보가 필요합니다.
+                    </p>
+                    <button
+                        onClick={() => navigate('/resume')}
+                        style={{
+                            width: '100%',
+                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                            color: 'white',
+                            border: 'none',
+                            padding: '15px 24px',
+                            borderRadius: '12px',
+                            fontSize: '1.1rem',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.4)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
+                        }}
+                    >
+                        이력서 작성하러 가기
                     </button>
                 </div>
             </div>

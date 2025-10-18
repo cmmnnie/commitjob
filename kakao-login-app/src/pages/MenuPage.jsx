@@ -109,7 +109,7 @@ export default function MenuPage() {
                         <span style={menuIconStyle}>📋</span>
                         <div style={menuContentStyle}>
                             <div style={menuTitleStyle}>이력서 관리</div>
-                            <div style={menuDescStyle}>이력서 정보를 활용하여 AI 채용공고와 AI 면접질문을 추천해드립니다.</div>
+                            <div style={menuDescStyle}>이력서 정보를 활용하여 AI 채용공고와 AI 면접질문을 추천해드리고 AI 자소서 작성을 지원해드립니다.</div>
                         </div>
                     </Link>
                 </div>

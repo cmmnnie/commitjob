@@ -577,7 +577,7 @@ export default function ResumePage() {
                                     textShadow: '0 1px 2px rgba(0,0,0,0.1)',
                                     letterSpacing: '-0.2px'
                                 }}>
-                                    이력서 정보를 활용하여 AI 채용공고와 AI 면접질문을 추천해드립니다
+                                    이력서 정보를 활용하여 AI 채용공고와 AI 면접질문을 추천해드리고 AI 자소서 작성을 지원해드립니다
                                 </p>
                             </div>
                         </div>
