@@ -414,6 +414,9 @@ export default function AICoverLetterPage() {
                         url: coverLetter.job_url
                     };
                     console.log('[자소서 불러오기] 채용공고 설정 (전체 정보 포함):', jobData);
+                    console.log('[자소서 불러오기] job_info 존재:', !!coverLetter.job_info);
+                    console.log('[자소서 불러오기] conditions 존재:', !!coverLetter.conditions);
+                    console.log('[자소서 불러오기] registration_info 존재:', !!coverLetter.registration_info);
 
                     // 선택된 채용공고 정보만 배열에 넣기
                     setJobPostings([jobData]);
@@ -1546,9 +1549,9 @@ export default function AICoverLetterPage() {
                         style={{
                             background: 'white',
                             borderRadius: '16px',
-                            maxWidth: '1200px',
-                            width: '98%',
-                            height: '96vh',
+                            maxWidth: '700px',
+                            width: '90%',
+                            maxHeight: '80vh',
                             overflow: 'hidden',
                             boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
                             display: 'flex',

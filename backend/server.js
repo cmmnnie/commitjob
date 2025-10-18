@@ -7441,7 +7441,11 @@ app.get('/api/cover-letters/detail/:id', async (req, res) => {
       job_id: rows[0].job_id,
       job_title: rows[0].job_title,
       company: rows[0].company,
-      job_category: rows[0].job_category
+      job_category: rows[0].job_category,
+      has_job_info: !!rows[0].job_info,
+      has_conditions: !!rows[0].conditions,
+      has_registration_info: !!rows[0].registration_info,
+      has_job_url: !!rows[0].job_url
     });
 
     res.json({
