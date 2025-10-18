@@ -4524,12 +4524,16 @@ ${interviewQuestionsSection}
           console.log(`[INTERVIEW-QUESTIONS] 📝 기출질문 개수: ${jobInfo.interview_questions?.length || 0}개`);
           console.log(`[INTERVIEW-QUESTIONS] ========================================\n`);
 
+          const systemMessage = 'Interview Q generator.JSON only.';
+          console.log(`[INTERVIEW-QUESTIONS] 📤 시스템 메시지: ${systemMessage}`);
+          console.log(`[INTERVIEW-QUESTIONS] 📤 GPT에게 전달하는 프롬프트:\n${prompt}\n`);
+
           const completion = await openai.chat.completions.create({
             model: 'gpt-4o-mini',
             messages: [
               {
                 role: 'system',
-                content: 'Interview Q generator.JSON only.'
+                content: systemMessage
               },
               {
                 role: 'user',
@@ -5315,14 +5319,18 @@ app.post('/api/cover-letter', async (req, res) => {
     prompt += `6. "인사담당자님께", "드림" 등의 형식적인 인사말이나 서명은 포함하지 마세요. 자기소개서 본문만 작성해주세요.\n`;
 
     console.log(`[COVER-LETTER] 📝 PROMPT 길이: ${prompt.length}자`);
+    console.log(`[COVER-LETTER] 📤 GPT에게 전달하는 프롬프트:\n${prompt}`);
 
     // 4. GPT API 호출
+    const systemMessage = '당신은 전문적인 자기소개서 작성 컨설턴트입니다. 지원자의 배경과 회사의 요구사항을 분석하여 효과적인 자기소개서를 작성합니다.';
+    console.log(`[COVER-LETTER] 📤 시스템 메시지: ${systemMessage}`);
+
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         {
           role: 'system',
-          content: '당신은 전문적인 자기소개서 작성 컨설턴트입니다. 지원자의 배경과 회사의 요구사항을 분석하여 효과적인 자기소개서를 작성합니다.'
+          content: systemMessage
         },
         {
           role: 'user',
