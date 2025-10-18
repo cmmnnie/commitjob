@@ -246,83 +246,166 @@ export default function MenuPage() {
                         width: '100%',
                         textAlign: 'center'
                     }}>
-                        <div style={{ fontSize: '4rem', marginBottom: '20px' }}>📋</div>
-                        <h2 style={{
-                            fontSize: '1.5rem',
-                            color: '#333',
-                            marginBottom: '20px',
-                            fontWeight: '700',
-                            lineHeight: '1.5'
-                        }}>
-                            AI 채용 추천, AI 면접,<br/>
-                            AI 자소서는<br/>
-                            이력서 작성 후<br/>
-                            이용 가능하십니다.
-                        </h2>
-                        <p style={{
-                            color: '#666',
-                            marginBottom: '30px',
-                            lineHeight: '1.6',
-                            fontSize: '1rem'
-                        }}>
-                            이력서를 작성하시면 맞춤형 AI 서비스를<br/>
-                            이용하실 수 있습니다.
-                        </p>
-                        <div style={{
-                            display: 'flex',
-                            gap: '10px',
-                            justifyContent: 'center'
-                        }}>
-                            <button
-                                onClick={closeModal}
-                                style={{
-                                    flex: 1,
-                                    background: '#e0e0e0',
-                                    color: '#666',
-                                    border: 'none',
-                                    padding: '14px 20px',
-                                    borderRadius: '12px',
-                                    fontSize: '1rem',
-                                    fontWeight: '600',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.background = '#d0d0d0';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.background = '#e0e0e0';
-                                }}
-                            >
-                                닫기
-                            </button>
-                            <button
-                                onClick={handleModalAction}
-                                style={{
-                                    flex: 1.5,
-                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                    color: 'white',
-                                    border: 'none',
-                                    padding: '14px 20px',
-                                    borderRadius: '12px',
-                                    fontSize: '1rem',
+                        {modalType === 'login' ? (
+                            /* 로그인 필요 모달 */
+                            <>
+                                <div style={{ fontSize: '4rem', marginBottom: '20px' }}>🔐</div>
+                                <h2 style={{
+                                    fontSize: '1.5rem',
+                                    color: '#333',
+                                    marginBottom: '20px',
                                     fontWeight: '700',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.transform = 'translateY(-2px)';
-                                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.4)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.transform = 'translateY(0)';
-                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
-                                }}
-                            >
-                                이력서 작성하기
-                            </button>
-                        </div>
+                                    lineHeight: '1.5'
+                                }}>
+                                    로그인이 필요합니다.
+                                </h2>
+                                <p style={{
+                                    color: '#666',
+                                    marginBottom: '30px',
+                                    lineHeight: '1.6',
+                                    fontSize: '1rem'
+                                }}>
+                                    AI 채용 추천, AI 면접, AI 자소서는<br/>
+                                    로그인 후 이용하실 수 있습니다.
+                                </p>
+                                <div style={{
+                                    display: 'flex',
+                                    gap: '10px',
+                                    justifyContent: 'center'
+                                }}>
+                                    <button
+                                        onClick={closeModal}
+                                        style={{
+                                            flex: 1,
+                                            background: '#e0e0e0',
+                                            color: '#666',
+                                            border: 'none',
+                                            padding: '14px 20px',
+                                            borderRadius: '12px',
+                                            fontSize: '1rem',
+                                            fontWeight: '600',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = '#d0d0d0';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = '#e0e0e0';
+                                        }}
+                                    >
+                                        닫기
+                                    </button>
+                                    <button
+                                        onClick={handleModalAction}
+                                        style={{
+                                            flex: 1.5,
+                                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                            color: 'white',
+                                            border: 'none',
+                                            padding: '14px 20px',
+                                            borderRadius: '12px',
+                                            fontSize: '1rem',
+                                            fontWeight: '700',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s',
+                                            boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.transform = 'translateY(-2px)';
+                                            e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.4)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.transform = 'translateY(0)';
+                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
+                                        }}
+                                    >
+                                        로그인하기
+                                    </button>
+                                </div>
+                            </>
+                        ) : (
+                            /* 이력서 필요 모달 */
+                            <>
+                                <div style={{ fontSize: '4rem', marginBottom: '20px' }}>📋</div>
+                                <h2 style={{
+                                    fontSize: '1.5rem',
+                                    color: '#333',
+                                    marginBottom: '20px',
+                                    fontWeight: '700',
+                                    lineHeight: '1.5'
+                                }}>
+                                    AI 채용 추천, AI 면접,<br/>
+                                    AI 자소서는<br/>
+                                    이력서 작성 후<br/>
+                                    이용 가능하십니다.
+                                </h2>
+                                <p style={{
+                                    color: '#666',
+                                    marginBottom: '30px',
+                                    lineHeight: '1.6',
+                                    fontSize: '1rem'
+                                }}>
+                                    이력서를 작성하시면 맞춤형 AI 서비스를<br/>
+                                    이용하실 수 있습니다.
+                                </p>
+                                <div style={{
+                                    display: 'flex',
+                                    gap: '10px',
+                                    justifyContent: 'center'
+                                }}>
+                                    <button
+                                        onClick={closeModal}
+                                        style={{
+                                            flex: 1,
+                                            background: '#e0e0e0',
+                                            color: '#666',
+                                            border: 'none',
+                                            padding: '14px 20px',
+                                            borderRadius: '12px',
+                                            fontSize: '1rem',
+                                            fontWeight: '600',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = '#d0d0d0';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = '#e0e0e0';
+                                        }}
+                                    >
+                                        닫기
+                                    </button>
+                                    <button
+                                        onClick={handleModalAction}
+                                        style={{
+                                            flex: 1.5,
+                                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                            color: 'white',
+                                            border: 'none',
+                                            padding: '14px 20px',
+                                            borderRadius: '12px',
+                                            fontSize: '1rem',
+                                            fontWeight: '700',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s',
+                                            boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.transform = 'translateY(-2px)';
+                                            e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.4)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.transform = 'translateY(0)';
+                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
+                                        }}
+                                    >
+                                        이력서 작성하기
+                                    </button>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             )}
