@@ -407,9 +407,13 @@ export default function AICoverLetterPage() {
                         id: coverLetter.job_id,
                         title: coverLetter.job_title,
                         company: coverLetter.company,
-                        category: coverLetter.job_category
+                        category: coverLetter.job_category,
+                        job_info: coverLetter.job_info,
+                        conditions: coverLetter.conditions,
+                        registration_info: coverLetter.registration_info,
+                        url: coverLetter.job_url
                     };
-                    console.log('[자소서 불러오기] 채용공고 설정:', jobData);
+                    console.log('[자소서 불러오기] 채용공고 설정 (전체 정보 포함):', jobData);
 
                     // 선택된 채용공고 정보만 배열에 넣기
                     setJobPostings([jobData]);

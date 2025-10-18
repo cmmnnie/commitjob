@@ -7418,7 +7418,12 @@ app.get('/api/cover-letters/detail/:id', async (req, res) => {
         cl.created_at,
         cl.updated_at,
         j.title as job_title,
-        j.category as job_category
+        j.company as job_company,
+        j.category as job_category,
+        j.job_info,
+        j.conditions,
+        j.registration_info,
+        j.url as job_url
       FROM cover_letters cl
       LEFT JOIN jobs j ON cl.job_id = j.id
       WHERE cl.id = ?
