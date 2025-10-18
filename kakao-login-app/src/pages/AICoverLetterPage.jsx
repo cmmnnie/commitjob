@@ -1828,99 +1828,289 @@ export default function AICoverLetterPage() {
                 }}>
                     <div style={{
                         background: 'white',
-                        borderRadius: '20px',
-                        padding: '30px',
-                        maxWidth: '600px',
+                        borderRadius: '24px',
+                        padding: '0',
+                        maxWidth: '700px',
                         width: '100%',
-                        maxHeight: '80vh',
-                        overflow: 'auto',
-                        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
+                        maxHeight: '85vh',
+                        overflow: 'hidden',
+                        boxShadow: '0 25px 70px rgba(0, 0, 0, 0.35)',
+                        display: 'flex',
+                        flexDirection: 'column'
                     }}>
-                        <h2 style={{ marginBottom: '20px', fontSize: '1.5rem', color: '#333' }}>
-                            저장된 자소서 ({savedCoverLetters.length})
-                        </h2>
-                        {savedCoverLetters.length === 0 ? (
-                            <p style={{ color: '#666', textAlign: 'center', padding: '20px' }}>
-                                저장된 자소서가 없습니다.
-                            </p>
-                        ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                {savedCoverLetters.map((letter) => (
-                                    <div
-                                        key={letter.id}
-                                        style={{
-                                            padding: '15px',
-                                            border: '2px solid #e2e8f0',
-                                            borderRadius: '10px',
-                                            background: selectedCoverLetterId === letter.id ? '#f7fafc' : 'white'
-                                        }}
-                                    >
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                                            <div style={{ flex: 1 }}>
-                                                <h3 style={{ margin: '0 0 5px 0', fontSize: '1.1rem', color: '#333' }}>
-                                                    {letter.title}
-                                                </h3>
-                                                {letter.company && (
-                                                    <p style={{ margin: '0 0 5px 0', fontSize: '0.9rem', color: '#666' }}>
-                                                        📌 {letter.company}
-                                                    </p>
-                                                )}
-                                                <p style={{ margin: 0, fontSize: '0.85rem', color: '#999' }}>
-                                                    {new Date(letter.updated_at).toLocaleDateString('ko-KR')}
-                                                </p>
+                        {/* 헤더 */}
+                        <div style={{
+                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                            padding: '25px 30px',
+                            borderRadius: '24px 24px 0 0'
+                        }}>
+                            <h2 style={{
+                                margin: 0,
+                                fontSize: '1.6rem',
+                                color: 'white',
+                                fontWeight: '700',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '12px'
+                            }}>
+                                📚 저장된 자소서
+                                <span style={{
+                                    background: 'rgba(255, 255, 255, 0.25)',
+                                    padding: '4px 12px',
+                                    borderRadius: '20px',
+                                    fontSize: '0.9rem',
+                                    fontWeight: '600'
+                                }}>
+                                    {savedCoverLetters.length}개
+                                </span>
+                            </h2>
+                        </div>
+
+                        {/* 리스트 영역 */}
+                        <div style={{
+                            flex: 1,
+                            overflow: 'auto',
+                            padding: '20px 30px'
+                        }}>
+                            {savedCoverLetters.length === 0 ? (
+                                <div style={{
+                                    textAlign: 'center',
+                                    padding: '60px 20px',
+                                    color: '#94a3b8'
+                                }}>
+                                    <div style={{ fontSize: '4rem', marginBottom: '16px' }}>📝</div>
+                                    <p style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '8px' }}>
+                                        저장된 자소서가 없습니다
+                                    </p>
+                                    <p style={{ fontSize: '0.9rem', color: '#cbd5e1' }}>
+                                        작성한 자소서를 저장해보세요
+                                    </p>
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                    {savedCoverLetters.map((letter, index) => {
+                                        const updatedDate = new Date(letter.updated_at);
+                                        const now = new Date();
+                                        const diffMs = now - updatedDate;
+                                        const diffMins = Math.floor(diffMs / 60000);
+                                        const diffHours = Math.floor(diffMs / 3600000);
+                                        const diffDays = Math.floor(diffMs / 86400000);
+
+                                        let timeText;
+                                        if (diffMins < 1) {
+                                            timeText = '방금 전';
+                                        } else if (diffMins < 60) {
+                                            timeText = `${diffMins}분 전`;
+                                        } else if (diffHours < 24) {
+                                            timeText = `${diffHours}시간 전`;
+                                        } else if (diffDays < 7) {
+                                            timeText = `${diffDays}일 전`;
+                                        } else {
+                                            timeText = updatedDate.toLocaleDateString('ko-KR', {
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric'
+                                            });
+                                        }
+
+                                        return (
+                                            <div
+                                                key={letter.id}
+                                                style={{
+                                                    padding: '20px',
+                                                    border: selectedCoverLetterId === letter.id
+                                                        ? '2px solid #667eea'
+                                                        : '2px solid #e2e8f0',
+                                                    borderRadius: '16px',
+                                                    background: selectedCoverLetterId === letter.id
+                                                        ? 'linear-gradient(135deg, #f0f4ff 0%, #e8eeff 100%)'
+                                                        : 'white',
+                                                    transition: 'all 0.3s ease',
+                                                    cursor: 'pointer',
+                                                    position: 'relative',
+                                                    overflow: 'hidden'
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    if (selectedCoverLetterId !== letter.id) {
+                                                        e.currentTarget.style.transform = 'translateY(-2px)';
+                                                        e.currentTarget.style.boxShadow = '0 8px 20px rgba(0, 0, 0, 0.12)';
+                                                    }
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.currentTarget.style.transform = 'translateY(0)';
+                                                    e.currentTarget.style.boxShadow = 'none';
+                                                }}
+                                            >
+                                                {/* 순번 뱃지 */}
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    top: '12px',
+                                                    left: '12px',
+                                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                                    color: 'white',
+                                                    width: '28px',
+                                                    height: '28px',
+                                                    borderRadius: '50%',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: '700',
+                                                    boxShadow: '0 2px 8px rgba(102, 126, 234, 0.4)'
+                                                }}>
+                                                    {index + 1}
+                                                </div>
+
+                                                <div style={{ paddingLeft: '36px' }}>
+                                                    {/* 제목 */}
+                                                    <h3 style={{
+                                                        margin: '0 0 10px 0',
+                                                        fontSize: '1.15rem',
+                                                        color: '#1e293b',
+                                                        fontWeight: '700',
+                                                        lineHeight: '1.4',
+                                                        paddingRight: '120px'
+                                                    }}>
+                                                        {letter.title}
+                                                    </h3>
+
+                                                    {/* 회사명 */}
+                                                    {letter.company && (
+                                                        <div style={{
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: '6px',
+                                                            padding: '6px 12px',
+                                                            background: 'rgba(102, 126, 234, 0.1)',
+                                                            borderRadius: '8px',
+                                                            marginBottom: '10px'
+                                                        }}>
+                                                            <span style={{ fontSize: '0.85rem' }}>🏢</span>
+                                                            <span style={{
+                                                                fontSize: '0.9rem',
+                                                                color: '#667eea',
+                                                                fontWeight: '600'
+                                                            }}>
+                                                                {letter.company}
+                                                            </span>
+                                                        </div>
+                                                    )}
+
+                                                    {/* 시간 정보 */}
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '6px',
+                                                        color: '#94a3b8',
+                                                        fontSize: '0.85rem',
+                                                        marginTop: '8px'
+                                                    }}>
+                                                        <span>🕐</span>
+                                                        <span style={{ fontWeight: '500' }}>
+                                                            최종 수정: {timeText}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                {/* 버튼 영역 */}
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    top: '20px',
+                                                    right: '20px',
+                                                    display: 'flex',
+                                                    gap: '8px'
+                                                }}>
+                                                    <button
+                                                        onClick={() => loadCoverLetter(letter.id)}
+                                                        style={{
+                                                            padding: '10px 18px',
+                                                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                                            color: 'white',
+                                                            border: 'none',
+                                                            borderRadius: '10px',
+                                                            fontSize: '0.9rem',
+                                                            fontWeight: '600',
+                                                            cursor: 'pointer',
+                                                            transition: 'all 0.2s',
+                                                            boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+                                                            whiteSpace: 'nowrap'
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            e.currentTarget.style.transform = 'translateY(-2px)';
+                                                            e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.4)';
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.transform = 'translateY(0)';
+                                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
+                                                        }}
+                                                    >
+                                                        📂 불러오기
+                                                    </button>
+                                                    <button
+                                                        onClick={() => deleteCoverLetter(letter.id)}
+                                                        style={{
+                                                            padding: '10px 14px',
+                                                            background: '#ef4444',
+                                                            color: 'white',
+                                                            border: 'none',
+                                                            borderRadius: '10px',
+                                                            fontSize: '0.9rem',
+                                                            fontWeight: '600',
+                                                            cursor: 'pointer',
+                                                            transition: 'all 0.2s',
+                                                            boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)'
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            e.currentTarget.style.transform = 'translateY(-2px)';
+                                                            e.currentTarget.style.boxShadow = '0 6px 16px rgba(239, 68, 68, 0.4)';
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.transform = 'translateY(0)';
+                                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.3)';
+                                                        }}
+                                                    >
+                                                        🗑️
+                                                    </button>
+                                                </div>
                                             </div>
-                                            <div style={{ display: 'flex', gap: '5px' }}>
-                                                <button
-                                                    onClick={() => loadCoverLetter(letter.id)}
-                                                    style={{
-                                                        padding: '8px 16px',
-                                                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                                        color: 'white',
-                                                        border: 'none',
-                                                        borderRadius: '8px',
-                                                        fontSize: '0.9rem',
-                                                        fontWeight: '600',
-                                                        cursor: 'pointer'
-                                                    }}
-                                                >
-                                                    불러오기
-                                                </button>
-                                                <button
-                                                    onClick={() => deleteCoverLetter(letter.id)}
-                                                    style={{
-                                                        padding: '8px 12px',
-                                                        background: '#ef4444',
-                                                        color: 'white',
-                                                        border: 'none',
-                                                        borderRadius: '8px',
-                                                        fontSize: '0.9rem',
-                                                        cursor: 'pointer'
-                                                    }}
-                                                >
-                                                    삭제
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                        <button
-                            onClick={() => setShowLoadModal(false)}
-                            style={{
-                                width: '100%',
-                                marginTop: '20px',
-                                padding: '12px',
-                                background: '#e2e8f0',
-                                border: 'none',
-                                borderRadius: '10px',
-                                fontSize: '1rem',
-                                fontWeight: '600',
-                                cursor: 'pointer'
-                            }}
-                        >
-                            닫기
-                        </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* 하단 닫기 버튼 */}
+                        <div style={{
+                            padding: '20px 30px',
+                            borderTop: '1px solid #e2e8f0',
+                            background: '#f8fafc'
+                        }}>
+                            <button
+                                onClick={() => setShowLoadModal(false)}
+                                style={{
+                                    width: '100%',
+                                    padding: '14px',
+                                    background: 'white',
+                                    color: '#64748b',
+                                    border: '2px solid #e2e8f0',
+                                    borderRadius: '12px',
+                                    fontSize: '1rem',
+                                    fontWeight: '600',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.background = '#f1f5f9';
+                                    e.currentTarget.style.borderColor = '#cbd5e1';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = 'white';
+                                    e.currentTarget.style.borderColor = '#e2e8f0';
+                                }}
+                            >
+                                닫기
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
