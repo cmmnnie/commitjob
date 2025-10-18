@@ -1051,18 +1051,56 @@ export default function AIInterviewPage() {
                                 <div style={{
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '10px',
+                                    justifyContent: 'space-between',
                                     marginBottom: '16px'
                                 }}>
-                                    <span style={{ fontSize: '1.8rem' }}>⭐</span>
-                                    <h3 style={{
-                                        fontSize: '1.2rem',
-                                        color: '#92400e',
-                                        fontWeight: '700',
-                                        margin: 0
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '10px'
                                     }}>
-                                        AI 모범답변
-                                    </h3>
+                                        <span style={{ fontSize: '1.8rem' }}>⭐</span>
+                                        <h3 style={{
+                                            fontSize: '1.2rem',
+                                            color: '#92400e',
+                                            fontWeight: '700',
+                                            margin: 0
+                                        }}>
+                                            AI 모범답변
+                                        </h3>
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(modelAnswer);
+                                            alert('모범답변이 클립보드에 복사되었습니다!');
+                                        }}
+                                        style={{
+                                            background: 'white',
+                                            color: '#92400e',
+                                            border: '2px solid #f59e0b',
+                                            padding: '8px 16px',
+                                            borderRadius: '8px',
+                                            fontSize: '0.9rem',
+                                            fontWeight: '600',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = '#fef3c7';
+                                            e.currentTarget.style.transform = 'translateY(-1px)';
+                                            e.currentTarget.style.boxShadow = '0 4px 8px rgba(245, 158, 11, 0.3)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = 'white';
+                                            e.currentTarget.style.transform = 'translateY(0)';
+                                            e.currentTarget.style.boxShadow = 'none';
+                                        }}
+                                    >
+                                        📋 복사하기
+                                    </button>
                                 </div>
                                 <div style={{
                                     fontSize: '1rem',

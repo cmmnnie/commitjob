@@ -7369,10 +7369,18 @@ app.get('/api/cover-letters/:user_id', async (req, res) => {
     console.log('[COVER-LETTER-LIST] 자소서 목록 조회:', user_id);
 
     const [rows] = await pool.execute(`
-      SELECT id, company, job_id, title, created_at, updated_at
-      FROM cover_letters
-      WHERE user_id = ?
-      ORDER BY updated_at DESC
+      SELECT
+        cl.id,
+        cl.company,
+        cl.job_id,
+        cl.title,
+        cl.created_at,
+        cl.updated_at,
+        j.title as job_title
+      FROM cover_letters cl
+      LEFT JOIN jobs j ON cl.job_id = j.id
+      WHERE cl.user_id = ?
+      ORDER BY cl.updated_at DESC
     `, [user_id]);
 
     console.log('[COVER-LETTER-LIST] ✅ 조회 완료:', rows.length, '개');

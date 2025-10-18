@@ -630,7 +630,7 @@ export default function AICoverLetterPage() {
                                 letterSpacing: '-0.3px',
                                 textShadow: '0 1px 2px rgba(0,0,0,0.1)'
                             }}>
-                                GPT가 회원님의 이력서를 분석하여 맞춤형 자기소개서 작성
+                                GPT가 회원님의 이력서와 지원하는 회사와 채용공고를 분석하여 맞춤형 자기소개서 작성을 지원해드립니다.
                             </p>
                         </div>
                     </div>
@@ -1889,29 +1889,13 @@ export default function AICoverLetterPage() {
                             ) : (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                     {savedCoverLetters.map((letter, index) => {
-                                        const updatedDate = new Date(letter.updated_at);
-                                        const now = new Date();
-                                        const diffMs = now - updatedDate;
-                                        const diffMins = Math.floor(diffMs / 60000);
-                                        const diffHours = Math.floor(diffMs / 3600000);
-                                        const diffDays = Math.floor(diffMs / 86400000);
-
-                                        let timeText;
-                                        if (diffMins < 1) {
-                                            timeText = '방금 전';
-                                        } else if (diffMins < 60) {
-                                            timeText = `${diffMins}분 전`;
-                                        } else if (diffHours < 24) {
-                                            timeText = `${diffHours}시간 전`;
-                                        } else if (diffDays < 7) {
-                                            timeText = `${diffDays}일 전`;
-                                        } else {
-                                            timeText = updatedDate.toLocaleDateString('ko-KR', {
-                                                year: 'numeric',
-                                                month: 'long',
-                                                day: 'numeric'
-                                            });
-                                        }
+                                        const createdDate = new Date(letter.created_at);
+                                        const year = createdDate.getFullYear();
+                                        const month = String(createdDate.getMonth() + 1).padStart(2, '0');
+                                        const day = String(createdDate.getDate()).padStart(2, '0');
+                                        const hours = String(createdDate.getHours()).padStart(2, '0');
+                                        const minutes = String(createdDate.getMinutes()).padStart(2, '0');
+                                        const timeText = `${year}-${month}-${day} ${hours}:${minutes}`;
 
                                         return (
                                             <div
@@ -1974,29 +1958,55 @@ export default function AICoverLetterPage() {
                                                         {letter.title}
                                                     </h3>
 
-                                                    {/* 회사명 */}
-                                                    {letter.company && (
-                                                        <div style={{
-                                                            display: 'inline-flex',
-                                                            alignItems: 'center',
-                                                            gap: '6px',
-                                                            padding: '6px 12px',
-                                                            background: 'rgba(102, 126, 234, 0.1)',
-                                                            borderRadius: '8px',
-                                                            marginBottom: '10px'
-                                                        }}>
-                                                            <span style={{ fontSize: '0.85rem' }}>🏢</span>
-                                                            <span style={{
-                                                                fontSize: '0.9rem',
-                                                                color: '#667eea',
-                                                                fontWeight: '600'
+                                                    {/* 회사명 및 채용공고 */}
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '8px',
+                                                        marginBottom: '10px',
+                                                        flexWrap: 'wrap'
+                                                    }}>
+                                                        {letter.company && (
+                                                            <div style={{
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                gap: '6px',
+                                                                padding: '6px 12px',
+                                                                background: 'rgba(102, 126, 234, 0.1)',
+                                                                borderRadius: '8px'
                                                             }}>
-                                                                {letter.company}
-                                                            </span>
-                                                        </div>
-                                                    )}
+                                                                <span style={{ fontSize: '0.85rem' }}>🏢</span>
+                                                                <span style={{
+                                                                    fontSize: '0.9rem',
+                                                                    color: '#667eea',
+                                                                    fontWeight: '600'
+                                                                }}>
+                                                                    {letter.company}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                        {letter.job_title && (
+                                                            <div style={{
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                gap: '6px',
+                                                                padding: '6px 12px',
+                                                                background: 'rgba(139, 92, 246, 0.1)',
+                                                                borderRadius: '8px'
+                                                            }}>
+                                                                <span style={{ fontSize: '0.85rem' }}>📋</span>
+                                                                <span style={{
+                                                                    fontSize: '0.9rem',
+                                                                    color: '#8b5cf6',
+                                                                    fontWeight: '600'
+                                                                }}>
+                                                                    {letter.job_title}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                    </div>
 
-                                                    {/* 시간 정보 */}
+                                                    {/* 저장일시 */}
                                                     <div style={{
                                                         display: 'flex',
                                                         alignItems: 'center',
@@ -2007,7 +2017,7 @@ export default function AICoverLetterPage() {
                                                     }}>
                                                         <span>🕐</span>
                                                         <span style={{ fontWeight: '500' }}>
-                                                            최종 수정: {timeText}
+                                                            저장일시: {timeText}
                                                         </span>
                                                     </div>
                                                 </div>

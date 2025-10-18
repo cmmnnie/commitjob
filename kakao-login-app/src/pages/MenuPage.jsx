@@ -208,7 +208,7 @@ export default function MenuPage() {
                         <span style={menuIconStyle}>📝</span>
                         <div style={menuContentStyle}>
                             <div style={menuTitleStyle}>AI 자소서 관리</div>
-                            <div style={menuDescStyle}>GPT가 회원님의 이력서를 분석하여 맞춤형 자기소개서를 작성하고 피드백을 제공합니다.</div>
+                            <div style={menuDescStyle}>GPT가 회원님의 이력서와 지원하는 회사와 채용공고를 분석하여 맞춤형 자기소개서 작성을 지원해드립니다.</div>
                         </div>
                     </a>
 
