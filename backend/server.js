@@ -5018,7 +5018,7 @@ app.get('/api/jobs-by-company', async (req, res) => {
 
     console.log(`[JOBS-BY-COMPANY] Fetching jobs for company: ${company}`);
 
-    // jobs 테이블에서 회사명으로 검색
+    // jobs 테이블에서 회사명으로 검색 (정확한 매칭 우선, 포함 검색은 보조)
     const [jobRows] = await pool.execute(`
       SELECT
         id,
@@ -5029,12 +5029,17 @@ app.get('/api/jobs-by-company', async (req, res) => {
         job_info,
         conditions,
         registration_info,
-        scraped_at
+        scraped_at,
+        CASE
+          WHEN company = ? THEN 1
+          WHEN company LIKE ? THEN 2
+          ELSE 3
+        END as match_priority
       FROM jobs
-      WHERE company LIKE ?
-      ORDER BY scraped_at DESC
+      WHERE company = ? OR company LIKE ?
+      ORDER BY match_priority ASC, scraped_at DESC
       LIMIT 50
-    `, [`%${company}%`]);
+    `, [company, `${company}%`, company, `${company}%`]);
 
     // 마감되지 않은 공고만 필터링 + 상시채용/수시지원 제외
     const now = new Date();
