@@ -55,7 +55,6 @@ export default function ITJobsPage() {
             setLoading(true);
             setError(null);
 
-            console.log('[IT-JOBS] Fetching from:', `${API_BASE_URL}/api/jobs/IT`);
 
             const response = await axios.get(
                 `${API_BASE_URL}/api/jobs/IT`,
@@ -65,7 +64,6 @@ export default function ITJobsPage() {
                 }
             );
 
-            console.log('[IT-JOBS] Response:', response.data);
 
             if (response.data.success) {
                 // 만료되지 않은 공고만 필터링하고 최신순 정렬

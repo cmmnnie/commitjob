@@ -17,12 +17,8 @@ export default function SimpleTestPage() {
     const testBackend = async () => {
         setResult('테스트 중...\n\n브라우저 콘솔(F12)을 확인하세요!');
 
-        console.log('=== 백엔드 연결 테스트 시작 ===');
-        console.log('프론트엔드 Origin:', window.location.origin);
-        console.log('백엔드 URL:', CONFIG.BACKEND_URL);
 
         try {
-            console.log('fetch 요청 시작...');
 
             const response = await fetch(`${CONFIG.BACKEND_URL}/health`, {
                 method: 'GET',
@@ -33,11 +29,8 @@ export default function SimpleTestPage() {
                 }
             });
 
-            console.log('응답 받음:', response.status);
-            console.log('응답 헤더:', [...response.headers.entries()]);
 
             const data = await response.json();
-            console.log('응답 데이터:', data);
 
             setResult(
                 '✅ 성공!\n\n' +

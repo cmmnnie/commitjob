@@ -93,14 +93,12 @@ export default function AIRecommendationPage() {
 
             if (cachedRecommendations) {
                 // 캐시된 데이터가 있으면 사용
-                console.log('[AI 추천] 캐시된 추천 결과 사용');
                 setRecommendations(JSON.parse(cachedRecommendations));
                 setIsLoading(false);
                 return;
             }
 
             // 4. AI 추천 채용공고 가져오기 (캐시 없을 때만)
-            console.log('[AI 추천] 새로운 추천 요청');
             const recommendResponse = await fetch(
                 `${CONFIG.BACKEND_URL}/api/main-recommendations?user_id=${userData.user.id}`,
                 {

@@ -26,7 +26,6 @@ export default function JobsPage() {
             setLoading(true);
             setError(null);
 
-            console.log('[JOBS] Fetching 6 BIGDATA_AI and 6 IT jobs');
 
             // BIGDATA_AI 및 IT 카테고리 병렬 조회
             const [bigdataResponse, itResponse] = await Promise.all([
@@ -40,8 +39,6 @@ export default function JobsPage() {
                 })
             ]);
 
-            console.log('[JOBS] BIGDATA_AI Response:', bigdataResponse.data);
-            console.log('[JOBS] IT Response:', itResponse.data);
 
             if (bigdataResponse.data.success) {
                 const activeJobs = bigdataResponse.data.jobs.filter(job => !isExpired(job));
@@ -92,21 +89,17 @@ export default function JobsPage() {
 
         try {
             setScraping(true);
-            console.log('[SCRAPE] Starting job scraping...');
 
             const response = await axios.post(`${API_BASE_URL}/api/scrape-latest-jobs`, {}, {
                 withCredentials: true
             });
 
-            console.log('[SCRAPE] Response:', response.data);
 
             if (response.data.success) {
                 // 백그라운드 스크래핑 시작 알림만 표시하고 팝업창은 표시하지 않음
-                console.log('[SCRAPE] Background scraping started:', response.data.message);
 
                 // 30초 후 공고 목록 자동 새로고침
                 setTimeout(() => {
-                    console.log('[SCRAPE] Auto-refreshing job list after background scraping...');
                     fetchJobs();
                 }, 30000);
             } else {

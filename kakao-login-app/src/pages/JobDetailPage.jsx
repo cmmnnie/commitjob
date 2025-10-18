@@ -24,46 +24,29 @@ export default function JobDetailPage() {
     const fetchCompanyData = async (companyName) => {
         try {
             setLoading(true);
-            console.log('[JobDetail] Fetching company data for:', companyName);
 
             // 회사 정보 조회
-            console.log('[JobDetail] Fetching company info...');
             const companyRes = await fetch(`${API_BASE_URL}/api/company/${encodeURIComponent(companyName)}`);
             const companyData = await companyRes.json();
-            console.log('[JobDetail] Company data:', companyData);
             if (companyData.success && companyData.company) {
                 setCompanyInfo(companyData.company);
-                console.log('[JobDetail] Company info set:', companyData.company);
             } else {
-                console.log('[JobDetail] No company info found');
             }
 
             // 회사 리뷰 조회
-            console.log('[JobDetail] Fetching reviews...');
             const reviewsRes = await fetch(`${API_BASE_URL}/api/company/${encodeURIComponent(companyName)}/reviews?limit=5`);
             const reviewsData = await reviewsRes.json();
-            console.log('[JobDetail] Reviews data:', reviewsData);
             if (reviewsData.success && reviewsData.reviews) {
                 setReviews(reviewsData.reviews);
-                console.log('[JobDetail] Reviews set:', reviewsData.reviews.length);
             } else {
-                console.log('[JobDetail] No reviews found');
             }
 
             // 면접 기출문제 조회
-            console.log('[JobDetail] Fetching interview questions...');
-            console.log('[JobDetail] Company name:', companyName);
-            console.log('[JobDetail] API URL:', `${API_BASE_URL}/api/company/${encodeURIComponent(companyName)}/interview-questions?limit=5`);
             const questionsRes = await fetch(`${API_BASE_URL}/api/company/${encodeURIComponent(companyName)}/interview-questions?limit=5`);
             const questionsData = await questionsRes.json();
-            console.log('[JobDetail] Questions response:', JSON.stringify(questionsData, null, 2));
             if (questionsData.success && questionsData.questions) {
                 setInterviewQuestions(questionsData.questions);
-                console.log('[JobDetail] Questions set:', questionsData.questions.length);
             } else {
-                console.log('[JobDetail] No interview questions found or error occurred');
-                console.log('[JobDetail] Response success:', questionsData.success);
-                console.log('[JobDetail] Questions array:', questionsData.questions);
             }
         } catch (error) {
             console.error('[JobDetail] Error fetching company data:', error);

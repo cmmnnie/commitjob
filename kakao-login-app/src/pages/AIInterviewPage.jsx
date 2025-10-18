@@ -293,7 +293,6 @@ export default function AIInterviewPage() {
 
             const data = await response.json();
             if (data.success && data.revisedAnswer) {
-                console.log('[수정된 답변] 답변 업데이트:', data.revisedAnswer.substring(0, 50) + '...');
                 setRevisedAnswer(data.revisedAnswer);
                 // 수정된 답변을 textarea에 자동으로 채우기
                 setAnswer(data.revisedAnswer);

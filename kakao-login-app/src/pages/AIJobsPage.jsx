@@ -55,7 +55,6 @@ export default function AIJobsPage() {
             setLoading(true);
             setError(null);
 
-            console.log('[AI-JOBS] Fetching from:', `${API_BASE_URL}/api/jobs/BIGDATA_AI`);
 
             const response = await axios.get(
                 `${API_BASE_URL}/api/jobs/BIGDATA_AI`,
@@ -65,7 +64,6 @@ export default function AIJobsPage() {
                 }
             );
 
-            console.log('[AI-JOBS] Response:', response.data);
 
             if (response.data.success) {
                 // 만료되지 않은 공고만 필터링하고 최신순 정렬

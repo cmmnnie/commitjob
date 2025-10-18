@@ -171,7 +171,6 @@ export default function AICoverLetterPage() {
                 const selectedJob = jobPostings.find(job => job.id.toString() === selectedJobId);
                 if (selectedJob && selectedJob.company) {
                     finalCompany = selectedJob.company;
-                    console.log('[자소서 생성] 선택한 채용공고의 회사명 사용:', finalCompany);
                 }
             }
 
@@ -405,14 +404,9 @@ export default function AICoverLetterPage() {
             }
 
             const data = await response.json();
-            console.log('[자소서 불러오기] 받은 데이터:', data);
 
             if (data.success && data.cover_letter) {
                 const coverLetter = data.cover_letter;
-                console.log('[자소서 불러오기] coverLetter:', coverLetter);
-                console.log('[자소서 불러오기] job_id:', coverLetter.job_id);
-                console.log('[자소서 불러오기] job_title:', coverLetter.job_title);
-                console.log('[자소서 불러오기] company:', coverLetter.company);
 
                 // 자소서 내용 설정
                 setUserCoverLetter(coverLetter.content);
@@ -423,7 +417,6 @@ export default function AICoverLetterPage() {
                 // 회사명 설정
                 const company = coverLetter.company || '';
                 setCompanyName(company);
-                console.log('[자소서 불러오기] 회사명 설정:', company);
 
                 // 채용공고가 있으면 해당 채용공고만 jobPostings에 설정
                 if (coverLetter.job_id && coverLetter.job_title) {
@@ -437,20 +430,13 @@ export default function AICoverLetterPage() {
                         registration_info: coverLetter.registration_info,
                         url: coverLetter.job_url
                     };
-                    console.log('[자소서 불러오기] 채용공고 설정 (전체 정보 포함):', jobData);
-                    console.log('[자소서 불러오기] job_info 존재:', !!coverLetter.job_info);
-                    console.log('[자소서 불러오기] conditions 존재:', !!coverLetter.conditions);
-                    console.log('[자소서 불러오기] registration_info 존재:', !!coverLetter.registration_info);
 
                     // 선택된 채용공고 정보만 배열에 넣기
                     setJobPostings([jobData]);
                     setSelectedJobId(coverLetter.job_id.toString());
                     setIsLoadingJobs(false); // 로딩 상태 false로 설정
 
-                    console.log('[자소서 불러오기] jobPostings 배열에 추가 완료');
-                    console.log('[자소서 불러오기] selectedJobId 설정:', coverLetter.job_id.toString());
                 } else {
-                    console.log('[자소서 불러오기] 채용공고 정보 없음 - job_id 또는 job_title이 없음');
                     // 채용공고가 없으면 빈 배열
                     setJobPostings([]);
                     setSelectedJobId('');
@@ -1147,7 +1133,6 @@ export default function AICoverLetterPage() {
                                                             clearTimeout(debounceTimer.current);
                                                         }
                                                         setSelectedJobId(job.id.toString());
-                                                        console.log('[채용공고 선택] job_id:', job.id, 'company:', job.company);
                                                     }
                                                 }}
                                                 onMouseEnter={(e) => {
@@ -1179,7 +1164,6 @@ export default function AICoverLetterPage() {
                                                                 clearTimeout(debounceTimer.current);
                                                             }
                                                             setSelectedJobId(job.id.toString());
-                                                            console.log('[채용공고 라디오 선택] job_id:', job.id, 'company:', job.company);
                                                         }}
                                                         onClick={(e) => {
                                                             e.stopPropagation();

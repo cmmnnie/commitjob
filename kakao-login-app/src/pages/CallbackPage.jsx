@@ -20,12 +20,6 @@ export default function CallbackPage() {
             const code = params.get('code');
             const state = params.get('state');
 
-            console.log('[CALLBACK] ok parameter:', ok);
-            console.log('[CALLBACK] token received:', !!token);
-            console.log('[CALLBACK] code received:', !!code);
-            console.log('[CALLBACK] state received:', !!state);
-            console.log('[CALLBACK] Current URL:', window.location.href);
-
             // 카카오가 직접 프론트엔드로 리다이렉트한 경우 (code & state)
             // 백엔드로 전달하여 토큰 교환
             if (code && state) {
@@ -34,8 +28,6 @@ export default function CallbackPage() {
 
                 // 백엔드 콜백 URL로 리다이렉트 (서버사이드 처리)
                 const backendCallbackUrl = `${CONFIG.BACKEND_URL}/auth/kakao/callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`;
-                console.log('[CALLBACK] Redirecting to backend:', backendCallbackUrl);
-
                 window.location.href = backendCallbackUrl;
                 return;
             }
@@ -47,12 +39,8 @@ export default function CallbackPage() {
 
                 // JWT 토큰을 localStorage에 저장
                 localStorage.setItem('app_session', token);
-                console.log('[CALLBACK] Token saved to localStorage');
 
                 // 사용자 정보 확인
-                console.log('[CALLBACK] Fetching user info from:', `${CONFIG.BACKEND_URL}/api/me`);
-                console.log('[CALLBACK] Authorization header:', `Bearer ${token.substring(0, 20)}...`);
-
                 const response = await fetch(`${CONFIG.BACKEND_URL}/api/me`, {
                     credentials: 'include',
                     headers: {
@@ -61,12 +49,8 @@ export default function CallbackPage() {
                     }
                 });
 
-                console.log('[CALLBACK] /api/me response status:', response.status);
-                console.log('[CALLBACK] /api/me response headers:', [...response.headers.entries()]);
-
                 if (response.ok) {
                     const data = await response.json();
-                    console.log('[CALLBACK] User data:', data);
 
                     if (data.user) {
                         // 이름 마스킹
@@ -89,13 +73,12 @@ export default function CallbackPage() {
                             // 토큰이 이미 localStorage에 저장되어 있으므로
                             // MainPage에서 자동으로 로그인 상태를 확인함
                             window.location.href = '/';
-                        }, 1000);
+                        }, 500);
                     } else {
                         throw new Error('사용자 정보를 찾을 수 없습니다');
                     }
                 } else {
                     const errorText = await response.text();
-                    console.error('[CALLBACK] Error response:', errorText);
 
                     // 디버그 정보는 개발 환경에서만 표시
                     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {

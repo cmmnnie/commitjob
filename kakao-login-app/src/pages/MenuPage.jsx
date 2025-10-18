@@ -101,10 +101,8 @@ export default function MenuPage() {
                 }
             });
 
-            console.log('[MenuPage] user_profiles 조회 시작');
 
             if (!profileResponse.ok) {
-                console.log('[MenuPage] user_profiles 조회 실패 - 이력서 없음으로 판단');
                 setModalType('resume');
                 setTargetPath(path);
                 setShowModal(true);
@@ -112,21 +110,18 @@ export default function MenuPage() {
             }
 
             const profileData = await profileResponse.json();
-            console.log('[MenuPage] user_profiles 데이터:', profileData);
 
             // 이력서 필수 정보가 없는 경우
             if (!profileData.profile ||
                 (!profileData.profile.preferred_jobs &&
                  !profileData.profile.experience &&
                  (!profileData.profile.skills || profileData.profile.skills.length === 0))) {
-                console.log('[MenuPage] 이력서 작성 여부: false (필수 정보 없음)');
                 setModalType('resume');
                 setTargetPath(path);
                 setShowModal(true);
                 return;
             }
 
-            console.log('[MenuPage] 이력서 작성 여부: true');
             // 이력서가 있으면 해당 페이지로 이동
             navigate(path);
         } catch (err) {
