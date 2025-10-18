@@ -7338,11 +7338,28 @@ app.post('/api/cover-letters/save', async (req, res) => {
       )
     `);
 
+    // 선택한 채용공고가 있으면 해당 채용공고의 회사명을 우선으로 사용
+    let finalCompany = company;
+    if (job_id) {
+      try {
+        const [jobRows] = await pool.execute(`
+          SELECT company FROM jobs WHERE id = ?
+        `, [job_id]);
+
+        if (jobRows.length > 0 && jobRows[0].company) {
+          finalCompany = jobRows[0].company;
+          console.log('[COVER-LETTER-SAVE] 채용공고의 회사명 사용:', finalCompany);
+        }
+      } catch (jobError) {
+        console.warn('[COVER-LETTER-SAVE] 채용공고 회사명 조회 실패, 입력한 회사명 사용:', jobError);
+      }
+    }
+
     // 자소서 저장
     const [result] = await pool.execute(`
       INSERT INTO cover_letters (user_id, company, job_id, title, content)
       VALUES (?, ?, ?, ?, ?)
-    `, [user_id, company || null, job_id || null, title, content]);
+    `, [user_id, finalCompany || null, job_id || null, title, content]);
 
     console.log('[COVER-LETTER-SAVE] ✅ 자소서 저장 완료:', result.insertId);
 
