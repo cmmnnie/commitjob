@@ -5,7 +5,8 @@ import { CONFIG } from '../config';
 export default function Navigation() {
     const location = useLocation();
     const navigate = useNavigate();
-    const [showResumeModal, setShowResumeModal] = useState(false);
+    const [showModal, setShowModal] = useState(false);
+    const [modalType, setModalType] = useState(''); // 'login' or 'resume'
 
     // 콜백 페이지에서는 네비게이션 숨기기
     if (location.pathname === '/callback') {
@@ -16,14 +17,15 @@ export default function Navigation() {
     const handleAIMenuClick = async (e, path) => {
         e.preventDefault();
 
-        try {
-            const token = localStorage.getItem('app_session');
-            if (!token) {
-                alert('로그인이 필요합니다.');
-                navigate('/?view=login');
-                return;
-            }
+        // 로그인 확인
+        const token = localStorage.getItem('app_session');
+        if (!token) {
+            setModalType('login');
+            setShowModal(true);
+            return;
+        }
 
+        try {
             // 사용자 정보 조회
             const userResponse = await fetch(`${CONFIG.BACKEND_URL}${CONFIG.API.USER_INFO}`, {
                 method: 'GET',
@@ -35,13 +37,19 @@ export default function Navigation() {
             });
 
             if (!userResponse.ok) {
-                alert('로그인이 필요합니다.');
-                navigate('/?view=login');
+                setModalType('login');
+                setShowModal(true);
                 return;
             }
 
             const userData = await userResponse.json();
             const user = userData.user;
+
+            if (!user) {
+                setModalType('login');
+                setShowModal(true);
+                return;
+            }
 
             // user_profiles 테이블에서 이력서 정보 확인
             const profileResponse = await fetch(`${CONFIG.BACKEND_URL}/api/profile?user_id=${user.id}`, {
@@ -57,7 +65,8 @@ export default function Navigation() {
 
             if (!profileResponse.ok) {
                 console.log('[Navigation] user_profiles 조회 실패 - 이력서 없음으로 판단');
-                setShowResumeModal(true);
+                setModalType('resume');
+                setShowModal(true);
                 return;
             }
 
@@ -70,7 +79,8 @@ export default function Navigation() {
                  !profileData.profile.experience &&
                  (!profileData.profile.skills || profileData.profile.skills.length === 0))) {
                 console.log('[Navigation] 이력서 작성 여부: false (필수 정보 없음)');
-                setShowResumeModal(true);
+                setModalType('resume');
+                setShowModal(true);
                 return;
             }
 
@@ -78,15 +88,25 @@ export default function Navigation() {
             // 이력서가 있으면 해당 페이지로 이동
             navigate(path);
         } catch (error) {
-            console.error('이력서 확인 오류:', error);
-            alert('오류가 발생했습니다. 다시 시도해주세요.');
+            console.error('[Navigation] 확인 오류:', error);
+            navigate(path); // 오류 발생 시에도 페이지로 이동 (각 페이지에서 재확인)
         }
     };
 
-    // 이력서 작성하기 버튼 클릭
-    const handleGoToResume = () => {
-        setShowResumeModal(false);
-        navigate('/resume');
+    const closeModal = () => {
+        setShowModal(false);
+        setModalType('');
+    };
+
+    const handleModalAction = () => {
+        closeModal();
+        if (modalType === 'login') {
+            // 로그인이 필요한 경우 로그인 페이지로
+            navigate('/?view=login');
+        } else {
+            // 이력서가 필요한 경우 이력서 페이지로
+            navigate('/resume');
+        }
     };
 
     const navStyle = {
@@ -201,8 +221,8 @@ export default function Navigation() {
                 </ul>
             </nav>
 
-            {/* 이력서 필요 모달 */}
-            {showResumeModal && (
+            {/* 모달 */}
+            {showModal && (
                 <div style={{
                     position: 'fixed',
                     top: 0,
@@ -216,7 +236,7 @@ export default function Navigation() {
                     zIndex: 2000,
                     padding: '20px'
                 }}
-                onClick={() => setShowResumeModal(false)}>
+                onClick={closeModal}>
                     <div style={{
                         background: 'white',
                         borderRadius: '20px',
@@ -227,86 +247,172 @@ export default function Navigation() {
                         textAlign: 'center'
                     }}
                     onClick={(e) => e.stopPropagation()}>
-                        <div style={{
-                            fontSize: '4rem',
-                            marginBottom: '20px'
-                        }}>📋</div>
-                        <h2 style={{
-                            fontSize: '1.5rem',
-                            color: '#333',
-                            marginBottom: '20px',
-                            fontWeight: '700',
-                            lineHeight: '1.5'
-                        }}>
-                            AI 채용 추천, AI 면접,<br/>
-                            AI 자소서는<br/>
-                            이력서 작성 후<br/>
-                            이용 가능하십니다.
-                        </h2>
-                        <p style={{
-                            color: '#666',
-                            marginBottom: '30px',
-                            lineHeight: '1.6',
-                            fontSize: '1rem'
-                        }}>
-                            이력서를 작성하시면 맞춤형 AI 서비스를<br/>
-                            이용하실 수 있습니다.
-                        </p>
-                        <div style={{
-                            display: 'flex',
-                            gap: '10px',
-                            justifyContent: 'center'
-                        }}>
-                            <button
-                                onClick={() => setShowResumeModal(false)}
-                                style={{
-                                    flex: 1,
-                                    background: '#e0e0e0',
-                                    color: '#666',
-                                    border: 'none',
-                                    padding: '14px 20px',
-                                    borderRadius: '12px',
-                                    fontSize: '1rem',
-                                    fontWeight: '600',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.background = '#d0d0d0';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.background = '#e0e0e0';
-                                }}
-                            >
-                                닫기
-                            </button>
-                            <button
-                                onClick={handleGoToResume}
-                                style={{
-                                    flex: 1.5,
-                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                    color: 'white',
-                                    border: 'none',
-                                    padding: '14px 20px',
-                                    borderRadius: '12px',
-                                    fontSize: '1rem',
+                        {modalType === 'login' ? (
+                            /* 로그인 필요 모달 */
+                            <>
+                                <div style={{
+                                    fontSize: '4rem',
+                                    marginBottom: '20px'
+                                }}>🔐</div>
+                                <h2 style={{
+                                    fontSize: '1.5rem',
+                                    color: '#333',
+                                    marginBottom: '20px',
                                     fontWeight: '700',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.transform = 'translateY(-2px)';
-                                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.4)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.transform = 'translateY(0)';
-                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
-                                }}
-                            >
-                                이력서 작성하기
-                            </button>
-                        </div>
+                                    lineHeight: '1.5'
+                                }}>
+                                    로그인이 필요합니다.
+                                </h2>
+                                <p style={{
+                                    color: '#666',
+                                    marginBottom: '30px',
+                                    lineHeight: '1.6',
+                                    fontSize: '1rem'
+                                }}>
+                                    AI 채용 추천, AI 면접, AI 자소서는<br/>
+                                    로그인 후 이용하실 수 있습니다.
+                                </p>
+                                <div style={{
+                                    display: 'flex',
+                                    gap: '10px',
+                                    justifyContent: 'center'
+                                }}>
+                                    <button
+                                        onClick={closeModal}
+                                        style={{
+                                            flex: 1,
+                                            background: '#e0e0e0',
+                                            color: '#666',
+                                            border: 'none',
+                                            padding: '14px 20px',
+                                            borderRadius: '12px',
+                                            fontSize: '1rem',
+                                            fontWeight: '600',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = '#d0d0d0';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = '#e0e0e0';
+                                        }}
+                                    >
+                                        닫기
+                                    </button>
+                                    <button
+                                        onClick={handleModalAction}
+                                        style={{
+                                            flex: 1.5,
+                                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                            color: 'white',
+                                            border: 'none',
+                                            padding: '14px 20px',
+                                            borderRadius: '12px',
+                                            fontSize: '1rem',
+                                            fontWeight: '700',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s',
+                                            boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.transform = 'translateY(-2px)';
+                                            e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.4)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.transform = 'translateY(0)';
+                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
+                                        }}
+                                    >
+                                        로그인하기
+                                    </button>
+                                </div>
+                            </>
+                        ) : (
+                            /* 이력서 필요 모달 */
+                            <>
+                                <div style={{
+                                    fontSize: '4rem',
+                                    marginBottom: '20px'
+                                }}>📋</div>
+                                <h2 style={{
+                                    fontSize: '1.5rem',
+                                    color: '#333',
+                                    marginBottom: '20px',
+                                    fontWeight: '700',
+                                    lineHeight: '1.5'
+                                }}>
+                                    AI 채용 추천, AI 면접,<br/>
+                                    AI 자소서는<br/>
+                                    이력서 작성 후<br/>
+                                    이용 가능하십니다.
+                                </h2>
+                                <p style={{
+                                    color: '#666',
+                                    marginBottom: '30px',
+                                    lineHeight: '1.6',
+                                    fontSize: '1rem'
+                                }}>
+                                    이력서를 작성하시면 맞춤형 AI 서비스를<br/>
+                                    이용하실 수 있습니다.
+                                </p>
+                                <div style={{
+                                    display: 'flex',
+                                    gap: '10px',
+                                    justifyContent: 'center'
+                                }}>
+                                    <button
+                                        onClick={closeModal}
+                                        style={{
+                                            flex: 1,
+                                            background: '#e0e0e0',
+                                            color: '#666',
+                                            border: 'none',
+                                            padding: '14px 20px',
+                                            borderRadius: '12px',
+                                            fontSize: '1rem',
+                                            fontWeight: '600',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = '#d0d0d0';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = '#e0e0e0';
+                                        }}
+                                    >
+                                        닫기
+                                    </button>
+                                    <button
+                                        onClick={handleModalAction}
+                                        style={{
+                                            flex: 1.5,
+                                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                            color: 'white',
+                                            border: 'none',
+                                            padding: '14px 20px',
+                                            borderRadius: '12px',
+                                            fontSize: '1rem',
+                                            fontWeight: '700',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s',
+                                            boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.transform = 'translateY(-2px)';
+                                            e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.4)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.transform = 'translateY(0)';
+                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
+                                        }}
+                                    >
+                                        이력서 작성하기
+                                    </button>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             )}
