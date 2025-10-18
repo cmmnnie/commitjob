@@ -82,38 +82,78 @@ export default function MenuPage() {
             }
 
             const userData = await userResponse.json();
-            if (!userData.user) {
+            const user = userData.user;
+
+            if (!user) {
                 setModalType('login');
                 setTargetPath(path);
                 setShowModal(true);
                 return;
             }
 
-            // 이력서 정보 확인
-            const profileResponse = await fetch(`${CONFIG.BACKEND_URL}/api/user-profile/${userData.user.id}`, {
-                method: 'GET',
-                credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
+            // 이력서 작성 여부 확인 로그
+            console.log('[MenuPage] 사용자 정보:', {
+                skills: user.skills,
+                skillsType: typeof user.skills,
+                skillsLength: Array.isArray(user.skills) ? user.skills.length : 'not array',
+                jobs: user.jobs,
+                experience: user.experience
             });
 
-            if (profileResponse.ok) {
-                const profileData = await profileResponse.json();
-                // 이력서 필수 정보가 없는 경우
-                if (!profileData.profile ||
-                    (!profileData.profile.preferred_jobs &&
-                     !profileData.profile.experience &&
-                     (!profileData.profile.skills || profileData.profile.skills.length === 0))) {
-                    setModalType('resume');
-                    setTargetPath(path);
-                    setShowModal(true);
-                    return;
+            // 이력서 작성 여부 확인 (skills, jobs, experience 중 하나라도 있으면 이력서 있음으로 간주)
+            let hasResume = false;
+
+            // skills 확인
+            if (user.skills) {
+                if (Array.isArray(user.skills) && user.skills.length > 0) {
+                    hasResume = true;
+                } else if (typeof user.skills === 'string') {
+                    const trimmed = user.skills.trim();
+                    if (trimmed !== '' && trimmed !== '[]' && trimmed !== 'null') {
+                        // 문자열을 파싱해서 배열인지 확인
+                        try {
+                            const parsed = JSON.parse(trimmed);
+                            if (Array.isArray(parsed) && parsed.length > 0) {
+                                hasResume = true;
+                            }
+                        } catch {
+                            // JSON 파싱 실패하면 일반 문자열로 간주
+                            hasResume = true;
+                        }
+                    }
                 }
             }
 
-            // 로그인 및 이력서 모두 확인되면 페이지 이동
+            // jobs 확인
+            if (!hasResume && user.jobs) {
+                if (Array.isArray(user.jobs) && user.jobs.length > 0) {
+                    hasResume = true;
+                } else if (typeof user.jobs === 'string') {
+                    const trimmed = user.jobs.trim();
+                    if (trimmed !== '' && trimmed !== '[]' && trimmed !== 'null') {
+                        hasResume = true;
+                    }
+                }
+            }
+
+            // experience 확인
+            if (!hasResume && user.experience) {
+                const exp = user.experience.trim();
+                if (exp !== '' && exp !== 'null') {
+                    hasResume = true;
+                }
+            }
+
+            console.log('[MenuPage] 이력서 작성 여부:', hasResume);
+
+            if (!hasResume) {
+                setModalType('resume');
+                setTargetPath(path);
+                setShowModal(true);
+                return;
+            }
+
+            // 이력서가 있으면 해당 페이지로 이동
             navigate(path);
         } catch (err) {
             console.error('[메뉴] 확인 오류:', err);
@@ -128,12 +168,14 @@ export default function MenuPage() {
     };
 
     const handleModalAction = () => {
+        closeModal();
         if (modalType === 'login') {
+            // 로그인이 필요한 경우 로그인 페이지로
             navigate('/?view=login');
-        } else if (modalType === 'resume') {
+        } else {
+            // 이력서가 필요한 경우 이력서 페이지로
             navigate('/resume');
         }
-        closeModal();
     };
 
     return (
@@ -230,52 +272,52 @@ export default function MenuPage() {
                         width: '100%',
                         textAlign: 'center'
                     }}>
-                        <div style={{ fontSize: '3rem', marginBottom: '20px' }}>
-                            {modalType === 'login' ? '🔒' : '📋'}
-                        </div>
+                        <div style={{ fontSize: '4rem', marginBottom: '20px' }}>📋</div>
                         <h2 style={{
                             fontSize: '1.5rem',
                             color: '#333',
-                            marginBottom: '15px',
-                            fontWeight: '700'
+                            marginBottom: '20px',
+                            fontWeight: '700',
+                            lineHeight: '1.5'
                         }}>
-                            {modalType === 'login' ? '로그인이 필요합니다' : '이력서를 먼저 작성해주세요'}
+                            AI 채용 추천, AI 면접,<br/>
+                            AI 자소서는<br/>
+                            이력서 작성 후<br/>
+                            이용 가능하십니다.
                         </h2>
-                        <p style={{ color: '#666', marginBottom: '30px', lineHeight: '1.6' }}>
-                            {modalType === 'login' ? (
-                                <>
-                                    AI {targetPath === '/ai-recommendation' ? '맞춤 채용공고 추천' :
-                                        targetPath === '/ai-interview' ? '면접 준비' : '자기소개서 생성'} 서비스를 이용하려면<br/>
-                                    로그인이 필요합니다.
-                                </>
-                            ) : (
-                                <>
-                                    AI {targetPath === '/ai-recommendation' ? '맞춤 채용공고 추천' :
-                                        targetPath === '/ai-interview' ? '면접 준비' : '자기소개서 생성'} 서비스를 이용하려면<br/>
-                                    이력서 정보가 필요합니다.
-                                </>
-                            )}
+                        <p style={{
+                            color: '#666',
+                            marginBottom: '30px',
+                            lineHeight: '1.6',
+                            fontSize: '1rem'
+                        }}>
+                            이력서를 작성하시면 맞춤형 AI 서비스를<br/>
+                            이용하실 수 있습니다.
                         </p>
-                        <div style={{ display: 'flex', gap: '10px' }}>
+                        <div style={{
+                            display: 'flex',
+                            gap: '10px',
+                            justifyContent: 'center'
+                        }}>
                             <button
                                 onClick={closeModal}
                                 style={{
                                     flex: 1,
-                                    background: '#e2e8f0',
-                                    color: '#333',
+                                    background: '#e0e0e0',
+                                    color: '#666',
                                     border: 'none',
-                                    padding: '15px 24px',
+                                    padding: '14px 20px',
                                     borderRadius: '12px',
-                                    fontSize: '1.1rem',
+                                    fontSize: '1rem',
                                     fontWeight: '600',
                                     cursor: 'pointer',
                                     transition: 'all 0.2s'
                                 }}
                                 onMouseEnter={(e) => {
-                                    e.currentTarget.style.background = '#cbd5e0';
+                                    e.currentTarget.style.background = '#d0d0d0';
                                 }}
                                 onMouseLeave={(e) => {
-                                    e.currentTarget.style.background = '#e2e8f0';
+                                    e.currentTarget.style.background = '#e0e0e0';
                                 }}
                             >
                                 닫기
@@ -283,14 +325,14 @@ export default function MenuPage() {
                             <button
                                 onClick={handleModalAction}
                                 style={{
-                                    flex: 1,
+                                    flex: 1.5,
                                     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                                     color: 'white',
                                     border: 'none',
-                                    padding: '15px 24px',
+                                    padding: '14px 20px',
                                     borderRadius: '12px',
-                                    fontSize: '1.1rem',
-                                    fontWeight: '600',
+                                    fontSize: '1rem',
+                                    fontWeight: '700',
                                     cursor: 'pointer',
                                     transition: 'all 0.2s',
                                     boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
@@ -304,7 +346,7 @@ export default function MenuPage() {
                                     e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
                                 }}
                             >
-                                {modalType === 'login' ? '로그인하러 가기' : '이력서 작성하러 가기'}
+                                이력서 작성하기
                             </button>
                         </div>
                     </div>
