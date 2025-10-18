@@ -1934,12 +1934,14 @@ export default function AICoverLetterPage() {
                             ) : (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                     {savedCoverLetters.map((letter, index) => {
-                                        const createdDate = new Date(letter.created_at);
-                                        const year = createdDate.getFullYear();
-                                        const month = String(createdDate.getMonth() + 1).padStart(2, '0');
-                                        const day = String(createdDate.getDate()).padStart(2, '0');
-                                        const hours = String(createdDate.getHours()).padStart(2, '0');
-                                        const minutes = String(createdDate.getMinutes()).padStart(2, '0');
+                                        // UTC 시간을 한국시간(UTC+9)으로 변환
+                                        const utcDate = new Date(letter.created_at);
+                                        const kstDate = new Date(utcDate.getTime() + (9 * 60 * 60 * 1000));
+                                        const year = kstDate.getFullYear();
+                                        const month = String(kstDate.getMonth() + 1).padStart(2, '0');
+                                        const day = String(kstDate.getDate()).padStart(2, '0');
+                                        const hours = String(kstDate.getHours()).padStart(2, '0');
+                                        const minutes = String(kstDate.getMinutes()).padStart(2, '0');
                                         const timeText = `${year}-${month}-${day} ${hours}:${minutes}`;
 
                                         return (
