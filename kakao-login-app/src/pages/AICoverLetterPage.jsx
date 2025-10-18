@@ -1534,17 +1534,17 @@ export default function AICoverLetterPage() {
                         alignItems: 'center',
                         justifyContent: 'center',
                         zIndex: 9999,
-                        padding: '20px'
+                        padding: '10px'
                     }}
                     onClick={closeJobPopup}
                 >
                     <div
                         style={{
                             background: 'white',
-                            borderRadius: '20px',
-                            maxWidth: '700px',
-                            width: '100%',
-                            maxHeight: '80vh',
+                            borderRadius: '16px',
+                            maxWidth: '1200px',
+                            width: '98%',
+                            height: '96vh',
                             overflow: 'hidden',
                             boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
                             display: 'flex',
