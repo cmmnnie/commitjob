@@ -91,68 +91,42 @@ export default function MenuPage() {
                 return;
             }
 
-            // 이력서 작성 여부 확인 로그
-            console.log('[MenuPage] 사용자 정보:', {
-                skills: user.skills,
-                skillsType: typeof user.skills,
-                skillsLength: Array.isArray(user.skills) ? user.skills.length : 'not array',
-                jobs: user.jobs,
-                experience: user.experience
+            // user_profiles 테이블에서 이력서 정보 확인
+            const profileResponse = await fetch(`${CONFIG.BACKEND_URL}/api/user-profile/${user.id}`, {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
             });
 
-            // 이력서 작성 여부 확인 (skills, jobs, experience 중 하나라도 있으면 이력서 있음으로 간주)
-            let hasResume = false;
+            console.log('[MenuPage] user_profiles 조회 시작');
 
-            // skills 확인
-            if (user.skills) {
-                if (Array.isArray(user.skills) && user.skills.length > 0) {
-                    hasResume = true;
-                } else if (typeof user.skills === 'string') {
-                    const trimmed = user.skills.trim();
-                    if (trimmed !== '' && trimmed !== '[]' && trimmed !== 'null') {
-                        // 문자열을 파싱해서 배열인지 확인
-                        try {
-                            const parsed = JSON.parse(trimmed);
-                            if (Array.isArray(parsed) && parsed.length > 0) {
-                                hasResume = true;
-                            }
-                        } catch {
-                            // JSON 파싱 실패하면 일반 문자열로 간주
-                            hasResume = true;
-                        }
-                    }
-                }
-            }
-
-            // jobs 확인
-            if (!hasResume && user.jobs) {
-                if (Array.isArray(user.jobs) && user.jobs.length > 0) {
-                    hasResume = true;
-                } else if (typeof user.jobs === 'string') {
-                    const trimmed = user.jobs.trim();
-                    if (trimmed !== '' && trimmed !== '[]' && trimmed !== 'null') {
-                        hasResume = true;
-                    }
-                }
-            }
-
-            // experience 확인
-            if (!hasResume && user.experience) {
-                const exp = user.experience.trim();
-                if (exp !== '' && exp !== 'null') {
-                    hasResume = true;
-                }
-            }
-
-            console.log('[MenuPage] 이력서 작성 여부:', hasResume);
-
-            if (!hasResume) {
+            if (!profileResponse.ok) {
+                console.log('[MenuPage] user_profiles 조회 실패 - 이력서 없음으로 판단');
                 setModalType('resume');
                 setTargetPath(path);
                 setShowModal(true);
                 return;
             }
 
+            const profileData = await profileResponse.json();
+            console.log('[MenuPage] user_profiles 데이터:', profileData);
+
+            // 이력서 필수 정보가 없는 경우
+            if (!profileData.profile ||
+                (!profileData.profile.preferred_jobs &&
+                 !profileData.profile.experience &&
+                 (!profileData.profile.skills || profileData.profile.skills.length === 0))) {
+                console.log('[MenuPage] 이력서 작성 여부: false (필수 정보 없음)');
+                setModalType('resume');
+                setTargetPath(path);
+                setShowModal(true);
+                return;
+            }
+
+            console.log('[MenuPage] 이력서 작성 여부: true');
             // 이력서가 있으면 해당 페이지로 이동
             navigate(path);
         } catch (err) {
