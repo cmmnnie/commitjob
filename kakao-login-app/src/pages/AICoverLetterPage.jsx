@@ -1142,6 +1142,10 @@ export default function AICoverLetterPage() {
                                                     // 상세보기 버튼 클릭이 아닌 경우에만 선택
                                                     const isButton = e.target.tagName === 'BUTTON' || e.target.closest('button');
                                                     if (!isButton) {
+                                                        // 디바운스 타이머 취소 (리스트 다시 로딩 방지)
+                                                        if (debounceTimer.current) {
+                                                            clearTimeout(debounceTimer.current);
+                                                        }
                                                         setSelectedJobId(job.id.toString());
                                                         console.log('[채용공고 선택] job_id:', job.id, 'company:', job.company);
                                                     }
@@ -1170,6 +1174,10 @@ export default function AICoverLetterPage() {
                                                         checked={selectedJobId === job.id.toString()}
                                                         onChange={(e) => {
                                                             e.stopPropagation();
+                                                            // 디바운스 타이머 취소 (리스트 다시 로딩 방지)
+                                                            if (debounceTimer.current) {
+                                                                clearTimeout(debounceTimer.current);
+                                                            }
                                                             setSelectedJobId(job.id.toString());
                                                             console.log('[채용공고 라디오 선택] job_id:', job.id, 'company:', job.company);
                                                         }}

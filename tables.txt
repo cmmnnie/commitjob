@@ -1,0 +1,366 @@
+=== CommitJob 데이터베이스 테이블 구조 ===
+
+총 13개의 테이블
+
+
+📋 테이블: catch_companies
+====================================================================================================
+📊 데이터 건수: 211건
+
+컬럼명                                데이터 타입                        NULL    Key     Default
+----------------------------------------------------------------------------------------------------
+id                                 int                           NO      PRI     NULL
+company                            varchar(255)                  YES     UNI     NULL
+industry                           varchar(255)                  YES             NULL
+company_type                       varchar(100)                  YES             NULL
+location                           text                          YES             NULL
+employee_count                     varchar(100)                  YES             NULL
+revenue                            varchar(100)                  YES             NULL
+ceo                                varchar(255)                  YES             NULL
+establishment_date                 varchar(100)                  YES             NULL
+company_form                       varchar(100)                  YES             NULL
+credit_rating                      varchar(50)                   YES             NULL
+tags                               text                          YES             NULL
+recommendation_keywords            text                          YES             NULL
+starting_salary                    varchar(100)                  YES             NULL
+average_salary                     varchar(100)                  YES             NULL
+industry_average_salary            varchar(100)                  YES             NULL
+company_url                        varchar(1024)                 YES             NULL
+created_at                         timestamp                     YES             CURRENT_TIMESTAMP
+updated_at                         timestamp                     YES             CURRENT_TIMESTAMP
+
+📄 샘플 데이터 (1건):
+----------------------------------------------------------------------------------------------------
+  id: 657
+  company: 카카오
+  industry: 포털·플랫폼
+  company_type: 대기업
+  location: 제주 제주시 첨단로 242
+  employee_count: 3,865명
+  revenue: 2조 5,951억
+  ceo: 정신아
+  establishment_date: 1995년 02월 16일
+  company_form: 코스피
+  credit_rating: 최상 2025.07
+  tags: #캐치추천,#재무평가_상위2%,#현직자리뷰_상위6%,#주요계열사,#매출1조이상
+  recommendation_keywords: 일한만큼보상,초봉4천이상,좋은업무공간,눈치안보고퇴근,육아휴직자유,자유로운휴가,뛰어난동료,커리어에 도움되는,성장하는느낌,고용안정성,비전있는,리뷰TOP,재무TOP
+  starting_salary: -
+  average_salary: 10,200만원 2024.12
+  industry_average_salary: 4,408만원 2024.12
+  company_url: https://www.catch.co.kr/Comp/CompSummary/041800
+  created_at: 2025-10-14T15:04:55.000Z
+  updated_at: 2025-10-14T15:04:55.000Z
+
+
+📋 테이블: catch_interview_questions
+====================================================================================================
+📊 데이터 건수: 1467건
+
+컬럼명                                데이터 타입                        NULL    Key     Default
+----------------------------------------------------------------------------------------------------
+id                                 int                           NO      PRI     NULL
+company_id                         int                           YES     MUL     NULL
+company                            varchar(255)                  YES     MUL     NULL
+question                           text                          NO              NULL
+period                             varchar(100)                  YES             NULL
+position                           varchar(200)                  YES             NULL
+experience                         varchar(100)                  YES             NULL
+company_url                        varchar(1024)                 YES             NULL
+created_at                         timestamp                     YES             CURRENT_TIMESTAMP
+
+📄 샘플 데이터 (1건):
+----------------------------------------------------------------------------------------------------
+  id: 4520
+  company_id: NULL
+  company: NHN KCP
+  question: 갈등을 겪고 해결했던 사례가 있는지
+  period: 2025 상반기
+  position: 웹기획/PM/웹마케팅
+  experience: 경력
+  company_url: https://www.catch.co.kr/Comp/CompSummary/053138
+  created_at: 2025-10-13T19:59:45.000Z
+
+
+📋 테이블: catch_reviews
+====================================================================================================
+📊 데이터 건수: 0건
+
+컬럼명                                데이터 타입                        NULL    Key     Default
+----------------------------------------------------------------------------------------------------
+id                                 int                           NO      PRI     NULL
+company_id                         int                           NO      MUL     NULL
+company                            varchar(255)                  YES     MUL     NULL
+reviewer_info                      varchar(255)                  YES             NULL
+review_date                        varchar(100)                  YES             NULL
+rating                             decimal(2,1)                  YES     MUL     NULL
+pros                               text                          YES             NULL
+cons                               text                          YES             NULL
+created_at                         timestamp                     YES             CURRENT_TIMESTAMP
+
+
+📋 테이블: companies
+====================================================================================================
+📊 데이터 건수: 25건
+
+컬럼명                                데이터 타입                        NULL    Key     Default
+----------------------------------------------------------------------------------------------------
+id                                 int                           NO      PRI     NULL
+company_id                         varchar(100)                  NO      UNI     NULL
+name                               varchar(200)                  NO      MUL     NULL
+description                        text                          YES             NULL
+website                            varchar(500)                  YES             NULL
+location                           varchar(200)                  YES             NULL
+size                               varchar(50)                   YES             NULL
+industry                           varchar(100)                  YES             NULL
+logo_url                           varchar(500)                  YES             NULL
+created_at                         timestamp                     YES             CURRENT_TIMESTAMP
+updated_at                         timestamp                     YES             CURRENT_TIMESTAMP
+
+📄 샘플 데이터 (1건):
+----------------------------------------------------------------------------------------------------
+  id: 1
+  company_id: company_001
+  name: 네이버
+  description: 국내 대표 IT 기업
+  website: NULL
+  location: 경기 성남시
+  size: 1000명 이상
+  industry: IT/인터넷
+  logo_url: NULL
+  created_at: 2025-10-03T00:59:38.000Z
+  updated_at: 2025-10-03T00:59:38.000Z
+
+
+📋 테이블: company_reviews
+====================================================================================================
+📊 데이터 건수: 0건
+
+컬럼명                                데이터 타입                        NULL    Key     Default
+----------------------------------------------------------------------------------------------------
+id                                 int                           NO      PRI     NULL
+company_id                         int                           NO      MUL     NULL
+company_name                       varchar(255)                  NO      MUL     NULL
+reviewer_info                      varchar(255)                  YES             NULL
+review_date                        varchar(100)                  YES             NULL
+rating                             varchar(50)                   YES             NULL
+pros                               text                          YES             NULL
+cons                               text                          YES             NULL
+created_at                         timestamp                     YES             CURRENT_TIMESTAMP
+
+
+📋 테이블: interview_logs
+====================================================================================================
+📊 데이터 건수: 0건
+
+컬럼명                                데이터 타입                        NULL    Key     Default
+----------------------------------------------------------------------------------------------------
+id                                 int                           NO      PRI     NULL
+user_id                            int                           YES     MUL     NULL
+session_id                         varchar(100)                  YES     MUL     NULL
+job_id                             varchar(100)                  YES     MUL     NULL
+questions                          json                          YES             NULL
+created_at                         timestamp                     YES             CURRENT_TIMESTAMP
+
+
+📋 테이블: job_postings
+====================================================================================================
+📊 데이터 건수: 25건
+
+컬럼명                                데이터 타입                        NULL    Key     Default
+----------------------------------------------------------------------------------------------------
+id                                 int                           NO      PRI     NULL
+job_id                             varchar(100)                  NO      UNI     NULL
+company_id                         varchar(100)                  NO      MUL     NULL
+title                              varchar(300)                  NO      MUL     NULL
+description                        text                          YES     MUL     NULL
+requirements                       text                          YES             NULL
+skills                             json                          YES             NULL
+experience_level                   varchar(50)                   YES             NULL
+employment_type                    varchar(50)                   YES             NULL
+location                           varchar(200)                  YES     MUL     NULL
+salary                             varchar(100)                  YES             NULL
+source                             varchar(50)                   YES             NULL
+source_url                         varchar(1000)                 YES             NULL
+posted_date                        date                          YES             NULL
+deadline_date                      date                          YES             NULL
+is_active                          tinyint(1)                    YES     MUL     1
+created_at                         timestamp                     YES             CURRENT_TIMESTAMP
+updated_at                         timestamp                     YES             CURRENT_TIMESTAMP
+
+📄 샘플 데이터 (1건):
+----------------------------------------------------------------------------------------------------
+  id: 1
+  job_id: job_001
+  company_id: company_001
+  title: 백엔드 개발자
+  description: Spring Boot를 이용한 백엔드 시스템 개발
+  requirements: NULL
+  skills: Java,Spring Boot,MySQL,Redis
+  experience_level: 3-5년
+  employment_type: 정규직
+  location: 경기 성남시
+  salary: 5000-7000만원
+  source: NULL
+  source_url: NULL
+  posted_date: NULL
+  deadline_date: NULL
+  is_active: 1
+  created_at: 2025-10-03T00:59:38.000Z
+  updated_at: 2025-10-03T00:59:38.000Z
+
+
+📋 테이블: jobs
+====================================================================================================
+📊 데이터 건수: 1229건
+
+컬럼명                                데이터 타입                        NULL    Key     Default
+----------------------------------------------------------------------------------------------------
+id                                 int                           NO      PRI     NULL
+company                            varchar(255)                  NO      MUL     NULL
+title                              varchar(512)                  NO              NULL
+url                                varchar(1024)                 NO      MUL     NULL
+category                           varchar(50)                   NO      MUL     NULL
+page                               int                           YES             1
+job_info                           text                          YES             NULL
+conditions                         text                          YES             NULL
+registration_info                  text                          YES             NULL
+scraped_at                         datetime                      NO      MUL     NULL
+company_search_key                 varchar(255)                  YES     MUL     NULL
+
+📄 샘플 데이터 (1건):
+----------------------------------------------------------------------------------------------------
+  id: 1
+  company: 넷마블네오
+  title: [넷마블네오] 채용전환형 인턴십 모집 (11월초 예정)
+  url: https://www.catch.co.kr/NCS/RecruitInfoDetails/525065
+  category: IT
+  page: 1
+  job_info: ["게임"]
+  conditions: ["신입", "인턴", "학력무관"]
+  registration_info: ["~11.02(일)", "3일 전 등록"]
+  scraped_at: 2025-10-04T18:22:53.000Z
+  company_search_key: 넷마블네오
+
+
+📋 테이블: recommendation_logs
+====================================================================================================
+📊 데이터 건수: 0건
+
+컬럼명                                데이터 타입                        NULL    Key     Default
+----------------------------------------------------------------------------------------------------
+id                                 int                           NO      PRI     NULL
+user_id                            int                           YES     MUL     NULL
+session_id                         varchar(100)                  YES     MUL     NULL
+job_id                             varchar(100)                  YES     MUL     NULL
+recommendation_score               int                           YES     MUL     NULL
+match_reasons                      json                          YES             NULL
+created_at                         timestamp                     YES             CURRENT_TIMESTAMP
+
+
+📋 테이블: user_interview_conditions
+====================================================================================================
+📊 데이터 건수: 24건
+
+컬럼명                                데이터 타입                        NULL    Key     Default
+----------------------------------------------------------------------------------------------------
+id                                 int                           NO      PRI     NULL
+user_id                            int                           YES     MUL     NULL
+session_id                         varchar(100)                  YES     MUL     NULL
+preferred_job                      varchar(200)                  YES             NULL
+company_size                       varchar(50)                   YES             NULL
+industry                           varchar(200)                  YES             NULL
+additional_skills                  json                          YES             NULL
+custom_company                     varchar(200)                  YES             NULL
+custom_position                    varchar(200)                  YES             NULL
+input_source                       varchar(50)                   YES     MUL     interview_form
+created_at                         timestamp                     YES     MUL     CURRENT_TIMESTAMP
+updated_at                         timestamp                     YES             CURRENT_TIMESTAMP
+
+📄 샘플 데이터 (1건):
+----------------------------------------------------------------------------------------------------
+  id: 1
+  user_id: NULL
+  session_id: session_1759765828929_1
+  preferred_job: 백엔드
+  company_size: 대기업
+  industry: IT
+  additional_skills: AWS
+  custom_company: NULL
+  custom_position: NULL
+  input_source: interview_form
+  created_at: 2025-10-06T06:50:29.000Z
+  updated_at: 2025-10-06T06:50:29.000Z
+
+
+📋 테이블: user_profiles
+====================================================================================================
+📊 데이터 건수: 47건
+
+컬럼명                                데이터 타입                        NULL    Key     Default
+----------------------------------------------------------------------------------------------------
+id                                 int                           NO      PRI     NULL
+user_id                            int                           NO      MUL     NULL
+skills                             json                          YES             NULL
+experience                         varchar(50)                   YES             NULL
+preferred_regions                  json                          YES             NULL
+preferred_jobs                     varchar(200)                  YES             NULL
+expected_salary                    decimal(10,2)                 YES             NULL
+resume_path                        varchar(500)                  YES             NULL
+created_at                         timestamp                     YES             CURRENT_TIMESTAMP
+updated_at                         timestamp                     YES             CURRENT_TIMESTAMP
+
+📄 샘플 데이터 (1건):
+----------------------------------------------------------------------------------------------------
+  id: 2
+  user_id: 8
+  skills: React,TypeScript,JavaScript,Next.js,CSS
+  experience: 2년
+  preferred_regions: 서울
+  preferred_jobs: 프론트엔드 개발자
+  expected_salary: 5500.00
+  resume_path: NULL
+  created_at: 2025-10-04T07:47:20.000Z
+  updated_at: 2025-10-04T07:47:20.000Z
+
+
+📋 테이블: user_sessions
+====================================================================================================
+📊 데이터 건수: 0건
+
+컬럼명                                데이터 타입                        NULL    Key     Default
+----------------------------------------------------------------------------------------------------
+id                                 int                           NO      PRI     NULL
+session_id                         varchar(100)                  NO      UNI     NULL
+user_id                            int                           YES     MUL     NULL
+session_data                       json                          YES             NULL
+created_at                         timestamp                     YES             CURRENT_TIMESTAMP
+updated_at                         timestamp                     YES             CURRENT_TIMESTAMP
+expires_at                         timestamp                     YES     MUL     (now() + interval 24 hour)
+
+
+📋 테이블: users
+====================================================================================================
+📊 데이터 건수: 6건
+
+컬럼명                                데이터 타입                        NULL    Key     Default
+----------------------------------------------------------------------------------------------------
+id                                 int                           NO      PRI     NULL
+provider_key                       varchar(100)                  NO      UNI     NULL
+email                              varchar(255)                  NO      MUL     NULL
+name                               varchar(100)                  YES             NULL
+picture                            varchar(500)                  YES             NULL
+provider                           enum('google','kakao')        NO              NULL
+created_at                         datetime                      YES             CURRENT_TIMESTAMP
+updated_at                         datetime                      YES             CURRENT_TIMESTAMP
+
+📄 샘플 데이터 (1건):
+----------------------------------------------------------------------------------------------------
+  id: 8
+  provider_key: kakao:4477737199
+  email: rlaekdbs0329@naver.com
+  name: 김다윤
+  picture: http://img1.kakaocdn.net/thumb/R640x640.q70/?fname=http://t1.kakaocdn.net/account_images/default_pro...
+  provider: kakao
+  created_at: 2025-10-04T06:13:11.000Z
+  updated_at: 2025-10-04T06:13:11.000Z
+

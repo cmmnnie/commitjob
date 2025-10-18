@@ -1,0 +1,101 @@
+.problem-list {
+  padding: 1.5rem;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  width: 70%;
+  margin: 30px auto;
+
+  .problem-list-company {
+    font-size: 2rem;
+    font-family: SansBold;
+    color: #1e293b;
+    margin-bottom: 50px;
+    border-left: 4px solid #2563eb;
+    padding-left: 0.6rem;
+  }
+
+  /* 🔹 헤더 영역 */
+  .testList-item-header {
+    display: grid;
+    grid-template-columns: 130px 1fr 100px 100px 100px 80px; /* 문제 번호 ↔ 제목 간격 확대 */
+    background: #e2e8f0;
+    color: #334155;
+    font-family: SansMid;
+    border-radius: 8px;
+    padding: 0.7rem 1rem;
+    font-size: 1.2rem;
+    margin-bottom: 0.6rem;
+
+    div {
+      text-align: center;
+
+      &:nth-child(2) {
+        text-align: left;
+        padding-left: 0.4rem;
+      }
+
+      &:last-child {
+        font-size: 0.85rem;
+        color: #475569;
+      }
+    }
+  }
+
+  /* 🔹 리스트 */
+  .testList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .testList-item {
+    display: grid;
+    grid-template-columns: 130px 1fr 100px 100px 100px 80px; /* 동일한 컬럼 구조 유지 */
+    align-items: center;
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 0.8rem 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.8);
+      background: #f9fafb;
+    }
+
+    .testList-item-id {
+      text-align: center;
+      color: #475569;
+      font-family: SansMid;
+    }
+
+    .testList-item-title {
+      color: #0f172a;
+
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      padding-left: 0.4rem;
+    }
+
+    .testList-item-ratio {
+      text-align: center;
+      color: #2563eb;
+    }
+
+    .testList-item-solve-cnt,
+    .testList-item-submit-cnt {
+      text-align: center;
+      color: #475569;
+      font-size: 0.9rem;
+    }
+
+    .testList-item-info {
+      text-align: center;
+      color: #64748b;
+      font-size: 0.85rem;
+    }
+  }
+}
