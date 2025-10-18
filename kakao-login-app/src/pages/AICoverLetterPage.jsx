@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CONFIG } from '../config';
 
@@ -11,6 +11,7 @@ export default function AICoverLetterPage() {
     const [jobPostings, setJobPostings] = useState([]);
     const [selectedJobId, setSelectedJobId] = useState('');
     const [isLoadingJobs, setIsLoadingJobs] = useState(false);
+    const debounceTimer = useRef(null);
     const [coverLetter, setCoverLetter] = useState(null);
     const [isCoverLetterLoading, setIsCoverLetterLoading] = useState(false);
     const [userCoverLetter, setUserCoverLetter] = useState('');
@@ -36,6 +37,15 @@ export default function AICoverLetterPage() {
             loadSavedCoverLetters();
         }
     }, [currentUser]);
+
+    // 컴포넌트 언마운트 시 타이머 정리
+    useEffect(() => {
+        return () => {
+            if (debounceTimer.current) {
+                clearTimeout(debounceTimer.current);
+            }
+        };
+    }, []);
 
     const checkLogin = async () => {
         try {
@@ -888,9 +898,18 @@ export default function AICoverLetterPage() {
                             type="text"
                             value={companyName}
                             onChange={(e) => {
-                                setCompanyName(e.target.value);
-                                // 회사명 입력 시 채용공고 조회
-                                fetchJobPostings(e.target.value);
+                                const value = e.target.value;
+                                setCompanyName(value);
+
+                                // 이전 타이머 취소
+                                if (debounceTimer.current) {
+                                    clearTimeout(debounceTimer.current);
+                                }
+
+                                // 500ms 후에 채용공고 조회
+                                debounceTimer.current = setTimeout(() => {
+                                    fetchJobPostings(value);
+                                }, 500);
                             }}
                             placeholder="예: 네이버, 카카오, 삼성전자, 쿠팡"
                             style={{
