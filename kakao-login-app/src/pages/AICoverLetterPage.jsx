@@ -929,8 +929,8 @@ export default function AICoverLetterPage() {
                                             <input
                                                 type="radio"
                                                 checked={selectedJobId === ''}
-                                                onChange={() => setSelectedJobId('')}
-                                                style={{ cursor: 'pointer' }}
+                                                onChange={() => {}}
+                                                style={{ cursor: 'pointer', pointerEvents: 'none' }}
                                             />
                                             <span style={{ color: '#2d3748' }}>선택 안함 (회사명만 사용)</span>
                                         </div>
@@ -1088,9 +1088,8 @@ export default function AICoverLetterPage() {
                                                     <input
                                                         type="radio"
                                                         checked={selectedJobId === job.id.toString()}
-                                                        onChange={() => setSelectedJobId(job.id.toString())}
-                                                        style={{ cursor: 'pointer' }}
-                                                        onClick={(e) => e.stopPropagation()}
+                                                        onChange={() => {}}
+                                                        style={{ cursor: 'pointer', pointerEvents: 'none' }}
                                                     />
                                                     <div style={{ flex: 1 }}>
                                                         <div style={{
