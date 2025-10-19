@@ -351,11 +351,9 @@ app.get('/debug/check-cookie', (req, res) => {
 const stateStore = new Map(); // state -> origin
 
 const corsOptions = {
-  origin: true,
-  credentials: true,
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  exposedHeaders: ['Set-Cookie'],
   optionsSuccessStatus: 204,
 };
 console.log("[CORS] allowedOrigins =", allowedOrigins);
