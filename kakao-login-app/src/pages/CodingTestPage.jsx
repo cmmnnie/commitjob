@@ -171,7 +171,7 @@ export default function CodingTestPage() {
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '20px',
-                                marginBottom: '30px'
+                                marginBottom: '20px'
                             }}>
                                 <div style={{
                                     fontSize: '4rem',
@@ -180,7 +180,7 @@ export default function CodingTestPage() {
                                     WebkitTextFillColor: 'transparent',
                                     backgroundClip: 'text'
                                 }}>
-                                    💻
+                                    🖥️
                                 </div>
                                 <div style={{ flex: '1' }}>
                                     <h1 style={{
@@ -192,7 +192,7 @@ export default function CodingTestPage() {
                                         backgroundClip: 'text',
                                         marginBottom: '10px'
                                     }}>
-                                        AI 코딩 테스트
+                                        AI 코딩 Test
                                     </h1>
                                     <p style={{
                                         fontSize: '1.1rem',
@@ -209,8 +209,8 @@ export default function CodingTestPage() {
                             <div style={{
                                 display: 'flex',
                                 flexDirection: 'column',
-                                gap: '15px',
-                                marginTop: '30px'
+                                gap: '10px',
+                                marginTop: '20px'
                             }}>
                                 <div style={{
                                     display: 'flex',
