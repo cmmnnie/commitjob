@@ -1,0 +1,44 @@
+# Node modules (Railway가 자동으로 설치)
+node_modules/
+npm-debug.log*
+
+# Git
+.git/
+.gitignore
+
+# Scripts (크롤러 등)
+scripts/
+coding/baek.sql
+
+# Logs
+*.log
+logs/
+
+# Environment (Railway가 환경변수로 제공)
+.env.local
+.env.development
+.env.test
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test files
+*.test.js
+test/
+coverage/
+
+# Documentation
+README.md
+docs/
+
+# Temporary files
+*.tmp
+temp/
+tmp/
