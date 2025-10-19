@@ -564,6 +564,10 @@ router.get('/companies/stats', async (req, res) => {
     console.log('[CODING-TEST] 회사별 통계 조회 완료');
     console.log('='.repeat(80));
 
+    // 명시적으로 상태 코드와 헤더 설정
+    res.status(200);
+    res.setHeader('Content-Type', 'application/json');
+
     res.json({
       success: true,
       companies: companiesStats,

@@ -65,6 +65,12 @@ export default function CodingTestPage() {
             }
         } catch (error) {
             console.error('회사별 문제 조회 오류:', error);
+            console.error('오류 상세:', {
+                message: error.message,
+                response: error.response?.data,
+                status: error.response?.status,
+                url: error.config?.url
+            });
         } finally {
             setLoading(false);
         }
