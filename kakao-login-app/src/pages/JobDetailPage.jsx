@@ -354,7 +354,7 @@ export default function JobDetailPage() {
                             fontSize: '1.4rem',
                             filter: activeTab === 'interview' ? 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' : 'none'
                         }}>💬</span>
-                        <span style={{ letterSpacing: '-0.5px' }}>면접문제</span>
+                        <span style={{ letterSpacing: '-0.5px' }}>면접기출문제</span>
                     </button>
                 </div>
 
@@ -1138,7 +1138,7 @@ export default function JobDetailPage() {
                     }}>
                         <div style={{ fontSize: '3rem', marginBottom: '16px' }}>⏳</div>
                         <p style={{ fontSize: '1.2rem', color: '#666', fontWeight: '700' }}>
-                            면접문제를 불러오는 중...
+                            면접기출문제를 불러오는 중...
                         </p>
                     </div>
                 )}
