@@ -185,8 +185,7 @@ const swaggerUiOptions = {
 
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOptions));
 
-// 코딩 테스트 API 라우터
-app.use('/api/coding', codingRouter);
+// 코딩 테스트 API는 아래 server.js에 직접 작성됨
 app.use('/api/programmers', programmersRouter);
 
 /* -------------------- 기본 설정 -------------------- */
@@ -246,7 +245,6 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 app.use('/uploads/cover-letters', express.static(path.join(process.cwd(), 'uploads', 'cover-letters')));
 // --- MySQL 풀 ---
 import mysql from 'mysql2/promise';
-import codingRouter from './routes/coding.js';
 import programmersRouter from './routes/programmers.js';
 
 const pool = mysql.createPool({
