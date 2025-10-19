@@ -25,51 +25,86 @@ export default function CodingTestPage() {
     const fetchAllCompaniesProblems = async () => {
         try {
             setLoading(true);
+            console.log('[CodingTest] API 요청 시작:', `${API_BASE_URL}/api/coding/companies/stats`);
 
             // 회사별 통계 조회
             const statsResponse = await axios.get(
                 `${API_BASE_URL}/api/coding/companies/stats`,
-                { withCredentials: true }
+                {
+                    withCredentials: true,
+                    timeout: 10000 // 10초 타임아웃
+                }
             );
 
-            if (statsResponse.data.success) {
+            console.log('[CodingTest] statsResponse:', statsResponse);
+            console.log('[CodingTest] statsResponse.data:', statsResponse.data);
+
+            if (statsResponse.data && statsResponse.data.success) {
                 const companies = Object.keys(statsResponse.data.companies);
+                console.log('[CodingTest] 조회된 회사 목록:', companies);
                 const companiesData = {};
 
                 // 각 회사별로 문제 목록 조회 (company_workbook_problem 테이블)
                 for (const company of companies) {
                     try {
+                        console.log(`[CodingTest] ${company} 문제 조회 시작...`);
                         const problemsResponse = await axios.get(
                             `${API_BASE_URL}/api/coding/company-problems`,
                             {
                                 params: { company },
-                                withCredentials: true
+                                withCredentials: true,
+                                timeout: 10000
                             }
                         );
 
-                        if (problemsResponse.data.success) {
+                        console.log(`[CodingTest] ${company} 응답:`, problemsResponse.data);
+
+                        if (problemsResponse.data && problemsResponse.data.success) {
                             companiesData[company] = problemsResponse.data.problems;
                         }
                     } catch (error) {
-                        console.error(`${company} 문제 조회 오류:`, error);
+                        console.error(`[CodingTest] ${company} 문제 조회 오류:`, error);
+                        console.error(`[CodingTest] ${company} 오류 타입:`, error.constructor.name);
+                        console.error(`[CodingTest] ${company} 오류 메시지:`, error.message);
+                        if (error.response) {
+                            console.error(`[CodingTest] ${company} 응답 상태:`, error.response.status);
+                            console.error(`[CodingTest] ${company} 응답 데이터:`, error.response.data);
+                        }
                         companiesData[company] = [];
                     }
                 }
 
+                console.log('[CodingTest] 최종 회사별 데이터:', companiesData);
                 setCompaniesWithProblems(companiesData);
 
                 // 첫 번째 회사만 기본으로 펼치기
                 if (companies.length > 0) {
                     setExpandedCompanies({ [companies[0]]: true });
                 }
+            } else {
+                console.error('[CodingTest] 통계 응답 형식 오류:', statsResponse.data);
             }
         } catch (error) {
-            console.error('회사별 문제 조회 오류:', error);
-            console.error('오류 상세:', {
+            console.error('[CodingTest] 회사별 문제 조회 오류:', error);
+            console.error('[CodingTest] 오류 타입:', error.constructor.name);
+            console.error('[CodingTest] 오류 메시지:', error.message);
+            console.error('[CodingTest] 오류 상세:', {
                 message: error.message,
-                response: error.response?.data,
-                status: error.response?.status,
-                url: error.config?.url
+                name: error.name,
+                code: error.code,
+                response: error.response ? {
+                    status: error.response.status,
+                    statusText: error.response.statusText,
+                    data: error.response.data,
+                    headers: error.response.headers
+                } : 'No response',
+                request: error.request ? 'Request was made' : 'No request',
+                config: error.config ? {
+                    url: error.config.url,
+                    method: error.config.method,
+                    baseURL: error.config.baseURL
+                } : 'No config',
+                stack: error.stack
             });
         } finally {
             setLoading(false);
@@ -88,20 +123,34 @@ export default function CodingTestPage() {
         setProblemDetail(null);
 
         try {
+            console.log('[CodingTest] 문제 상세 조회 시작:', problem.problem_number);
             // problem_detail 테이블에서 상세 정보 조회
             const detailResponse = await axios.get(
                 `${API_BASE_URL}/api/coding/problem-detail/${problem.problem_number}`,
-                { withCredentials: true }
+                {
+                    withCredentials: true,
+                    timeout: 10000
+                }
             );
 
-            if (detailResponse.data.success) {
+            console.log('[CodingTest] 문제 상세 응답:', detailResponse.data);
+
+            if (detailResponse.data && detailResponse.data.success) {
                 setSelectedProblem({ ...problem, company });
                 setProblemDetail(detailResponse.data.detail);
                 setCode('// 여기에 코드를 작성하세요\n');
                 setTestResult(null);
+            } else {
+                console.error('[CodingTest] 문제 상세 응답 형식 오류:', detailResponse.data);
+                alert('문제 상세 정보를 불러오는데 실패했습니다.');
             }
         } catch (error) {
-            console.error('문제 상세 조회 오류:', error);
+            console.error('[CodingTest] 문제 상세 조회 오류:', error);
+            console.error('[CodingTest] 오류 상세:', {
+                message: error.message,
+                response: error.response?.data,
+                status: error.response?.status
+            });
             alert('문제 상세 정보를 불러오는데 실패했습니다.');
         } finally {
             setLoading(false);
