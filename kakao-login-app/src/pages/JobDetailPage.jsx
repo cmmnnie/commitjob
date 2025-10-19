@@ -24,32 +24,50 @@ export default function JobDetailPage() {
     const fetchCompanyData = async (companyName) => {
         try {
             setLoading(true);
+            console.log('[JobDetail] API_BASE_URL:', API_BASE_URL);
+            console.log('[JobDetail] Fetching data for company:', companyName);
 
             // 회사 정보 조회
-            const companyRes = await fetch(`${API_BASE_URL}/api/company/${encodeURIComponent(companyName)}`);
+            const companyUrl = `${API_BASE_URL}/api/company/${encodeURIComponent(companyName)}`;
+            console.log('[JobDetail] Company URL:', companyUrl);
+            const companyRes = await fetch(companyUrl);
+            console.log('[JobDetail] Company response status:', companyRes.status);
             const companyData = await companyRes.json();
+            console.log('[JobDetail] Company data:', companyData);
             if (companyData.success && companyData.company) {
                 setCompanyInfo(companyData.company);
             } else {
+                console.log('[JobDetail] No company info found');
             }
 
             // 회사 리뷰 조회
-            const reviewsRes = await fetch(`${API_BASE_URL}/api/company/${encodeURIComponent(companyName)}/reviews?limit=5`);
+            const reviewsUrl = `${API_BASE_URL}/api/company/${encodeURIComponent(companyName)}/reviews?limit=5`;
+            console.log('[JobDetail] Reviews URL:', reviewsUrl);
+            const reviewsRes = await fetch(reviewsUrl);
+            console.log('[JobDetail] Reviews response status:', reviewsRes.status);
             const reviewsData = await reviewsRes.json();
+            console.log('[JobDetail] Reviews data:', reviewsData);
             if (reviewsData.success && reviewsData.reviews) {
                 setReviews(reviewsData.reviews);
             } else {
+                console.log('[JobDetail] No reviews found');
             }
 
             // 면접 기출문제 조회
-            const questionsRes = await fetch(`${API_BASE_URL}/api/company/${encodeURIComponent(companyName)}/interview-questions?limit=5`);
+            const questionsUrl = `${API_BASE_URL}/api/company/${encodeURIComponent(companyName)}/interview-questions?limit=5`;
+            console.log('[JobDetail] Questions URL:', questionsUrl);
+            const questionsRes = await fetch(questionsUrl);
+            console.log('[JobDetail] Questions response status:', questionsRes.status);
             const questionsData = await questionsRes.json();
+            console.log('[JobDetail] Questions data:', questionsData);
             if (questionsData.success && questionsData.questions) {
                 setInterviewQuestions(questionsData.questions);
             } else {
+                console.log('[JobDetail] No interview questions found');
             }
         } catch (error) {
             console.error('[JobDetail] Error fetching company data:', error);
+            console.error('[JobDetail] Error details:', error.message, error.stack);
         } finally {
             setLoading(false);
         }
