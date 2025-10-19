@@ -85,6 +85,7 @@ check-*.js
 *.zip
 *.rar
 backend.tar.gz
+*.backup
 
 # Python files (if not needed)
 *.py

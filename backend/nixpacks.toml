@@ -1,3 +1,4 @@
+# Railway Build Optimization v2
 [phases.setup]
 nixPkgs = ["nodejs_18"]
 
@@ -5,7 +6,8 @@ nixPkgs = ["nodejs_18"]
 cmds = ["npm ci --omit=dev --prefer-offline --no-audit --no-fund"]
 
 [phases.build]
-cmds = ["true"]
+# Skip build phase - no compilation needed for Node.js
+cmds = ["echo 'Build skipped'"]
 
 [start]
 cmd = "node server.js"
