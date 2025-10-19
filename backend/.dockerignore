@@ -9,12 +9,16 @@ npm-debug.log*
 # Scripts (크롤러 등)
 scripts/
 coding/
+catch-scraper-service/
+migrations/
 
 # Database files
 *.db
 *.sql
 *.sqlite
 *.sqlite3
+database-setup.sql
+catch.db
 
 # Logs
 *.log
@@ -48,6 +52,13 @@ create-*.js
 check-*.cjs
 migrate-*.js
 delete-*.js
+*_backup.js
+server_backup.js
+test-results.json
+
+# Deployment configs for other platforms
+vercel.json
+netlify.toml
 
 # Documentation
 README.md
@@ -64,7 +75,10 @@ uploads/
 
 # Archive files
 *.tar.gz
+*.tar
 *.zip
+*.rar
+backend.tar.gz
 
 # Python files (if not needed)
 *.py
