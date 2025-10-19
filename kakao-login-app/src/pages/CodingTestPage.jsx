@@ -31,7 +31,6 @@ export default function CodingTestPage() {
             const statsResponse = await axios.get(
                 `${API_BASE_URL}/api/coding/companies/stats`,
                 {
-                    withCredentials: true,
                     timeout: 10000 // 10초 타임아웃
                 }
             );
@@ -52,7 +51,6 @@ export default function CodingTestPage() {
                             `${API_BASE_URL}/api/coding/company-problems`,
                             {
                                 params: { company },
-                                withCredentials: true,
                                 timeout: 10000
                             }
                         );
@@ -128,7 +126,6 @@ export default function CodingTestPage() {
             const detailResponse = await axios.get(
                 `${API_BASE_URL}/api/coding/problem-detail/${problem.problem_number}`,
                 {
-                    withCredentials: true,
                     timeout: 10000
                 }
             );
