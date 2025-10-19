@@ -533,9 +533,14 @@ router.get('/baekjoon/companies/:companyName/problems', async (req, res) => {
 // ==============================================================================
 router.get('/companies/stats', async (req, res) => {
   try {
+    console.log('='.repeat(80));
+    console.log('[CODING-TEST] 회사별 문제 통계 조회 시작');
+    console.log('[CODING-TEST] 요청 시간:', new Date().toISOString());
+
     const pool = req.app.get('pool');
 
     // company_workbook_problem 테이블에서 회사별 문항 수 집계
+    console.log('[CODING-TEST] company_workbook_problem 테이블 조회 중...');
     const [stats] = await pool.execute(`
       SELECT
         company,
@@ -545,11 +550,19 @@ router.get('/companies/stats', async (req, res) => {
       ORDER BY company
     `);
 
+    console.log('[CODING-TEST] 조회 결과:', {
+      총_회사_수: stats.length,
+      회사_목록: stats.map(s => `${s.company}(${s.problem_count})`).join(', ')
+    });
+
     // 결과를 객체 형태로 변환
     const companiesStats = stats.reduce((acc, row) => {
       acc[row.company] = row.problem_count;
       return acc;
     }, {});
+
+    console.log('[CODING-TEST] 회사별 통계 조회 완료');
+    console.log('='.repeat(80));
 
     res.json({
       success: true,
@@ -558,7 +571,10 @@ router.get('/companies/stats', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[CODING-TEST] 회사별 통계 조회 오류:', error);
+    console.error('='.repeat(80));
+    console.error('[CODING-TEST] 회사별 통계 조회 오류:', error.message);
+    console.error('[CODING-TEST] 오류 스택:', error.stack);
+    console.error('='.repeat(80));
     res.status(500).json({ error: '회사별 통계 조회 중 오류가 발생했습니다' });
   }
 });
@@ -569,6 +585,12 @@ router.get('/companies/stats', async (req, res) => {
 router.get('/company-problems', async (req, res) => {
   try {
     const { company } = req.query;
+
+    console.log('='.repeat(80));
+    console.log('[CODING-TEST] 회사별 문제 목록 조회 시작');
+    console.log('[CODING-TEST] 요청 회사:', company || '전체');
+    console.log('[CODING-TEST] 요청 시간:', new Date().toISOString());
+
     const pool = req.app.get('pool');
 
     let query = 'SELECT * FROM company_workbook_problem';
@@ -581,7 +603,22 @@ router.get('/company-problems', async (req, res) => {
 
     query += ' ORDER BY problem_number';
 
+    console.log('[CODING-TEST] 실행 쿼리:', query);
+    console.log('[CODING-TEST] 쿼리 파라미터:', params);
+
     const [problems] = await pool.execute(query, params);
+
+    console.log('[CODING-TEST] 조회 결과:', {
+      총_문제_수: problems.length,
+      첫_문제: problems[0] ? {
+        번호: problems[0].problem_number,
+        제목: problems[0].problem_title,
+        난이도: problems[0].level
+      } : '없음'
+    });
+
+    console.log('[CODING-TEST] 회사별 문제 목록 조회 완료');
+    console.log('='.repeat(80));
 
     res.json({
       success: true,
@@ -590,7 +627,10 @@ router.get('/company-problems', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[CODING-TEST] 회사별 문제 목록 조회 오류:', error);
+    console.error('='.repeat(80));
+    console.error('[CODING-TEST] 회사별 문제 목록 조회 오류:', error.message);
+    console.error('[CODING-TEST] 오류 스택:', error.stack);
+    console.error('='.repeat(80));
     res.status(500).json({ error: '회사별 문제 목록 조회 중 오류가 발생했습니다' });
   }
 });
@@ -601,27 +641,52 @@ router.get('/company-problems', async (req, res) => {
 router.get('/problem-detail/:problemNumber', async (req, res) => {
   try {
     const { problemNumber } = req.params;
+
+    console.log('='.repeat(80));
+    console.log('[CODING-TEST] 문제 상세 조회 시작');
+    console.log('[CODING-TEST] 문제 번호:', problemNumber);
+    console.log('[CODING-TEST] 요청 시간:', new Date().toISOString());
+
     const pool = req.app.get('pool');
 
+    console.log('[CODING-TEST] problem_detail 테이블 조회 중...');
     const [details] = await pool.execute(
       'SELECT * FROM problem_detail WHERE problem_number = ?',
       [problemNumber]
     );
 
     if (details.length === 0) {
+      console.log('[CODING-TEST] 문제 상세 정보를 찾을 수 없음');
+      console.log('='.repeat(80));
       return res.status(404).json({
         success: false,
         error: '문제 상세 정보를 찾을 수 없습니다'
       });
     }
 
+    const detail = details[0];
+    console.log('[CODING-TEST] 조회 결과:', {
+      문제번호: detail.problem_number,
+      문제설명_길이: detail.problem_description?.length || 0,
+      입력설명: detail.input_description ? '있음' : '없음',
+      출력설명: detail.output_description ? '있음' : '없음',
+      예제입력: detail.sample_input_1 ? '있음' : '없음',
+      링크: detail.link || '없음'
+    });
+
+    console.log('[CODING-TEST] 문제 상세 조회 완료');
+    console.log('='.repeat(80));
+
     res.json({
       success: true,
-      detail: details[0]
+      detail: detail
     });
 
   } catch (error) {
-    console.error('[CODING-TEST] 문제 상세 조회 오류:', error);
+    console.error('='.repeat(80));
+    console.error('[CODING-TEST] 문제 상세 조회 오류:', error.message);
+    console.error('[CODING-TEST] 오류 스택:', error.stack);
+    console.error('='.repeat(80));
     res.status(500).json({ error: '문제 상세 조회 중 오류가 발생했습니다' });
   }
 });
