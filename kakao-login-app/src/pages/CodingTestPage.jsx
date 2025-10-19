@@ -11,6 +11,7 @@ export default function CodingTestPage() {
     const navigate = useNavigate();
     const [companiesWithProblems, setCompaniesWithProblems] = useState({});
     const [selectedProblem, setSelectedProblem] = useState(null);
+    const [problemDetail, setProblemDetail] = useState(null);
     const [code, setCode] = useState('// 여기에 코드를 작성하세요\n');
     const [testResult, setTestResult] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -35,13 +36,13 @@ export default function CodingTestPage() {
                 const companies = Object.keys(statsResponse.data.companies);
                 const companiesData = {};
 
-                // 각 회사별로 문제 목록 조회
+                // 각 회사별로 문제 목록 조회 (company_workbook_problem 테이블)
                 for (const company of companies) {
                     try {
                         const problemsResponse = await axios.get(
-                            `${API_BASE_URL}/api/coding/problems`,
+                            `${API_BASE_URL}/api/coding/company-problems`,
                             {
-                                params: { company, limit: 100 },
+                                params: { company },
                                 withCredentials: true
                             }
                         );
@@ -76,10 +77,29 @@ export default function CodingTestPage() {
         }));
     };
 
-    const handleProblemSelect = (problem, company) => {
-        setSelectedProblem({ ...problem, company });
-        setCode('// 여기에 코드를 작성하세요\n');
-        setTestResult(null);
+    const handleProblemSelect = async (problem, company) => {
+        setLoading(true);
+        setProblemDetail(null);
+
+        try {
+            // problem_detail 테이블에서 상세 정보 조회
+            const detailResponse = await axios.get(
+                `${API_BASE_URL}/api/coding/problem-detail/${problem.problem_number}`,
+                { withCredentials: true }
+            );
+
+            if (detailResponse.data.success) {
+                setSelectedProblem({ ...problem, company });
+                setProblemDetail(detailResponse.data.detail);
+                setCode('// 여기에 코드를 작성하세요\n');
+                setTestResult(null);
+            }
+        } catch (error) {
+            console.error('문제 상세 조회 오류:', error);
+            alert('문제 상세 정보를 불러오는데 실패했습니다.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleSubmitCode = async () => {
@@ -98,7 +118,7 @@ export default function CodingTestPage() {
             const response = await axios.post(
                 `${API_BASE_URL}/api/coding/submit`,
                 {
-                    problem_id: selectedProblem.id,
+                    problem_id: selectedProblem.id || selectedProblem.problem_number,
                     code: code,
                     language: 'javascript'
                 },
@@ -125,6 +145,7 @@ export default function CodingTestPage() {
 
     const handleBackToList = () => {
         setSelectedProblem(null);
+        setProblemDetail(null);
         setCode('// 여기에 코드를 작성하세요\n');
         setTestResult(null);
     };
@@ -132,127 +153,145 @@ export default function CodingTestPage() {
     return (
         <div style={{
             minHeight: '100vh',
-            backgroundColor: '#f5f7fa',
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             paddingBottom: '80px'
         }}>
-            {/* 헤더 */}
-            <div style={{
-                backgroundColor: '#fff',
-                borderBottom: '1px solid #e5e8eb',
-                padding: '16px',
-                position: 'sticky',
-                top: 0,
-                zIndex: 100
-            }}>
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    maxWidth: '1200px',
-                    margin: '0 auto'
-                }}>
-                    <button
-                        onClick={() => navigate(-1)}
-                        style={{
-                            background: 'none',
-                            border: 'none',
-                            fontSize: '24px',
-                            cursor: 'pointer',
-                            padding: '8px',
-                            marginRight: '12px'
-                        }}
-                    >
-                        ←
-                    </button>
-                    <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 'bold' }}>
-                        코딩 테스트
-                    </h1>
-                </div>
-            </div>
-
             <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px' }}>
                 {!selectedProblem ? (
                     <>
                         {/* 기능 설명 */}
                         <div style={{
-                            backgroundColor: '#fff',
-                            borderRadius: '12px',
-                            padding: '24px',
-                            marginBottom: '20px',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                            background: 'white',
+                            borderRadius: '20px',
+                            padding: '40px',
+                            marginBottom: '30px',
+                            boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
                         }}>
-                            <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px', color: '#1a202c' }}>
-                                💻 AI 코딩 테스트
-                            </h2>
-                            <p style={{ color: '#4a5568', lineHeight: '1.8', marginBottom: '20px', fontSize: '15px' }}>
-                                기업별 코딩 테스트 문제를 풀어보고 AI의 도움으로 실력을 향상시킬 수 있습니다.<br/>
-                                아래 회사 목록에서 문제를 선택하여 직접 코드를 작성하고 테스트해보세요.
-                            </p>
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '20px',
+                                marginBottom: '30px'
+                            }}>
+                                <div style={{
+                                    fontSize: '4rem',
+                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                    WebkitBackgroundClip: 'text',
+                                    WebkitTextFillColor: 'transparent',
+                                    backgroundClip: 'text'
+                                }}>
+                                    💻
+                                </div>
+                                <div style={{ flex: '1' }}>
+                                    <h1 style={{
+                                        fontSize: '2.5rem',
+                                        fontWeight: '800',
+                                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                        WebkitBackgroundClip: 'text',
+                                        WebkitTextFillColor: 'transparent',
+                                        backgroundClip: 'text',
+                                        marginBottom: '10px'
+                                    }}>
+                                        AI 코딩 테스트
+                                    </h1>
+                                    <p style={{
+                                        fontSize: '1.1rem',
+                                        color: '#666',
+                                        lineHeight: '1.8',
+                                        margin: 0
+                                    }}>
+                                        기업별 코딩 테스트 문제를 풀어보고 AI의 도움으로 실력을 향상시킬 수 있습니다.
+                                    </p>
+                                </div>
+                            </div>
 
                             {/* AI 기능 소개 */}
                             <div style={{
                                 display: 'grid',
                                 gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-                                gap: '12px',
-                                marginTop: '20px',
-                                paddingTop: '20px',
-                                borderTop: '1px solid #e5e8eb'
+                                gap: '20px',
+                                marginTop: '30px'
                             }}>
                                 <div style={{
-                                    padding: '16px',
-                                    backgroundColor: '#f0f9ff',
-                                    borderRadius: '8px',
-                                    borderLeft: '3px solid #3b82f6'
+                                    padding: '20px',
+                                    background: 'linear-gradient(135deg, #667eea15 0%, #764ba215 100%)',
+                                    borderRadius: '15px',
+                                    border: '2px solid #667eea30',
+                                    transition: 'all 0.3s ease'
                                 }}>
-                                    <div style={{ fontSize: '24px', marginBottom: '8px' }}>🤖</div>
-                                    <div style={{ fontWeight: 'bold', marginBottom: '6px', color: '#1e40af', fontSize: '14px' }}>
+                                    <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🤖</div>
+                                    <div style={{
+                                        fontWeight: '700',
+                                        marginBottom: '8px',
+                                        color: '#667eea',
+                                        fontSize: '1.1rem'
+                                    }}>
                                         AI 어시스턴트
                                     </div>
-                                    <div style={{ fontSize: '13px', color: '#1e3a8a', lineHeight: '1.5' }}>
+                                    <div style={{ fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
                                         문제 해결에 어려움이 있을 때 AI가 힌트와 가이드를 제공합니다
                                     </div>
                                 </div>
 
                                 <div style={{
-                                    padding: '16px',
-                                    backgroundColor: '#f0fdf4',
-                                    borderRadius: '8px',
-                                    borderLeft: '3px solid #10b981'
+                                    padding: '20px',
+                                    background: 'linear-gradient(135deg, #10b98115 0%, #059ff215 100%)',
+                                    borderRadius: '15px',
+                                    border: '2px solid #10b98130',
+                                    transition: 'all 0.3s ease'
                                 }}>
-                                    <div style={{ fontSize: '24px', marginBottom: '8px' }}>⚡</div>
-                                    <div style={{ fontWeight: 'bold', marginBottom: '6px', color: '#065f46', fontSize: '14px' }}>
+                                    <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>⚡</div>
+                                    <div style={{
+                                        fontWeight: '700',
+                                        marginBottom: '8px',
+                                        color: '#10b981',
+                                        fontSize: '1.1rem'
+                                    }}>
                                         실시간 피드백
                                     </div>
-                                    <div style={{ fontSize: '13px', color: '#064e3b', lineHeight: '1.5' }}>
+                                    <div style={{ fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
                                         코드 작성 후 즉시 AI 리뷰와 개선 제안을 받을 수 있습니다
                                     </div>
                                 </div>
 
                                 <div style={{
-                                    padding: '16px',
-                                    backgroundColor: '#fef3c7',
-                                    borderRadius: '8px',
-                                    borderLeft: '3px solid #f59e0b'
+                                    padding: '20px',
+                                    background: 'linear-gradient(135deg, #f59e0b15 0%, #d97f0715 100%)',
+                                    borderRadius: '15px',
+                                    border: '2px solid #f59e0b30',
+                                    transition: 'all 0.3s ease'
                                 }}>
-                                    <div style={{ fontSize: '24px', marginBottom: '8px' }}>🎯</div>
-                                    <div style={{ fontWeight: 'bold', marginBottom: '6px', color: '#92400e', fontSize: '14px' }}>
+                                    <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🎯</div>
+                                    <div style={{
+                                        fontWeight: '700',
+                                        marginBottom: '8px',
+                                        color: '#f59e0b',
+                                        fontSize: '1.1rem'
+                                    }}>
                                         맞춤형 문제 생성
                                     </div>
-                                    <div style={{ fontSize: '13px', color: '#78350f', lineHeight: '1.5' }}>
+                                    <div style={{ fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
                                         회원님의 실력에 맞는 맞춤형 문제를 AI가 생성해드립니다
                                     </div>
                                 </div>
 
                                 <div style={{
-                                    padding: '16px',
-                                    backgroundColor: '#fce7f3',
-                                    borderRadius: '8px',
-                                    borderLeft: '3px solid #ec4899'
+                                    padding: '20px',
+                                    background: 'linear-gradient(135deg, #ec489915 0%, #d946ef15 100%)',
+                                    borderRadius: '15px',
+                                    border: '2px solid #ec489930',
+                                    transition: 'all 0.3s ease'
                                 }}>
-                                    <div style={{ fontSize: '24px', marginBottom: '8px' }}>✨</div>
-                                    <div style={{ fontWeight: 'bold', marginBottom: '6px', color: '#831843', fontSize: '14px' }}>
+                                    <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>✨</div>
+                                    <div style={{
+                                        fontWeight: '700',
+                                        marginBottom: '8px',
+                                        color: '#ec4899',
+                                        fontSize: '1.1rem'
+                                    }}>
                                         코드 자동 완성
                                     </div>
-                                    <div style={{ fontSize: '13px', color: '#831843', lineHeight: '1.5' }}>
+                                    <div style={{ fontSize: '0.95rem', color: '#666', lineHeight: '1.6' }}>
                                         AI가 코드 패턴을 학습하여 자동 완성 기능을 제공합니다
                                     </div>
                                 </div>
@@ -262,26 +301,28 @@ export default function CodingTestPage() {
                         {/* 로딩 중 */}
                         {loading && (
                             <div style={{
-                                textAlign: 'center',
+                                background: 'white',
+                                borderRadius: '20px',
                                 padding: '60px',
-                                color: '#6b7280',
-                                fontSize: '16px'
+                                textAlign: 'center',
+                                boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
                             }}>
-                                문제 목록을 불러오는 중...
+                                <div style={{ fontSize: '3rem', marginBottom: '20px' }}>⏳</div>
+                                <div style={{ color: '#666', fontSize: '1.2rem' }}>문제 목록을 불러오는 중...</div>
                             </div>
                         )}
 
                         {/* 회사별 문제 목록 */}
                         {!loading && Object.keys(companiesWithProblems).length === 0 && (
                             <div style={{
-                                backgroundColor: '#fff',
-                                borderRadius: '12px',
-                                padding: '60px 24px',
+                                background: 'white',
+                                borderRadius: '20px',
+                                padding: '60px',
                                 textAlign: 'center',
-                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                                color: '#6b7280'
+                                boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
                             }}>
-                                문제가 없습니다.
+                                <div style={{ fontSize: '3rem', marginBottom: '20px' }}>📭</div>
+                                <div style={{ color: '#666', fontSize: '1.2rem' }}>문제가 없습니다.</div>
                             </div>
                         )}
 
@@ -289,53 +330,71 @@ export default function CodingTestPage() {
                             <div
                                 key={company}
                                 style={{
-                                    backgroundColor: '#fff',
-                                    borderRadius: '12px',
-                                    marginBottom: '16px',
-                                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                                    overflow: 'hidden'
+                                    background: 'white',
+                                    borderRadius: '20px',
+                                    marginBottom: '20px',
+                                    boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+                                    overflow: 'hidden',
+                                    transition: 'all 0.3s ease'
                                 }}
                             >
                                 {/* 회사 헤더 */}
                                 <div
                                     onClick={() => toggleCompany(company)}
                                     style={{
-                                        padding: '20px 24px',
+                                        padding: '30px',
                                         cursor: 'pointer',
                                         display: 'flex',
                                         justifyContent: 'space-between',
                                         alignItems: 'center',
-                                        backgroundColor: expandedCompanies[company] ? '#f9fafb' : '#fff',
-                                        borderBottom: expandedCompanies[company] ? '1px solid #e5e8eb' : 'none',
-                                        transition: 'background-color 0.2s'
+                                        background: expandedCompanies[company]
+                                            ? 'linear-gradient(135deg, #667eea15 0%, #764ba215 100%)'
+                                            : 'white',
+                                        transition: 'all 0.3s ease'
                                     }}
                                     onMouseEnter={(e) => {
                                         if (!expandedCompanies[company]) {
-                                            e.currentTarget.style.backgroundColor = '#f9fafb';
+                                            e.currentTarget.style.background = '#f9fafb';
                                         }
                                     }}
                                     onMouseLeave={(e) => {
                                         if (!expandedCompanies[company]) {
-                                            e.currentTarget.style.backgroundColor = '#fff';
+                                            e.currentTarget.style.background = 'white';
                                         }
                                     }}
                                 >
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                        <span style={{ fontSize: '24px' }}>🏢</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                                        <div style={{
+                                            fontSize: '2.5rem',
+                                            width: '60px',
+                                            height: '60px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                            borderRadius: '15px'
+                                        }}>
+                                            🏢
+                                        </div>
                                         <div>
-                                            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#1a202c' }}>
+                                            <div style={{
+                                                fontSize: '1.5rem',
+                                                fontWeight: '700',
+                                                color: '#333',
+                                                marginBottom: '5px'
+                                            }}>
                                                 {company}
                                             </div>
-                                            <div style={{ fontSize: '14px', color: '#6b7280', marginTop: '4px' }}>
+                                            <div style={{ fontSize: '1rem', color: '#666' }}>
                                                 {problems.length}개 문제
                                             </div>
                                         </div>
                                     </div>
                                     <div style={{
-                                        fontSize: '20px',
-                                        color: '#6b7280',
+                                        fontSize: '1.5rem',
+                                        color: '#667eea',
                                         transform: expandedCompanies[company] ? 'rotate(180deg)' : 'rotate(0deg)',
-                                        transition: 'transform 0.2s'
+                                        transition: 'transform 0.3s ease'
                                     }}>
                                         ▼
                                     </div>
@@ -343,38 +402,40 @@ export default function CodingTestPage() {
 
                                 {/* 문제 목록 */}
                                 {expandedCompanies[company] && (
-                                    <div style={{ padding: '12px 24px 24px 24px' }}>
+                                    <div style={{ padding: '20px 30px 30px 30px' }}>
                                         {problems.length === 0 ? (
                                             <div style={{
                                                 textAlign: 'center',
                                                 padding: '40px',
-                                                color: '#6b7280'
+                                                color: '#999'
                                             }}>
                                                 문제가 없습니다.
                                             </div>
                                         ) : (
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                                                 {problems.map(problem => (
                                                     <div
-                                                        key={problem.id}
+                                                        key={problem.id || problem.problem_number}
                                                         onClick={() => handleProblemSelect(problem, company)}
                                                         style={{
-                                                            padding: '16px',
-                                                            borderRadius: '8px',
-                                                            border: '1px solid #e5e8eb',
+                                                            padding: '20px',
+                                                            borderRadius: '15px',
+                                                            border: '2px solid #e5e8eb',
                                                             cursor: 'pointer',
-                                                            transition: 'all 0.2s',
-                                                            backgroundColor: '#fff'
+                                                            transition: 'all 0.3s ease',
+                                                            background: 'white'
                                                         }}
                                                         onMouseEnter={(e) => {
-                                                            e.currentTarget.style.backgroundColor = '#f0f9ff';
-                                                            e.currentTarget.style.borderColor = '#3b82f6';
-                                                            e.currentTarget.style.transform = 'translateX(4px)';
+                                                            e.currentTarget.style.background = 'linear-gradient(135deg, #667eea08 0%, #764ba208 100%)';
+                                                            e.currentTarget.style.borderColor = '#667eea';
+                                                            e.currentTarget.style.transform = 'translateX(8px)';
+                                                            e.currentTarget.style.boxShadow = '0 10px 30px rgba(102, 126, 234, 0.2)';
                                                         }}
                                                         onMouseLeave={(e) => {
-                                                            e.currentTarget.style.backgroundColor = '#fff';
+                                                            e.currentTarget.style.background = 'white';
                                                             e.currentTarget.style.borderColor = '#e5e8eb';
                                                             e.currentTarget.style.transform = 'translateX(0)';
+                                                            e.currentTarget.style.boxShadow = 'none';
                                                         }}
                                                     >
                                                         <div style={{
@@ -384,32 +445,28 @@ export default function CodingTestPage() {
                                                         }}>
                                                             <div style={{ flex: 1 }}>
                                                                 <div style={{
-                                                                    fontWeight: 'bold',
-                                                                    marginBottom: '6px',
-                                                                    color: '#1a202c',
-                                                                    fontSize: '15px'
+                                                                    fontWeight: '700',
+                                                                    marginBottom: '8px',
+                                                                    color: '#333',
+                                                                    fontSize: '1.1rem'
                                                                 }}>
-                                                                    {problem.title || `문제 ${problem.problem_id}`}
+                                                                    {problem.problem_title || `문제 ${problem.problem_number}`}
                                                                 </div>
                                                                 <div style={{
-                                                                    fontSize: '13px',
-                                                                    color: '#6b7280',
+                                                                    fontSize: '0.9rem',
+                                                                    color: '#666',
                                                                     display: 'flex',
-                                                                    gap: '12px',
+                                                                    gap: '15px',
                                                                     flexWrap: 'wrap'
                                                                 }}>
-                                                                    <span>
-                                                                        난이도: {problem.level || problem.difficulty || 'N/A'}
-                                                                    </span>
-                                                                    {problem.problem_id && (
-                                                                        <span>번호: {problem.problem_id}</span>
-                                                                    )}
+                                                                    <span>📊 난이도: {problem.level || 'N/A'}</span>
+                                                                    <span>🔢 번호: {problem.problem_number}</span>
                                                                 </div>
                                                             </div>
                                                             <div style={{
-                                                                color: '#3b82f6',
-                                                                fontSize: '20px',
-                                                                marginLeft: '12px'
+                                                                color: '#667eea',
+                                                                fontSize: '1.5rem',
+                                                                marginLeft: '20px'
                                                             }}>
                                                                 →
                                                             </div>
@@ -428,115 +485,222 @@ export default function CodingTestPage() {
                     <div>
                         {/* 문제 정보 */}
                         <div style={{
-                            backgroundColor: '#fff',
-                            borderRadius: '12px',
-                            padding: '24px',
+                            background: 'white',
+                            borderRadius: '20px',
+                            padding: '40px',
                             marginBottom: '20px',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                            boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
                         }}>
                             <div style={{
                                 display: 'flex',
                                 justifyContent: 'space-between',
-                                alignItems: 'center',
-                                marginBottom: '16px'
+                                alignItems: 'flex-start',
+                                marginBottom: '20px'
                             }}>
-                                <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0, color: '#1a202c' }}>
-                                    {selectedProblem.title || `문제 ${selectedProblem.problem_id}`}
-                                </h2>
+                                <div style={{ flex: 1 }}>
+                                    <h2 style={{
+                                        fontSize: '2rem',
+                                        fontWeight: '800',
+                                        color: '#333',
+                                        marginBottom: '15px'
+                                    }}>
+                                        {selectedProblem.problem_title || `문제 ${selectedProblem.problem_number}`}
+                                    </h2>
+                                    <div style={{
+                                        display: 'flex',
+                                        gap: '20px',
+                                        fontSize: '1rem',
+                                        color: '#666',
+                                        flexWrap: 'wrap'
+                                    }}>
+                                        <span style={{ fontWeight: '600' }}>🏢 {selectedProblem.company}</span>
+                                        <span>📊 난이도: {selectedProblem.level || 'N/A'}</span>
+                                        <span>🔢 번호: {selectedProblem.problem_number}</span>
+                                    </div>
+                                </div>
                                 <button
                                     onClick={handleBackToList}
                                     style={{
-                                        padding: '10px 20px',
-                                        borderRadius: '8px',
-                                        border: '1px solid #e5e8eb',
-                                        backgroundColor: '#fff',
+                                        padding: '12px 24px',
+                                        borderRadius: '12px',
+                                        border: 'none',
+                                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                        color: 'white',
                                         cursor: 'pointer',
-                                        fontSize: '14px',
-                                        fontWeight: '600',
-                                        color: '#374151',
-                                        transition: 'all 0.2s'
+                                        fontSize: '1rem',
+                                        fontWeight: '700',
+                                        transition: 'all 0.3s ease',
+                                        boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
                                     }}
                                     onMouseEnter={(e) => {
-                                        e.currentTarget.style.backgroundColor = '#f9fafb';
-                                        e.currentTarget.style.borderColor = '#d1d5db';
+                                        e.currentTarget.style.transform = 'translateY(-2px)';
+                                        e.currentTarget.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.4)';
                                     }}
                                     onMouseLeave={(e) => {
-                                        e.currentTarget.style.backgroundColor = '#fff';
-                                        e.currentTarget.style.borderColor = '#e5e8eb';
+                                        e.currentTarget.style.transform = 'translateY(0)';
+                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
                                     }}
                                 >
                                     ← 목록으로
                                 </button>
                             </div>
-                            <div style={{
-                                display: 'flex',
-                                gap: '16px',
-                                fontSize: '14px',
-                                color: '#6b7280',
-                                flexWrap: 'wrap'
-                            }}>
-                                <span style={{ fontWeight: '600' }}>
-                                    🏢 {selectedProblem.company}
-                                </span>
-                                <span>•</span>
-                                <span>
-                                    난이도: {selectedProblem.level || selectedProblem.difficulty || 'N/A'}
-                                </span>
-                                {selectedProblem.problem_id && (
-                                    <>
-                                        <span>•</span>
-                                        <span>번호: {selectedProblem.problem_id}</span>
-                                    </>
-                                )}
-                            </div>
-                            {selectedProblem.link && (
-                                <div style={{ marginTop: '16px' }}>
-                                    <a
-                                        href={selectedProblem.link}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        style={{
-                                            color: '#3b82f6',
-                                            textDecoration: 'none',
-                                            fontSize: '14px',
-                                            fontWeight: '600',
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            gap: '6px'
-                                        }}
-                                    >
-                                        백준 문제 바로가기 →
-                                    </a>
+
+                            {/* 문제 상세 내용 */}
+                            {loading ? (
+                                <div style={{ textAlign: 'center', padding: '40px' }}>
+                                    <div style={{ fontSize: '2rem', marginBottom: '10px' }}>⏳</div>
+                                    <div style={{ color: '#666' }}>문제 상세 정보를 불러오는 중...</div>
+                                </div>
+                            ) : problemDetail ? (
+                                <div style={{
+                                    marginTop: '20px',
+                                    padding: '30px',
+                                    background: '#f9fafb',
+                                    borderRadius: '15px',
+                                    lineHeight: '1.8'
+                                }}>
+                                    <div style={{
+                                        whiteSpace: 'pre-wrap',
+                                        fontFamily: 'inherit',
+                                        color: '#333'
+                                    }}>
+                                        {problemDetail.problem_description || '문제 설명이 없습니다.'}
+                                    </div>
+
+                                    {problemDetail.input_description && (
+                                        <div style={{ marginTop: '20px' }}>
+                                            <h4 style={{ color: '#667eea', marginBottom: '10px' }}>📥 입력</h4>
+                                            <div style={{ whiteSpace: 'pre-wrap', color: '#666' }}>
+                                                {problemDetail.input_description}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {problemDetail.output_description && (
+                                        <div style={{ marginTop: '20px' }}>
+                                            <h4 style={{ color: '#667eea', marginBottom: '10px' }}>📤 출력</h4>
+                                            <div style={{ whiteSpace: 'pre-wrap', color: '#666' }}>
+                                                {problemDetail.output_description}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {(problemDetail.sample_input_1 || problemDetail.sample_output_1) && (
+                                        <div style={{ marginTop: '20px' }}>
+                                            <h4 style={{ color: '#667eea', marginBottom: '10px' }}>📋 예제</h4>
+                                            <div style={{
+                                                display: 'grid',
+                                                gridTemplateColumns: '1fr 1fr',
+                                                gap: '15px'
+                                            }}>
+                                                <div>
+                                                    <div style={{ fontWeight: '600', marginBottom: '5px', color: '#333' }}>입력</div>
+                                                    <div style={{
+                                                        padding: '15px',
+                                                        background: 'white',
+                                                        borderRadius: '8px',
+                                                        fontFamily: 'Monaco, monospace',
+                                                        fontSize: '0.9rem',
+                                                        whiteSpace: 'pre-wrap'
+                                                    }}>
+                                                        {problemDetail.sample_input_1 || '-'}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div style={{ fontWeight: '600', marginBottom: '5px', color: '#333' }}>출력</div>
+                                                    <div style={{
+                                                        padding: '15px',
+                                                        background: 'white',
+                                                        borderRadius: '8px',
+                                                        fontFamily: 'Monaco, monospace',
+                                                        fontSize: '0.9rem',
+                                                        whiteSpace: 'pre-wrap'
+                                                    }}>
+                                                        {problemDetail.sample_output_1 || '-'}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {problemDetail.link && (
+                                        <div style={{ marginTop: '20px' }}>
+                                            <a
+                                                href={problemDetail.link}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '8px',
+                                                    padding: '10px 20px',
+                                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                                    color: 'white',
+                                                    textDecoration: 'none',
+                                                    borderRadius: '10px',
+                                                    fontWeight: '600',
+                                                    transition: 'all 0.3s ease'
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.4)';
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.currentTarget.style.transform = 'translateY(0)';
+                                                    e.currentTarget.style.boxShadow = 'none';
+                                                }}
+                                            >
+                                                백준 문제 바로가기 →
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div style={{
+                                    marginTop: '20px',
+                                    padding: '30px',
+                                    background: '#fef2f2',
+                                    borderRadius: '15px',
+                                    color: '#b91c1c',
+                                    textAlign: 'center'
+                                }}>
+                                    문제 상세 정보를 불러올 수 없습니다.
                                 </div>
                             )}
                         </div>
 
                         {/* 코드 에디터 */}
                         <div style={{
-                            backgroundColor: '#fff',
-                            borderRadius: '12px',
-                            padding: '24px',
+                            background: 'white',
+                            borderRadius: '20px',
+                            padding: '40px',
                             marginBottom: '20px',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                            boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
                         }}>
-                            <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '12px', color: '#1a202c' }}>
-                                코드 작성
+                            <h3 style={{
+                                fontSize: '1.5rem',
+                                fontWeight: '700',
+                                marginBottom: '20px',
+                                color: '#333'
+                            }}>
+                                💻 코드 작성
                             </h3>
                             <textarea
                                 value={code}
                                 onChange={(e) => setCode(e.target.value)}
                                 style={{
                                     width: '100%',
-                                    minHeight: '450px',
-                                    padding: '16px',
-                                    borderRadius: '8px',
-                                    border: '1px solid #e5e8eb',
+                                    minHeight: '500px',
+                                    padding: '20px',
+                                    borderRadius: '15px',
+                                    border: '2px solid #e5e8eb',
                                     fontFamily: 'Monaco, Menlo, Consolas, "Courier New", monospace',
                                     fontSize: '14px',
                                     lineHeight: '1.6',
                                     resize: 'vertical',
-                                    backgroundColor: '#f9fafb',
-                                    color: '#1a202c'
+                                    background: '#1e1e1e',
+                                    color: '#d4d4d4',
+                                    outline: 'none'
                                 }}
                                 placeholder="여기에 코드를 작성하세요..."
                             />
@@ -544,61 +708,67 @@ export default function CodingTestPage() {
 
                         {/* 제출 버튼 */}
                         <div style={{
-                            backgroundColor: '#fff',
-                            borderRadius: '12px',
-                            padding: '24px',
+                            background: 'white',
+                            borderRadius: '20px',
+                            padding: '40px',
                             marginBottom: '20px',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                            boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
                         }}>
                             <button
                                 onClick={handleSubmitCode}
                                 disabled={loading}
                                 style={{
                                     width: '100%',
-                                    padding: '16px',
-                                    borderRadius: '8px',
+                                    padding: '20px',
+                                    borderRadius: '15px',
                                     border: 'none',
-                                    backgroundColor: loading ? '#9ca3af' : '#3b82f6',
+                                    background: loading
+                                        ? '#9ca3af'
+                                        : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                                     color: '#fff',
-                                    fontSize: '16px',
-                                    fontWeight: 'bold',
+                                    fontSize: '1.3rem',
+                                    fontWeight: '700',
                                     cursor: loading ? 'not-allowed' : 'pointer',
-                                    transition: 'background-color 0.2s'
+                                    transition: 'all 0.3s ease',
+                                    boxShadow: loading ? 'none' : '0 10px 30px rgba(102, 126, 234, 0.3)'
                                 }}
                                 onMouseEnter={(e) => {
                                     if (!loading) {
-                                        e.currentTarget.style.backgroundColor = '#2563eb';
+                                        e.currentTarget.style.transform = 'translateY(-3px)';
+                                        e.currentTarget.style.boxShadow = '0 15px 40px rgba(102, 126, 234, 0.4)';
                                     }
                                 }}
                                 onMouseLeave={(e) => {
                                     if (!loading) {
-                                        e.currentTarget.style.backgroundColor = '#3b82f6';
+                                        e.currentTarget.style.transform = 'translateY(0)';
+                                        e.currentTarget.style.boxShadow = '0 10px 30px rgba(102, 126, 234, 0.3)';
                                     }
                                 }}
                             >
-                                {loading ? '제출 중...' : '코드 제출'}
+                                {loading ? '제출 중...' : '🚀 코드 제출'}
                             </button>
                         </div>
 
                         {/* 테스트 결과 */}
                         {testResult && (
                             <div style={{
-                                backgroundColor: testResult.status === 'success' ? '#ecfdf5' : '#fef2f2',
-                                borderRadius: '12px',
-                                padding: '24px',
-                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                                borderLeft: `4px solid ${testResult.status === 'success' ? '#10b981' : '#ef4444'}`
+                                background: testResult.status === 'success' ? '#ecfdf5' : '#fef2f2',
+                                borderRadius: '20px',
+                                padding: '40px',
+                                boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+                                borderLeft: `6px solid ${testResult.status === 'success' ? '#10b981' : '#ef4444'}`
                             }}>
                                 <h3 style={{
-                                    fontSize: '16px',
-                                    fontWeight: 'bold',
-                                    marginBottom: '8px',
+                                    fontSize: '1.5rem',
+                                    fontWeight: '700',
+                                    marginBottom: '15px',
                                     color: testResult.status === 'success' ? '#065f46' : '#991b1b'
                                 }}>
                                     {testResult.status === 'success' ? '✓ 제출 완료' : '✗ 제출 실패'}
                                 </h3>
                                 <p style={{
                                     margin: 0,
+                                    fontSize: '1.1rem',
                                     color: testResult.status === 'success' ? '#047857' : '#b91c1c',
                                     lineHeight: '1.6'
                                 }}>
@@ -606,8 +776,8 @@ export default function CodingTestPage() {
                                 </p>
                                 {testResult.submissionId && (
                                     <p style={{
-                                        margin: '8px 0 0 0',
-                                        fontSize: '14px',
+                                        margin: '15px 0 0 0',
+                                        fontSize: '0.95rem',
                                         color: '#6b7280'
                                     }}>
                                         제출 ID: {testResult.submissionId}

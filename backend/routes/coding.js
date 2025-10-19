@@ -528,4 +528,67 @@ router.get('/baekjoon/companies/:companyName/problems', async (req, res) => {
   }
 });
 
+// ==============================================================================
+// 12. 회사별 문제 목록 조회 API (company_workbook_problem)
+// ==============================================================================
+router.get('/company-problems', async (req, res) => {
+  try {
+    const { company } = req.query;
+    const pool = req.app.get('pool');
+
+    let query = 'SELECT * FROM company_workbook_problem';
+    const params = [];
+
+    if (company) {
+      query += ' WHERE company = ?';
+      params.push(company);
+    }
+
+    query += ' ORDER BY problem_number';
+
+    const [problems] = await pool.execute(query, params);
+
+    res.json({
+      success: true,
+      problems: problems,
+      count: problems.length
+    });
+
+  } catch (error) {
+    console.error('[CODING-TEST] 회사별 문제 목록 조회 오류:', error);
+    res.status(500).json({ error: '회사별 문제 목록 조회 중 오류가 발생했습니다' });
+  }
+});
+
+// ==============================================================================
+// 13. 문제 상세 조회 API (problem_detail)
+// ==============================================================================
+router.get('/problem-detail/:problemNumber', async (req, res) => {
+  try {
+    const { problemNumber } = req.params;
+    const pool = req.app.get('pool');
+
+    const [details] = await pool.execute(
+      'SELECT * FROM problem_detail WHERE problem_number = ?',
+      [problemNumber]
+    );
+
+    if (details.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: '문제 상세 정보를 찾을 수 없습니다'
+      });
+    }
+
+    res.json({
+      success: true,
+      detail: details[0]
+    });
+
+  } catch (error) {
+    console.error('[CODING-TEST] 문제 상세 조회 오류:', error);
+    res.status(500).json({ error: '문제 상세 조회 중 오류가 발생했습니다' });
+  }
+});
+
 export default router;
