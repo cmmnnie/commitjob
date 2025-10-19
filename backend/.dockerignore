@@ -1,7 +1,6 @@
 # Node modules (Railway가 자동으로 설치)
 node_modules/
 npm-debug.log*
-package-lock.json
 
 # Git
 .git/
