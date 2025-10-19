@@ -214,6 +214,14 @@ export default function MenuPage() {
                             <div style={menuDescStyle}>이력서 정보를 활용하여 AI 채용공고와 AI 면접질문을 추천해드리고 AI 자소서 작성을 지원해드립니다.</div>
                         </div>
                     </a>
+
+                    <a href="/coding-test" onClick={(e) => { e.preventDefault(); navigate('/coding-test'); }} style={{...menuItemStyle, cursor: 'pointer'}}>
+                        <span style={menuIconStyle}>💻</span>
+                        <div style={menuContentStyle}>
+                            <div style={menuTitleStyle}>코딩 테스트</div>
+                            <div style={menuDescStyle}>기업별 코딩 테스트 문제를 풀어보고 실력을 향상시킬 수 있습니다. 회사를 선택하면 해당 기업의 기출 문제들을 확인하고 직접 코드를 작성할 수 있습니다.</div>
+                        </div>
+                    </a>
                 </div>
             </div>
 
