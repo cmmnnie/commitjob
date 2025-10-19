@@ -157,19 +157,20 @@ export default function CodingTestPage() {
                             <h2 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '20px' }}>
                                 회사 선택
                             </h2>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '15px' }}>
+                            <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
                                 {companies.map(comp => (
                                     <button
                                         key={comp.company}
                                         onClick={() => handleCompanySelect(comp.company)}
                                         style={{
-                                            padding: '20px',
-                                            borderRadius: '15px',
+                                            padding: '15px 30px',
+                                            borderRadius: '12px',
                                             border: selectedCompany === comp.company ? '3px solid #667eea' : '2px solid #e5e8eb',
-                                            background: selectedCompany === comp.company ? 'linear-gradient(135deg, #667eea15 0%, #764ba215 100%)' : 'white',
+                                            background: selectedCompany === comp.company ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'white',
+                                            color: selectedCompany === comp.company ? 'white' : '#333',
                                             cursor: 'pointer',
                                             transition: 'all 0.3s ease',
-                                            fontWeight: '600',
+                                            fontWeight: '700',
                                             fontSize: '1.1rem'
                                         }}
                                         onMouseEnter={(e) => {
@@ -185,11 +186,7 @@ export default function CodingTestPage() {
                                             }
                                         }}
                                     >
-                                        <div style={{ fontSize: '2rem', marginBottom: '10px' }}>🏢</div>
-                                        <div style={{ color: '#333' }}>{comp.company}</div>
-                                        <div style={{ fontSize: '0.9rem', color: '#666', marginTop: '5px' }}>
-                                            {comp.count}개 문제
-                                        </div>
+                                        {comp.company}({comp.count}개)
                                     </button>
                                 ))}
                             </div>
