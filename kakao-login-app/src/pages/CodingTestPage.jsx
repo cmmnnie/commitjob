@@ -86,7 +86,7 @@ export default function CodingTestPage() {
             setCode('// 여기에 코드를 작성하세요\n');
 
             const response = await axios.get(
-                `${API_BASE_URL}/api/coding/problem/${problem.problem_number}`
+                `${API_BASE_URL}/api/coding/problem/${problem.problem_id}`
             );
 
             if (response.data.success) {
@@ -215,7 +215,7 @@ export default function CodingTestPage() {
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                         {problems.map(problem => (
                                             <div
-                                                key={problem.problem_number}
+                                                key={problem.problem_id}
                                                 onClick={() => handleProblemSelect(problem)}
                                                 style={{
                                                     padding: '20px',
@@ -236,10 +236,10 @@ export default function CodingTestPage() {
                                                 }}
                                             >
                                                 <div style={{ fontWeight: '700', fontSize: '1.1rem', marginBottom: '8px' }}>
-                                                    {problem.problem_title || `문제 ${problem.problem_number}`}
+                                                    {problem.title || `문제 ${problem.problem_id}`}
                                                 </div>
                                                 <div style={{ fontSize: '0.9rem', color: '#666' }}>
-                                                    난이도: {problem.level || 'N/A'} | 번호: {problem.problem_number}
+                                                    난이도: {problem.info || 'N/A'} | 번호: {problem.problem_id}
                                                 </div>
                                             </div>
                                         ))}
@@ -261,7 +261,7 @@ export default function CodingTestPage() {
                         }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
                                 <h2 style={{ fontSize: '1.8rem', fontWeight: '700', margin: 0 }}>
-                                    {selectedProblem.problem_title || `문제 ${selectedProblem.problem_number}`}
+                                    {selectedProblem.title || `문제 ${selectedProblem.problem_id}`}
                                 </h2>
                                 <button
                                     onClick={handleBackToList}
@@ -279,61 +279,74 @@ export default function CodingTestPage() {
                                 </button>
                             </div>
 
-                            {problemDetail && (
-                                <div style={{ lineHeight: '1.8' }}>
-                                    <div style={{ whiteSpace: 'pre-wrap', marginBottom: '20px' }}>
-                                        {problemDetail.problem_description}
-                                    </div>
+                            {problemDetail && (() => {
+                                let samples = [];
+                                try {
+                                    samples = JSON.parse(problemDetail.samples_json || '[]');
+                                } catch (e) {
+                                    console.error('샘플 JSON 파싱 실패:', e);
+                                }
+                                const firstSample = samples[0] || {};
 
-                                    {problemDetail.input_description && (
-                                        <div style={{ marginTop: '20px' }}>
-                                            <h4 style={{ color: '#667eea' }}>입력</h4>
-                                            <div style={{ whiteSpace: 'pre-wrap', color: '#666' }}>
-                                                {problemDetail.input_description}
-                                            </div>
-                                        </div>
-                                    )}
+                                return (
+                                    <div style={{ lineHeight: '1.8' }}>
+                                        {problemDetail.description_html && (
+                                            <div
+                                                style={{ marginBottom: '20px' }}
+                                                dangerouslySetInnerHTML={{ __html: problemDetail.description_html }}
+                                            />
+                                        )}
 
-                                    {problemDetail.output_description && (
-                                        <div style={{ marginTop: '20px' }}>
-                                            <h4 style={{ color: '#667eea' }}>출력</h4>
-                                            <div style={{ whiteSpace: 'pre-wrap', color: '#666' }}>
-                                                {problemDetail.output_description}
+                                        {problemDetail.input_html && (
+                                            <div style={{ marginTop: '20px' }}>
+                                                <h4 style={{ color: '#667eea' }}>입력</h4>
+                                                <div
+                                                    style={{ color: '#666' }}
+                                                    dangerouslySetInnerHTML={{ __html: problemDetail.input_html }}
+                                                />
                                             </div>
-                                        </div>
-                                    )}
+                                        )}
 
-                                    {problemDetail.sample_input_1 && (
-                                        <div style={{ marginTop: '20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                                            <div>
-                                                <h4 style={{ color: '#667eea' }}>예제 입력</h4>
-                                                <pre style={{
-                                                    padding: '15px',
-                                                    background: '#f5f5f5',
-                                                    borderRadius: '8px',
-                                                    overflow: 'auto'
-                                                }}>
-                                                    {problemDetail.sample_input_1}
-                                                </pre>
+                                        {problemDetail.output_html && (
+                                            <div style={{ marginTop: '20px' }}>
+                                                <h4 style={{ color: '#667eea' }}>출력</h4>
+                                                <div
+                                                    style={{ color: '#666' }}
+                                                    dangerouslySetInnerHTML={{ __html: problemDetail.output_html }}
+                                                />
                                             </div>
-                                            <div>
-                                                <h4 style={{ color: '#667eea' }}>예제 출력</h4>
-                                                <pre style={{
-                                                    padding: '15px',
-                                                    background: '#f5f5f5',
-                                                    borderRadius: '8px',
-                                                    overflow: 'auto'
-                                                }}>
-                                                    {problemDetail.sample_output_1}
-                                                </pre>
-                                            </div>
-                                        </div>
-                                    )}
+                                        )}
 
-                                    {problemDetail.link && (
+                                        {firstSample.input && (
+                                            <div style={{ marginTop: '20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                                                <div>
+                                                    <h4 style={{ color: '#667eea' }}>예제 입력</h4>
+                                                    <pre style={{
+                                                        padding: '15px',
+                                                        background: '#f5f5f5',
+                                                        borderRadius: '8px',
+                                                        overflow: 'auto'
+                                                    }}>
+                                                        {firstSample.input}
+                                                    </pre>
+                                                </div>
+                                                <div>
+                                                    <h4 style={{ color: '#667eea' }}>예제 출력</h4>
+                                                    <pre style={{
+                                                        padding: '15px',
+                                                        background: '#f5f5f5',
+                                                        borderRadius: '8px',
+                                                        overflow: 'auto'
+                                                    }}>
+                                                        {firstSample.output}
+                                                    </pre>
+                                                </div>
+                                            </div>
+                                        )}
+
                                         <div style={{ marginTop: '20px' }}>
                                             <a
-                                                href={problemDetail.link}
+                                                href={`https://www.acmicpc.net/problem/${selectedProblem.problem_id}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 style={{
@@ -349,9 +362,9 @@ export default function CodingTestPage() {
                                                 백준에서 문제 보기 →
                                             </a>
                                         </div>
-                                    )}
-                                </div>
-                            )}
+                                    </div>
+                                );
+                            })()}
                         </div>
 
                         {/* 코드 에디터 */}

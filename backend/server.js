@@ -6943,7 +6943,7 @@ app.get('/api/coding/problems', async (req, res) => {
       params.push(company);
     }
 
-    query += ' ORDER BY problem_number';
+    query += ' ORDER BY problem_id';
 
     const [rows] = await pool.execute(query, params);
     console.log(`[CODING] 문제 목록 조회 완료: ${rows.length}개`);
@@ -6962,7 +6962,7 @@ app.get('/api/coding/problem/:number', async (req, res) => {
     console.log('[CODING] 문제 상세 조회:', number);
 
     const [rows] = await pool.execute(
-      'SELECT * FROM problem_detail WHERE problem_number = ?',
+      'SELECT * FROM problem_detail WHERE problem_id = ?',
       [number]
     );
 
