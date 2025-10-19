@@ -297,8 +297,7 @@ const requiredOrigins = [
   'http://localhost:4001',
   'http://localhost:5173',
   'http://localhost:5174',
-  'http://commitjob.site',
-  '*'
+  'http://commitjob.site'
 ];
 
 // 기존 allowedOrigins에 없는 requiredOrigins만 추가 (중복 방지)
@@ -349,7 +348,19 @@ app.get('/debug/check-cookie', (req, res) => {
 const stateStore = new Map(); // state -> origin
 
 const corsOptions = {
-  origin: '*',
+  origin: (origin, callback) => {
+    // origin이 undefined인 경우는 same-origin 요청 (허용)
+    if (!origin) return callback(null, true);
+
+    // allowedOrigins에 포함된 경우 허용
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn('[CORS] Rejected origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   optionsSuccessStatus: 204,
@@ -581,7 +592,7 @@ app.get("/auth/kakao", (req, res) => {
   console.log('[KAKAO-AUTH] Request origin:', origin);
   console.log('[KAKAO-AUTH] Allowed origins:', allowedOrigins);
 
-  if (!origin || (!allowedOrigins.includes(origin) && !allowedOrigins.includes('*'))) {
+  if (!origin || !allowedOrigins.includes(origin)) {
     console.error('[KAKAO-AUTH] Bad origin:', origin);
     return res.status(400).send("Bad origin");
   }
@@ -617,16 +628,14 @@ app.get("/auth/kakao/login-url", (req, res) => {
   console.log('[KAKAO-LOGIN-URL] Request origin:', origin);
   console.log('[KAKAO-LOGIN-URL] Allowed origins:', allowedOrigins);
 
-  if (!origin || (!allowedOrigins.includes(origin) && !allowedOrigins.includes('*'))) {
+  if (!origin || !allowedOrigins.includes(origin)) {
     console.error('[KAKAO-LOGIN-URL] Bad origin:', origin);
     console.error('[KAKAO-LOGIN-URL] allowedOrigins.includes(origin):', allowedOrigins.includes(origin));
-    console.error('[KAKAO-LOGIN-URL] allowedOrigins.includes("*"):', allowedOrigins.includes('*'));
     return res.status(400).json({
       error: "Bad origin or missing origin query parameter",
       debug: {
         received_origin: origin,
         allowed_origins: allowedOrigins,
-        has_wildcard: allowedOrigins.includes('*'),
         origin_in_list: allowedOrigins.includes(origin)
       }
     });
