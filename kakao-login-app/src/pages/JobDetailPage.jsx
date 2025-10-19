@@ -596,6 +596,22 @@ export default function JobDetailPage() {
                 {/* 기업정보 탭 */}
                 {activeTab === 'company' && (
                 <>
+                {/* 로딩 중 */}
+                {loading && (
+                    <div style={{
+                        background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+                        borderRadius: '20px',
+                        padding: '60px 35px',
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                        textAlign: 'center'
+                    }}>
+                        <div style={{ fontSize: '3rem', marginBottom: '16px' }}>⏳</div>
+                        <p style={{ fontSize: '1.2rem', color: '#666', fontWeight: '700' }}>
+                            기업정보를 불러오는 중...
+                        </p>
+                    </div>
+                )}
+
                 {/* 기업정보 없음 메시지 */}
                 {!companyInfo && !loading && (
                     <div style={{
@@ -1110,7 +1126,23 @@ export default function JobDetailPage() {
                 )}
 
                 {/* 면접문제 탭 */}
-                {activeTab === 'interview' && !loading && (
+                {activeTab === 'interview' && (
+                <>
+                {loading && (
+                    <div style={{
+                        background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+                        borderRadius: '20px',
+                        padding: '60px 35px',
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                        textAlign: 'center'
+                    }}>
+                        <div style={{ fontSize: '3rem', marginBottom: '16px' }}>⏳</div>
+                        <p style={{ fontSize: '1.2rem', color: '#666', fontWeight: '700' }}>
+                            면접문제를 불러오는 중...
+                        </p>
+                    </div>
+                )}
+                {!loading && (
                     <div style={{
                         background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
                         borderRadius: '20px',
@@ -1315,6 +1347,8 @@ export default function JobDetailPage() {
                             </div>
                         )}
                     </div>
+                )}
+                </>
                 )}
             </div>
         </div>
