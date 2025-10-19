@@ -1,6 +1,7 @@
 # Node modules (Railway가 자동으로 설치)
 node_modules/
 npm-debug.log*
+package-lock.json
 
 # Git
 .git/
@@ -8,16 +9,21 @@ npm-debug.log*
 
 # Scripts (크롤러 등)
 scripts/
-coding/baek.sql
+coding/
+
+# Database files
+*.db
+*.sql
+*.sqlite
+*.sqlite3
 
 # Logs
 *.log
 logs/
+server.log
 
 # Environment (Railway가 환경변수로 제공)
-.env.local
-.env.development
-.env.test
+.env*
 
 # IDE
 .vscode/
@@ -29,16 +35,38 @@ logs/
 .DS_Store
 Thumbs.db
 
-# Test files
+# Test and development files
 *.test.js
+*.test.cjs
+test-*.js
+test-*.cjs
+integration-test.js
 test/
 coverage/
+query-*.js
+create-*.cjs
+create-*.js
+check-*.cjs
+migrate-*.js
+delete-*.js
 
 # Documentation
 README.md
+*.md
 docs/
 
-# Temporary files
+# Temporary and backup files
 *.tmp
+*.backup
+*_backup.js
 temp/
 tmp/
+uploads/
+
+# Archive files
+*.tar.gz
+*.zip
+
+# Python files (if not needed)
+*.py
+requirements.txt
