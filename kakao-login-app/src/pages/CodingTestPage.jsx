@@ -24,14 +24,31 @@ export default function CodingTestPage() {
     const fetchCompanies = async () => {
         try {
             setLoading(true);
-            const response = await axios.get(`${API_BASE_URL}/api/coding/companies`);
 
-            if (response.data.success) {
-                setCompanies(response.data.companies);
-                console.log('[CodingTest] 회사 목록:', response.data.companies);
+            // 목업 데이터 (Railway 빌드 실패 대비)
+            const mockData = [
+                { company: 'LG', count: 34 },
+                { company: '삼성', count: 45 },
+                { company: '카카오', count: 14 },
+                { company: '현대', count: 46 }
+            ];
+
+            try {
+                const response = await axios.get(`${API_BASE_URL}/api/coding/companies`, { timeout: 3000 });
+                if (response.data.success) {
+                    setCompanies(response.data.companies);
+                    console.log('[CodingTest] API 회사 목록:', response.data.companies);
+                    return;
+                }
+            } catch (apiError) {
+                console.warn('[CodingTest] API 실패, 목업 사용:', apiError.message);
             }
+
+            // API 실패 시 목업 데이터 사용
+            setCompanies(mockData);
+            console.log('[CodingTest] 목업 데이터 사용');
         } catch (error) {
-            console.error('[CodingTest] 회사 목록 조회 오류:', error);
+            console.error('[CodingTest] 오류:', error);
         } finally {
             setLoading(false);
         }
