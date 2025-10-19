@@ -2070,12 +2070,13 @@ app.get("/api/main-recommendations", async (req, res) => {
             skill_match_score DESC,
             ${categoryOrder},
             scraped_at DESC
-          LIMIT 25
+          LIMIT 35
         `;
 
         console.log('[MAIN-RECS] 사용자 스킬:', userSkills.join(', '));
         console.log('[MAIN-RECS] AI 관련 스킬 보유:', userHasAISkills);
         console.log('[MAIN-RECS] IT 관련 스킬 보유:', userHasITSkills);
+        console.log('[MAIN-RECS] 상시채용 포함 최대 35개 공고 조회');
 
         const [dbJobs] = await pool.execute(query);
 
@@ -2182,9 +2183,9 @@ app.get("/api/main-recommendations", async (req, res) => {
 
       if (openai) {
         try {
-          console.log('[MAIN-RECS] GPT-4o-mini 기반 추천 시작 (최근 25개 공고 전달 → 3개 선택)');
-          // 최근 25개 공고를 GPT에 전달
-          const topCandidates = allJobs.slice(0, 25);
+          console.log('[MAIN-RECS] GPT-4o-mini 기반 추천 시작 (최근 35개 공고 전달 → 3개 선택, 상시채용 포함)');
+          // 최근 35개 공고를 GPT에 전달 (상시채용 포함)
+          const topCandidates = allJobs.slice(0, 35);
           rerankedJobs = await generateGPT4Recommendations(userProfile, topCandidates, 3);
           console.log(`[MAIN-RECS] ✅ GPT-4o-mini로 ${rerankedJobs.length}개 공고 추천 완료`);
         } catch (gptError) {
