@@ -124,14 +124,12 @@ export default function MainPage() {
             // BIGDATA_AI 및 IT 카테고리 병렬 조회
             const [bigdataResponse, itResponse] = await Promise.all([
                 axios.get(`${API_BASE_URL}/api/jobs/BIGDATA_AI?limit=6`, {
-                    withCredentials: true,
                     timeout: 10000
                 }).catch(err => {
                     console.error('[MAIN] BIGDATA_AI fetch error:', err);
                     return null;
                 }),
                 axios.get(`${API_BASE_URL}/api/jobs/IT?limit=6`, {
-                    withCredentials: true,
                     timeout: 10000
                 }).catch(err => {
                     console.error('[MAIN] IT fetch error:', err);
@@ -227,7 +225,6 @@ export default function MainPage() {
 
             const response = await axios.get(`${API_BASE_URL}/api/jobs/search`, {
                 params: { query },
-                withCredentials: true,
                 timeout: 10000
             });
 
