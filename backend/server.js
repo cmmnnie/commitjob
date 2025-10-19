@@ -351,41 +351,7 @@ app.get('/debug/check-cookie', (req, res) => {
 const stateStore = new Map(); // state -> origin
 
 const corsOptions = {
-  origin: function (origin, callback) {
-    console.log(`[CORS Check] Incoming origin: "${origin}" (length: ${origin ? origin.length : 0})`);
-    console.log(`[CORS Check] allowedOrigins used in callback: `, allowedOrigins);
-
-    if (!origin) {
-      console.log('[CORS Check] No origin (server-to-server or terminal test). Allowed.');
-      return callback(null, true); // 서버-서버 / curl 허용
-    }
-
-    // '*' wildcard가 있으면 모든 origin 허용
-    if (allowedOrigins.includes('*')) {
-      console.log(`[CORS Check] Wildcard '*' found. All origins allowed. Origin: "${origin}"`);
-      return callback(null, true);
-    }
-
-    // LocalTunnel URL 허용 (*.loca.lt)
-    if (origin.endsWith('.loca.lt')) {
-      console.log(`[CORS Check] LocalTunnel origin "${origin}" allowed.`);
-      return callback(null, true);
-    }
-
-    // Vercel 프리뷰 배포 URL 허용 (*.vercel.app)
-    if (origin.endsWith('.vercel.app')) {
-      console.log(`[CORS Check] Vercel preview origin "${origin}" allowed.`);
-      return callback(null, true);
-    }
-
-    if (allowedOrigins.includes(origin) || origin === null || origin === 'null') {
-      console.log(`[CORS Check] Origin "${origin}" allowed (${origin === null || origin === 'null' ? 'file protocol' : 'in allowed list'}).`);
-      return callback(null, true);
-    }
-
-    console.error(`[CORS Check] ERROR: Origin "${origin}" NOT found in allowed list! Disallowed.`);
-    return callback(new Error(`Not allowed by CORS: ${origin}`));
-  },
+  origin: true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
