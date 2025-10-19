@@ -1,10 +1,12 @@
 # Node modules (Railway가 자동으로 설치)
 node_modules/
 npm-debug.log*
+package-lock.json
 
 # Git
 .git/
 .gitignore
+.claude/
 
 # Scripts (크롤러 등)
 scripts/
@@ -72,6 +74,9 @@ docs/
 temp/
 tmp/
 uploads/
+nul
+verify-*.js
+check-*.js
 
 # Archive files
 *.tar.gz

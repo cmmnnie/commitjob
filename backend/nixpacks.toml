@@ -2,10 +2,10 @@
 nixPkgs = ["nodejs_18"]
 
 [phases.install]
-cmds = ["npm ci --omit=dev --prefer-offline"]
+cmds = ["npm ci --omit=dev --prefer-offline --no-audit --no-fund"]
 
 [phases.build]
-cmds = ["echo 'Skipping build phase'"]
+cmds = []
 
 [start]
 cmd = "node server.js"
