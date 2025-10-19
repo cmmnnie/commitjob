@@ -5,6 +5,7 @@ nixPkgs = ["nodejs_18"]
 cmds = ["npm ci --omit=dev --prefer-offline --no-audit --no-fund"]
 
 [phases.build]
+cmds = ["true"]
 
 [start]
 cmd = "node server.js"

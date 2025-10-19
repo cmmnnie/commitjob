@@ -55,7 +55,9 @@ migrate-*.js
 delete-*.js
 *_backup.js
 server_backup.js
+server.js.backup
 test-results.json
+scrape-jobs-old.txt
 
 # Deployment configs for other platforms
 vercel.json
