@@ -529,7 +529,42 @@ router.get('/baekjoon/companies/:companyName/problems', async (req, res) => {
 });
 
 // ==============================================================================
-// 12. 회사별 문제 목록 조회 API (company_workbook_problem)
+// 12. 회사별 문제 통계 조회 API
+// ==============================================================================
+router.get('/companies/stats', async (req, res) => {
+  try {
+    const pool = req.app.get('pool');
+
+    // company_workbook_problem 테이블에서 회사별 문항 수 집계
+    const [stats] = await pool.execute(`
+      SELECT
+        company,
+        COUNT(*) as problem_count
+      FROM company_workbook_problem
+      GROUP BY company
+      ORDER BY company
+    `);
+
+    // 결과를 객체 형태로 변환
+    const companiesStats = stats.reduce((acc, row) => {
+      acc[row.company] = row.problem_count;
+      return acc;
+    }, {});
+
+    res.json({
+      success: true,
+      companies: companiesStats,
+      stats: stats
+    });
+
+  } catch (error) {
+    console.error('[CODING-TEST] 회사별 통계 조회 오류:', error);
+    res.status(500).json({ error: '회사별 통계 조회 중 오류가 발생했습니다' });
+  }
+});
+
+// ==============================================================================
+// 13. 회사별 문제 목록 조회 API (company_workbook_problem)
 // ==============================================================================
 router.get('/company-problems', async (req, res) => {
   try {
@@ -561,7 +596,7 @@ router.get('/company-problems', async (req, res) => {
 });
 
 // ==============================================================================
-// 13. 문제 상세 조회 API (problem_detail)
+// 14. 문제 상세 조회 API (problem_detail)
 // ==============================================================================
 router.get('/problem-detail/:problemNumber', async (req, res) => {
   try {
