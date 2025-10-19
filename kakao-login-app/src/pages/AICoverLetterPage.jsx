@@ -123,7 +123,7 @@ export default function AICoverLetterPage() {
         try {
             const token = localStorage.getItem('app_session');
             const response = await fetch(
-                `${CONFIG.BACKEND_URL}/api/jobs-by-company?company=${encodeURIComponent(company.trim())}`,
+                `${CONFIG.BACKEND_URL}/api/jobs-by-company?company=${encodeURIComponent(company.trim())}&includeAlways=true`,
                 {
                     method: 'GET',
                     credentials: 'include',

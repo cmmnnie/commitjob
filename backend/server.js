@@ -4982,7 +4982,7 @@ Q: ${question}`;
  */
 app.get('/api/jobs-by-company', async (req, res) => {
   try {
-    const { company } = req.query;
+    const { company, includeAlways } = req.query;
 
     if (!company) {
       return res.status(400).json({
@@ -4991,7 +4991,8 @@ app.get('/api/jobs-by-company', async (req, res) => {
       });
     }
 
-    console.log(`[JOBS-BY-COMPANY] Fetching jobs for company: ${company}`);
+    const includeAlwaysOpen = includeAlways === 'true';
+    console.log(`[JOBS-BY-COMPANY] Fetching jobs for company: ${company} (includeAlways: ${includeAlwaysOpen})`);
 
     // jobs 테이블에서 회사명으로 검색 (정확한 매칭 우선, 포함 검색은 보조)
     const [jobRows] = await pool.execute(`
@@ -5028,9 +5029,14 @@ app.get('/api/jobs-by-company', async (req, res) => {
 
         const deadlineStr = regInfo[0]; // "~11.02(일)" 형식
 
-        // 상시채용, 수시지원 제외
-        if (deadlineStr.includes('상시채용') || deadlineStr.includes('수시지원')) {
+        // 상시채용, 수시지원 제외 (includeAlways가 true면 포함)
+        if (!includeAlwaysOpen && (deadlineStr.includes('상시채용') || deadlineStr.includes('수시지원'))) {
           return false;
+        }
+
+        // 상시채용/수시지원은 마감일 체크 없이 통과
+        if (deadlineStr.includes('상시채용') || deadlineStr.includes('수시지원')) {
+          return true;
         }
 
         if (!deadlineStr || !deadlineStr.startsWith('~')) return true;
