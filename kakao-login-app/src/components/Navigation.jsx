@@ -197,11 +197,11 @@ export default function Navigation() {
                     </li>
                     <li style={{ flex: 1 }}>
                         <Link
-                            to="/resume"
-                            style={linkStyle(location.pathname === '/resume')}
+                            to="/coding-test"
+                            style={linkStyle(location.pathname === '/coding-test')}
                         >
-                            <span style={iconStyle(location.pathname === '/resume')}>📋</span>
-                            <span>이력서</span>
+                            <span style={iconStyle(location.pathname === '/coding-test')}>💻</span>
+                            <span>코딩Test</span>
                         </Link>
                     </li>
                     <li style={{ flex: 1 }}>

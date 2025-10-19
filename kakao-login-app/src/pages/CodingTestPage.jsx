@@ -180,13 +180,83 @@ export default function CodingTestPage() {
                             marginBottom: '20px',
                             boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
                         }}>
-                            <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '12px', color: '#1a202c' }}>
-                                💻 코딩 테스트
+                            <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px', color: '#1a202c' }}>
+                                💻 AI 코딩 테스트
                             </h2>
-                            <p style={{ color: '#4a5568', lineHeight: '1.8', margin: 0, fontSize: '15px' }}>
-                                기업별 코딩 테스트 문제를 풀어보고 실력을 향상시킬 수 있습니다.<br/>
+                            <p style={{ color: '#4a5568', lineHeight: '1.8', marginBottom: '20px', fontSize: '15px' }}>
+                                기업별 코딩 테스트 문제를 풀어보고 AI의 도움으로 실력을 향상시킬 수 있습니다.<br/>
                                 아래 회사 목록에서 문제를 선택하여 직접 코드를 작성하고 테스트해보세요.
                             </p>
+
+                            {/* AI 기능 소개 */}
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                                gap: '12px',
+                                marginTop: '20px',
+                                paddingTop: '20px',
+                                borderTop: '1px solid #e5e8eb'
+                            }}>
+                                <div style={{
+                                    padding: '16px',
+                                    backgroundColor: '#f0f9ff',
+                                    borderRadius: '8px',
+                                    borderLeft: '3px solid #3b82f6'
+                                }}>
+                                    <div style={{ fontSize: '24px', marginBottom: '8px' }}>🤖</div>
+                                    <div style={{ fontWeight: 'bold', marginBottom: '6px', color: '#1e40af', fontSize: '14px' }}>
+                                        AI 어시스턴트
+                                    </div>
+                                    <div style={{ fontSize: '13px', color: '#1e3a8a', lineHeight: '1.5' }}>
+                                        문제 해결에 어려움이 있을 때 AI가 힌트와 가이드를 제공합니다
+                                    </div>
+                                </div>
+
+                                <div style={{
+                                    padding: '16px',
+                                    backgroundColor: '#f0fdf4',
+                                    borderRadius: '8px',
+                                    borderLeft: '3px solid #10b981'
+                                }}>
+                                    <div style={{ fontSize: '24px', marginBottom: '8px' }}>⚡</div>
+                                    <div style={{ fontWeight: 'bold', marginBottom: '6px', color: '#065f46', fontSize: '14px' }}>
+                                        실시간 피드백
+                                    </div>
+                                    <div style={{ fontSize: '13px', color: '#064e3b', lineHeight: '1.5' }}>
+                                        코드 작성 후 즉시 AI 리뷰와 개선 제안을 받을 수 있습니다
+                                    </div>
+                                </div>
+
+                                <div style={{
+                                    padding: '16px',
+                                    backgroundColor: '#fef3c7',
+                                    borderRadius: '8px',
+                                    borderLeft: '3px solid #f59e0b'
+                                }}>
+                                    <div style={{ fontSize: '24px', marginBottom: '8px' }}>🎯</div>
+                                    <div style={{ fontWeight: 'bold', marginBottom: '6px', color: '#92400e', fontSize: '14px' }}>
+                                        맞춤형 문제 생성
+                                    </div>
+                                    <div style={{ fontSize: '13px', color: '#78350f', lineHeight: '1.5' }}>
+                                        회원님의 실력에 맞는 맞춤형 문제를 AI가 생성해드립니다
+                                    </div>
+                                </div>
+
+                                <div style={{
+                                    padding: '16px',
+                                    backgroundColor: '#fce7f3',
+                                    borderRadius: '8px',
+                                    borderLeft: '3px solid #ec4899'
+                                }}>
+                                    <div style={{ fontSize: '24px', marginBottom: '8px' }}>✨</div>
+                                    <div style={{ fontWeight: 'bold', marginBottom: '6px', color: '#831843', fontSize: '14px' }}>
+                                        코드 자동 완성
+                                    </div>
+                                    <div style={{ fontSize: '13px', color: '#831843', lineHeight: '1.5' }}>
+                                        AI가 코드 패턴을 학습하여 자동 완성 기능을 제공합니다
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         {/* 로딩 중 */}
