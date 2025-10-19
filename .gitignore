@@ -25,3 +25,7 @@ Thumbs.db
 # Temporary files
 *.tmp
 .cache/
+
+# 참고 자료 폴더
+old/
+old_scrap/
