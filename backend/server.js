@@ -1539,7 +1539,10 @@ app.post('/api/profile', uploadProfile.single('resume'), async (req, res) => {
       careers,
       regions,
       skills,
-      expected_salary
+      expected_salary,
+      education,
+      certificates,
+      awards
     } = req.body || {};
 
     console.log('[PROFILE] 프로필 저장 요청 받음:', {
@@ -1614,6 +1617,18 @@ app.post('/api/profile', uploadProfile.single('resume'), async (req, res) => {
         updateFields.push('resume_path = ?');
         updateValues.push(resumePath);
       }
+      if (education) {
+        updateFields.push('education = ?');
+        updateValues.push(typeof education === 'string' ? education : JSON.stringify(education));
+      }
+      if (certificates) {
+        updateFields.push('certificates = ?');
+        updateValues.push(typeof certificates === 'string' ? certificates : JSON.stringify(certificates));
+      }
+      if (awards) {
+        updateFields.push('awards = ?');
+        updateValues.push(typeof awards === 'string' ? awards : JSON.stringify(awards));
+      }
 
       updateFields.push('updated_at = CURRENT_TIMESTAMP');
       updateValues.push(user_id);
@@ -1636,7 +1651,7 @@ app.post('/api/profile', uploadProfile.single('resume'), async (req, res) => {
         throw new Error('희망지역 데이터 형식이 올바르지 않습니다');
       }
 
-      const insertSQL = 'INSERT INTO user_profiles (user_id, preferred_jobs, experience, preferred_regions, skills, expected_salary, resume_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())';
+      const insertSQL = 'INSERT INTO user_profiles (user_id, preferred_jobs, experience, preferred_regions, skills, expected_salary, resume_path, education, certificates, awards, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())';
       const insertParams = [
         user_id,
         jobs,
@@ -1644,7 +1659,10 @@ app.post('/api/profile', uploadProfile.single('resume'), async (req, res) => {
         JSON.stringify(regionsArray),
         skills ? JSON.stringify(skills.split(',').map(s => s.trim())) : null,
         expected_salary,
-        resumePath
+        resumePath,
+        education ? (typeof education === 'string' ? education : JSON.stringify(education)) : null,
+        certificates ? (typeof certificates === 'string' ? certificates : JSON.stringify(certificates)) : null,
+        awards ? (typeof awards === 'string' ? awards : JSON.stringify(awards)) : null
       ];
 
       console.log('[PROFILE] INSERT SQL:', insertSQL);

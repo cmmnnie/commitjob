@@ -98,6 +98,32 @@ export default function ResumePage() {
                     setCurrentUser(data.user); // user 정보 업데이트
                 }
                 setUserProfile(data.profile); // profile 정보 설정
+
+                // 학력/자격/수상 데이터 로드
+                if (data.profile) {
+                    try {
+                        if (data.profile.education) {
+                            const eduData = typeof data.profile.education === 'string'
+                                ? JSON.parse(data.profile.education)
+                                : data.profile.education;
+                            setEducationList(Array.isArray(eduData) ? eduData : []);
+                        }
+                        if (data.profile.certificates) {
+                            const certData = typeof data.profile.certificates === 'string'
+                                ? JSON.parse(data.profile.certificates)
+                                : data.profile.certificates;
+                            setCertificatesList(Array.isArray(certData) ? certData : []);
+                        }
+                        if (data.profile.awards) {
+                            const awardsData = typeof data.profile.awards === 'string'
+                                ? JSON.parse(data.profile.awards)
+                                : data.profile.awards;
+                            setAwardsList(Array.isArray(awardsData) ? awardsData : []);
+                        }
+                    } catch (parseError) {
+                        console.error('[RESUME] 학력/자격/수상 데이터 파싱 오류:', parseError);
+                    }
+                }
             } else if (response.status === 404) {
                 console.log('[RESUME] ❌ 사용자 또는 프로필 없음');
                 setUserProfile(null);
