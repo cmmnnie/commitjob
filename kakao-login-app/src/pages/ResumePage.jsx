@@ -1179,7 +1179,7 @@ export default function ResumePage() {
                                             onClick={handleAddEducation}
                                             style={{
                                                 padding: '6px 12px',
-                                                background: '#2196f3',
+                                                background: '#64b5f6',
                                                 color: 'white',
                                                 border: 'none',
                                                 borderRadius: '6px',
@@ -1335,7 +1335,7 @@ export default function ResumePage() {
                                                     onClick={handleSaveEducation}
                                                     style={{
                                                         padding: '8px 16px',
-                                                        background: '#2196f3',
+                                                        background: '#64b5f6',
                                                         color: 'white',
                                                         border: 'none',
                                                         borderRadius: '6px',
@@ -1380,7 +1380,7 @@ export default function ResumePage() {
                                                             onClick={() => handleEditEducation(index)}
                                                             style={{
                                                                 padding: '4px 10px',
-                                                                background: '#1976d2',
+                                                                background: '#64b5f6',
                                                                 color: 'white',
                                                                 border: 'none',
                                                                 borderRadius: '4px',
@@ -1395,7 +1395,7 @@ export default function ResumePage() {
                                                             onClick={() => handleDeleteEducation(index)}
                                                             style={{
                                                                 padding: '4px 10px',
-                                                                background: '#d32f2f',
+                                                                background: '#e57373',
                                                                 color: 'white',
                                                                 border: 'none',
                                                                 borderRadius: '4px',
@@ -1448,7 +1448,7 @@ export default function ResumePage() {
                                             onClick={handleAddCertificate}
                                             style={{
                                                 padding: '6px 12px',
-                                                background: '#9c27b0',
+                                                background: '#ba68c8',
                                                 color: 'white',
                                                 border: 'none',
                                                 borderRadius: '6px',
@@ -1543,7 +1543,7 @@ export default function ResumePage() {
                                                     onClick={handleSaveCertificate}
                                                     style={{
                                                         padding: '8px 16px',
-                                                        background: '#9c27b0',
+                                                        background: '#ba68c8',
                                                         color: 'white',
                                                         border: 'none',
                                                         borderRadius: '6px',
@@ -1583,7 +1583,7 @@ export default function ResumePage() {
                                                             onClick={() => handleEditCertificate(index)}
                                                             style={{
                                                                 padding: '4px 10px',
-                                                                background: '#8e24aa',
+                                                                background: '#ab47bc',
                                                                 color: 'white',
                                                                 border: 'none',
                                                                 borderRadius: '4px',
@@ -1598,7 +1598,7 @@ export default function ResumePage() {
                                                             onClick={() => handleDeleteCertificate(index)}
                                                             style={{
                                                                 padding: '4px 10px',
-                                                                background: '#d32f2f',
+                                                                background: '#e57373',
                                                                 color: 'white',
                                                                 border: 'none',
                                                                 borderRadius: '4px',
@@ -1651,7 +1651,7 @@ export default function ResumePage() {
                                             onClick={handleAddLanguage}
                                             style={{
                                                 padding: '6px 12px',
-                                                background: '#4caf50',
+                                                background: '#81c784',
                                                 color: 'white',
                                                 border: 'none',
                                                 borderRadius: '6px',
@@ -1766,7 +1766,7 @@ export default function ResumePage() {
                                                     onClick={handleSaveLanguage}
                                                     style={{
                                                         padding: '8px 16px',
-                                                        background: '#4caf50',
+                                                        background: '#81c784',
                                                         color: 'white',
                                                         border: 'none',
                                                         borderRadius: '6px',
@@ -1808,7 +1808,7 @@ export default function ResumePage() {
                                                             onClick={() => handleEditLanguage(index)}
                                                             style={{
                                                                 padding: '4px 10px',
-                                                                background: '#43a047',
+                                                                background: '#66bb6a',
                                                                 color: 'white',
                                                                 border: 'none',
                                                                 borderRadius: '4px',
@@ -1823,7 +1823,7 @@ export default function ResumePage() {
                                                             onClick={() => handleDeleteLanguage(index)}
                                                             style={{
                                                                 padding: '4px 10px',
-                                                                background: '#d32f2f',
+                                                                background: '#e57373',
                                                                 color: 'white',
                                                                 border: 'none',
                                                                 borderRadius: '4px',
@@ -1876,7 +1876,7 @@ export default function ResumePage() {
                                             onClick={handleAddAward}
                                             style={{
                                                 padding: '6px 12px',
-                                                background: '#ff9800',
+                                                background: '#ffb74d',
                                                 color: 'white',
                                                 border: 'none',
                                                 borderRadius: '6px',
@@ -1971,7 +1971,7 @@ export default function ResumePage() {
                                                     onClick={handleSaveAward}
                                                     style={{
                                                         padding: '8px 16px',
-                                                        background: '#ff9800',
+                                                        background: '#ffb74d',
                                                         color: 'white',
                                                         border: 'none',
                                                         borderRadius: '6px',
@@ -2011,7 +2011,7 @@ export default function ResumePage() {
                                                             onClick={() => handleEditAward(index)}
                                                             style={{
                                                                 padding: '4px 10px',
-                                                                background: '#f57c00',
+                                                                background: '#ffa726',
                                                                 color: 'white',
                                                                 border: 'none',
                                                                 borderRadius: '4px',
@@ -2026,7 +2026,7 @@ export default function ResumePage() {
                                                             onClick={() => handleDeleteAward(index)}
                                                             style={{
                                                                 padding: '4px 10px',
-                                                                background: '#d32f2f',
+                                                                background: '#e57373',
                                                                 color: 'white',
                                                                 border: 'none',
                                                                 borderRadius: '4px',
