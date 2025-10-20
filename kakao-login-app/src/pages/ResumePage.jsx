@@ -16,6 +16,11 @@ export default function ResumePage() {
         expected_salary: '0'  // 기본값 0
     });
 
+    // 학력/자격/수상 데이터
+    const [educationList, setEducationList] = useState([]);
+    const [certificatesList, setCertificatesList] = useState([]);
+    const [awardsList, setAwardsList] = useState([]);
+
     useEffect(() => {
         checkLoginAndLoadProfile();
     }, []);
@@ -724,32 +729,218 @@ export default function ResumePage() {
 
                         {/* 학력/자격/수상 탭 */}
                         {activeTab === 'education' && (
-                            <div style={{
-                                background: '#f8f9fa',
-                                borderRadius: '12px',
-                                padding: '40px 20px',
-                                textAlign: 'center',
-                                minHeight: '200px',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                            }}>
-                                <div style={{ fontSize: '3rem', marginBottom: '15px' }}>🎓</div>
-                                <h3 style={{
-                                    fontSize: '1.2rem',
-                                    color: '#333',
-                                    marginBottom: '10px',
-                                    fontWeight: '700'
-                                }}>학력 / 자격 / 수상</h3>
-                                <p style={{
-                                    color: '#666',
-                                    fontSize: '0.9rem',
-                                    lineHeight: '1.6'
+                            <>
+                                {/* 학력 섹션 */}
+                                <div style={{
+                                    background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
+                                    borderRadius: '15px',
+                                    padding: '18px',
+                                    marginBottom: '12px'
                                 }}>
-                                    학력, 자격증, 수상 경력을 입력하는 기능은<br/>곧 추가될 예정입니다.
-                                </p>
-                            </div>
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        marginBottom: '12px'
+                                    }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <span style={{ fontSize: '1.2rem' }}>🎓</span>
+                                            <h3 style={{
+                                                fontSize: '1.05rem',
+                                                color: '#333',
+                                                fontWeight: '600',
+                                                margin: 0
+                                            }}>학력</h3>
+                                        </div>
+                                        <button
+                                            onClick={() => setIsEditing(true)}
+                                            style={{
+                                                padding: '6px 12px',
+                                                background: '#2196f3',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '6px',
+                                                fontSize: '0.85rem',
+                                                fontWeight: '600',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            추가/수정
+                                        </button>
+                                    </div>
+                                    {educationList.length > 0 ? (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                            {educationList.map((edu, index) => (
+                                                <div key={index} style={{
+                                                    background: 'rgba(255,255,255,0.7)',
+                                                    padding: '12px',
+                                                    borderRadius: '8px'
+                                                }}>
+                                                    <div style={{ fontWeight: '600', color: '#333', marginBottom: '4px' }}>
+                                                        {edu.school}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.85rem', color: '#666' }}>
+                                                        {edu.major} | {edu.degree} | {edu.status}
+                                                    </div>
+                                                    {edu.start_date && (
+                                                        <div style={{ fontSize: '0.8rem', color: '#999', marginTop: '4px' }}>
+                                                            {edu.start_date} ~ {edu.end_date || '현재'}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div style={{
+                                            padding: '20px',
+                                            textAlign: 'center',
+                                            color: '#999',
+                                            fontSize: '0.9rem'
+                                        }}>
+                                            등록된 학력이 없습니다
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 자격증 섹션 */}
+                                <div style={{
+                                    background: 'linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%)',
+                                    borderRadius: '15px',
+                                    padding: '18px',
+                                    marginBottom: '12px'
+                                }}>
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        marginBottom: '12px'
+                                    }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <span style={{ fontSize: '1.2rem' }}>📜</span>
+                                            <h3 style={{
+                                                fontSize: '1.05rem',
+                                                color: '#333',
+                                                fontWeight: '600',
+                                                margin: 0
+                                            }}>자격증</h3>
+                                        </div>
+                                        <button
+                                            onClick={() => setIsEditing(true)}
+                                            style={{
+                                                padding: '6px 12px',
+                                                background: '#9c27b0',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '6px',
+                                                fontSize: '0.85rem',
+                                                fontWeight: '600',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            추가/수정
+                                        </button>
+                                    </div>
+                                    {certificatesList.length > 0 ? (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                            {certificatesList.map((cert, index) => (
+                                                <div key={index} style={{
+                                                    background: 'rgba(255,255,255,0.7)',
+                                                    padding: '12px',
+                                                    borderRadius: '8px'
+                                                }}>
+                                                    <div style={{ fontWeight: '600', color: '#333', marginBottom: '4px' }}>
+                                                        {cert.name}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.85rem', color: '#666' }}>
+                                                        {cert.issuer} {cert.date && `| ${cert.date}`}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div style={{
+                                            padding: '20px',
+                                            textAlign: 'center',
+                                            color: '#999',
+                                            fontSize: '0.9rem'
+                                        }}>
+                                            등록된 자격증이 없습니다
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 수상 섹션 */}
+                                <div style={{
+                                    background: 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)',
+                                    borderRadius: '15px',
+                                    padding: '18px',
+                                    marginBottom: '12px'
+                                }}>
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        marginBottom: '12px'
+                                    }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <span style={{ fontSize: '1.2rem' }}>🏆</span>
+                                            <h3 style={{
+                                                fontSize: '1.05rem',
+                                                color: '#333',
+                                                fontWeight: '600',
+                                                margin: 0
+                                            }}>수상</h3>
+                                        </div>
+                                        <button
+                                            onClick={() => setIsEditing(true)}
+                                            style={{
+                                                padding: '6px 12px',
+                                                background: '#ff9800',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '6px',
+                                                fontSize: '0.85rem',
+                                                fontWeight: '600',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            추가/수정
+                                        </button>
+                                    </div>
+                                    {awardsList.length > 0 ? (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                            {awardsList.map((award, index) => (
+                                                <div key={index} style={{
+                                                    background: 'rgba(255,255,255,0.7)',
+                                                    padding: '12px',
+                                                    borderRadius: '8px'
+                                                }}>
+                                                    <div style={{ fontWeight: '600', color: '#333', marginBottom: '4px' }}>
+                                                        {award.title}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.85rem', color: '#666' }}>
+                                                        {award.organization} {award.date && `| ${award.date}`}
+                                                    </div>
+                                                    {award.description && (
+                                                        <div style={{ fontSize: '0.8rem', color: '#999', marginTop: '4px' }}>
+                                                            {award.description}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div style={{
+                                            padding: '20px',
+                                            textAlign: 'center',
+                                            color: '#999',
+                                            fontSize: '0.9rem'
+                                        }}>
+                                            등록된 수상 경력이 없습니다
+                                        </div>
+                                    )}
+                                </div>
+                            </>
                         )}
 
                         {/* 자기소개서 탭 */}
