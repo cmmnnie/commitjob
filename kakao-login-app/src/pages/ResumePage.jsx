@@ -22,6 +22,18 @@ export default function ResumePage() {
     const [languagesList, setLanguagesList] = useState([]);
     const [awardsList, setAwardsList] = useState([]);
 
+    // 학력 편집 모드
+    const [isEditingEducation, setIsEditingEducation] = useState(false);
+    const [editingEducationIndex, setEditingEducationIndex] = useState(null);
+    const [educationForm, setEducationForm] = useState({
+        school: '',
+        major: '',
+        degree: '',
+        status: '졸업',
+        start_date: '',
+        end_date: ''
+    });
+
     useEffect(() => {
         checkLoginAndLoadProfile();
     }, []);
@@ -30,6 +42,94 @@ export default function ResumePage() {
     const handleTabChange = (tab) => {
         setActiveTab(tab);
         setIsEditing(false); // 탭 전환시 편집 모드 해제
+        setIsEditingEducation(false); // 학력 편집 모드도 해제
+    };
+
+    // 학력 추가 버튼 클릭
+    const handleAddEducation = () => {
+        setEducationForm({
+            school: '',
+            major: '',
+            degree: '',
+            status: '졸업',
+            start_date: '',
+            end_date: ''
+        });
+        setEditingEducationIndex(null);
+        setIsEditingEducation(true);
+    };
+
+    // 학력 수정 버튼 클릭
+    const handleEditEducation = (index) => {
+        setEducationForm(educationList[index]);
+        setEditingEducationIndex(index);
+        setIsEditingEducation(true);
+    };
+
+    // 학력 삭제
+    const handleDeleteEducation = async (index) => {
+        if (!confirm('정말 삭제하시겠습니까?')) return;
+
+        const newList = educationList.filter((_, i) => i !== index);
+        setEducationList(newList);
+
+        // 백엔드에 저장
+        await saveEducationToBackend(newList);
+    };
+
+    // 학력 저장
+    const handleSaveEducation = async () => {
+        if (!educationForm.school || !educationForm.major) {
+            alert('학교명과 전공은 필수 입력 항목입니다.');
+            return;
+        }
+
+        let newList;
+        if (editingEducationIndex !== null) {
+            // 수정
+            newList = educationList.map((edu, i) =>
+                i === editingEducationIndex ? educationForm : edu
+            );
+        } else {
+            // 추가
+            newList = [...educationList, educationForm];
+        }
+
+        setEducationList(newList);
+        setIsEditingEducation(false);
+
+        // 백엔드에 저장
+        await saveEducationToBackend(newList);
+    };
+
+    // 학력 취소
+    const handleCancelEducation = () => {
+        setIsEditingEducation(false);
+        setEditingEducationIndex(null);
+    };
+
+    // 백엔드에 학력 데이터 저장
+    const saveEducationToBackend = async (eduList) => {
+        try {
+            const formData = new FormData();
+            formData.append('user_id', currentUser.id);
+            formData.append('education', JSON.stringify(eduList));
+
+            const response = await fetch(`${CONFIG.BACKEND_URL}/api/profile`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                alert('학력 정보가 저장되었습니다!');
+                await loadUserProfile(currentUser.id);
+            } else {
+                alert('학력 정보 저장에 실패했습니다.');
+            }
+        } catch (error) {
+            console.error('[EDUCATION] 저장 오류:', error);
+            alert('학력 정보 저장 중 오류가 발생했습니다.');
+        }
     };
 
     const checkLoginAndLoadProfile = async () => {
@@ -792,7 +892,7 @@ export default function ResumePage() {
                                             }}>학력</h3>
                                         </div>
                                         <button
-                                            onClick={() => setIsEditing(true)}
+                                            onClick={handleAddEducation}
                                             style={{
                                                 padding: '6px 12px',
                                                 background: '#2196f3',
@@ -804,28 +904,225 @@ export default function ResumePage() {
                                                 cursor: 'pointer'
                                             }}
                                         >
-                                            추가/수정
+                                            추가
                                         </button>
                                     </div>
+
+                                    {/* 학력 입력 폼 */}
+                                    {isEditingEducation && (
+                                        <div style={{
+                                            background: 'white',
+                                            padding: '15px',
+                                            borderRadius: '10px',
+                                            marginBottom: '12px',
+                                            border: '2px solid #2196f3'
+                                        }}>
+                                            <div style={{ marginBottom: '12px' }}>
+                                                <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: '600', color: '#333' }}>
+                                                    학교명 *
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={educationForm.school}
+                                                    onChange={(e) => setEducationForm({...educationForm, school: e.target.value})}
+                                                    placeholder="예: 서울대학교"
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '8px',
+                                                        borderRadius: '6px',
+                                                        border: '1px solid #ddd',
+                                                        fontSize: '0.9rem'
+                                                    }}
+                                                />
+                                            </div>
+                                            <div style={{ marginBottom: '12px' }}>
+                                                <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: '600', color: '#333' }}>
+                                                    전공 *
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={educationForm.major}
+                                                    onChange={(e) => setEducationForm({...educationForm, major: e.target.value})}
+                                                    placeholder="예: 컴퓨터공학과"
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '8px',
+                                                        borderRadius: '6px',
+                                                        border: '1px solid #ddd',
+                                                        fontSize: '0.9rem'
+                                                    }}
+                                                />
+                                            </div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                                                <div>
+                                                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: '600', color: '#333' }}>
+                                                        학위
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={educationForm.degree}
+                                                        onChange={(e) => setEducationForm({...educationForm, degree: e.target.value})}
+                                                        placeholder="예: 학사"
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '8px',
+                                                            borderRadius: '6px',
+                                                            border: '1px solid #ddd',
+                                                            fontSize: '0.9rem'
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: '600', color: '#333' }}>
+                                                        상태
+                                                    </label>
+                                                    <select
+                                                        value={educationForm.status}
+                                                        onChange={(e) => setEducationForm({...educationForm, status: e.target.value})}
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '8px',
+                                                            borderRadius: '6px',
+                                                            border: '1px solid #ddd',
+                                                            fontSize: '0.9rem'
+                                                        }}
+                                                    >
+                                                        <option value="졸업">졸업</option>
+                                                        <option value="재학중">재학중</option>
+                                                        <option value="휴학">휴학</option>
+                                                        <option value="수료">수료</option>
+                                                        <option value="중퇴">중퇴</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '15px' }}>
+                                                <div>
+                                                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: '600', color: '#333' }}>
+                                                        입학일
+                                                    </label>
+                                                    <input
+                                                        type="month"
+                                                        value={educationForm.start_date}
+                                                        onChange={(e) => setEducationForm({...educationForm, start_date: e.target.value})}
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '8px',
+                                                            borderRadius: '6px',
+                                                            border: '1px solid #ddd',
+                                                            fontSize: '0.9rem'
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: '600', color: '#333' }}>
+                                                        졸업일
+                                                    </label>
+                                                    <input
+                                                        type="month"
+                                                        value={educationForm.end_date}
+                                                        onChange={(e) => setEducationForm({...educationForm, end_date: e.target.value})}
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '8px',
+                                                            borderRadius: '6px',
+                                                            border: '1px solid #ddd',
+                                                            fontSize: '0.9rem'
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                <button
+                                                    onClick={handleCancelEducation}
+                                                    style={{
+                                                        padding: '8px 16px',
+                                                        background: '#e0e0e0',
+                                                        color: '#666',
+                                                        border: 'none',
+                                                        borderRadius: '6px',
+                                                        fontSize: '0.85rem',
+                                                        fontWeight: '600',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    취소
+                                                </button>
+                                                <button
+                                                    onClick={handleSaveEducation}
+                                                    style={{
+                                                        padding: '8px 16px',
+                                                        background: '#2196f3',
+                                                        color: 'white',
+                                                        border: 'none',
+                                                        borderRadius: '6px',
+                                                        fontSize: '0.85rem',
+                                                        fontWeight: '600',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    저장
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* 학력 목록 */}
                                     {educationList.length > 0 ? (
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                             {educationList.map((edu, index) => (
                                                 <div key={index} style={{
                                                     background: 'rgba(255,255,255,0.7)',
                                                     padding: '12px',
-                                                    borderRadius: '8px'
+                                                    borderRadius: '8px',
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'flex-start'
                                                 }}>
-                                                    <div style={{ fontWeight: '600', color: '#333', marginBottom: '4px' }}>
-                                                        {edu.school}
-                                                    </div>
-                                                    <div style={{ fontSize: '0.85rem', color: '#666' }}>
-                                                        {edu.major} | {edu.degree} | {edu.status}
-                                                    </div>
-                                                    {edu.start_date && (
-                                                        <div style={{ fontSize: '0.8rem', color: '#999', marginTop: '4px' }}>
-                                                            {edu.start_date} ~ {edu.end_date || '현재'}
+                                                    <div style={{ flex: 1 }}>
+                                                        <div style={{ fontWeight: '600', color: '#333', marginBottom: '4px' }}>
+                                                            {edu.school}
                                                         </div>
-                                                    )}
+                                                        <div style={{ fontSize: '0.85rem', color: '#666' }}>
+                                                            {edu.major} | {edu.degree} | {edu.status}
+                                                        </div>
+                                                        {edu.start_date && (
+                                                            <div style={{ fontSize: '0.8rem', color: '#999', marginTop: '4px' }}>
+                                                                {edu.start_date} ~ {edu.end_date || '현재'}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div style={{ display: 'flex', gap: '4px', marginLeft: '12px' }}>
+                                                        <button
+                                                            onClick={() => handleEditEducation(index)}
+                                                            style={{
+                                                                padding: '4px 10px',
+                                                                background: '#1976d2',
+                                                                color: 'white',
+                                                                border: 'none',
+                                                                borderRadius: '4px',
+                                                                fontSize: '0.75rem',
+                                                                fontWeight: '600',
+                                                                cursor: 'pointer'
+                                                            }}
+                                                        >
+                                                            수정
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteEducation(index)}
+                                                            style={{
+                                                                padding: '4px 10px',
+                                                                background: '#d32f2f',
+                                                                color: 'white',
+                                                                border: 'none',
+                                                                borderRadius: '4px',
+                                                                fontSize: '0.75rem',
+                                                                fontWeight: '600',
+                                                                cursor: 'pointer'
+                                                            }}
+                                                        >
+                                                            삭제
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>
