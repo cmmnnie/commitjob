@@ -425,10 +425,6 @@ export default function ResumePage() {
                                 e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.05)';
                             }
                         }}>
-                        <span style={{
-                            fontSize: '1.4rem',
-                            filter: activeTab === 'basic' ? 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' : 'none'
-                        }}>📋</span>
                         <span style={{ letterSpacing: '-0.5px' }}>기본정보</span>
                     </button>
                     <button
@@ -473,10 +469,6 @@ export default function ResumePage() {
                                 e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.05)';
                             }
                         }}>
-                        <span style={{
-                            fontSize: '1.4rem',
-                            filter: activeTab === 'experience' ? 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' : 'none'
-                        }}>💼</span>
                         <span style={{ letterSpacing: '-0.5px' }}>경력</span>
                     </button>
                     <button
@@ -521,10 +513,6 @@ export default function ResumePage() {
                                 e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.05)';
                             }
                         }}>
-                        <span style={{
-                            fontSize: '1.4rem',
-                            filter: activeTab === 'education' ? 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' : 'none'
-                        }}>🎓</span>
                         <span style={{ letterSpacing: '-0.5px' }}>학력/자격/수상</span>
                     </button>
                     <button
@@ -569,10 +557,6 @@ export default function ResumePage() {
                                 e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.05)';
                             }
                         }}>
-                        <span style={{
-                            fontSize: '1.4rem',
-                            filter: activeTab === 'coverLetter' ? 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' : 'none'
-                        }}>📝</span>
                         <span style={{ letterSpacing: '-0.5px' }}>자기소개서</span>
                     </button>
                 </div>
