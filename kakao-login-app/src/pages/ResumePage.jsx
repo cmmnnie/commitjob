@@ -34,6 +34,15 @@ export default function ResumePage() {
         end_date: ''
     });
 
+    // 자격증 편집 모드
+    const [isEditingCertificate, setIsEditingCertificate] = useState(false);
+    const [editingCertificateIndex, setEditingCertificateIndex] = useState(null);
+    const [certificateForm, setCertificateForm] = useState({
+        name: '',
+        issuer: '',
+        date: ''
+    });
+
     useEffect(() => {
         checkLoginAndLoadProfile();
     }, []);
@@ -43,6 +52,7 @@ export default function ResumePage() {
         setActiveTab(tab);
         setIsEditing(false); // 탭 전환시 편집 모드 해제
         setIsEditingEducation(false); // 학력 편집 모드도 해제
+        setIsEditingCertificate(false); // 자격증 편집 모드도 해제
     };
 
     // 학력 추가 버튼 클릭
@@ -129,6 +139,90 @@ export default function ResumePage() {
         } catch (error) {
             console.error('[EDUCATION] 저장 오류:', error);
             alert('학력 정보 저장 중 오류가 발생했습니다.');
+        }
+    };
+
+    // 자격증 추가 버튼 클릭
+    const handleAddCertificate = () => {
+        setCertificateForm({
+            name: '',
+            issuer: '',
+            date: ''
+        });
+        setEditingCertificateIndex(null);
+        setIsEditingCertificate(true);
+    };
+
+    // 자격증 수정 버튼 클릭
+    const handleEditCertificate = (index) => {
+        setCertificateForm(certificatesList[index]);
+        setEditingCertificateIndex(index);
+        setIsEditingCertificate(true);
+    };
+
+    // 자격증 삭제
+    const handleDeleteCertificate = async (index) => {
+        if (!confirm('정말 삭제하시겠습니까?')) return;
+
+        const newList = certificatesList.filter((_, i) => i !== index);
+        setCertificatesList(newList);
+
+        // 백엔드에 저장
+        await saveCertificateToBackend(newList);
+    };
+
+    // 자격증 저장
+    const handleSaveCertificate = async () => {
+        if (!certificateForm.name) {
+            alert('자격증명은 필수 입력 항목입니다.');
+            return;
+        }
+
+        let newList;
+        if (editingCertificateIndex !== null) {
+            // 수정
+            newList = certificatesList.map((cert, i) =>
+                i === editingCertificateIndex ? certificateForm : cert
+            );
+        } else {
+            // 추가
+            newList = [...certificatesList, certificateForm];
+        }
+
+        setCertificatesList(newList);
+        setIsEditingCertificate(false);
+
+        // 백엔드에 저장
+        await saveCertificateToBackend(newList);
+    };
+
+    // 자격증 취소
+    const handleCancelCertificate = () => {
+        setIsEditingCertificate(false);
+        setEditingCertificateIndex(null);
+    };
+
+    // 백엔드에 자격증 데이터 저장
+    const saveCertificateToBackend = async (certList) => {
+        try {
+            const formData = new FormData();
+            formData.append('user_id', currentUser.id);
+            formData.append('certificates', JSON.stringify(certList));
+
+            const response = await fetch(`${CONFIG.BACKEND_URL}/api/profile`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                alert('자격증 정보가 저장되었습니다!');
+                await loadUserProfile(currentUser.id);
+            } else {
+                alert('자격증 정보 저장에 실패했습니다.');
+            }
+        } catch (error) {
+            console.error('[CERTIFICATE] 저장 오류:', error);
+            alert('자격증 정보 저장 중 오류가 발생했습니다.');
         }
     };
 
@@ -1161,7 +1255,7 @@ export default function ResumePage() {
                                             }}>자격증</h3>
                                         </div>
                                         <button
-                                            onClick={() => setIsEditing(true)}
+                                            onClick={handleAddCertificate}
                                             style={{
                                                 padding: '6px 12px',
                                                 background: '#9c27b0',
@@ -1173,22 +1267,158 @@ export default function ResumePage() {
                                                 cursor: 'pointer'
                                             }}
                                         >
-                                            추가/수정
+                                            추가
                                         </button>
                                     </div>
+
+                                    {/* 자격증 입력 폼 */}
+                                    {isEditingCertificate && (
+                                        <div style={{
+                                            background: 'white',
+                                            padding: '15px',
+                                            borderRadius: '10px',
+                                            marginBottom: '12px',
+                                            border: '2px solid #9c27b0'
+                                        }}>
+                                            <div style={{ marginBottom: '12px' }}>
+                                                <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: '600', color: '#333' }}>
+                                                    자격증명 *
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={certificateForm.name}
+                                                    onChange={(e) => setCertificateForm({...certificateForm, name: e.target.value})}
+                                                    placeholder="예: 정보처리기사"
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '8px',
+                                                        borderRadius: '6px',
+                                                        border: '1px solid #ddd',
+                                                        fontSize: '0.9rem'
+                                                    }}
+                                                />
+                                            </div>
+                                            <div style={{ marginBottom: '12px' }}>
+                                                <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: '600', color: '#333' }}>
+                                                    발행기관
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={certificateForm.issuer}
+                                                    onChange={(e) => setCertificateForm({...certificateForm, issuer: e.target.value})}
+                                                    placeholder="예: 한국산업인력공단"
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '8px',
+                                                        borderRadius: '6px',
+                                                        border: '1px solid #ddd',
+                                                        fontSize: '0.9rem'
+                                                    }}
+                                                />
+                                            </div>
+                                            <div style={{ marginBottom: '15px' }}>
+                                                <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: '600', color: '#333' }}>
+                                                    취득일
+                                                </label>
+                                                <input
+                                                    type="month"
+                                                    value={certificateForm.date}
+                                                    onChange={(e) => setCertificateForm({...certificateForm, date: e.target.value})}
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '8px',
+                                                        borderRadius: '6px',
+                                                        border: '1px solid #ddd',
+                                                        fontSize: '0.9rem'
+                                                    }}
+                                                />
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                <button
+                                                    onClick={handleCancelCertificate}
+                                                    style={{
+                                                        padding: '8px 16px',
+                                                        background: '#e0e0e0',
+                                                        color: '#666',
+                                                        border: 'none',
+                                                        borderRadius: '6px',
+                                                        fontSize: '0.85rem',
+                                                        fontWeight: '600',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    취소
+                                                </button>
+                                                <button
+                                                    onClick={handleSaveCertificate}
+                                                    style={{
+                                                        padding: '8px 16px',
+                                                        background: '#9c27b0',
+                                                        color: 'white',
+                                                        border: 'none',
+                                                        borderRadius: '6px',
+                                                        fontSize: '0.85rem',
+                                                        fontWeight: '600',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    저장
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* 자격증 목록 */}
                                     {certificatesList.length > 0 ? (
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                             {certificatesList.map((cert, index) => (
                                                 <div key={index} style={{
                                                     background: 'rgba(255,255,255,0.7)',
                                                     padding: '12px',
-                                                    borderRadius: '8px'
+                                                    borderRadius: '8px',
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'flex-start'
                                                 }}>
-                                                    <div style={{ fontWeight: '600', color: '#333', marginBottom: '4px' }}>
-                                                        {cert.name}
+                                                    <div style={{ flex: 1 }}>
+                                                        <div style={{ fontWeight: '600', color: '#333', marginBottom: '4px' }}>
+                                                            {cert.name}
+                                                        </div>
+                                                        <div style={{ fontSize: '0.85rem', color: '#666' }}>
+                                                            {cert.issuer} {cert.date && `| ${cert.date}`}
+                                                        </div>
                                                     </div>
-                                                    <div style={{ fontSize: '0.85rem', color: '#666' }}>
-                                                        {cert.issuer} {cert.date && `| ${cert.date}`}
+                                                    <div style={{ display: 'flex', gap: '4px', marginLeft: '12px' }}>
+                                                        <button
+                                                            onClick={() => handleEditCertificate(index)}
+                                                            style={{
+                                                                padding: '4px 10px',
+                                                                background: '#8e24aa',
+                                                                color: 'white',
+                                                                border: 'none',
+                                                                borderRadius: '4px',
+                                                                fontSize: '0.75rem',
+                                                                fontWeight: '600',
+                                                                cursor: 'pointer'
+                                                            }}
+                                                        >
+                                                            수정
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteCertificate(index)}
+                                                            style={{
+                                                                padding: '4px 10px',
+                                                                background: '#d32f2f',
+                                                                color: 'white',
+                                                                border: 'none',
+                                                                borderRadius: '4px',
+                                                                fontSize: '0.75rem',
+                                                                fontWeight: '600',
+                                                                cursor: 'pointer'
+                                                            }}
+                                                        >
+                                                            삭제
+                                                        </button>
                                                     </div>
                                                 </div>
                                             ))}
