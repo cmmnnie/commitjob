@@ -53,6 +53,15 @@ export default function ResumePage() {
         date: ''
     });
 
+    // 수상 편집 모드
+    const [isEditingAward, setIsEditingAward] = useState(false);
+    const [editingAwardIndex, setEditingAwardIndex] = useState(null);
+    const [awardForm, setAwardForm] = useState({
+        name: '',
+        issuer: '',
+        date: ''
+    });
+
     useEffect(() => {
         checkLoginAndLoadProfile();
     }, []);
@@ -64,6 +73,7 @@ export default function ResumePage() {
         setIsEditingEducation(false); // 학력 편집 모드도 해제
         setIsEditingCertificate(false); // 자격증 편집 모드도 해제
         setIsEditingLanguage(false); // 어학 편집 모드도 해제
+        setIsEditingAward(false); // 수상 편집 모드도 해제
     };
 
     // 학력 추가 버튼 클릭
@@ -319,6 +329,90 @@ export default function ResumePage() {
         } catch (error) {
             console.error('[LANGUAGE] 저장 오류:', error);
             alert('어학 정보 저장 중 오류가 발생했습니다.');
+        }
+    };
+
+    // 수상 추가 버튼 클릭
+    const handleAddAward = () => {
+        setAwardForm({
+            name: '',
+            issuer: '',
+            date: ''
+        });
+        setEditingAwardIndex(null);
+        setIsEditingAward(true);
+    };
+
+    // 수상 수정 버튼 클릭
+    const handleEditAward = (index) => {
+        setAwardForm(awardsList[index]);
+        setEditingAwardIndex(index);
+        setIsEditingAward(true);
+    };
+
+    // 수상 삭제
+    const handleDeleteAward = async (index) => {
+        if (!confirm('정말 삭제하시겠습니까?')) return;
+
+        const newList = awardsList.filter((_, i) => i !== index);
+        setAwardsList(newList);
+
+        // 백엔드에 저장
+        await saveAwardToBackend(newList);
+    };
+
+    // 수상 저장
+    const handleSaveAward = async () => {
+        if (!awardForm.name) {
+            alert('수상명은 필수 입력 항목입니다.');
+            return;
+        }
+
+        let newList;
+        if (editingAwardIndex !== null) {
+            // 수정
+            newList = awardsList.map((award, i) =>
+                i === editingAwardIndex ? awardForm : award
+            );
+        } else {
+            // 추가
+            newList = [...awardsList, awardForm];
+        }
+
+        setAwardsList(newList);
+        setIsEditingAward(false);
+
+        // 백엔드에 저장
+        await saveAwardToBackend(newList);
+    };
+
+    // 수상 취소
+    const handleCancelAward = () => {
+        setIsEditingAward(false);
+        setEditingAwardIndex(null);
+    };
+
+    // 백엔드에 수상 데이터 저장
+    const saveAwardToBackend = async (awardList) => {
+        try {
+            const formData = new FormData();
+            formData.append('user_id', currentUser.id);
+            formData.append('awards', JSON.stringify(awardList));
+
+            const response = await fetch(`${CONFIG.BACKEND_URL}/api/profile`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                alert('수상 정보가 저장되었습니다!');
+                await loadUserProfile(currentUser.id);
+            } else {
+                alert('수상 정보 저장에 실패했습니다.');
+            }
+        } catch (error) {
+            console.error('[AWARD] 저장 오류:', error);
+            alert('수상 정보 저장 중 오류가 발생했습니다.');
         }
     };
 
@@ -1779,7 +1873,7 @@ export default function ResumePage() {
                                             }}>수상</h3>
                                         </div>
                                         <button
-                                            onClick={() => setIsEditing(true)}
+                                            onClick={handleAddAward}
                                             style={{
                                                 padding: '6px 12px',
                                                 background: '#ff9800',
@@ -1791,28 +1885,159 @@ export default function ResumePage() {
                                                 cursor: 'pointer'
                                             }}
                                         >
-                                            추가/수정
+                                            추가
                                         </button>
                                     </div>
+
+                                    {/* 수상 입력 폼 */}
+                                    {isEditingAward && (
+                                        <div style={{
+                                            background: 'white',
+                                            padding: '15px',
+                                            borderRadius: '10px',
+                                            marginBottom: '12px',
+                                            border: '2px solid #ff9800'
+                                        }}>
+                                            <div style={{ marginBottom: '12px' }}>
+                                                <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: '600', color: '#333' }}>
+                                                    수상명 *
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={awardForm.name}
+                                                    onChange={(e) => setAwardForm({...awardForm, name: e.target.value})}
+                                                    placeholder="예: 최우수상"
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '8px',
+                                                        borderRadius: '6px',
+                                                        border: '1px solid #ddd',
+                                                        fontSize: '0.9rem'
+                                                    }}
+                                                />
+                                            </div>
+                                            <div style={{ marginBottom: '12px' }}>
+                                                <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: '600', color: '#333' }}>
+                                                    발행기관
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={awardForm.issuer}
+                                                    onChange={(e) => setAwardForm({...awardForm, issuer: e.target.value})}
+                                                    placeholder="예: 한국산업협회"
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '8px',
+                                                        borderRadius: '6px',
+                                                        border: '1px solid #ddd',
+                                                        fontSize: '0.9rem'
+                                                    }}
+                                                />
+                                            </div>
+                                            <div style={{ marginBottom: '15px' }}>
+                                                <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: '600', color: '#333' }}>
+                                                    수상일
+                                                </label>
+                                                <input
+                                                    type="month"
+                                                    value={awardForm.date}
+                                                    onChange={(e) => setAwardForm({...awardForm, date: e.target.value})}
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '8px',
+                                                        borderRadius: '6px',
+                                                        border: '1px solid #ddd',
+                                                        fontSize: '0.9rem'
+                                                    }}
+                                                />
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                <button
+                                                    onClick={handleCancelAward}
+                                                    style={{
+                                                        padding: '8px 16px',
+                                                        background: '#e0e0e0',
+                                                        color: '#666',
+                                                        border: 'none',
+                                                        borderRadius: '6px',
+                                                        fontSize: '0.85rem',
+                                                        fontWeight: '600',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    취소
+                                                </button>
+                                                <button
+                                                    onClick={handleSaveAward}
+                                                    style={{
+                                                        padding: '8px 16px',
+                                                        background: '#ff9800',
+                                                        color: 'white',
+                                                        border: 'none',
+                                                        borderRadius: '6px',
+                                                        fontSize: '0.85rem',
+                                                        fontWeight: '600',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    저장
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* 수상 목록 */}
                                     {awardsList.length > 0 ? (
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                             {awardsList.map((award, index) => (
                                                 <div key={index} style={{
                                                     background: 'rgba(255,255,255,0.7)',
                                                     padding: '12px',
-                                                    borderRadius: '8px'
+                                                    borderRadius: '8px',
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'flex-start'
                                                 }}>
-                                                    <div style={{ fontWeight: '600', color: '#333', marginBottom: '4px' }}>
-                                                        {award.title}
-                                                    </div>
-                                                    <div style={{ fontSize: '0.85rem', color: '#666' }}>
-                                                        {award.organization} {award.date && `| ${award.date}`}
-                                                    </div>
-                                                    {award.description && (
-                                                        <div style={{ fontSize: '0.8rem', color: '#999', marginTop: '4px' }}>
-                                                            {award.description}
+                                                    <div style={{ flex: 1 }}>
+                                                        <div style={{ fontWeight: '600', color: '#333', marginBottom: '4px' }}>
+                                                            {award.name}
                                                         </div>
-                                                    )}
+                                                        <div style={{ fontSize: '0.85rem', color: '#666' }}>
+                                                            {award.issuer} {award.date && `| ${award.date}`}
+                                                        </div>
+                                                    </div>
+                                                    <div style={{ display: 'flex', gap: '4px', marginLeft: '12px' }}>
+                                                        <button
+                                                            onClick={() => handleEditAward(index)}
+                                                            style={{
+                                                                padding: '4px 10px',
+                                                                background: '#f57c00',
+                                                                color: 'white',
+                                                                border: 'none',
+                                                                borderRadius: '4px',
+                                                                fontSize: '0.75rem',
+                                                                fontWeight: '600',
+                                                                cursor: 'pointer'
+                                                            }}
+                                                        >
+                                                            수정
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteAward(index)}
+                                                            style={{
+                                                                padding: '4px 10px',
+                                                                background: '#d32f2f',
+                                                                color: 'white',
+                                                                border: 'none',
+                                                                borderRadius: '4px',
+                                                                fontSize: '0.75rem',
+                                                                fontWeight: '600',
+                                                                cursor: 'pointer'
+                                                            }}
+                                                        >
+                                                            삭제
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>
