@@ -43,6 +43,16 @@ export default function ResumePage() {
         date: ''
     });
 
+    // 어학 편집 모드
+    const [isEditingLanguage, setIsEditingLanguage] = useState(false);
+    const [editingLanguageIndex, setEditingLanguageIndex] = useState(null);
+    const [languageForm, setLanguageForm] = useState({
+        language: '',
+        level: '',
+        score: '',
+        date: ''
+    });
+
     useEffect(() => {
         checkLoginAndLoadProfile();
     }, []);
@@ -53,6 +63,7 @@ export default function ResumePage() {
         setIsEditing(false); // 탭 전환시 편집 모드 해제
         setIsEditingEducation(false); // 학력 편집 모드도 해제
         setIsEditingCertificate(false); // 자격증 편집 모드도 해제
+        setIsEditingLanguage(false); // 어학 편집 모드도 해제
     };
 
     // 학력 추가 버튼 클릭
@@ -223,6 +234,91 @@ export default function ResumePage() {
         } catch (error) {
             console.error('[CERTIFICATE] 저장 오류:', error);
             alert('자격증 정보 저장 중 오류가 발생했습니다.');
+        }
+    };
+
+    // 어학 추가 버튼 클릭
+    const handleAddLanguage = () => {
+        setLanguageForm({
+            language: '',
+            level: '',
+            score: '',
+            date: ''
+        });
+        setEditingLanguageIndex(null);
+        setIsEditingLanguage(true);
+    };
+
+    // 어학 수정 버튼 클릭
+    const handleEditLanguage = (index) => {
+        setLanguageForm(languagesList[index]);
+        setEditingLanguageIndex(index);
+        setIsEditingLanguage(true);
+    };
+
+    // 어학 삭제
+    const handleDeleteLanguage = async (index) => {
+        if (!confirm('정말 삭제하시겠습니까?')) return;
+
+        const newList = languagesList.filter((_, i) => i !== index);
+        setLanguagesList(newList);
+
+        // 백엔드에 저장
+        await saveLanguageToBackend(newList);
+    };
+
+    // 어학 저장
+    const handleSaveLanguage = async () => {
+        if (!languageForm.language) {
+            alert('언어는 필수 입력 항목입니다.');
+            return;
+        }
+
+        let newList;
+        if (editingLanguageIndex !== null) {
+            // 수정
+            newList = languagesList.map((lang, i) =>
+                i === editingLanguageIndex ? languageForm : lang
+            );
+        } else {
+            // 추가
+            newList = [...languagesList, languageForm];
+        }
+
+        setLanguagesList(newList);
+        setIsEditingLanguage(false);
+
+        // 백엔드에 저장
+        await saveLanguageToBackend(newList);
+    };
+
+    // 어학 취소
+    const handleCancelLanguage = () => {
+        setIsEditingLanguage(false);
+        setEditingLanguageIndex(null);
+    };
+
+    // 백엔드에 어학 데이터 저장
+    const saveLanguageToBackend = async (langList) => {
+        try {
+            const formData = new FormData();
+            formData.append('user_id', currentUser.id);
+            formData.append('languages', JSON.stringify(langList));
+
+            const response = await fetch(`${CONFIG.BACKEND_URL}/api/profile`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                alert('어학 정보가 저장되었습니다!');
+                await loadUserProfile(currentUser.id);
+            } else {
+                alert('어학 정보 저장에 실패했습니다.');
+            }
+        } catch (error) {
+            console.error('[LANGUAGE] 저장 오류:', error);
+            alert('어학 정보 저장 중 오류가 발생했습니다.');
         }
     };
 
@@ -1458,7 +1554,7 @@ export default function ResumePage() {
                                             }}>어학</h3>
                                         </div>
                                         <button
-                                            onClick={() => setIsEditing(true)}
+                                            onClick={handleAddLanguage}
                                             style={{
                                                 padding: '6px 12px',
                                                 background: '#4caf50',
@@ -1470,24 +1566,180 @@ export default function ResumePage() {
                                                 cursor: 'pointer'
                                             }}
                                         >
-                                            추가/수정
+                                            추가
                                         </button>
                                     </div>
+
+                                    {/* 어학 입력 폼 */}
+                                    {isEditingLanguage && (
+                                        <div style={{
+                                            background: 'white',
+                                            padding: '15px',
+                                            borderRadius: '10px',
+                                            marginBottom: '12px',
+                                            border: '2px solid #4caf50'
+                                        }}>
+                                            <div style={{ marginBottom: '12px' }}>
+                                                <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: '600', color: '#333' }}>
+                                                    언어 *
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={languageForm.language}
+                                                    onChange={(e) => setLanguageForm({...languageForm, language: e.target.value})}
+                                                    placeholder="예: 영어"
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '8px',
+                                                        borderRadius: '6px',
+                                                        border: '1px solid #ddd',
+                                                        fontSize: '0.9rem'
+                                                    }}
+                                                />
+                                            </div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                                                <div>
+                                                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: '600', color: '#333' }}>
+                                                        수준
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={languageForm.level}
+                                                        onChange={(e) => setLanguageForm({...languageForm, level: e.target.value})}
+                                                        placeholder="예: 고급"
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '8px',
+                                                            borderRadius: '6px',
+                                                            border: '1px solid #ddd',
+                                                            fontSize: '0.9rem'
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: '600', color: '#333' }}>
+                                                        점수
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={languageForm.score}
+                                                        onChange={(e) => setLanguageForm({...languageForm, score: e.target.value})}
+                                                        placeholder="예: 990"
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '8px',
+                                                            borderRadius: '6px',
+                                                            border: '1px solid #ddd',
+                                                            fontSize: '0.9rem'
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div style={{ marginBottom: '15px' }}>
+                                                <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: '600', color: '#333' }}>
+                                                    취득일
+                                                </label>
+                                                <input
+                                                    type="month"
+                                                    value={languageForm.date}
+                                                    onChange={(e) => setLanguageForm({...languageForm, date: e.target.value})}
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '8px',
+                                                        borderRadius: '6px',
+                                                        border: '1px solid #ddd',
+                                                        fontSize: '0.9rem'
+                                                    }}
+                                                />
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                <button
+                                                    onClick={handleCancelLanguage}
+                                                    style={{
+                                                        padding: '8px 16px',
+                                                        background: '#e0e0e0',
+                                                        color: '#666',
+                                                        border: 'none',
+                                                        borderRadius: '6px',
+                                                        fontSize: '0.85rem',
+                                                        fontWeight: '600',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    취소
+                                                </button>
+                                                <button
+                                                    onClick={handleSaveLanguage}
+                                                    style={{
+                                                        padding: '8px 16px',
+                                                        background: '#4caf50',
+                                                        color: 'white',
+                                                        border: 'none',
+                                                        borderRadius: '6px',
+                                                        fontSize: '0.85rem',
+                                                        fontWeight: '600',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    저장
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* 어학 목록 */}
                                     {languagesList.length > 0 ? (
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                             {languagesList.map((lang, index) => (
                                                 <div key={index} style={{
                                                     background: 'rgba(255,255,255,0.7)',
                                                     padding: '12px',
-                                                    borderRadius: '8px'
+                                                    borderRadius: '8px',
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'flex-start'
                                                 }}>
-                                                    <div style={{ fontWeight: '600', color: '#333', marginBottom: '4px' }}>
-                                                        {lang.language}
+                                                    <div style={{ flex: 1 }}>
+                                                        <div style={{ fontWeight: '600', color: '#333', marginBottom: '4px' }}>
+                                                            {lang.language}
+                                                        </div>
+                                                        <div style={{ fontSize: '0.85rem', color: '#666' }}>
+                                                            {lang.level}
+                                                            {lang.score && ` | ${lang.score}점`}
+                                                            {lang.date && ` | ${lang.date}`}
+                                                        </div>
                                                     </div>
-                                                    <div style={{ fontSize: '0.85rem', color: '#666' }}>
-                                                        {lang.level}
-                                                        {lang.score && ` | ${lang.score}점`}
-                                                        {lang.date && ` | ${lang.date}`}
+                                                    <div style={{ display: 'flex', gap: '4px', marginLeft: '12px' }}>
+                                                        <button
+                                                            onClick={() => handleEditLanguage(index)}
+                                                            style={{
+                                                                padding: '4px 10px',
+                                                                background: '#43a047',
+                                                                color: 'white',
+                                                                border: 'none',
+                                                                borderRadius: '4px',
+                                                                fontSize: '0.75rem',
+                                                                fontWeight: '600',
+                                                                cursor: 'pointer'
+                                                            }}
+                                                        >
+                                                            수정
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteLanguage(index)}
+                                                            style={{
+                                                                padding: '4px 10px',
+                                                                background: '#d32f2f',
+                                                                color: 'white',
+                                                                border: 'none',
+                                                                borderRadius: '4px',
+                                                                fontSize: '0.75rem',
+                                                                fontWeight: '600',
+                                                                cursor: 'pointer'
+                                                            }}
+                                                        >
+                                                            삭제
+                                                        </button>
                                                     </div>
                                                 </div>
                                             ))}
