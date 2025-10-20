@@ -16,9 +16,10 @@ export default function ResumePage() {
         expected_salary: '0'  // 기본값 0
     });
 
-    // 학력/자격/수상 데이터
+    // 학력/자격/어학/수상 데이터
     const [educationList, setEducationList] = useState([]);
     const [certificatesList, setCertificatesList] = useState([]);
+    const [languagesList, setLanguagesList] = useState([]);
     const [awardsList, setAwardsList] = useState([]);
 
     useEffect(() => {
@@ -99,7 +100,7 @@ export default function ResumePage() {
                 }
                 setUserProfile(data.profile); // profile 정보 설정
 
-                // 학력/자격/수상 데이터 로드
+                // 학력/자격/어학/수상 데이터 로드
                 if (data.profile) {
                     try {
                         if (data.profile.education) {
@@ -114,6 +115,12 @@ export default function ResumePage() {
                                 : data.profile.certificates;
                             setCertificatesList(Array.isArray(certData) ? certData : []);
                         }
+                        if (data.profile.languages) {
+                            const langData = typeof data.profile.languages === 'string'
+                                ? JSON.parse(data.profile.languages)
+                                : data.profile.languages;
+                            setLanguagesList(Array.isArray(langData) ? langData : []);
+                        }
                         if (data.profile.awards) {
                             const awardsData = typeof data.profile.awards === 'string'
                                 ? JSON.parse(data.profile.awards)
@@ -121,7 +128,7 @@ export default function ResumePage() {
                             setAwardsList(Array.isArray(awardsData) ? awardsData : []);
                         }
                     } catch (parseError) {
-                        console.error('[RESUME] 학력/자격/수상 데이터 파싱 오류:', parseError);
+                        console.error('[RESUME] 학력/자격/어학/수상 데이터 파싱 오류:', parseError);
                     }
                 }
             } else if (response.status === 404) {
@@ -318,7 +325,7 @@ export default function ResumePage() {
                     borderRadius: '20px',
                     padding: '40px',
                     boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-                    maxWidth: '500px',
+                    maxWidth: '700px',
                     margin: '0 auto',
                     textAlign: 'center'
                 }}>
@@ -442,13 +449,13 @@ export default function ResumePage() {
                             border: 'none',
                             borderBottom: activeTab === 'education' ? 'none' : '2px solid transparent',
                             borderRadius: activeTab === 'education' ? '8px 8px 0 0' : '0',
-                            fontSize: '0.95rem',
+                            fontSize: '0.9rem',
                             fontWeight: '700',
                             cursor: 'pointer',
                             transition: 'all 0.3s ease'
                         }}
                     >
-                        학력/자격/수상
+                        학력/자격/어학/수상
                     </button>
                     <button
                         onClick={() => setActiveTab('coverLetter')}
@@ -891,6 +898,75 @@ export default function ResumePage() {
                                             fontSize: '0.9rem'
                                         }}>
                                             등록된 자격증이 없습니다
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 어학 섹션 */}
+                                <div style={{
+                                    background: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
+                                    borderRadius: '15px',
+                                    padding: '18px',
+                                    marginBottom: '12px'
+                                }}>
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        marginBottom: '12px'
+                                    }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <span style={{ fontSize: '1.2rem' }}>🌐</span>
+                                            <h3 style={{
+                                                fontSize: '1.05rem',
+                                                color: '#333',
+                                                fontWeight: '600',
+                                                margin: 0
+                                            }}>어학</h3>
+                                        </div>
+                                        <button
+                                            onClick={() => setIsEditing(true)}
+                                            style={{
+                                                padding: '6px 12px',
+                                                background: '#4caf50',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '6px',
+                                                fontSize: '0.85rem',
+                                                fontWeight: '600',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            추가/수정
+                                        </button>
+                                    </div>
+                                    {languagesList.length > 0 ? (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                            {languagesList.map((lang, index) => (
+                                                <div key={index} style={{
+                                                    background: 'rgba(255,255,255,0.7)',
+                                                    padding: '12px',
+                                                    borderRadius: '8px'
+                                                }}>
+                                                    <div style={{ fontWeight: '600', color: '#333', marginBottom: '4px' }}>
+                                                        {lang.language}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.85rem', color: '#666' }}>
+                                                        {lang.level}
+                                                        {lang.score && ` | ${lang.score}점`}
+                                                        {lang.date && ` | ${lang.date}`}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div style={{
+                                            padding: '20px',
+                                            textAlign: 'center',
+                                            color: '#999',
+                                            fontSize: '0.9rem'
+                                        }}>
+                                            등록된 어학 정보가 없습니다
                                         </div>
                                     )}
                                 </div>

@@ -1542,6 +1542,7 @@ app.post('/api/profile', uploadProfile.single('resume'), async (req, res) => {
       expected_salary,
       education,
       certificates,
+      languages,
       awards
     } = req.body || {};
 
@@ -1625,6 +1626,10 @@ app.post('/api/profile', uploadProfile.single('resume'), async (req, res) => {
         updateFields.push('certificates = ?');
         updateValues.push(typeof certificates === 'string' ? certificates : JSON.stringify(certificates));
       }
+      if (languages) {
+        updateFields.push('languages = ?');
+        updateValues.push(typeof languages === 'string' ? languages : JSON.stringify(languages));
+      }
       if (awards) {
         updateFields.push('awards = ?');
         updateValues.push(typeof awards === 'string' ? awards : JSON.stringify(awards));
@@ -1651,7 +1656,7 @@ app.post('/api/profile', uploadProfile.single('resume'), async (req, res) => {
         throw new Error('희망지역 데이터 형식이 올바르지 않습니다');
       }
 
-      const insertSQL = 'INSERT INTO user_profiles (user_id, preferred_jobs, experience, preferred_regions, skills, expected_salary, resume_path, education, certificates, awards, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())';
+      const insertSQL = 'INSERT INTO user_profiles (user_id, preferred_jobs, experience, preferred_regions, skills, expected_salary, resume_path, education, certificates, languages, awards, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())';
       const insertParams = [
         user_id,
         jobs,
@@ -1662,6 +1667,7 @@ app.post('/api/profile', uploadProfile.single('resume'), async (req, res) => {
         resumePath,
         education ? (typeof education === 'string' ? education : JSON.stringify(education)) : null,
         certificates ? (typeof certificates === 'string' ? certificates : JSON.stringify(certificates)) : null,
+        languages ? (typeof languages === 'string' ? languages : JSON.stringify(languages)) : null,
         awards ? (typeof awards === 'string' ? awards : JSON.stringify(awards)) : null
       ];
 
