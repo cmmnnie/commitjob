@@ -339,8 +339,8 @@ export default function ResumePage() {
 
     return (
         <div style={{
-            padding: '20px',
-            paddingBottom: '80px',
+            padding: '40px 20px',
+            paddingBottom: '100px',
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             minHeight: 'calc(100vh - 60px)'
         }}>
@@ -361,7 +361,7 @@ export default function ResumePage() {
                 borderRadius: '20px',
                 padding: '25px',
                 boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-                maxWidth: '500px',
+                maxWidth: '800px',
                 margin: '0 auto'
             }}>
                 {/* 헤더 - 사용자 정보 */}
