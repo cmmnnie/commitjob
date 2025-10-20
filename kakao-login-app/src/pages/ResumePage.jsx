@@ -6,6 +6,7 @@ export default function ResumePage() {
     const [userProfile, setUserProfile] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
+    const [activeTab, setActiveTab] = useState('basic'); // 'basic', 'experience', 'education', 'coverLetter'
     const [formData, setFormData] = useState({
         jobs: '',
         careerType: '',  // '신입' 또는 '경력'
@@ -356,15 +357,100 @@ export default function ResumePage() {
                     }}>{maskName(currentUser.name)}님의 이력서</h1>
                 </div>
 
+                {/* 탭 네비게이션 */}
+                <div style={{
+                    display: 'flex',
+                    gap: '8px',
+                    marginBottom: '20px',
+                    borderBottom: '2px solid #f0f0f0',
+                    paddingBottom: '0'
+                }}>
+                    <button
+                        onClick={() => setActiveTab('basic')}
+                        style={{
+                            flex: 1,
+                            padding: '12px 8px',
+                            background: activeTab === 'basic' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'transparent',
+                            color: activeTab === 'basic' ? 'white' : '#666',
+                            border: 'none',
+                            borderBottom: activeTab === 'basic' ? 'none' : '2px solid transparent',
+                            borderRadius: activeTab === 'basic' ? '8px 8px 0 0' : '0',
+                            fontSize: '0.85rem',
+                            fontWeight: '700',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s ease'
+                        }}
+                    >
+                        기본정보
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('experience')}
+                        style={{
+                            flex: 1,
+                            padding: '12px 8px',
+                            background: activeTab === 'experience' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'transparent',
+                            color: activeTab === 'experience' ? 'white' : '#666',
+                            border: 'none',
+                            borderBottom: activeTab === 'experience' ? 'none' : '2px solid transparent',
+                            borderRadius: activeTab === 'experience' ? '8px 8px 0 0' : '0',
+                            fontSize: '0.85rem',
+                            fontWeight: '700',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s ease'
+                        }}
+                    >
+                        경력
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('education')}
+                        style={{
+                            flex: 1,
+                            padding: '12px 8px',
+                            background: activeTab === 'education' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'transparent',
+                            color: activeTab === 'education' ? 'white' : '#666',
+                            border: 'none',
+                            borderBottom: activeTab === 'education' ? 'none' : '2px solid transparent',
+                            borderRadius: activeTab === 'education' ? '8px 8px 0 0' : '0',
+                            fontSize: '0.8rem',
+                            fontWeight: '700',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s ease'
+                        }}
+                    >
+                        학력/자격/수상
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('coverLetter')}
+                        style={{
+                            flex: 1,
+                            padding: '12px 8px',
+                            background: activeTab === 'coverLetter' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'transparent',
+                            color: activeTab === 'coverLetter' ? 'white' : '#666',
+                            border: 'none',
+                            borderBottom: activeTab === 'coverLetter' ? 'none' : '2px solid transparent',
+                            borderRadius: activeTab === 'coverLetter' ? '8px 8px 0 0' : '0',
+                            fontSize: '0.85rem',
+                            fontWeight: '700',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s ease'
+                        }}
+                    >
+                        자기소개서
+                    </button>
+                </div>
+
                 {userProfile && !isEditing ? (
                     <>
-                        {/* 기본 정보 섹션 */}
-                        <div style={{
-                            background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-                            borderRadius: '15px',
-                            padding: '18px',
-                            marginBottom: '12px'
-                        }}>
+                        {/* 기본정보 탭 */}
+                        {activeTab === 'basic' && (
+                            <>
+                                {/* 기본 정보 섹션 */}
+                                <div style={{
+                                    background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+                                    borderRadius: '15px',
+                                    padding: '18px',
+                                    marginBottom: '12px'
+                                }}>
                             <div style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -603,52 +689,147 @@ export default function ResumePage() {
                         >
                             ✏️ 프로필 수정
                         </button>
+                            </>
+                        )}
+
+                        {/* 경력 탭 */}
+                        {activeTab === 'experience' && (
+                            <div style={{
+                                background: '#f8f9fa',
+                                borderRadius: '12px',
+                                padding: '40px 20px',
+                                textAlign: 'center',
+                                minHeight: '200px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}>
+                                <div style={{ fontSize: '3rem', marginBottom: '15px' }}>💼</div>
+                                <h3 style={{
+                                    fontSize: '1.2rem',
+                                    color: '#333',
+                                    marginBottom: '10px',
+                                    fontWeight: '700'
+                                }}>경력 정보</h3>
+                                <p style={{
+                                    color: '#666',
+                                    fontSize: '0.9rem',
+                                    lineHeight: '1.6'
+                                }}>
+                                    상세한 경력 정보를 입력하는 기능은<br/>곧 추가될 예정입니다.
+                                </p>
+                            </div>
+                        )}
+
+                        {/* 학력/자격/수상 탭 */}
+                        {activeTab === 'education' && (
+                            <div style={{
+                                background: '#f8f9fa',
+                                borderRadius: '12px',
+                                padding: '40px 20px',
+                                textAlign: 'center',
+                                minHeight: '200px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}>
+                                <div style={{ fontSize: '3rem', marginBottom: '15px' }}>🎓</div>
+                                <h3 style={{
+                                    fontSize: '1.2rem',
+                                    color: '#333',
+                                    marginBottom: '10px',
+                                    fontWeight: '700'
+                                }}>학력 / 자격 / 수상</h3>
+                                <p style={{
+                                    color: '#666',
+                                    fontSize: '0.9rem',
+                                    lineHeight: '1.6'
+                                }}>
+                                    학력, 자격증, 수상 경력을 입력하는 기능은<br/>곧 추가될 예정입니다.
+                                </p>
+                            </div>
+                        )}
+
+                        {/* 자기소개서 탭 */}
+                        {activeTab === 'coverLetter' && (
+                            <div style={{
+                                background: '#f8f9fa',
+                                borderRadius: '12px',
+                                padding: '40px 20px',
+                                textAlign: 'center',
+                                minHeight: '200px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}>
+                                <div style={{ fontSize: '3rem', marginBottom: '15px' }}>📝</div>
+                                <h3 style={{
+                                    fontSize: '1.2rem',
+                                    color: '#333',
+                                    marginBottom: '10px',
+                                    fontWeight: '700'
+                                }}>자기소개서</h3>
+                                <p style={{
+                                    color: '#666',
+                                    fontSize: '0.9rem',
+                                    lineHeight: '1.6'
+                                }}>
+                                    자기소개서를 작성하고 관리하는 기능은<br/>곧 추가될 예정입니다.
+                                </p>
+                            </div>
+                        )}
 
                     </>
                 ) : (
                     <>
-                        {/* 프로필 입력 폼 */}
-                        <div style={{
-                            background: userProfile
-                                ? 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)'
-                                : 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)',
-                            borderRadius: '12px',
-                            padding: '12px 16px',
-                            marginBottom: '15px',
-                            border: userProfile ? '2px dashed #2196f3' : '2px dashed #fb8c00'
-                        }}>
-                            <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                marginBottom: '4px'
-                            }}>
-                                <span style={{ fontSize: '1.4rem' }}>
-                                    {userProfile ? '✏️' : '📝'}
-                                </span>
-                                <p style={{
-                                    fontSize: '1.05rem',
-                                    color: userProfile ? '#1565c0' : '#e65100',
-                                    margin: 0,
-                                    fontWeight: '600'
+                        {/* 기본정보 탭 - 편집 모드 */}
+                        {activeTab === 'basic' && (
+                            <>
+                                {/* 프로필 입력 폼 */}
+                                <div style={{
+                                    background: userProfile
+                                        ? 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)'
+                                        : 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)',
+                                    borderRadius: '12px',
+                                    padding: '12px 16px',
+                                    marginBottom: '15px',
+                                    border: userProfile ? '2px dashed #2196f3' : '2px dashed #fb8c00'
                                 }}>
-                                    {userProfile ? '프로필을 수정해주세요' : '이력서를 작성해주세요'}
-                                </p>
-                            </div>
-                            <p style={{
-                                fontSize: '0.85rem',
-                                color: userProfile ? '#0d47a1' : '#e65100',
-                                lineHeight: '1.3',
-                                margin: 0,
-                                paddingLeft: '32px',
-                                fontWeight: '700',
-                                textShadow: '0 1px 2px rgba(0,0,0,0.1)'
-                            }}>
-                                이력서 정보를 활용하여 AI 채용공고와 AI 면접질문을 추천해드립니다
-                            </p>
-                        </div>
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        marginBottom: '4px'
+                                    }}>
+                                        <span style={{ fontSize: '1.4rem' }}>
+                                            {userProfile ? '✏️' : '📝'}
+                                        </span>
+                                        <p style={{
+                                            fontSize: '1.05rem',
+                                            color: userProfile ? '#1565c0' : '#e65100',
+                                            margin: 0,
+                                            fontWeight: '600'
+                                        }}>
+                                            {userProfile ? '프로필을 수정해주세요' : '이력서를 작성해주세요'}
+                                        </p>
+                                    </div>
+                                    <p style={{
+                                        fontSize: '0.85rem',
+                                        color: userProfile ? '#0d47a1' : '#e65100',
+                                        lineHeight: '1.3',
+                                        margin: 0,
+                                        paddingLeft: '32px',
+                                        fontWeight: '700',
+                                        textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                                    }}>
+                                        이력서 정보를 활용하여 AI 채용공고와 AI 면접질문을 추천해드립니다
+                                    </p>
+                                </div>
 
-                        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             <div>
                                 <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.9rem', fontWeight: '600', color: '#333' }}>
                                     희망직무 <span style={{ color: '#e74c3c' }}>*</span>
@@ -834,6 +1015,98 @@ export default function ResumePage() {
                                 )}
                             </div>
                         </form>
+                            </>
+                        )}
+
+                        {/* 경력 탭 - 편집 모드 */}
+                        {activeTab === 'experience' && (
+                            <div style={{
+                                background: '#f8f9fa',
+                                borderRadius: '12px',
+                                padding: '40px 20px',
+                                textAlign: 'center',
+                                minHeight: '200px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}>
+                                <div style={{ fontSize: '3rem', marginBottom: '15px' }}>💼</div>
+                                <h3 style={{
+                                    fontSize: '1.2rem',
+                                    color: '#333',
+                                    marginBottom: '10px',
+                                    fontWeight: '700'
+                                }}>경력 정보</h3>
+                                <p style={{
+                                    color: '#666',
+                                    fontSize: '0.9rem',
+                                    lineHeight: '1.6'
+                                }}>
+                                    상세한 경력 정보를 입력하는 기능은<br/>곧 추가될 예정입니다.
+                                </p>
+                            </div>
+                        )}
+
+                        {/* 학력/자격/수상 탭 - 편집 모드 */}
+                        {activeTab === 'education' && (
+                            <div style={{
+                                background: '#f8f9fa',
+                                borderRadius: '12px',
+                                padding: '40px 20px',
+                                textAlign: 'center',
+                                minHeight: '200px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}>
+                                <div style={{ fontSize: '3rem', marginBottom: '15px' }}>🎓</div>
+                                <h3 style={{
+                                    fontSize: '1.2rem',
+                                    color: '#333',
+                                    marginBottom: '10px',
+                                    fontWeight: '700'
+                                }}>학력 / 자격 / 수상</h3>
+                                <p style={{
+                                    color: '#666',
+                                    fontSize: '0.9rem',
+                                    lineHeight: '1.6'
+                                }}>
+                                    학력, 자격증, 수상 경력을 입력하는 기능은<br/>곧 추가될 예정입니다.
+                                </p>
+                            </div>
+                        )}
+
+                        {/* 자기소개서 탭 - 편집 모드 */}
+                        {activeTab === 'coverLetter' && (
+                            <div style={{
+                                background: '#f8f9fa',
+                                borderRadius: '12px',
+                                padding: '40px 20px',
+                                textAlign: 'center',
+                                minHeight: '200px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}>
+                                <div style={{ fontSize: '3rem', marginBottom: '15px' }}>📝</div>
+                                <h3 style={{
+                                    fontSize: '1.2rem',
+                                    color: '#333',
+                                    marginBottom: '10px',
+                                    fontWeight: '700'
+                                }}>자기소개서</h3>
+                                <p style={{
+                                    color: '#666',
+                                    fontSize: '0.9rem',
+                                    lineHeight: '1.6'
+                                }}>
+                                    자기소개서를 작성하고 관리하는 기능은<br/>곧 추가될 예정입니다.
+                                </p>
+                            </div>
+                        )}
                     </>
                 )}
             </div>
