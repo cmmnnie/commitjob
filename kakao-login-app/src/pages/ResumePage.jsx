@@ -1180,7 +1180,7 @@ export default function ResumePage() {
                                             style={{
                                                 padding: '4px 10px',
                                                 background: 'linear-gradient(135deg, #7f8c8d 0%, #5d6d7e 100%)',
-                                                color: 'black',
+                                                color: 'white',
                                                 border: 'none',
                                                 borderRadius: '8px',
                                                 fontSize: '0.85rem',
@@ -1383,7 +1383,7 @@ export default function ResumePage() {
                                                             style={{
                                                                 padding: '4px 10px',
                                                                 background: 'linear-gradient(135deg, #7f8c8d 0%, #5d6d7e 100%)',
-                                                                color: 'black',
+                                                                color: 'white',
                                                                 border: 'none',
                                                                 borderRadius: '6px',
                                                                 fontSize: '0.75rem',
@@ -1398,14 +1398,14 @@ export default function ResumePage() {
                                                             onClick={() => handleDeleteEducation(index)}
                                                             style={{
                                                                 padding: '4px 10px',
-                                                                background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
-                                                                color: 'black',
+                                                                background: 'linear-gradient(135deg, #ff69b4 0%, #ff1493 100%)',
+                                                                color: 'white',
                                                                 border: 'none',
                                                                 borderRadius: '6px',
                                                                 fontSize: '0.75rem',
                                                                 fontWeight: '600',
                                                                 cursor: 'pointer',
-                                                                boxShadow: '0 1px 4px rgba(192, 57, 43, 0.4)'
+                                                                boxShadow: '0 1px 4px rgba(255, 105, 180, 0.4)'
                                                             }}
                                                         >
                                                             삭제
@@ -1453,7 +1453,7 @@ export default function ResumePage() {
                                             style={{
                                                 padding: '4px 10px',
                                                 background: 'linear-gradient(135deg, #7f8c8d 0%, #5d6d7e 100%)',
-                                                color: 'black',
+                                                color: 'white',
                                                 border: 'none',
                                                 borderRadius: '8px',
                                                 fontSize: '0.85rem',
@@ -1590,7 +1590,7 @@ export default function ResumePage() {
                                                             style={{
                                                                 padding: '4px 10px',
                                                                 background: 'linear-gradient(135deg, #7f8c8d 0%, #5d6d7e 100%)',
-                                                                color: 'black',
+                                                                color: 'white',
                                                                 border: 'none',
                                                                 borderRadius: '6px',
                                                                 fontSize: '0.75rem',
@@ -1605,14 +1605,14 @@ export default function ResumePage() {
                                                             onClick={() => handleDeleteCertificate(index)}
                                                             style={{
                                                                 padding: '4px 10px',
-                                                                background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
-                                                                color: 'black',
+                                                                background: 'linear-gradient(135deg, #ff69b4 0%, #ff1493 100%)',
+                                                                color: 'white',
                                                                 border: 'none',
                                                                 borderRadius: '6px',
                                                                 fontSize: '0.75rem',
                                                                 fontWeight: '600',
                                                                 cursor: 'pointer',
-                                                                boxShadow: '0 1px 4px rgba(192, 57, 43, 0.4)'
+                                                                boxShadow: '0 1px 4px rgba(255, 105, 180, 0.4)'
                                                             }}
                                                         >
                                                             삭제
@@ -1660,7 +1660,7 @@ export default function ResumePage() {
                                             style={{
                                                 padding: '4px 10px',
                                                 background: 'linear-gradient(135deg, #7f8c8d 0%, #5d6d7e 100%)',
-                                                color: 'black',
+                                                color: 'white',
                                                 border: 'none',
                                                 borderRadius: '8px',
                                                 fontSize: '0.85rem',
@@ -1819,7 +1819,7 @@ export default function ResumePage() {
                                                             style={{
                                                                 padding: '4px 10px',
                                                                 background: 'linear-gradient(135deg, #7f8c8d 0%, #5d6d7e 100%)',
-                                                                color: 'black',
+                                                                color: 'white',
                                                                 border: 'none',
                                                                 borderRadius: '6px',
                                                                 fontSize: '0.75rem',
@@ -1834,14 +1834,14 @@ export default function ResumePage() {
                                                             onClick={() => handleDeleteLanguage(index)}
                                                             style={{
                                                                 padding: '4px 10px',
-                                                                background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
-                                                                color: 'black',
+                                                                background: 'linear-gradient(135deg, #ff69b4 0%, #ff1493 100%)',
+                                                                color: 'white',
                                                                 border: 'none',
                                                                 borderRadius: '6px',
                                                                 fontSize: '0.75rem',
                                                                 fontWeight: '600',
                                                                 cursor: 'pointer',
-                                                                boxShadow: '0 1px 4px rgba(192, 57, 43, 0.4)'
+                                                                boxShadow: '0 1px 4px rgba(255, 105, 180, 0.4)'
                                                             }}
                                                         >
                                                             삭제
@@ -1889,7 +1889,7 @@ export default function ResumePage() {
                                             style={{
                                                 padding: '4px 10px',
                                                 background: 'linear-gradient(135deg, #7f8c8d 0%, #5d6d7e 100%)',
-                                                color: 'black',
+                                                color: 'white',
                                                 border: 'none',
                                                 borderRadius: '8px',
                                                 fontSize: '0.85rem',
@@ -2026,7 +2026,7 @@ export default function ResumePage() {
                                                             style={{
                                                                 padding: '4px 10px',
                                                                 background: 'linear-gradient(135deg, #7f8c8d 0%, #5d6d7e 100%)',
-                                                                color: 'black',
+                                                                color: 'white',
                                                                 border: 'none',
                                                                 borderRadius: '6px',
                                                                 fontSize: '0.75rem',
@@ -2041,14 +2041,14 @@ export default function ResumePage() {
                                                             onClick={() => handleDeleteAward(index)}
                                                             style={{
                                                                 padding: '4px 10px',
-                                                                background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
-                                                                color: 'black',
+                                                                background: 'linear-gradient(135deg, #ff69b4 0%, #ff1493 100%)',
+                                                                color: 'white',
                                                                 border: 'none',
                                                                 borderRadius: '6px',
                                                                 fontSize: '0.75rem',
                                                                 fontWeight: '600',
                                                                 cursor: 'pointer',
-                                                                boxShadow: '0 1px 4px rgba(192, 57, 43, 0.4)'
+                                                                boxShadow: '0 1px 4px rgba(255, 105, 180, 0.4)'
                                                             }}
                                                         >
                                                             삭제
