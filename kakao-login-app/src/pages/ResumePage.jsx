@@ -325,7 +325,7 @@ export default function ResumePage() {
                     borderRadius: '20px',
                     padding: '40px',
                     boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-                    maxWidth: '700px',
+                    maxWidth: '800px',
                     margin: '0 auto',
                     textAlign: 'center'
                 }}>
