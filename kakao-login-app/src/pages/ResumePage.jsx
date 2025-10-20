@@ -359,205 +359,83 @@ export default function ResumePage() {
 
                 {/* 탭 네비게이션 */}
                 <div style={{
-                    background: 'linear-gradient(135deg, #ffffff 0%, #fafafa 100%)',
-                    borderRadius: '24px',
-                    padding: '10px',
-                    marginBottom: '28px',
-                    boxShadow: '0 8px 30px rgba(102, 126, 234, 0.15), 0 2px 8px rgba(0,0,0,0.05)',
                     display: 'flex',
-                    gap: '10px',
-                    border: '1px solid rgba(102, 126, 234, 0.1)',
-                    position: 'relative',
-                    overflow: 'hidden'
+                    gap: '8px',
+                    marginBottom: '20px',
+                    borderBottom: '2px solid #f0f0f0',
+                    paddingBottom: '0'
                 }}>
-                    {/* 장식 배경 요소 */}
-                    <div style={{
-                        position: 'absolute',
-                        top: '-20px',
-                        right: '-20px',
-                        width: '100px',
-                        height: '100px',
-                        background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.04) 100%)',
-                        borderRadius: '50%',
-                        filter: 'blur(30px)',
-                        pointerEvents: 'none'
-                    }}></div>
-
                     <button
                         onClick={() => setActiveTab('basic')}
                         style={{
                             flex: 1,
-                            background: activeTab === 'basic'
-                                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                                : 'white',
-                            color: activeTab === 'basic' ? 'white' : '#555',
-                            border: activeTab === 'basic' ? 'none' : '2px solid #e0e0e0',
-                            padding: '18px 26px',
-                            borderRadius: '18px',
-                            fontSize: '1.1rem',
-                            fontWeight: '800',
+                            padding: '16px 20px',
+                            background: activeTab === 'basic' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'transparent',
+                            color: activeTab === 'basic' ? 'white' : '#666',
+                            border: 'none',
+                            borderBottom: activeTab === 'basic' ? 'none' : '2px solid transparent',
+                            borderRadius: activeTab === 'basic' ? '8px 8px 0 0' : '0',
+                            fontSize: '1rem',
+                            fontWeight: '700',
                             cursor: 'pointer',
-                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '10px',
-                            boxShadow: activeTab === 'basic'
-                                ? '0 6px 20px rgba(102, 126, 234, 0.5), 0 2px 8px rgba(0,0,0,0.1)'
-                                : '0 2px 6px rgba(0,0,0,0.05)',
-                            position: 'relative',
-                            zIndex: 1,
-                            transform: activeTab === 'basic' ? 'scale(1.02) translateY(-2px)' : 'scale(1)'
+                            transition: 'all 0.3s ease'
                         }}
-                        onMouseEnter={(e) => {
-                            if (activeTab !== 'basic') {
-                                e.currentTarget.style.background = 'linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%)';
-                                e.currentTarget.style.borderColor = '#667eea';
-                                e.currentTarget.style.transform = 'scale(1.02) translateY(-2px)';
-                                e.currentTarget.style.boxShadow = '0 4px 16px rgba(102, 126, 234, 0.15)';
-                            }
-                        }}
-                        onMouseLeave={(e) => {
-                            if (activeTab !== 'basic') {
-                                e.currentTarget.style.background = 'white';
-                                e.currentTarget.style.borderColor = '#e0e0e0';
-                                e.currentTarget.style.transform = 'scale(1)';
-                                e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.05)';
-                            }
-                        }}>
-                        <span style={{ letterSpacing: '-0.5px' }}>기본정보</span>
+                    >
+                        기본정보
                     </button>
                     <button
                         onClick={() => setActiveTab('experience')}
                         style={{
                             flex: 1,
-                            background: activeTab === 'experience'
-                                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                                : 'white',
-                            color: activeTab === 'experience' ? 'white' : '#555',
-                            border: activeTab === 'experience' ? 'none' : '2px solid #e0e0e0',
-                            padding: '18px 26px',
-                            borderRadius: '18px',
-                            fontSize: '1.1rem',
-                            fontWeight: '800',
+                            padding: '16px 20px',
+                            background: activeTab === 'experience' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'transparent',
+                            color: activeTab === 'experience' ? 'white' : '#666',
+                            border: 'none',
+                            borderBottom: activeTab === 'experience' ? 'none' : '2px solid transparent',
+                            borderRadius: activeTab === 'experience' ? '8px 8px 0 0' : '0',
+                            fontSize: '1rem',
+                            fontWeight: '700',
                             cursor: 'pointer',
-                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '10px',
-                            boxShadow: activeTab === 'experience'
-                                ? '0 6px 20px rgba(102, 126, 234, 0.5), 0 2px 8px rgba(0,0,0,0.1)'
-                                : '0 2px 6px rgba(0,0,0,0.05)',
-                            position: 'relative',
-                            zIndex: 1,
-                            transform: activeTab === 'experience' ? 'scale(1.02) translateY(-2px)' : 'scale(1)'
+                            transition: 'all 0.3s ease'
                         }}
-                        onMouseEnter={(e) => {
-                            if (activeTab !== 'experience') {
-                                e.currentTarget.style.background = 'linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%)';
-                                e.currentTarget.style.borderColor = '#667eea';
-                                e.currentTarget.style.transform = 'scale(1.02) translateY(-2px)';
-                                e.currentTarget.style.boxShadow = '0 4px 16px rgba(102, 126, 234, 0.15)';
-                            }
-                        }}
-                        onMouseLeave={(e) => {
-                            if (activeTab !== 'experience') {
-                                e.currentTarget.style.background = 'white';
-                                e.currentTarget.style.borderColor = '#e0e0e0';
-                                e.currentTarget.style.transform = 'scale(1)';
-                                e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.05)';
-                            }
-                        }}>
-                        <span style={{ letterSpacing: '-0.5px' }}>경력</span>
+                    >
+                        경력
                     </button>
                     <button
                         onClick={() => setActiveTab('education')}
                         style={{
                             flex: 1,
-                            background: activeTab === 'education'
-                                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                                : 'white',
-                            color: activeTab === 'education' ? 'white' : '#555',
-                            border: activeTab === 'education' ? 'none' : '2px solid #e0e0e0',
-                            padding: '18px 26px',
-                            borderRadius: '18px',
-                            fontSize: '1.05rem',
-                            fontWeight: '800',
+                            padding: '16px 20px',
+                            background: activeTab === 'education' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'transparent',
+                            color: activeTab === 'education' ? 'white' : '#666',
+                            border: 'none',
+                            borderBottom: activeTab === 'education' ? 'none' : '2px solid transparent',
+                            borderRadius: activeTab === 'education' ? '8px 8px 0 0' : '0',
+                            fontSize: '0.95rem',
+                            fontWeight: '700',
                             cursor: 'pointer',
-                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '8px',
-                            boxShadow: activeTab === 'education'
-                                ? '0 6px 20px rgba(102, 126, 234, 0.5), 0 2px 8px rgba(0,0,0,0.1)'
-                                : '0 2px 6px rgba(0,0,0,0.05)',
-                            position: 'relative',
-                            zIndex: 1,
-                            transform: activeTab === 'education' ? 'scale(1.02) translateY(-2px)' : 'scale(1)'
+                            transition: 'all 0.3s ease'
                         }}
-                        onMouseEnter={(e) => {
-                            if (activeTab !== 'education') {
-                                e.currentTarget.style.background = 'linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%)';
-                                e.currentTarget.style.borderColor = '#667eea';
-                                e.currentTarget.style.transform = 'scale(1.02) translateY(-2px)';
-                                e.currentTarget.style.boxShadow = '0 4px 16px rgba(102, 126, 234, 0.15)';
-                            }
-                        }}
-                        onMouseLeave={(e) => {
-                            if (activeTab !== 'education') {
-                                e.currentTarget.style.background = 'white';
-                                e.currentTarget.style.borderColor = '#e0e0e0';
-                                e.currentTarget.style.transform = 'scale(1)';
-                                e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.05)';
-                            }
-                        }}>
-                        <span style={{ letterSpacing: '-0.5px' }}>학력/자격/수상</span>
+                    >
+                        학력/자격/수상
                     </button>
                     <button
                         onClick={() => setActiveTab('coverLetter')}
                         style={{
                             flex: 1,
-                            background: activeTab === 'coverLetter'
-                                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                                : 'white',
-                            color: activeTab === 'coverLetter' ? 'white' : '#555',
-                            border: activeTab === 'coverLetter' ? 'none' : '2px solid #e0e0e0',
-                            padding: '18px 26px',
-                            borderRadius: '18px',
-                            fontSize: '1.1rem',
-                            fontWeight: '800',
+                            padding: '16px 20px',
+                            background: activeTab === 'coverLetter' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'transparent',
+                            color: activeTab === 'coverLetter' ? 'white' : '#666',
+                            border: 'none',
+                            borderBottom: activeTab === 'coverLetter' ? 'none' : '2px solid transparent',
+                            borderRadius: activeTab === 'coverLetter' ? '8px 8px 0 0' : '0',
+                            fontSize: '1rem',
+                            fontWeight: '700',
                             cursor: 'pointer',
-                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '10px',
-                            boxShadow: activeTab === 'coverLetter'
-                                ? '0 6px 20px rgba(102, 126, 234, 0.5), 0 2px 8px rgba(0,0,0,0.1)'
-                                : '0 2px 6px rgba(0,0,0,0.05)',
-                            position: 'relative',
-                            zIndex: 1,
-                            transform: activeTab === 'coverLetter' ? 'scale(1.02) translateY(-2px)' : 'scale(1)'
+                            transition: 'all 0.3s ease'
                         }}
-                        onMouseEnter={(e) => {
-                            if (activeTab !== 'coverLetter') {
-                                e.currentTarget.style.background = 'linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%)';
-                                e.currentTarget.style.borderColor = '#667eea';
-                                e.currentTarget.style.transform = 'scale(1.02) translateY(-2px)';
-                                e.currentTarget.style.boxShadow = '0 4px 16px rgba(102, 126, 234, 0.15)';
-                            }
-                        }}
-                        onMouseLeave={(e) => {
-                            if (activeTab !== 'coverLetter') {
-                                e.currentTarget.style.background = 'white';
-                                e.currentTarget.style.borderColor = '#e0e0e0';
-                                e.currentTarget.style.transform = 'scale(1)';
-                                e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.05)';
-                            }
-                        }}>
-                        <span style={{ letterSpacing: '-0.5px' }}>자기소개서</span>
+                    >
+                        자기소개서
                     </button>
                 </div>
 
