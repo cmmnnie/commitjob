@@ -13,6 +13,22 @@ export default function Navigation() {
         return null;
     }
 
+    // 이력서 메뉴 클릭 핸들러 (로그인만 체크)
+    const handleResumeClick = (e) => {
+        e.preventDefault();
+
+        // 로그인 확인
+        const token = localStorage.getItem('app_session');
+        if (!token) {
+            setModalType('login');
+            setShowModal(true);
+            return;
+        }
+
+        // 로그인되어 있으면 이력서 페이지로 이동
+        navigate('/resume');
+    };
+
     // AI 메뉴 클릭 핸들러 (이력서 체크)
     const handleAIMenuClick = async (e, path) => {
         e.preventDefault();
@@ -205,13 +221,14 @@ export default function Navigation() {
                         </Link>
                     </li>
                     <li style={{ flex: 1 }}>
-                        <Link
-                            to="/resume"
+                        <a
+                            href="/resume"
+                            onClick={handleResumeClick}
                             style={linkStyle(location.pathname === '/resume')}
                         >
                             <span style={iconStyle(location.pathname === '/resume')}>📋</span>
                             <span>이력서</span>
-                        </Link>
+                        </a>
                     </li>
                     <li style={{ flex: 1 }}>
                         <Link
