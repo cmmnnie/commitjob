@@ -1178,10 +1178,10 @@ export default function ResumePage() {
                                         <button
                                             onClick={handleAddEducation}
                                             style={{
-                                                padding: '6px 12px',
+                                                padding: '4px 10px',
                                                 background: 'linear-gradient(135deg, #7f8c8d 0%, #5d6d7e 100%)',
-                                                color: 'white',
-                                                border: '2px solid #5d6d7e',
+                                                color: 'black',
+                                                border: 'none',
                                                 borderRadius: '8px',
                                                 fontSize: '0.85rem',
                                                 fontWeight: '600',
@@ -1383,8 +1383,8 @@ export default function ResumePage() {
                                                             style={{
                                                                 padding: '4px 10px',
                                                                 background: 'linear-gradient(135deg, #7f8c8d 0%, #5d6d7e 100%)',
-                                                                color: 'white',
-                                                                border: '2px solid #5d6d7e',
+                                                                color: 'black',
+                                                                border: 'none',
                                                                 borderRadius: '6px',
                                                                 fontSize: '0.75rem',
                                                                 fontWeight: '600',
@@ -1399,8 +1399,8 @@ export default function ResumePage() {
                                                             style={{
                                                                 padding: '4px 10px',
                                                                 background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
-                                                                color: 'white',
-                                                                border: '2px solid #c0392b',
+                                                                color: 'black',
+                                                                border: 'none',
                                                                 borderRadius: '6px',
                                                                 fontSize: '0.75rem',
                                                                 fontWeight: '600',
@@ -1451,10 +1451,10 @@ export default function ResumePage() {
                                         <button
                                             onClick={handleAddCertificate}
                                             style={{
-                                                padding: '6px 12px',
+                                                padding: '4px 10px',
                                                 background: 'linear-gradient(135deg, #7f8c8d 0%, #5d6d7e 100%)',
-                                                color: 'white',
-                                                border: '2px solid #5d6d7e',
+                                                color: 'black',
+                                                border: 'none',
                                                 borderRadius: '8px',
                                                 fontSize: '0.85rem',
                                                 fontWeight: '600',
@@ -1590,8 +1590,8 @@ export default function ResumePage() {
                                                             style={{
                                                                 padding: '4px 10px',
                                                                 background: 'linear-gradient(135deg, #7f8c8d 0%, #5d6d7e 100%)',
-                                                                color: 'white',
-                                                                border: '2px solid #5d6d7e',
+                                                                color: 'black',
+                                                                border: 'none',
                                                                 borderRadius: '6px',
                                                                 fontSize: '0.75rem',
                                                                 fontWeight: '600',
@@ -1606,8 +1606,8 @@ export default function ResumePage() {
                                                             style={{
                                                                 padding: '4px 10px',
                                                                 background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
-                                                                color: 'white',
-                                                                border: '2px solid #c0392b',
+                                                                color: 'black',
+                                                                border: 'none',
                                                                 borderRadius: '6px',
                                                                 fontSize: '0.75rem',
                                                                 fontWeight: '600',
@@ -1658,10 +1658,10 @@ export default function ResumePage() {
                                         <button
                                             onClick={handleAddLanguage}
                                             style={{
-                                                padding: '6px 12px',
+                                                padding: '4px 10px',
                                                 background: 'linear-gradient(135deg, #7f8c8d 0%, #5d6d7e 100%)',
-                                                color: 'white',
-                                                border: '2px solid #5d6d7e',
+                                                color: 'black',
+                                                border: 'none',
                                                 borderRadius: '8px',
                                                 fontSize: '0.85rem',
                                                 fontWeight: '600',
@@ -1819,8 +1819,8 @@ export default function ResumePage() {
                                                             style={{
                                                                 padding: '4px 10px',
                                                                 background: 'linear-gradient(135deg, #7f8c8d 0%, #5d6d7e 100%)',
-                                                                color: 'white',
-                                                                border: '2px solid #5d6d7e',
+                                                                color: 'black',
+                                                                border: 'none',
                                                                 borderRadius: '6px',
                                                                 fontSize: '0.75rem',
                                                                 fontWeight: '600',
@@ -1835,8 +1835,8 @@ export default function ResumePage() {
                                                             style={{
                                                                 padding: '4px 10px',
                                                                 background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
-                                                                color: 'white',
-                                                                border: '2px solid #c0392b',
+                                                                color: 'black',
+                                                                border: 'none',
                                                                 borderRadius: '6px',
                                                                 fontSize: '0.75rem',
                                                                 fontWeight: '600',
@@ -1887,10 +1887,10 @@ export default function ResumePage() {
                                         <button
                                             onClick={handleAddAward}
                                             style={{
-                                                padding: '6px 12px',
+                                                padding: '4px 10px',
                                                 background: 'linear-gradient(135deg, #7f8c8d 0%, #5d6d7e 100%)',
-                                                color: 'white',
-                                                border: '2px solid #5d6d7e',
+                                                color: 'black',
+                                                border: 'none',
                                                 borderRadius: '8px',
                                                 fontSize: '0.85rem',
                                                 fontWeight: '600',
@@ -2026,8 +2026,8 @@ export default function ResumePage() {
                                                             style={{
                                                                 padding: '4px 10px',
                                                                 background: 'linear-gradient(135deg, #7f8c8d 0%, #5d6d7e 100%)',
-                                                                color: 'white',
-                                                                border: '2px solid #5d6d7e',
+                                                                color: 'black',
+                                                                border: 'none',
                                                                 borderRadius: '6px',
                                                                 fontSize: '0.75rem',
                                                                 fontWeight: '600',
@@ -2042,8 +2042,8 @@ export default function ResumePage() {
                                                             style={{
                                                                 padding: '4px 10px',
                                                                 background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
-                                                                color: 'white',
-                                                                border: '2px solid #c0392b',
+                                                                color: 'black',
+                                                                border: 'none',
                                                                 borderRadius: '6px',
                                                                 fontSize: '0.75rem',
                                                                 fontWeight: '600',
