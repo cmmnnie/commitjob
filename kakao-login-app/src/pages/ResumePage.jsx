@@ -1179,14 +1179,14 @@ export default function ResumePage() {
                                             onClick={handleAddEducation}
                                             style={{
                                                 padding: '6px 12px',
-                                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                                background: 'linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%)',
                                                 color: 'white',
                                                 border: 'none',
                                                 borderRadius: '8px',
                                                 fontSize: '0.85rem',
                                                 fontWeight: '600',
                                                 cursor: 'pointer',
-                                                boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)'
+                                                boxShadow: '0 2px 8px rgba(149, 165, 166, 0.3)'
                                             }}
                                         >
                                             추가
@@ -1336,14 +1336,14 @@ export default function ResumePage() {
                                                     onClick={handleSaveEducation}
                                                     style={{
                                                         padding: '8px 16px',
-                                                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                                        background: 'linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%)',
                                                         color: 'white',
                                                         border: 'none',
                                                         borderRadius: '8px',
                                                         fontSize: '0.85rem',
                                                         fontWeight: '600',
                                                         cursor: 'pointer',
-                                                        boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)'
+                                                        boxShadow: '0 2px 8px rgba(149, 165, 166, 0.3)'
                                                     }}
                                                 >
                                                     저장
@@ -1382,14 +1382,14 @@ export default function ResumePage() {
                                                             onClick={() => handleEditEducation(index)}
                                                             style={{
                                                                 padding: '4px 10px',
-                                                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                                                background: 'linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%)',
                                                                 color: 'white',
                                                                 border: 'none',
                                                                 borderRadius: '6px',
                                                                 fontSize: '0.75rem',
                                                                 fontWeight: '600',
                                                                 cursor: 'pointer',
-                                                                boxShadow: '0 1px 4px rgba(102, 126, 234, 0.3)'
+                                                                boxShadow: '0 1px 4px rgba(149, 165, 166, 0.3)'
                                                             }}
                                                         >
                                                             수정
@@ -1452,14 +1452,14 @@ export default function ResumePage() {
                                             onClick={handleAddCertificate}
                                             style={{
                                                 padding: '6px 12px',
-                                                background: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
-                                                color: '#333',
+                                                background: 'linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%)',
+                                                color: 'white',
                                                 border: 'none',
                                                 borderRadius: '8px',
                                                 fontSize: '0.85rem',
                                                 fontWeight: '600',
                                                 cursor: 'pointer',
-                                                boxShadow: '0 2px 8px rgba(168, 237, 234, 0.4)'
+                                                boxShadow: '0 2px 8px rgba(149, 165, 166, 0.3)'
                                             }}
                                         >
                                             추가
@@ -1548,14 +1548,14 @@ export default function ResumePage() {
                                                     onClick={handleSaveCertificate}
                                                     style={{
                                                         padding: '8px 16px',
-                                                        background: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
-                                                        color: '#333',
+                                                        background: 'linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%)',
+                                                        color: 'white',
                                                         border: 'none',
                                                         borderRadius: '8px',
                                                         fontSize: '0.85rem',
                                                         fontWeight: '600',
                                                         cursor: 'pointer',
-                                                        boxShadow: '0 2px 8px rgba(168, 237, 234, 0.4)'
+                                                        boxShadow: '0 2px 8px rgba(149, 165, 166, 0.3)'
                                                     }}
                                                 >
                                                     저장
@@ -1589,14 +1589,14 @@ export default function ResumePage() {
                                                             onClick={() => handleEditCertificate(index)}
                                                             style={{
                                                                 padding: '4px 10px',
-                                                                background: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
-                                                                color: '#333',
+                                                                background: 'linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%)',
+                                                                color: 'white',
                                                                 border: 'none',
                                                                 borderRadius: '6px',
                                                                 fontSize: '0.75rem',
                                                                 fontWeight: '600',
                                                                 cursor: 'pointer',
-                                                                boxShadow: '0 1px 4px rgba(168, 237, 234, 0.4)'
+                                                                boxShadow: '0 1px 4px rgba(149, 165, 166, 0.3)'
                                                             }}
                                                         >
                                                             수정
@@ -1659,14 +1659,14 @@ export default function ResumePage() {
                                             onClick={handleAddLanguage}
                                             style={{
                                                 padding: '6px 12px',
-                                                background: 'linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)',
-                                                color: '#333',
+                                                background: 'linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%)',
+                                                color: 'white',
                                                 border: 'none',
                                                 borderRadius: '8px',
                                                 fontSize: '0.85rem',
                                                 fontWeight: '600',
                                                 cursor: 'pointer',
-                                                boxShadow: '0 2px 8px rgba(132, 250, 176, 0.4)'
+                                                boxShadow: '0 2px 8px rgba(149, 165, 166, 0.3)'
                                             }}
                                         >
                                             추가
@@ -1775,14 +1775,14 @@ export default function ResumePage() {
                                                     onClick={handleSaveLanguage}
                                                     style={{
                                                         padding: '8px 16px',
-                                                        background: 'linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)',
-                                                        color: '#333',
+                                                        background: 'linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%)',
+                                                        color: 'white',
                                                         border: 'none',
                                                         borderRadius: '8px',
                                                         fontSize: '0.85rem',
                                                         fontWeight: '600',
                                                         cursor: 'pointer',
-                                                        boxShadow: '0 2px 8px rgba(132, 250, 176, 0.4)'
+                                                        boxShadow: '0 2px 8px rgba(149, 165, 166, 0.3)'
                                                     }}
                                                 >
                                                     저장
@@ -1818,14 +1818,14 @@ export default function ResumePage() {
                                                             onClick={() => handleEditLanguage(index)}
                                                             style={{
                                                                 padding: '4px 10px',
-                                                                background: 'linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)',
-                                                                color: '#333',
+                                                                background: 'linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%)',
+                                                                color: 'white',
                                                                 border: 'none',
                                                                 borderRadius: '6px',
                                                                 fontSize: '0.75rem',
                                                                 fontWeight: '600',
                                                                 cursor: 'pointer',
-                                                                boxShadow: '0 1px 4px rgba(132, 250, 176, 0.4)'
+                                                                boxShadow: '0 1px 4px rgba(149, 165, 166, 0.3)'
                                                             }}
                                                         >
                                                             수정
@@ -1888,14 +1888,14 @@ export default function ResumePage() {
                                             onClick={handleAddAward}
                                             style={{
                                                 padding: '6px 12px',
-                                                background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-                                                color: '#333',
+                                                background: 'linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%)',
+                                                color: 'white',
                                                 border: 'none',
                                                 borderRadius: '8px',
                                                 fontSize: '0.85rem',
                                                 fontWeight: '600',
                                                 cursor: 'pointer',
-                                                boxShadow: '0 2px 8px rgba(250, 112, 154, 0.4)'
+                                                boxShadow: '0 2px 8px rgba(149, 165, 166, 0.3)'
                                             }}
                                         >
                                             추가
@@ -1984,14 +1984,14 @@ export default function ResumePage() {
                                                     onClick={handleSaveAward}
                                                     style={{
                                                         padding: '8px 16px',
-                                                        background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-                                                        color: '#333',
+                                                        background: 'linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%)',
+                                                        color: 'white',
                                                         border: 'none',
                                                         borderRadius: '8px',
                                                         fontSize: '0.85rem',
                                                         fontWeight: '600',
                                                         cursor: 'pointer',
-                                                        boxShadow: '0 2px 8px rgba(250, 112, 154, 0.4)'
+                                                        boxShadow: '0 2px 8px rgba(149, 165, 166, 0.3)'
                                                     }}
                                                 >
                                                     저장
@@ -2025,14 +2025,14 @@ export default function ResumePage() {
                                                             onClick={() => handleEditAward(index)}
                                                             style={{
                                                                 padding: '4px 10px',
-                                                                background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-                                                                color: '#333',
+                                                                background: 'linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%)',
+                                                                color: 'white',
                                                                 border: 'none',
                                                                 borderRadius: '6px',
                                                                 fontSize: '0.75rem',
                                                                 fontWeight: '600',
                                                                 cursor: 'pointer',
-                                                                boxShadow: '0 1px 4px rgba(250, 112, 154, 0.4)'
+                                                                boxShadow: '0 1px 4px rgba(149, 165, 166, 0.3)'
                                                             }}
                                                         >
                                                             수정
