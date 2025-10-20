@@ -26,6 +26,12 @@ export default function ResumePage() {
         checkLoginAndLoadProfile();
     }, []);
 
+    // 탭 변경 핸들러 - 탭 전환시 항상 조회 모드로
+    const handleTabChange = (tab) => {
+        setActiveTab(tab);
+        setIsEditing(false); // 탭 전환시 편집 모드 해제
+    };
+
     const checkLoginAndLoadProfile = async () => {
         try {
             setIsLoading(true);
@@ -404,7 +410,7 @@ export default function ResumePage() {
                     paddingBottom: '0'
                 }}>
                     <button
-                        onClick={() => setActiveTab('basic')}
+                        onClick={() => handleTabChange('basic')}
                         style={{
                             flex: 1,
                             padding: '16px 20px',
@@ -422,7 +428,7 @@ export default function ResumePage() {
                         기본정보
                     </button>
                     <button
-                        onClick={() => setActiveTab('experience')}
+                        onClick={() => handleTabChange('experience')}
                         style={{
                             flex: 1,
                             padding: '16px 20px',
@@ -440,7 +446,7 @@ export default function ResumePage() {
                         경력
                     </button>
                     <button
-                        onClick={() => setActiveTab('education')}
+                        onClick={() => handleTabChange('education')}
                         style={{
                             flex: 1,
                             padding: '16px 20px',
@@ -458,7 +464,7 @@ export default function ResumePage() {
                         학력/자격/어학/수상
                     </button>
                     <button
-                        onClick={() => setActiveTab('coverLetter')}
+                        onClick={() => handleTabChange('coverLetter')}
                         style={{
                             flex: 1,
                             padding: '16px 20px',
