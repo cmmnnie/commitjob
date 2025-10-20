@@ -1350,6 +1350,10 @@ app.get('/api/profile', async (req, res) => {
         up.skills,
         up.expected_salary,
         up.resume_path,
+        up.education,
+        up.certificates,
+        up.languages,
+        up.awards,
         up.created_at as profile_created_at,
         up.updated_at as profile_updated_at
       FROM users u
@@ -1403,6 +1407,10 @@ app.get('/api/profile', async (req, res) => {
         skills: safeParseJSON(data.skills),
         expected_salary: data.expected_salary,
         resume_path: data.resume_path,
+        education: safeParseJSON(data.education),
+        certificates: safeParseJSON(data.certificates),
+        languages: safeParseJSON(data.languages),
+        awards: safeParseJSON(data.awards),
         created_at: data.profile_created_at,
         updated_at: data.profile_updated_at
       } : null
