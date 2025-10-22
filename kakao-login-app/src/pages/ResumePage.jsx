@@ -1265,9 +1265,17 @@ export default function ResumePage() {
                                                 flexDirection: 'column',
                                                 gap: '15px'
                                             }}>
-                                                {coverLetterList.map((item, index) => (
+                                                {/* 문항별로 정렬 (같은 문항끼리 모아서 표시) */}
+                                                {coverLetterList
+                                                    .map((item, originalIndex) => ({ ...item, originalIndex }))
+                                                    .sort((a, b) => {
+                                                        const questionIndexA = coverLetterQuestions.indexOf(a.question);
+                                                        const questionIndexB = coverLetterQuestions.indexOf(b.question);
+                                                        return questionIndexA - questionIndexB;
+                                                    })
+                                                    .map(({ originalIndex, ...item }) => (
                                                     <div
-                                                        key={index}
+                                                        key={originalIndex}
                                                         style={{
                                                             background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
                                                             borderRadius: '10px',
@@ -1309,7 +1317,7 @@ export default function ResumePage() {
                                                             justifyContent: 'flex-end'
                                                         }}>
                                                             <button
-                                                                onClick={() => handleEditCoverLetter(index)}
+                                                                onClick={() => handleEditCoverLetter(originalIndex)}
                                                                 style={{
                                                                     padding: '4px 10px',
                                                                     background: 'linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%)',
@@ -1325,7 +1333,7 @@ export default function ResumePage() {
                                                                 수정
                                                             </button>
                                                             <button
-                                                                onClick={() => handleDeleteCoverLetter(index)}
+                                                                onClick={() => handleDeleteCoverLetter(originalIndex)}
                                                                 style={{
                                                                     padding: '4px 10px',
                                                                     background: 'linear-gradient(135deg, #ff69b4 0%, #ff1493 100%)',
