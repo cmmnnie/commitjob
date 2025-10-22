@@ -1100,7 +1100,7 @@ export default function ResumePage() {
                     </button>
                 </div>
 
-                {userProfile && !isEditing ? (
+                {(userProfile && !isEditing) || (activeTab === 'coverLetter' && !isEditing) ? (
                     <>
                         {/* 기본정보 탭 */}
                         {activeTab === 'basic' && (
