@@ -7272,6 +7272,14 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
                     shell: true
                   });
 
+                  companyProcess.stdout.on('data', (data) => {
+                    console.log(`[COMPANY-INFO] ${data.toString().trim()}`);
+                  });
+
+                  companyProcess.stderr.on('data', (data) => {
+                    console.error(`[COMPANY-INFO-ERROR] ${data.toString().trim()}`);
+                  });
+
                   companyProcess.on('close', (code) => {
                     if (code === 0) {
                       console.log(`[SCRAPE-JOBS-BG] ✅ ${company} 기업정보 스크래핑 완료`);
@@ -7300,6 +7308,14 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
                 await new Promise((resolve, reject) => {
                   const interviewProcess = spawn('python3', [interviewScriptPath, company], {
                     shell: true
+                  });
+
+                  interviewProcess.stdout.on('data', (data) => {
+                    console.log(`[INTERVIEW-QUESTIONS] ${data.toString().trim()}`);
+                  });
+
+                  interviewProcess.stderr.on('data', (data) => {
+                    console.error(`[INTERVIEW-QUESTIONS-ERROR] ${data.toString().trim()}`);
                   });
 
                   interviewProcess.on('close', (code) => {
