@@ -7291,13 +7291,13 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
               if (needsCompanyInfo) console.log(`[SCRAPE-JOBS-BG]    - 기업정보 스크래핑 필요`);
               if (needsInterviewQuestions) console.log(`[SCRAPE-JOBS-BG]    - 면접질문 스크래핑 필요`);
 
-              // 기업정보 스크래핑 (순차 실행)
+              // 기업정보 스크래핑 (순차 실행) - JavaScript
               if (needsCompanyInfo) {
-                const companyScriptPath = path.join(__dirname, 'catch-scraper-service', 'scrape_company_info.py');
+                const companyScriptPath = path.join(__dirname, 'scrape-company-info.js');
                 console.log(`[SCRAPE-JOBS-BG] 🚀 ${company} 기업정보 스크래핑 시작...`);
 
                 await new Promise((resolve, reject) => {
-                  const companyProcess = spawn(PYTHON_CMD, [companyScriptPath, company], {
+                  const companyProcess = spawn('node', [companyScriptPath, company], {
                     shell: true
                   });
 
@@ -7326,16 +7326,16 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
                 });
 
                 // 다음 스크래핑 전 대기 (Chrome 드라이버 안전 종료)
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                await new Promise(resolve => setTimeout(resolve, 3000));
               }
 
-              // 면접질문 스크래핑 (순차 실행)
+              // 면접질문 스크래핑 (순차 실행) - JavaScript
               if (needsInterviewQuestions) {
-                const interviewScriptPath = path.join(__dirname, 'catch-scraper-service', 'scrape_interview_questions.py');
+                const interviewScriptPath = path.join(__dirname, 'scrape-interview-questions.js');
                 console.log(`[SCRAPE-JOBS-BG] 🚀 ${company} 면접질문 스크래핑 시작...`);
 
                 await new Promise((resolve, reject) => {
-                  const interviewProcess = spawn(PYTHON_CMD, [interviewScriptPath, company], {
+                  const interviewProcess = spawn('node', [interviewScriptPath, company], {
                     shell: true
                   });
 
@@ -7364,7 +7364,7 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
                 });
 
                 // 다음 회사 스크래핑 전 대기
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                await new Promise(resolve => setTimeout(resolve, 3000));
               }
 
             } catch (companyError) {

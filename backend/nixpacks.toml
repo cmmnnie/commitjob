@@ -1,12 +1,9 @@
-# Railway Build Optimization v2 - Node.js + Python
+# Railway Build Optimization v2 - Node.js only
 [phases.setup]
-nixPkgs = ["nodejs_18", "python311", "python311Packages.pip"]
+nixPkgs = ["nodejs_18"]
 
 [phases.install]
-cmds = [
-  "npm ci --omit=dev --prefer-offline --no-audit --no-fund",
-  "pip install --break-system-packages -r requirements.txt"
-]
+cmds = ["npm ci --omit=dev --prefer-offline --no-audit --no-fund"]
 
 [phases.build]
 # Skip build phase - no compilation needed for Node.js

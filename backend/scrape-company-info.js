@@ -1,0 +1,279 @@
+/**
+ * Catch.co.kr 기업정보 스크래핑 (JavaScript/Puppeteer)
+ * 사용법: node scrape-company-info.js "회사명"
+ */
+
+import puppeteer from 'puppeteer';
+import mysql from 'mysql2/promise';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const DB_CONFIG = {
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'commitjob',
+  port: process.env.DB_PORT || 3306
+};
+
+const CATCH_LOGIN = {
+  id: 'test0137',
+  password: '#test0808'
+};
+
+async function scrapeCompanyInfo(companyName) {
+  let browser = null;
+  let connection = null;
+
+  try {
+    console.log(`\n${'='.repeat(60)}`);
+    console.log(`🚀 단일 회사 정보 스크래핑 시작: ${companyName}`);
+    console.log('='.repeat(60) + '\n');
+
+    // MySQL 연결
+    connection = await mysql.createConnection(DB_CONFIG);
+    console.log('✅ AWS RDS MySQL 연결 성공\n');
+
+    // Puppeteer 브라우저 실행
+    browser = await puppeteer.launch({
+      headless: 'new',
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu'
+      ]
+    });
+
+    const page = await browser.newPage();
+    await page.setViewport({ width: 1920, height: 1080 });
+
+    console.log('✅ Chrome 드라이버 초기화 성공\n');
+
+    // Catch.co.kr 로그인
+    console.log(`🔐 Catch.co.kr 로그인 시도 (사용자: ${CATCH_LOGIN.id})\n`);
+    await page.goto('https://www.catch.co.kr/');
+    await page.waitForTimeout(2000);
+
+    // 로그인 버튼 클릭
+    try {
+      await page.waitForSelector('a:has-text("로그인")', { timeout: 5000 });
+      await page.click('a:has-text("로그인")');
+      console.log('  로그인 버튼 클릭 완료');
+      await page.waitForTimeout(2000);
+    } catch (e) {
+      console.log('  ⚠️ 로그인 버튼을 찾을 수 없습니다 (이미 로그인 상태일 수 있음)');
+    }
+
+    // 로그인 폼 입력
+    try {
+      await page.waitForSelector('#id_login', { timeout: 5000 });
+      await page.type('#id_login', CATCH_LOGIN.id);
+      await page.type('#pw_login', CATCH_LOGIN.password);
+      await page.keyboard.press('Enter');
+      console.log('  로그인 정보 입력 및 제출 완료');
+      await page.waitForTimeout(3000);
+      console.log('✅ Catch.co.kr 로그인 성공\n');
+    } catch (e) {
+      console.log('  ⚠️ 로그인 폼을 찾을 수 없습니다 (이미 로그인 상태일 수 있음)\n');
+    }
+
+    // 회사 검색
+    console.log(`\n[1/1] 🏢 ${companyName}`);
+    console.log('-'.repeat(60));
+
+    const searchUrl = 'https://www.catch.co.kr/Comp/CompMajor/SearchPage';
+    await page.goto(searchUrl);
+    await page.waitForTimeout(3000);
+
+    const searchTerm = companyName.trim();
+    console.log(`  🔍 검색어: '${searchTerm}'`);
+
+    // 검색창에 입력
+    await page.waitForSelector('input[placeholder*="궁금한 기업을 검색"]', { timeout: 10000 });
+    await page.type('input[placeholder*="궁금한 기업을 검색"]', searchTerm);
+
+    // 검색 버튼 클릭
+    await page.click('button.bt_sch');
+    await page.waitForTimeout(3000);
+
+    // 검색 결과에서 정확한 회사 찾기
+    const companyLinks = await page.$$('ul.list_corp_round li p.name a');
+
+    console.log(`  📋 검색 결과 ${companyLinks.length}개`);
+
+    // 정규화 함수
+    const normalize = (name) => {
+      return name.replace(/\s/g, '').replace(/\(주\)/g, '').replace(/주식회사/g, '')
+        .replace(/㈜/g, '').replace(/\(\)/g, '').toLowerCase();
+    };
+
+    const normalizedInput = normalize(searchTerm);
+    let targetUrl = null;
+
+    // 정확한 매칭 찾기
+    for (const link of companyLinks) {
+      const text = await page.evaluate(el => el.textContent.trim(), link);
+      const normalizedText = normalize(text);
+
+      if (normalizedText === normalizedInput) {
+        targetUrl = await page.evaluate(el => el.href, link);
+        console.log(`  ✅ 정확한 기업명 매칭: '${searchTerm}' → '${text}'`);
+        break;
+      }
+    }
+
+    if (!targetUrl) {
+      console.log(`  ❌ 회사를 찾을 수 없음`);
+      return;
+    }
+
+    // 회사 상세 페이지로 이동
+    await page.goto(targetUrl);
+    await page.waitForTimeout(3000);
+
+    console.log(`  🔗 회사 URL: ${targetUrl}`);
+
+    // 기업정보 스크래핑
+    const companyInfo = {
+      company: companyName.trim(),
+      url: targetUrl
+    };
+
+    // 업종
+    try {
+      const industry = await page.$eval('div.item.type3 p.t1', el => el.textContent.trim()).catch(() => '');
+      companyInfo.industry = industry || '';
+    } catch (e) {
+      companyInfo.industry = '';
+    }
+
+    // 기업 규모
+    try {
+      const companyType = await page.$eval('div.item.type1 p.t1', el => el.textContent.trim()).catch(() => '');
+      companyInfo.company_type = companyType || '';
+    } catch (e) {
+      companyInfo.company_type = '';
+    }
+
+    // 사원수
+    try {
+      const employeeCount = await page.$eval('div.item.type2 p.t1', el => el.textContent.trim()).catch(() => '');
+      companyInfo.employee_count = employeeCount || '';
+    } catch (e) {
+      companyInfo.employee_count = '';
+    }
+
+    // 매출액
+    try {
+      const revenue = await page.$eval('div.item.type3 p.t1', el => el.textContent.trim()).catch(() => '');
+      companyInfo.revenue = revenue || '';
+    } catch (e) {
+      companyInfo.revenue = '';
+    }
+
+    // 주소
+    try {
+      const location = await page.$eval("table tr th:has-text('주소') + td", el => el.textContent.replace('지도', '').trim()).catch(() => '');
+      companyInfo.location = location || '';
+    } catch (e) {
+      companyInfo.location = '';
+    }
+
+    // 대표자
+    try {
+      const ceo = await page.$eval("table tr th:has-text('대표자') + td", el => el.textContent.trim()).catch(() => '');
+      companyInfo.ceo = ceo || '';
+    } catch (e) {
+      companyInfo.ceo = '';
+    }
+
+    // 설립일
+    try {
+      const establishedDate = await page.$eval("table tr th:has-text('설립일') + td", el => el.textContent.trim()).catch(() => '');
+      companyInfo.established_date = establishedDate || '';
+    } catch (e) {
+      companyInfo.established_date = '';
+    }
+
+    // 홈페이지
+    try {
+      const website = await page.$eval("table tr th:has-text('홈페이지') + td a", el => el.href).catch(() => '');
+      companyInfo.website = website || '';
+    } catch (e) {
+      companyInfo.website = '';
+    }
+
+    console.log(`  ✅ 기업정보 스크래핑 완료`);
+
+    // DB 저장
+    const [existing] = await connection.execute(
+      'SELECT id FROM catch_companies WHERE company = ?',
+      [companyInfo.company]
+    );
+
+    if (existing.length > 0) {
+      // 업데이트
+      await connection.execute(
+        `UPDATE catch_companies SET
+          url = ?, industry = ?, company_type = ?, employee_count = ?,
+          revenue = ?, location = ?, ceo = ?, established_date = ?,
+          website = ?, updated_at = NOW()
+        WHERE company = ?`,
+        [
+          companyInfo.url, companyInfo.industry, companyInfo.company_type,
+          companyInfo.employee_count, companyInfo.revenue, companyInfo.location,
+          companyInfo.ceo, companyInfo.established_date, companyInfo.website,
+          companyInfo.company
+        ]
+      );
+      console.log(`  ✅ 회사 정보 업데이트`);
+    } else {
+      // 신규 저장
+      await connection.execute(
+        `INSERT INTO catch_companies (company, url, industry, company_type, employee_count,
+          revenue, location, ceo, established_date, website, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+        [
+          companyInfo.company, companyInfo.url, companyInfo.industry,
+          companyInfo.company_type, companyInfo.employee_count, companyInfo.revenue,
+          companyInfo.location, companyInfo.ceo, companyInfo.established_date,
+          companyInfo.website
+        ]
+      );
+      console.log(`  ✅ 회사 정보 신규 저장`);
+    }
+
+    console.log(`\n${'='.repeat(60)}`);
+    console.log('📊 스크래핑 완료');
+    console.log('='.repeat(60) + '\n');
+
+  } catch (error) {
+    console.error('❌ 스크래핑 오류:', error);
+    throw error;
+  } finally {
+    if (browser) {
+      await browser.close();
+      console.log('✅ 리소스 정리 완료\n');
+    }
+    if (connection) {
+      await connection.end();
+    }
+  }
+}
+
+// 커맨드 라인 인자로 회사명 받기
+const companyName = process.argv.slice(2).join(' ');
+
+if (!companyName) {
+  console.error('사용법: node scrape-company-info.js "회사명"');
+  process.exit(1);
+}
+
+scrapeCompanyInfo(companyName)
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error('실행 실패:', error);
+    process.exit(1);
+  });
