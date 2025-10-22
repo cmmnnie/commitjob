@@ -13,6 +13,11 @@ import path from 'path';
 import fs from 'fs';
 import OpenAI from 'openai';
 import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
+
+// ES modules에서 __dirname 정의
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // jose 라이브러리를 위한 Web Crypto API 설정
 if (!globalThis.crypto) {
