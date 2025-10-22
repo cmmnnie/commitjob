@@ -32,11 +32,19 @@ async function scrapeInterviewQuestions(companyName, pool = null) {
     console.log(`🚀 단일 회사 면접질문 스크래핑 시작: ${companyName}`);
     console.log('='.repeat(60) + '\n');
 
+    // 디버깅: pool 파라미터 확인
+    console.log(`[DEBUG] pool 파라미터 전달됨: ${pool ? 'YES' : 'NO'}`);
+    console.log(`[DEBUG] pool 타입: ${typeof pool}`);
+
     // MySQL 연결 (pool이 있으면 사용, 없으면 새로 생성)
     if (pool) {
       connection = pool;
       console.log('✅ 기존 DB pool 사용\n');
     } else {
+      console.log('[DEBUG] pool이 없어서 새 연결 생성 시도...');
+      console.log(`[DEBUG] DB_HOST: ${process.env.DB_HOST ? '설정됨' : '없음'}`);
+      console.log(`[DEBUG] DB_USER: ${process.env.DB_USER ? '설정됨' : '없음'}`);
+      console.log(`[DEBUG] DB_PASSWORD: ${process.env.DB_PASSWORD ? '설정됨' : '없음'}`);
       connection = await mysql.createConnection(DB_CONFIG);
       shouldCloseConnection = true;
       console.log('✅ AWS RDS MySQL 연결 성공\n');
