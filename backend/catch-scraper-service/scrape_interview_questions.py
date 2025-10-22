@@ -453,6 +453,42 @@ class InterviewQuestionsScraper:
             self.stats['errors'] += 1
             self.stats['processed'] += 1
 
+    def run_single_company(self, company_name):
+        """단일 회사 면접질문 스크래핑"""
+        print("\n" + "="*60)
+        print(f"🚀 단일 회사 면접질문 스크래핑 시작: {company_name}")
+        print("="*60 + "\n")
+
+        if not self.init_driver():
+            return False
+
+        if not self.login():
+            self.close()
+            return False
+
+        if not self.connect_db():
+            self.close()
+            return False
+
+        # 단일 회사 처리
+        self.process_company(company_name, 1, 1)
+
+        # 최종 통계
+        print(f"\n{'='*60}")
+        print("📊 스크래핑 완료")
+        print(f"{'='*60}")
+        print(f"회사: {company_name}")
+        print(f"처리 완료: {self.stats['processed']}개")
+        print(f"기출질문이 있는 회사: {self.stats['companies_with_questions']}개")
+        print(f"저장된 질문 수: {self.stats['inserted_questions']}개")
+        print(f"기출질문이 없는 회사: {self.stats['companies_without_questions']}개")
+        print(f"찾을 수 없음: {self.stats['not_found']}개")
+        print(f"오류: {self.stats['errors']}개")
+        print(f"{'='*60}\n")
+
+        self.close()
+        return True
+
     def run(self):
         """메인 실행"""
         print("\n" + "="*60)
@@ -513,4 +549,10 @@ class InterviewQuestionsScraper:
 
 if __name__ == "__main__":
     scraper = InterviewQuestionsScraper()
-    scraper.run()
+
+    # Command line argument로 특정 회사명이 전달된 경우 단일 회사만 스크래핑
+    if len(sys.argv) > 1:
+        company_name = ' '.join(sys.argv[1:])  # 회사명에 공백이 포함될 수 있으므로 join
+        scraper.run_single_company(company_name)
+    else:
+        scraper.run()

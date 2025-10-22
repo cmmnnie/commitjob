@@ -7207,6 +7207,7 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
 
       let newJobs = 0;
       let duplicates = 0;
+      const newCompanies = new Set(); // 새로 추가된 공고의 회사명 수집
 
       for (const job of scrapedJobs) {
         try {
@@ -7239,6 +7240,7 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
           ]);
 
           newJobs++;
+          newCompanies.add(job.company); // 새로 추가된 회사 기록
           console.log(`[SCRAPE-JOBS-BG] ✅ INSERT 성공 [${newJobs}]:`);
           console.log(`[SCRAPE-JOBS-BG]    - ID: ${result.insertId}`);
           console.log(`[SCRAPE-JOBS-BG]    - 제목: ${job.title}`);
@@ -7261,6 +7263,78 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
       console.log(`[SCRAPE-JOBS-BG] ⏭️  중복 제외된 공고: ${duplicates}개`);
       console.log(`[SCRAPE-JOBS-BG] 📈 총 처리된 공고: ${scrapedJobs.length}개`);
       console.log('='.repeat(80) + '\n');
+
+      // 새로 추가된 회사에 대해 기업정보 및 면접질문 스크래핑
+      if (newCompanies.size > 0) {
+        console.log('\n' + '='.repeat(80));
+        console.log('[SCRAPE-JOBS-BG] 🏢 기업정보 및 면접질문 스크래핑 시작');
+        console.log(`[SCRAPE-JOBS-BG] 대상 회사 수: ${newCompanies.size}개`);
+        console.log('='.repeat(80) + '\n');
+
+        const { spawn } = require('child_process');
+        const path = require('path');
+
+        for (const company of newCompanies) {
+          try {
+            // 기업정보 확인
+            const [companyData] = await pool.execute(
+              'SELECT id FROM catch_companies WHERE company_name = ?',
+              [company]
+            );
+
+            // 면접질문 확인
+            const [interviewData] = await pool.execute(
+              'SELECT id FROM catch_interview_questions WHERE company_name = ?',
+              [company]
+            );
+
+            const needsCompanyInfo = companyData.length === 0;
+            const needsInterviewQuestions = interviewData.length === 0;
+
+            if (!needsCompanyInfo && !needsInterviewQuestions) {
+              console.log(`[SCRAPE-JOBS-BG] ✅ ${company}: 기업정보와 면접질문 이미 존재`);
+              continue;
+            }
+
+            console.log(`[SCRAPE-JOBS-BG] 🔍 ${company} 스크래핑 필요:`);
+            if (needsCompanyInfo) console.log(`[SCRAPE-JOBS-BG]    - 기업정보 스크래핑 필요`);
+            if (needsInterviewQuestions) console.log(`[SCRAPE-JOBS-BG]    - 면접질문 스크래핑 필요`);
+
+            // 기업정보 스크래핑 (백그라운드)
+            if (needsCompanyInfo) {
+              const companyScriptPath = path.join(__dirname, 'catch-scraper-service', 'scrape_company_info.py');
+              const companyProcess = spawn('python', [companyScriptPath, company], {
+                detached: true,
+                stdio: 'ignore'
+              });
+              companyProcess.unref();
+              console.log(`[SCRAPE-JOBS-BG] 🚀 ${company} 기업정보 스크래핑 백그라운드 시작`);
+            }
+
+            // 면접질문 스크래핑 (백그라운드)
+            if (needsInterviewQuestions) {
+              const interviewScriptPath = path.join(__dirname, 'catch-scraper-service', 'scrape_interview_questions.py');
+              const interviewProcess = spawn('python', [interviewScriptPath, company], {
+                detached: true,
+                stdio: 'ignore'
+              });
+              interviewProcess.unref();
+              console.log(`[SCRAPE-JOBS-BG] 🚀 ${company} 면접질문 스크래핑 백그라운드 시작`);
+            }
+
+            // 스크래핑 사이 딜레이 (과부하 방지)
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+          } catch (companyError) {
+            console.error(`[SCRAPE-JOBS-BG] ❌ ${company} 스크래핑 오류:`, companyError.message);
+          }
+        }
+
+        console.log('\n' + '='.repeat(80));
+        console.log('[SCRAPE-JOBS-BG] 🏢 기업정보 및 면접질문 스크래핑 백그라운드 작업 시작 완료');
+        console.log('='.repeat(80) + '\n');
+      }
+
     } catch (error) {
       console.error('[SCRAPE-JOBS-BG] 예상치 못한 오류:', error);
       console.error('[SCRAPE-JOBS-BG] 오류 스택:', error.stack);
