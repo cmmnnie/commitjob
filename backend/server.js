@@ -7182,7 +7182,7 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
       const jobsScriptPath = path.join(__dirname, 'catch-scraper-service', 'scrape_latest_jobs.py');
 
       await new Promise((resolve, reject) => {
-        const jobsProcess = spawn('python', [jobsScriptPath], {
+        const jobsProcess = spawn('python3', [jobsScriptPath], {
           shell: true
         });
 
@@ -7268,7 +7268,7 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
                 console.log(`[SCRAPE-JOBS-BG] 🚀 ${company} 기업정보 스크래핑 시작...`);
 
                 await new Promise((resolve, reject) => {
-                  const companyProcess = spawn('python', [companyScriptPath, company], {
+                  const companyProcess = spawn('python3', [companyScriptPath, company], {
                     shell: true
                   });
 
@@ -7298,7 +7298,7 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
                 console.log(`[SCRAPE-JOBS-BG] 🚀 ${company} 면접질문 스크래핑 시작...`);
 
                 await new Promise((resolve, reject) => {
-                  const interviewProcess = spawn('python', [interviewScriptPath, company], {
+                  const interviewProcess = spawn('python3', [interviewScriptPath, company], {
                     shell: true
                   });
 
