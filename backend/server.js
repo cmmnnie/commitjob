@@ -12,10 +12,10 @@ import crypto from "crypto";
 import path from 'path';
 import fs from 'fs';
 import OpenAI from 'openai';
-import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import { scrapeCompanyInfo } from './scrape-company-info.js';
 import { scrapeInterviewQuestions } from './scrape-interview-questions.js';
+import { scrapeLatestJobs } from './scrape-latest-jobs.js';
 
 // ES modules에서 __dirname 정의
 const __filename = fileURLToPath(import.meta.url);
@@ -7182,68 +7182,16 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
   (async () => {
     try {
       console.log('[SCRAPE-JOBS-BG] 🔄 백그라운드 스크래핑 시작');
-      console.log('[SCRAPE-JOBS-BG] Python 스크립트를 사용하여 채용공고 스크래핑 중...');
+      console.log('[SCRAPE-JOBS-BG] JavaScript를 사용하여 채용공고 스크래핑 중...');
 
-      // Python 스크립트로 채용공고 스크래핑
-      // 여러 경로 시도
-      const possiblePaths = [
-        path.join(__dirname, 'catch-scraper-service', 'scrape_latest_jobs.py'),
-        path.join(__dirname, '..', 'catch-scraper-service', 'scrape_latest_jobs.py'),
-        '/app/catch-scraper-service/scrape_latest_jobs.py'
-      ];
-
-      let jobsScriptPath = null;
-      for (const testPath of possiblePaths) {
-        if (fs.existsSync(testPath)) {
-          jobsScriptPath = testPath;
-          console.log(`[SCRAPE-JOBS-BG] ✅ Python 스크립트 발견: ${jobsScriptPath}`);
-          break;
-        }
+      // JavaScript 함수로 채용공고 스크래핑
+      try {
+        await scrapeLatestJobs(pool);
+        console.log('[SCRAPE-JOBS-BG] ✅ 채용공고 스크래핑 완료');
+      } catch (error) {
+        console.error('[SCRAPE-JOBS-BG] ❌ 채용공고 스크래핑 실패:', error.message);
+        // 실패해도 계속 진행
       }
-
-      // 디버깅: 경로 확인
-      console.log(`[SCRAPE-JOBS-BG] [DEBUG] __dirname: ${__dirname}`);
-      console.log(`[SCRAPE-JOBS-BG] [DEBUG] 시도한 경로들:`);
-      possiblePaths.forEach((p, i) => {
-        console.log(`[SCRAPE-JOBS-BG] [DEBUG]   ${i + 1}. ${p} - ${fs.existsSync(p) ? 'EXISTS' : 'NOT FOUND'}`);
-      });
-
-      if (!jobsScriptPath) {
-        console.error(`[SCRAPE-JOBS-BG] ❌ Python 스크립트를 찾을 수 없습니다`);
-        console.log(`[SCRAPE-JOBS-BG] 채용공고 스크래핑 건너뜀, 기업정보/면접질문 스크래핑 진행...`);
-        // 스크래핑 건너뛰고 다음 단계로
-      } else {
-
-      await new Promise((resolve, reject) => {
-        const jobsProcess = spawn(PYTHON_CMD, [jobsScriptPath], {
-          shell: true
-        });
-
-        jobsProcess.stdout.on('data', (data) => {
-          console.log(`[SCRAPE-JOBS-BG] ${data.toString().trim()}`);
-        });
-
-        jobsProcess.stderr.on('data', (data) => {
-          console.error(`[SCRAPE-JOBS-BG] ERROR: ${data.toString().trim()}`);
-        });
-
-        jobsProcess.on('close', (code) => {
-          if (code === 0) {
-            console.log('[SCRAPE-JOBS-BG] ✅ 채용공고 스크래핑 완료');
-            resolve();
-          } else {
-            console.error(`[SCRAPE-JOBS-BG] ❌ 채용공고 스크래핑 실패 (code: ${code})`);
-            resolve(); // 실패해도 계속 진행
-          }
-        });
-
-        jobsProcess.on('error', (err) => {
-          console.error('[SCRAPE-JOBS-BG] ❌ 채용공고 스크래핑 프로세스 오류:', err.message);
-          resolve();
-        });
-      });
-
-      } // End if (fs.existsSync(jobsScriptPath))
 
       console.log('[SCRAPE-JOBS-BG] 채용공고 스크래핑 완료, DB 동기화 대기 중 (3초)...');
       await new Promise(resolve => setTimeout(resolve, 3000));

@@ -1,12 +1,9 @@
-# Railway Build Optimization v3 - Node.js + Python
+# Railway Build Optimization v4 - Node.js only (All scraping in JavaScript)
 [phases.setup]
-nixPkgs = ["nodejs_18", "python311", "python311Packages.pip"]
+nixPkgs = ["nodejs_18"]
 
 [phases.install]
-cmds = [
-  "npm ci --omit=dev --prefer-offline --no-audit --no-fund",
-  "pip install --break-system-packages selenium==4.15.2 flask==3.0.0 flask-cors==4.0.0 SQLAlchemy==2.0.32 PyMySQL==1.1.1"
-]
+cmds = ["npm ci --omit=dev --prefer-offline --no-audit --no-fund"]
 
 [phases.build]
 # Skip build phase - no compilation needed for Node.js
