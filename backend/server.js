@@ -7214,12 +7214,13 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
         });
       });
 
-      console.log('[SCRAPE-JOBS-BG] 채용공고 스크래핑 대기 중 (2초)...');
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log('[SCRAPE-JOBS-BG] 채용공고 스크래핑 완료, DB 동기화 대기 중 (3초)...');
+      await new Promise(resolve => setTimeout(resolve, 3000));
 
       // 오늘 insert된 채용공고의 회사 목록 조회
       console.log('\n' + '='.repeat(80));
       console.log('[SCRAPE-JOBS-BG] 🏢 오늘 insert된 채용공고의 회사 목록 조회 중...');
+      console.log('[SCRAPE-JOBS-BG] 쿼리: SELECT DISTINCT company FROM jobs WHERE DATE(scraped_at) = CURDATE()');
       console.log('='.repeat(80) + '\n');
 
       const [todayCompanies] = await pool.execute(
@@ -7230,6 +7231,30 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
       );
 
       console.log(`[SCRAPE-JOBS-BG] 📋 오늘 insert된 채용공고의 고유 회사 수: ${todayCompanies.length}개`);
+
+      if (todayCompanies.length > 0) {
+        console.log('[SCRAPE-JOBS-BG] 회사 목록:');
+        todayCompanies.forEach((row, idx) => {
+          console.log(`[SCRAPE-JOBS-BG]   ${idx + 1}. ${row.company}`);
+        });
+      } else {
+        console.log('[SCRAPE-JOBS-BG] ⚠️ 오늘 insert된 채용공고가 없습니다. 다음을 확인하세요:');
+        console.log('[SCRAPE-JOBS-BG]    1. scrape_latest_jobs.py가 정상적으로 실행되었는지');
+        console.log('[SCRAPE-JOBS-BG]    2. jobs 테이블에 데이터가 insert되었는지');
+        console.log('[SCRAPE-JOBS-BG]    3. scraped_at 컬럼의 날짜가 오늘인지 (시간대 문제)');
+
+        // 디버깅: 최근 insert된 데이터 확인
+        const [recentJobs] = await pool.execute(
+          `SELECT company, scraped_at, DATE(scraped_at) as date_part, CURDATE() as today
+           FROM jobs
+           ORDER BY scraped_at DESC
+           LIMIT 5`
+        );
+        console.log('[SCRAPE-JOBS-BG] 📊 최근 5개 채용공고:');
+        recentJobs.forEach((job, idx) => {
+          console.log(`[SCRAPE-JOBS-BG]   ${idx + 1}. ${job.company} - scraped_at: ${job.scraped_at}, date_part: ${job.date_part}, today: ${job.today}`);
+        });
+      }
 
       if (todayCompanies.length > 0) {
         console.log('\n' + '='.repeat(80));
