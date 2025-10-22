@@ -1,5 +1,5 @@
 /**
- * Catch.co.kr 최신 채용공고 1000건 스크래핑 (JavaScript/Puppeteer)
+ * Catch.co.kr 최신 채용공고 30건 스크래핑 (JavaScript/Puppeteer)
  * 사용법: node scrape-latest-jobs.js
  * 또는 함수 import: import { scrapeLatestJobs } from './scrape-latest-jobs.js'
  */
@@ -35,7 +35,7 @@ async function scrapeLatestJobs(pool = null) {
   try {
     console.log(`\n${'='.repeat(60)}`);
     console.log('🚀 Catch.co.kr 채용공고 스크래핑 시작');
-    console.log('   목표: 최신 채용공고 1000건');
+    console.log('   목표: 최신 채용공고 30건');
     console.log('='.repeat(60) + '\n');
 
     // MySQL 연결
@@ -81,16 +81,16 @@ async function scrapeLatestJobs(pool = null) {
     await new Promise(r => setTimeout(r, 2000));
     console.log('✅ 채용 검색 페이지 진입 성공\n');
 
-    // IT개발 카테고리 스크래핑
-    await scrapeCategoryJobs(page, connection, 'IT개발', 'IT', 50, stats);
+    // IT개발 카테고리 스크래핑 (최대 2페이지)
+    await scrapeCategoryJobs(page, connection, 'IT개발', 'IT', 2, stats);
 
-    // 1000건 미만이면 빅데이터·AI 카테고리도 스크래핑
-    if (stats.total_scraped < 1000) {
-      console.log(`\n📊 남은 목표: ${1000 - stats.total_scraped}건\n`);
+    // 30건 미만이면 빅데이터·AI 카테고리도 스크래핑
+    if (stats.total_scraped < 30) {
+      console.log(`\n📊 남은 목표: ${30 - stats.total_scraped}건\n`);
       // 채용 검색 페이지로 다시 이동
       await page.goto(`${BASE_URL}NCS/RecruitSearch`, { waitUntil: 'domcontentloaded' });
       await new Promise(r => setTimeout(r, 2000));
-      await scrapeCategoryJobs(page, connection, '빅데이터·AI', 'BIGDATA_AI', 30, stats);
+      await scrapeCategoryJobs(page, connection, '빅데이터·AI', 'BIGDATA_AI', 2, stats);
     }
 
     // 최종 통계
@@ -146,7 +146,7 @@ async function scrapeCategoryJobs(page, connection, categoryName, categoryCode, 
     let pageNum = 1;
     let categoryScraped = 0;
 
-    while (pageNum <= maxPages && stats.total_scraped < 1000) {
+    while (pageNum <= maxPages && stats.total_scraped < 30) {
       console.log(`📄 페이지 ${pageNum} 스크래핑 중...`);
 
       // 페이지 로딩 대기
@@ -199,11 +199,11 @@ async function scrapeCategoryJobs(page, connection, categoryName, categoryCode, 
       stats.total_scraped += jobs.length;
 
       console.log(`  ✅ ${jobs.length}건 수집, ${inserted}건 저장 (중복: ${jobs.length - inserted}건)`);
-      console.log(`  📊 전체 진행: ${stats.total_scraped}/1000건\n`);
+      console.log(`  📊 전체 진행: ${stats.total_scraped}/30건\n`);
 
-      // 1000건 도달 시 중단
-      if (stats.total_scraped >= 1000) {
-        console.log('\n✅ 목표 1000건 도달! 스크래핑 종료\n');
+      // 30건 도달 시 중단
+      if (stats.total_scraped >= 30) {
+        console.log('\n✅ 목표 30건 도달! 스크래핑 종료\n');
         break;
       }
 
