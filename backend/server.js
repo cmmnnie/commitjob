@@ -12,6 +12,7 @@ import crypto from "crypto";
 import path from 'path';
 import fs from 'fs';
 import OpenAI from 'openai';
+import { spawn } from 'child_process';
 
 // jose 라이브러리를 위한 Web Crypto API 설정
 if (!globalThis.crypto) {
@@ -7286,9 +7287,6 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
         console.log('[SCRAPE-JOBS-BG] 🏢 기업정보 및 면접질문 스크래핑 시작');
         console.log(`[SCRAPE-JOBS-BG] 대상 회사 수: ${todayCompanies.length}개`);
         console.log('='.repeat(80) + '\n');
-
-        const { spawn } = require('child_process');
-        const path = require('path');
 
         // 순차적으로 스크래핑 (Chrome 드라이버 충돌 방지)
         (async () => {
