@@ -7185,15 +7185,31 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
       console.log('[SCRAPE-JOBS-BG] Python 스크립트를 사용하여 채용공고 스크래핑 중...');
 
       // Python 스크립트로 채용공고 스크래핑
-      const jobsScriptPath = path.join(__dirname, 'catch-scraper-service', 'scrape_latest_jobs.py');
+      // 여러 경로 시도
+      const possiblePaths = [
+        path.join(__dirname, 'catch-scraper-service', 'scrape_latest_jobs.py'),
+        path.join(__dirname, '..', 'catch-scraper-service', 'scrape_latest_jobs.py'),
+        '/app/catch-scraper-service/scrape_latest_jobs.py'
+      ];
 
-      // 디버깅: 경로 및 파일 존재 확인
+      let jobsScriptPath = null;
+      for (const testPath of possiblePaths) {
+        if (fs.existsSync(testPath)) {
+          jobsScriptPath = testPath;
+          console.log(`[SCRAPE-JOBS-BG] ✅ Python 스크립트 발견: ${jobsScriptPath}`);
+          break;
+        }
+      }
+
+      // 디버깅: 경로 확인
       console.log(`[SCRAPE-JOBS-BG] [DEBUG] __dirname: ${__dirname}`);
-      console.log(`[SCRAPE-JOBS-BG] [DEBUG] jobsScriptPath: ${jobsScriptPath}`);
-      console.log(`[SCRAPE-JOBS-BG] [DEBUG] 파일 존재: ${fs.existsSync(jobsScriptPath) ? 'YES' : 'NO'}`);
+      console.log(`[SCRAPE-JOBS-BG] [DEBUG] 시도한 경로들:`);
+      possiblePaths.forEach((p, i) => {
+        console.log(`[SCRAPE-JOBS-BG] [DEBUG]   ${i + 1}. ${p} - ${fs.existsSync(p) ? 'EXISTS' : 'NOT FOUND'}`);
+      });
 
-      if (!fs.existsSync(jobsScriptPath)) {
-        console.error(`[SCRAPE-JOBS-BG] ❌ Python 스크립트를 찾을 수 없습니다: ${jobsScriptPath}`);
+      if (!jobsScriptPath) {
+        console.error(`[SCRAPE-JOBS-BG] ❌ Python 스크립트를 찾을 수 없습니다`);
         console.log(`[SCRAPE-JOBS-BG] 채용공고 스크래핑 건너뜀, 기업정보/면접질문 스크래핑 진행...`);
         // 스크래핑 건너뛰고 다음 단계로
       } else {
