@@ -1100,7 +1100,267 @@ export default function ResumePage() {
                     </button>
                 </div>
 
-                {(userProfile && !isEditing) || (activeTab === 'coverLetter' && !isEditing) ? (
+                {/* 자기소개서는 항상 표시 */}
+                {activeTab === 'coverLetter' ? (
+                    <>
+                        {/* 자기소개서 탭 */}
+                        {activeTab === 'coverLetter' && (
+                            <>
+                                {!isEditingCoverLetter && (
+                                    <div style={{
+                                        marginBottom: '20px'
+                                    }}>
+                                        <button
+                                            onClick={handleAddCoverLetter}
+                                            style={{
+                                                width: '100%',
+                                                padding: '16px',
+                                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '12px',
+                                                fontSize: '1rem',
+                                                fontWeight: '700',
+                                                cursor: 'pointer',
+                                                boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
+                                                transition: 'all 0.3s ease'
+                                            }}
+                                        >
+                                            + 자기소개서 추가
+                                        </button>
+                                    </div>
+                                )}
+
+                                {isEditingCoverLetter ? (
+                                    <div style={{
+                                        background: 'white',
+                                        borderRadius: '12px',
+                                        padding: '30px',
+                                        boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                                    }}>
+                                        <h3 style={{
+                                            fontSize: '1.3rem',
+                                            fontWeight: '700',
+                                            color: '#333',
+                                            marginBottom: '25px',
+                                            paddingBottom: '15px',
+                                            borderBottom: '2px solid #667eea'
+                                        }}>
+                                            {editingCoverLetterIndex !== null ? '자기소개서 수정' : '자기소개서 추가'}
+                                        </h3>
+
+                                        <div style={{
+                                            marginBottom: '20px'
+                                        }}>
+                                            <label style={{
+                                                display: 'block',
+                                                marginBottom: '8px',
+                                                fontWeight: '600',
+                                                color: '#495057',
+                                                fontSize: '0.95rem'
+                                            }}>
+                                                문항 선택 <span style={{ color: '#e74c3c' }}>*</span>
+                                            </label>
+                                            <select
+                                                value={coverLetterForm.question}
+                                                onChange={(e) => setCoverLetterForm({ ...coverLetterForm, question: e.target.value })}
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '12px',
+                                                    border: '2px solid #dee2e6',
+                                                    borderRadius: '8px',
+                                                    fontSize: '1rem',
+                                                    fontWeight: '500',
+                                                    color: '#495057',
+                                                    backgroundColor: 'white',
+                                                    cursor: 'pointer'
+                                                }}
+                                            >
+                                                <option value="">문항을 선택하세요</option>
+                                                {coverLetterQuestions.map((q, index) => (
+                                                    <option key={index} value={q}>{q}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div style={{
+                                            marginBottom: '25px'
+                                        }}>
+                                            <label style={{
+                                                display: 'block',
+                                                marginBottom: '8px',
+                                                fontWeight: '600',
+                                                color: '#495057',
+                                                fontSize: '0.95rem'
+                                            }}>
+                                                내용 <span style={{ color: '#e74c3c' }}>*</span>
+                                            </label>
+                                            <textarea
+                                                value={coverLetterForm.content}
+                                                onChange={(e) => setCoverLetterForm({ ...coverLetterForm, content: e.target.value })}
+                                                placeholder="자기소개서 내용을 입력하세요"
+                                                style={{
+                                                    width: '100%',
+                                                    minHeight: '250px',
+                                                    padding: '15px',
+                                                    border: '2px solid #dee2e6',
+                                                    borderRadius: '8px',
+                                                    fontSize: '1rem',
+                                                    lineHeight: '1.6',
+                                                    resize: 'vertical',
+                                                    fontFamily: 'inherit'
+                                                }}
+                                            />
+                                        </div>
+
+                                        <div style={{
+                                            display: 'flex',
+                                            gap: '10px',
+                                            justifyContent: 'flex-end'
+                                        }}>
+                                            <button
+                                                onClick={handleCancelCoverLetter}
+                                                style={{
+                                                    padding: '12px 24px',
+                                                    background: 'linear-gradient(135deg, #6c757d 0%, #495057 100%)',
+                                                    color: 'white',
+                                                    border: 'none',
+                                                    borderRadius: '8px',
+                                                    fontSize: '0.95rem',
+                                                    fontWeight: '600',
+                                                    cursor: 'pointer',
+                                                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+                                                }}
+                                            >
+                                                취소
+                                            </button>
+                                            <button
+                                                onClick={handleSaveCoverLetter}
+                                                style={{
+                                                    padding: '12px 24px',
+                                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                                    color: 'white',
+                                                    border: 'none',
+                                                    borderRadius: '8px',
+                                                    fontSize: '0.95rem',
+                                                    fontWeight: '600',
+                                                    cursor: 'pointer',
+                                                    boxShadow: '0 2px 8px rgba(102, 126, 234, 0.4)'
+                                                }}
+                                            >
+                                                저장
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div style={{
+                                        background: 'white',
+                                        borderRadius: '12px',
+                                        padding: '20px',
+                                        boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+                                    }}>
+                                        {coverLetterList.length > 0 ? (
+                                            <div style={{
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                gap: '15px'
+                                            }}>
+                                                {coverLetterList.map((item, index) => (
+                                                    <div
+                                                        key={index}
+                                                        style={{
+                                                            background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+                                                            borderRadius: '10px',
+                                                            padding: '20px',
+                                                            border: '2px solid #dee2e6'
+                                                        }}
+                                                    >
+                                                        <div style={{
+                                                            display: 'flex',
+                                                            justifyContent: 'space-between',
+                                                            alignItems: 'flex-start',
+                                                            marginBottom: '12px'
+                                                        }}>
+                                                            <div style={{
+                                                                flex: 1
+                                                            }}>
+                                                                <h4 style={{
+                                                                    fontSize: '1.1rem',
+                                                                    fontWeight: '700',
+                                                                    color: '#495057',
+                                                                    marginBottom: '10px'
+                                                                }}>
+                                                                    {item.question}
+                                                                </h4>
+                                                                <p style={{
+                                                                    fontSize: '0.95rem',
+                                                                    color: '#6c757d',
+                                                                    lineHeight: '1.6',
+                                                                    whiteSpace: 'pre-wrap',
+                                                                    marginBottom: 0
+                                                                }}>
+                                                                    {item.content}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        <div style={{
+                                                            display: 'flex',
+                                                            gap: '8px',
+                                                            justifyContent: 'flex-end'
+                                                        }}>
+                                                            <button
+                                                                onClick={() => handleEditCoverLetter(index)}
+                                                                style={{
+                                                                    padding: '4px 10px',
+                                                                    background: 'linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%)',
+                                                                    color: 'white',
+                                                                    border: 'none',
+                                                                    borderRadius: '6px',
+                                                                    fontSize: '0.75rem',
+                                                                    fontWeight: '600',
+                                                                    cursor: 'pointer',
+                                                                    boxShadow: '0 1px 4px rgba(0,0,0,0.2)'
+                                                                }}
+                                                            >
+                                                                수정
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDeleteCoverLetter(index)}
+                                                                style={{
+                                                                    padding: '4px 10px',
+                                                                    background: 'linear-gradient(135deg, #ff69b4 0%, #ff1493 100%)',
+                                                                    color: 'white',
+                                                                    border: 'none',
+                                                                    borderRadius: '6px',
+                                                                    fontSize: '0.75rem',
+                                                                    fontWeight: '600',
+                                                                    cursor: 'pointer',
+                                                                    boxShadow: '0 1px 4px rgba(255, 105, 180, 0.4)'
+                                                                }}
+                                                            >
+                                                                삭제
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div style={{
+                                                padding: '40px 20px',
+                                                textAlign: 'center',
+                                                color: '#999',
+                                                fontSize: '0.9rem'
+                                            }}>
+                                                <div style={{ fontSize: '3rem', marginBottom: '15px' }}>📝</div>
+                                                등록된 자기소개서가 없습니다
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </>
+                ) : (userProfile && !isEditing) ? (
                     <>
                         {/* 기본정보 탭 */}
                         {activeTab === 'basic' && (
@@ -2661,139 +2921,6 @@ export default function ResumePage() {
                             </>
                         )}
 
-                        {/* 자기소개서 탭 */}
-                        {activeTab === 'coverLetter' && (
-                            <>
-                                <div style={{
-                                    marginBottom: '20px'
-                                }}>
-                                    <button
-                                        onClick={handleAddCoverLetter}
-                                        style={{
-                                            width: '100%',
-                                            padding: '16px',
-                                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                            color: 'white',
-                                            border: 'none',
-                                            borderRadius: '12px',
-                                            fontSize: '1rem',
-                                            fontWeight: '700',
-                                            cursor: 'pointer',
-                                            boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
-                                            transition: 'all 0.3s ease'
-                                        }}
-                                    >
-                                        + 자기소개서 추가
-                                    </button>
-                                </div>
-
-                                {/* 자기소개서 목록 */}
-                                <div style={{
-                                    background: 'white',
-                                    borderRadius: '12px',
-                                    padding: '20px',
-                                    boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
-                                }}>
-                                    {coverLetterList.length > 0 ? (
-                                        <div style={{
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            gap: '15px'
-                                        }}>
-                                            {coverLetterList.map((item, index) => (
-                                                <div
-                                                    key={index}
-                                                    style={{
-                                                        background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
-                                                        borderRadius: '10px',
-                                                        padding: '20px',
-                                                        border: '2px solid #dee2e6'
-                                                    }}
-                                                >
-                                                    <div style={{
-                                                        display: 'flex',
-                                                        justifyContent: 'space-between',
-                                                        alignItems: 'flex-start',
-                                                        marginBottom: '12px'
-                                                    }}>
-                                                        <div style={{
-                                                            flex: 1
-                                                        }}>
-                                                            <h4 style={{
-                                                                fontSize: '1.1rem',
-                                                                fontWeight: '700',
-                                                                color: '#495057',
-                                                                marginBottom: '10px'
-                                                            }}>
-                                                                {item.question}
-                                                            </h4>
-                                                            <p style={{
-                                                                fontSize: '0.95rem',
-                                                                color: '#6c757d',
-                                                                lineHeight: '1.6',
-                                                                whiteSpace: 'pre-wrap',
-                                                                marginBottom: 0
-                                                            }}>
-                                                                {item.content}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                    <div style={{
-                                                        display: 'flex',
-                                                        gap: '8px',
-                                                        justifyContent: 'flex-end'
-                                                    }}>
-                                                        <button
-                                                            onClick={() => handleEditCoverLetter(index)}
-                                                            style={{
-                                                                padding: '4px 10px',
-                                                                background: 'linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%)',
-                                                                color: 'white',
-                                                                border: 'none',
-                                                                borderRadius: '6px',
-                                                                fontSize: '0.75rem',
-                                                                fontWeight: '600',
-                                                                cursor: 'pointer',
-                                                                boxShadow: '0 1px 4px rgba(0,0,0,0.2)'
-                                                            }}
-                                                        >
-                                                            수정
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDeleteCoverLetter(index)}
-                                                            style={{
-                                                                padding: '4px 10px',
-                                                                background: 'linear-gradient(135deg, #ff69b4 0%, #ff1493 100%)',
-                                                                color: 'white',
-                                                                border: 'none',
-                                                                borderRadius: '6px',
-                                                                fontSize: '0.75rem',
-                                                                fontWeight: '600',
-                                                                cursor: 'pointer',
-                                                                boxShadow: '0 1px 4px rgba(255, 105, 180, 0.4)'
-                                                            }}
-                                                        >
-                                                            삭제
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div style={{
-                                            padding: '40px 20px',
-                                            textAlign: 'center',
-                                            color: '#999',
-                                            fontSize: '0.9rem'
-                                        }}>
-                                            <div style={{ fontSize: '3rem', marginBottom: '15px' }}>📝</div>
-                                            등록된 자기소개서가 없습니다
-                                        </div>
-                                    )}
-                                </div>
-                            </>
-                        )}
-
                     </>
                 ) : (
                     <>
@@ -3445,263 +3572,6 @@ export default function ResumePage() {
                                     학력, 자격증, 수상 경력을 입력하는 기능은<br/>곧 추가될 예정입니다.
                                 </p>
                             </div>
-                        )}
-
-                        {/* 자기소개서 탭 - 편집 모드 */}
-                        {activeTab === 'coverLetter' && (
-                            <>
-                                {!isEditingCoverLetter && (
-                                    <div style={{
-                                        marginBottom: '20px'
-                                    }}>
-                                        <button
-                                            onClick={handleAddCoverLetter}
-                                            style={{
-                                                width: '100%',
-                                                padding: '16px',
-                                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                                color: 'white',
-                                                border: 'none',
-                                                borderRadius: '12px',
-                                                fontSize: '1rem',
-                                                fontWeight: '700',
-                                                cursor: 'pointer',
-                                                boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
-                                                transition: 'all 0.3s ease'
-                                            }}
-                                        >
-                                            + 자기소개서 추가
-                                        </button>
-                                    </div>
-                                )}
-
-                                {isEditingCoverLetter ? (
-                                    <div style={{
-                                        background: 'white',
-                                        borderRadius: '12px',
-                                        padding: '30px',
-                                        boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
-                                    }}>
-                                        <h3 style={{
-                                            fontSize: '1.3rem',
-                                            fontWeight: '700',
-                                            color: '#333',
-                                            marginBottom: '25px',
-                                            paddingBottom: '15px',
-                                            borderBottom: '2px solid #667eea'
-                                        }}>
-                                            {editingCoverLetterIndex !== null ? '자기소개서 수정' : '자기소개서 추가'}
-                                        </h3>
-
-                                        <div style={{
-                                            marginBottom: '20px'
-                                        }}>
-                                            <label style={{
-                                                display: 'block',
-                                                marginBottom: '8px',
-                                                fontWeight: '600',
-                                                color: '#495057',
-                                                fontSize: '0.95rem'
-                                            }}>
-                                                문항 선택 <span style={{ color: '#e74c3c' }}>*</span>
-                                            </label>
-                                            <select
-                                                value={coverLetterForm.question}
-                                                onChange={(e) => setCoverLetterForm({ ...coverLetterForm, question: e.target.value })}
-                                                style={{
-                                                    width: '100%',
-                                                    padding: '12px',
-                                                    border: '2px solid #dee2e6',
-                                                    borderRadius: '8px',
-                                                    fontSize: '1rem',
-                                                    fontWeight: '500',
-                                                    color: '#495057',
-                                                    backgroundColor: 'white',
-                                                    cursor: 'pointer'
-                                                }}
-                                            >
-                                                <option value="">문항을 선택하세요</option>
-                                                {coverLetterQuestions.map((q, index) => (
-                                                    <option key={index} value={q}>{q}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        <div style={{
-                                            marginBottom: '25px'
-                                        }}>
-                                            <label style={{
-                                                display: 'block',
-                                                marginBottom: '8px',
-                                                fontWeight: '600',
-                                                color: '#495057',
-                                                fontSize: '0.95rem'
-                                            }}>
-                                                내용 <span style={{ color: '#e74c3c' }}>*</span>
-                                            </label>
-                                            <textarea
-                                                value={coverLetterForm.content}
-                                                onChange={(e) => setCoverLetterForm({ ...coverLetterForm, content: e.target.value })}
-                                                placeholder="자기소개서 내용을 입력하세요"
-                                                style={{
-                                                    width: '100%',
-                                                    minHeight: '250px',
-                                                    padding: '15px',
-                                                    border: '2px solid #dee2e6',
-                                                    borderRadius: '8px',
-                                                    fontSize: '1rem',
-                                                    lineHeight: '1.6',
-                                                    resize: 'vertical',
-                                                    fontFamily: 'inherit'
-                                                }}
-                                            />
-                                        </div>
-
-                                        <div style={{
-                                            display: 'flex',
-                                            gap: '10px',
-                                            justifyContent: 'flex-end'
-                                        }}>
-                                            <button
-                                                onClick={handleCancelCoverLetter}
-                                                style={{
-                                                    padding: '12px 24px',
-                                                    background: 'linear-gradient(135deg, #6c757d 0%, #495057 100%)',
-                                                    color: 'white',
-                                                    border: 'none',
-                                                    borderRadius: '8px',
-                                                    fontSize: '0.95rem',
-                                                    fontWeight: '600',
-                                                    cursor: 'pointer',
-                                                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
-                                                }}
-                                            >
-                                                취소
-                                            </button>
-                                            <button
-                                                onClick={handleSaveCoverLetter}
-                                                style={{
-                                                    padding: '12px 24px',
-                                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                                    color: 'white',
-                                                    border: 'none',
-                                                    borderRadius: '8px',
-                                                    fontSize: '0.95rem',
-                                                    fontWeight: '600',
-                                                    cursor: 'pointer',
-                                                    boxShadow: '0 2px 8px rgba(102, 126, 234, 0.4)'
-                                                }}
-                                            >
-                                                저장
-                                            </button>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div style={{
-                                        background: 'white',
-                                        borderRadius: '12px',
-                                        padding: '20px',
-                                        boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
-                                    }}>
-                                        {coverLetterList.length > 0 ? (
-                                            <div style={{
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                gap: '15px'
-                                            }}>
-                                                {coverLetterList.map((item, index) => (
-                                                    <div
-                                                        key={index}
-                                                        style={{
-                                                            background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
-                                                            borderRadius: '10px',
-                                                            padding: '20px',
-                                                            border: '2px solid #dee2e6'
-                                                        }}
-                                                    >
-                                                        <div style={{
-                                                            display: 'flex',
-                                                            justifyContent: 'space-between',
-                                                            alignItems: 'flex-start',
-                                                            marginBottom: '12px'
-                                                        }}>
-                                                            <div style={{
-                                                                flex: 1
-                                                            }}>
-                                                                <h4 style={{
-                                                                    fontSize: '1.1rem',
-                                                                    fontWeight: '700',
-                                                                    color: '#495057',
-                                                                    marginBottom: '10px'
-                                                                }}>
-                                                                    {item.question}
-                                                                </h4>
-                                                                <p style={{
-                                                                    fontSize: '0.95rem',
-                                                                    color: '#6c757d',
-                                                                    lineHeight: '1.6',
-                                                                    whiteSpace: 'pre-wrap',
-                                                                    marginBottom: 0
-                                                                }}>
-                                                                    {item.content}
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                        <div style={{
-                                                            display: 'flex',
-                                                            gap: '8px',
-                                                            justifyContent: 'flex-end'
-                                                        }}>
-                                                            <button
-                                                                onClick={() => handleEditCoverLetter(index)}
-                                                                style={{
-                                                                    padding: '4px 10px',
-                                                                    background: 'linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%)',
-                                                                    color: 'white',
-                                                                    border: 'none',
-                                                                    borderRadius: '6px',
-                                                                    fontSize: '0.75rem',
-                                                                    fontWeight: '600',
-                                                                    cursor: 'pointer',
-                                                                    boxShadow: '0 1px 4px rgba(0,0,0,0.2)'
-                                                                }}
-                                                            >
-                                                                수정
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleDeleteCoverLetter(index)}
-                                                                style={{
-                                                                    padding: '4px 10px',
-                                                                    background: 'linear-gradient(135deg, #ff69b4 0%, #ff1493 100%)',
-                                                                    color: 'white',
-                                                                    border: 'none',
-                                                                    borderRadius: '6px',
-                                                                    fontSize: '0.75rem',
-                                                                    fontWeight: '600',
-                                                                    cursor: 'pointer',
-                                                                    boxShadow: '0 1px 4px rgba(255, 105, 180, 0.4)'
-                                                                }}
-                                                            >
-                                                                삭제
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <div style={{
-                                                padding: '40px 20px',
-                                                textAlign: 'center',
-                                                color: '#999',
-                                                fontSize: '0.9rem'
-                                            }}>
-                                                <div style={{ fontSize: '3rem', marginBottom: '15px' }}>📝</div>
-                                                등록된 자기소개서가 없습니다
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </>
                         )}
                     </>
                 )}
