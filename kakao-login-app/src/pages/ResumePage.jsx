@@ -1237,7 +1237,7 @@ export default function ResumePage() {
                             </>
                         )}
 
-                        {/* 경력 탭 */}
+                        {/* 경력 탭 - 조회 모드 */}
                         {activeTab === 'experience' && (
                             <>
                                 <div style={{
@@ -1246,38 +1246,59 @@ export default function ResumePage() {
                                     padding: '18px',
                                     marginBottom: '12px'
                                 }}>
-                                    <div style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        marginBottom: '12px'
-                                    }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    {/* 헤더 - 수정/추가 중이 아닐 때만 표시 */}
+                                    {!isEditingExperience && (
+                                        <div style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            marginBottom: '12px'
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <span style={{ fontSize: '1.2rem' }}>💼</span>
+                                                <h3 style={{
+                                                    fontSize: '1.05rem',
+                                                    color: '#333',
+                                                    fontWeight: '600',
+                                                    margin: 0
+                                                }}>경력</h3>
+                                            </div>
+                                            <button
+                                                onClick={handleAddExperience}
+                                                style={{
+                                                    padding: '4px 10px',
+                                                    background: 'linear-gradient(135deg, #7f8c8d 0%, #5d6d7e 100%)',
+                                                    color: 'white',
+                                                    border: 'none',
+                                                    borderRadius: '8px',
+                                                    fontSize: '0.85rem',
+                                                    fontWeight: '600',
+                                                    cursor: 'pointer',
+                                                    boxShadow: '0 2px 8px rgba(93, 109, 126, 0.4)'
+                                                }}
+                                            >
+                                                추가
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* 편집 중일 때 헤더 */}
+                                    {isEditingExperience && (
+                                        <div style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            marginBottom: '12px'
+                                        }}>
                                             <span style={{ fontSize: '1.2rem' }}>💼</span>
                                             <h3 style={{
                                                 fontSize: '1.05rem',
                                                 color: '#333',
                                                 fontWeight: '600',
                                                 margin: 0
-                                            }}>경력</h3>
+                                            }}>{editingExperienceIndex !== null ? '경력 수정' : '경력 추가'}</h3>
                                         </div>
-                                        <button
-                                            onClick={handleAddExperience}
-                                            style={{
-                                                padding: '4px 10px',
-                                                background: 'linear-gradient(135deg, #7f8c8d 0%, #5d6d7e 100%)',
-                                                color: 'white',
-                                                border: 'none',
-                                                borderRadius: '8px',
-                                                fontSize: '0.85rem',
-                                                fontWeight: '600',
-                                                cursor: 'pointer',
-                                                boxShadow: '0 2px 8px rgba(93, 109, 126, 0.4)'
-                                            }}
-                                        >
-                                            추가
-                                        </button>
-                                    </div>
+                                    )}
 
                                     {/* 경력 입력 폼 */}
                                     {isEditingExperience && (
@@ -1506,8 +1527,9 @@ export default function ResumePage() {
                                         </div>
                                     )}
 
-                                    {/* 경력 목록 */}
-                                    {experienceList.length > 0 ? (
+                                    {/* 경력 목록 - 편집 중이 아닐 때만 표시 */}
+                                    {!isEditingExperience && (
+                                        experienceList.length > 0 ? (
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                             {experienceList.map((exp, index) => (
                                                 <div key={index} style={{
@@ -1588,6 +1610,7 @@ export default function ResumePage() {
                                         }}>
                                             등록된 경력이 없습니다
                                         </div>
+                                    )
                                     )}
                                 </div>
                             </>
@@ -2789,38 +2812,59 @@ export default function ResumePage() {
                                     padding: '18px',
                                     marginBottom: '12px'
                                 }}>
-                                    <div style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        marginBottom: '12px'
-                                    }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    {/* 헤더 - 수정/추가 중이 아닐 때만 표시 */}
+                                    {!isEditingExperience && (
+                                        <div style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            marginBottom: '12px'
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <span style={{ fontSize: '1.2rem' }}>💼</span>
+                                                <h3 style={{
+                                                    fontSize: '1.05rem',
+                                                    color: '#333',
+                                                    fontWeight: '600',
+                                                    margin: 0
+                                                }}>경력</h3>
+                                            </div>
+                                            <button
+                                                onClick={handleAddExperience}
+                                                style={{
+                                                    padding: '4px 10px',
+                                                    background: 'linear-gradient(135deg, #7f8c8d 0%, #5d6d7e 100%)',
+                                                    color: 'white',
+                                                    border: 'none',
+                                                    borderRadius: '8px',
+                                                    fontSize: '0.85rem',
+                                                    fontWeight: '600',
+                                                    cursor: 'pointer',
+                                                    boxShadow: '0 2px 8px rgba(93, 109, 126, 0.4)'
+                                                }}
+                                            >
+                                                추가
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* 편집 중일 때 헤더 */}
+                                    {isEditingExperience && (
+                                        <div style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            marginBottom: '12px'
+                                        }}>
                                             <span style={{ fontSize: '1.2rem' }}>💼</span>
                                             <h3 style={{
                                                 fontSize: '1.05rem',
                                                 color: '#333',
                                                 fontWeight: '600',
                                                 margin: 0
-                                            }}>경력</h3>
+                                            }}>{editingExperienceIndex !== null ? '경력 수정' : '경력 추가'}</h3>
                                         </div>
-                                        <button
-                                            onClick={handleAddExperience}
-                                            style={{
-                                                padding: '4px 10px',
-                                                background: 'linear-gradient(135deg, #7f8c8d 0%, #5d6d7e 100%)',
-                                                color: 'white',
-                                                border: 'none',
-                                                borderRadius: '8px',
-                                                fontSize: '0.85rem',
-                                                fontWeight: '600',
-                                                cursor: 'pointer',
-                                                boxShadow: '0 2px 8px rgba(93, 109, 126, 0.4)'
-                                            }}
-                                        >
-                                            추가
-                                        </button>
-                                    </div>
+                                    )}
 
                                     {/* 경력 입력 폼 */}
                                     {isEditingExperience && (
@@ -3049,8 +3093,9 @@ export default function ResumePage() {
                                         </div>
                                     )}
 
-                                    {/* 경력 목록 */}
-                                    {experienceList.length > 0 ? (
+                                    {/* 경력 목록 - 편집 중이 아닐 때만 표시 */}
+                                    {!isEditingExperience && (
+                                        experienceList.length > 0 ? (
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                             {experienceList.map((exp, index) => (
                                                 <div key={index} style={{
@@ -3131,6 +3176,7 @@ export default function ResumePage() {
                                         }}>
                                             등록된 경력이 없습니다
                                         </div>
+                                        )
                                     )}
                                 </div>
                             </>
