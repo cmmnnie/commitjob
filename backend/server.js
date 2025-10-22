@@ -1413,6 +1413,7 @@ app.get('/api/profile', async (req, res) => {
         languages: safeParseJSON(data.languages),
         awards: safeParseJSON(data.awards),
         experiences: safeParseJSON(data.experiences),
+        cover_letters: safeParseJSON(data.cover_letters),
         created_at: data.profile_created_at,
         updated_at: data.profile_updated_at
       } : null
@@ -1647,6 +1648,10 @@ app.post('/api/profile', uploadProfile.single('resume'), async (req, res) => {
       if (req.body.experiences) {
         updateFields.push('experiences = ?');
         updateValues.push(typeof req.body.experiences === 'string' ? req.body.experiences : JSON.stringify(req.body.experiences));
+      }
+      if (req.body.cover_letters) {
+        updateFields.push('cover_letters = ?');
+        updateValues.push(typeof req.body.cover_letters === 'string' ? req.body.cover_letters : JSON.stringify(req.body.cover_letters));
       }
 
       updateFields.push('updated_at = CURRENT_TIMESTAMP');
@@ -7284,27 +7289,19 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
 
         const { spawn } = require('child_process');
         const path = require('path');
-        const fs = require('fs');
-
-        // 로그 디렉토리 생성
-        const logDir = path.join(__dirname, 'logs');
-        if (!fs.existsSync(logDir)) {
-          fs.mkdirSync(logDir, { recursive: true });
-          console.log(`[SCRAPE-JOBS-BG] 📁 로그 디렉토리 생성: ${logDir}`);
-        }
 
         for (const row of todayCompanies) {
           const company = row.company;
           try {
             // 기업정보 확인
             const [companyData] = await pool.execute(
-              'SELECT id FROM catch_companies WHERE company_name = ?',
+              'SELECT id FROM catch_companies WHERE company = ?',
               [company]
             );
 
             // 면접질문 확인
             const [interviewData] = await pool.execute(
-              'SELECT id FROM catch_interview_questions WHERE company_name = ?',
+              'SELECT id FROM catch_interview_questions WHERE company = ?',
               [company]
             );
 
@@ -7320,50 +7317,54 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
             if (needsCompanyInfo) console.log(`[SCRAPE-JOBS-BG]    - 기업정보 스크래핑 필요`);
             if (needsInterviewQuestions) console.log(`[SCRAPE-JOBS-BG]    - 면접질문 스크래핑 필요`);
 
-            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-
             // 기업정보 스크래핑 (백그라운드)
             if (needsCompanyInfo) {
               const companyScriptPath = path.join(__dirname, 'catch-scraper-service', 'scrape_company_info.py');
-              const companyLogPath = path.join(logDir, `company_info_${company.replace(/[^a-zA-Z0-9가-힣]/g, '_')}_${timestamp}.log`);
-              const companyLogStream = fs.createWriteStream(companyLogPath);
 
-              console.log(`[SCRAPE-JOBS-BG] 📝 기업정보 로그 파일: ${companyLogPath}`);
+              console.log(`[SCRAPE-JOBS-BG] 🔧 스크립트 경로: ${companyScriptPath}`);
+              console.log(`[SCRAPE-JOBS-BG] 🏢 회사명: ${company}`);
 
               const companyProcess = spawn('python', [companyScriptPath, company], {
                 detached: true,
-                stdio: ['ignore', companyLogStream, companyLogStream]
+                stdio: 'ignore',
+                shell: true
               });
 
               companyProcess.on('error', (err) => {
                 console.error(`[SCRAPE-JOBS-BG] ❌ ${company} 기업정보 스크래핑 프로세스 오류:`, err.message);
-                fs.appendFileSync(companyLogPath, `\n[ERROR] Process error: ${err.message}\n`);
+              });
+
+              companyProcess.on('spawn', () => {
+                console.log(`[SCRAPE-JOBS-BG] ✅ ${company} 기업정보 프로세스 시작됨 (PID: ${companyProcess.pid})`);
               });
 
               companyProcess.unref();
-              console.log(`[SCRAPE-JOBS-BG] 🚀 ${company} 기업정보 스크래핑 백그라운드 시작 (PID: ${companyProcess.pid})`);
+              console.log(`[SCRAPE-JOBS-BG] 🚀 ${company} 기업정보 스크래핑 백그라운드 시작`);
             }
 
             // 면접질문 스크래핑 (백그라운드)
             if (needsInterviewQuestions) {
               const interviewScriptPath = path.join(__dirname, 'catch-scraper-service', 'scrape_interview_questions.py');
-              const interviewLogPath = path.join(logDir, `interview_questions_${company.replace(/[^a-zA-Z0-9가-힣]/g, '_')}_${timestamp}.log`);
-              const interviewLogStream = fs.createWriteStream(interviewLogPath);
 
-              console.log(`[SCRAPE-JOBS-BG] 📝 면접질문 로그 파일: ${interviewLogPath}`);
+              console.log(`[SCRAPE-JOBS-BG] 🔧 스크립트 경로: ${interviewScriptPath}`);
+              console.log(`[SCRAPE-JOBS-BG] 🏢 회사명: ${company}`);
 
               const interviewProcess = spawn('python', [interviewScriptPath, company], {
                 detached: true,
-                stdio: ['ignore', interviewLogStream, interviewLogStream]
+                stdio: 'ignore',
+                shell: true
               });
 
               interviewProcess.on('error', (err) => {
                 console.error(`[SCRAPE-JOBS-BG] ❌ ${company} 면접질문 스크래핑 프로세스 오류:`, err.message);
-                fs.appendFileSync(interviewLogPath, `\n[ERROR] Process error: ${err.message}\n`);
+              });
+
+              interviewProcess.on('spawn', () => {
+                console.log(`[SCRAPE-JOBS-BG] ✅ ${company} 면접질문 프로세스 시작됨 (PID: ${interviewProcess.pid})`);
               });
 
               interviewProcess.unref();
-              console.log(`[SCRAPE-JOBS-BG] 🚀 ${company} 면접질문 스크래핑 백그라운드 시작 (PID: ${interviewProcess.pid})`);
+              console.log(`[SCRAPE-JOBS-BG] 🚀 ${company} 면접질문 스크래핑 백그라운드 시작`);
             }
 
             // 스크래핑 사이 딜레이 (과부하 방지)
@@ -7377,7 +7378,7 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
 
         console.log('\n' + '='.repeat(80));
         console.log('[SCRAPE-JOBS-BG] 🏢 기업정보 및 면접질문 스크래핑 백그라운드 작업 시작 완료');
-        console.log(`[SCRAPE-JOBS-BG] 📁 로그 파일 위치: ${logDir}`);
+        console.log('[SCRAPE-JOBS-BG] 💡 스크래핑 결과는 DB에 자동 저장됩니다');
         console.log('='.repeat(80) + '\n');
       }
 
