@@ -64,11 +64,14 @@ async function scrapeInterviewQuestions(companyName, pool = null) {
     const page = await browser.newPage();
     await page.setViewport({ width: 1920, height: 1080 });
 
+    // 타임아웃 설정 (Railway 환경에서 네트워크가 느릴 수 있음)
+    page.setDefaultNavigationTimeout(60000); // 60초
+
     console.log('✅ Chrome 드라이버 초기화 성공\n');
 
     // Catch.co.kr 로그인
     console.log(`🔐 Catch.co.kr 로그인 시도 (사용자: ${CATCH_LOGIN.id})\n`);
-    await page.goto('https://www.catch.co.kr/');
+    await page.goto('https://www.catch.co.kr/', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(2000);
 
     // 로그인 버튼 클릭
@@ -99,7 +102,7 @@ async function scrapeInterviewQuestions(companyName, pool = null) {
     console.log('-'.repeat(60));
 
     const searchUrl = 'https://www.catch.co.kr/Comp/CompMajor/SearchPage';
-    await page.goto(searchUrl);
+    await page.goto(searchUrl, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(3000);
 
     const searchTerm = companyName.trim();
@@ -145,7 +148,7 @@ async function scrapeInterviewQuestions(companyName, pool = null) {
     }
 
     // 회사 상세 페이지로 이동
-    await page.goto(targetUrl);
+    await page.goto(targetUrl, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(2000);
 
     console.log(`  🔗 회사 URL: ${targetUrl}`);
