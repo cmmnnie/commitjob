@@ -12,6 +12,7 @@ import crypto from "crypto";
 import path from 'path';
 import fs from 'fs';
 import OpenAI from 'openai';
+import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import { scrapeCompanyInfo } from './scrape-company-info.js';
 import { scrapeInterviewQuestions } from './scrape-interview-questions.js';
