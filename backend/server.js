@@ -12,8 +12,9 @@ import crypto from "crypto";
 import path from 'path';
 import fs from 'fs';
 import OpenAI from 'openai';
-import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
+import { scrapeCompanyInfo } from './scrape-company-info.js';
+import { scrapeInterviewQuestions } from './scrape-interview-questions.js';
 
 // ES modules에서 __dirname 정의
 const __filename = fileURLToPath(import.meta.url);
@@ -7291,79 +7292,33 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
               if (needsCompanyInfo) console.log(`[SCRAPE-JOBS-BG]    - 기업정보 스크래핑 필요`);
               if (needsInterviewQuestions) console.log(`[SCRAPE-JOBS-BG]    - 면접질문 스크래핑 필요`);
 
-              // 기업정보 스크래핑 (순차 실행) - JavaScript
+              // 기업정보 스크래핑 (순차 실행) - 직접 함수 호출
               if (needsCompanyInfo) {
-                const companyScriptPath = path.join(__dirname, 'scrape-company-info.js');
                 console.log(`[SCRAPE-JOBS-BG] 🚀 ${company} 기업정보 스크래핑 시작...`);
 
-                await new Promise((resolve, reject) => {
-                  const companyProcess = spawn('node', [companyScriptPath, company], {
-                    cwd: __dirname,
-                    env: process.env
-                  });
-
-                  companyProcess.stdout.on('data', (data) => {
-                    console.log(`[COMPANY-INFO] ${data.toString().trim()}`);
-                  });
-
-                  companyProcess.stderr.on('data', (data) => {
-                    console.error(`[COMPANY-INFO-ERROR] ${data.toString().trim()}`);
-                  });
-
-                  companyProcess.on('close', (code) => {
-                    if (code === 0) {
-                      console.log(`[SCRAPE-JOBS-BG] ✅ ${company} 기업정보 스크래핑 완료`);
-                      resolve();
-                    } else {
-                      console.error(`[SCRAPE-JOBS-BG] ❌ ${company} 기업정보 스크래핑 실패 (code: ${code})`);
-                      resolve(); // 실패해도 다음 회사 진행
-                    }
-                  });
-
-                  companyProcess.on('error', (err) => {
-                    console.error(`[SCRAPE-JOBS-BG] ❌ ${company} 기업정보 프로세스 오류:`, err.message);
-                    resolve(); // 오류 발생해도 다음 회사 진행
-                  });
-                });
+                try {
+                  await scrapeCompanyInfo(company);
+                  console.log(`[SCRAPE-JOBS-BG] ✅ ${company} 기업정보 스크래핑 완료`);
+                } catch (error) {
+                  console.error(`[SCRAPE-JOBS-BG] ❌ ${company} 기업정보 스크래핑 실패:`, error.message);
+                  // 실패해도 다음 회사 진행
+                }
 
                 // 다음 스크래핑 전 대기 (Chrome 드라이버 안전 종료)
                 await new Promise(resolve => setTimeout(resolve, 3000));
               }
 
-              // 면접질문 스크래핑 (순차 실행) - JavaScript
+              // 면접질문 스크래핑 (순차 실행) - 직접 함수 호출
               if (needsInterviewQuestions) {
-                const interviewScriptPath = path.join(__dirname, 'scrape-interview-questions.js');
                 console.log(`[SCRAPE-JOBS-BG] 🚀 ${company} 면접질문 스크래핑 시작...`);
 
-                await new Promise((resolve, reject) => {
-                  const interviewProcess = spawn('node', [interviewScriptPath, company], {
-                    cwd: __dirname,
-                    env: process.env
-                  });
-
-                  interviewProcess.stdout.on('data', (data) => {
-                    console.log(`[INTERVIEW-QUESTIONS] ${data.toString().trim()}`);
-                  });
-
-                  interviewProcess.stderr.on('data', (data) => {
-                    console.error(`[INTERVIEW-QUESTIONS-ERROR] ${data.toString().trim()}`);
-                  });
-
-                  interviewProcess.on('close', (code) => {
-                    if (code === 0) {
-                      console.log(`[SCRAPE-JOBS-BG] ✅ ${company} 면접질문 스크래핑 완료`);
-                      resolve();
-                    } else {
-                      console.error(`[SCRAPE-JOBS-BG] ❌ ${company} 면접질문 스크래핑 실패 (code: ${code})`);
-                      resolve(); // 실패해도 다음 회사 진행
-                    }
-                  });
-
-                  interviewProcess.on('error', (err) => {
-                    console.error(`[SCRAPE-JOBS-BG] ❌ ${company} 면접질문 프로세스 오류:`, err.message);
-                    resolve(); // 오류 발생해도 다음 회사 진행
-                  });
-                });
+                try {
+                  await scrapeInterviewQuestions(company);
+                  console.log(`[SCRAPE-JOBS-BG] ✅ ${company} 면접질문 스크래핑 완료`);
+                } catch (error) {
+                  console.error(`[SCRAPE-JOBS-BG] ❌ ${company} 면접질문 스크래핑 실패:`, error.message);
+                  // 실패해도 다음 회사 진행
+                }
 
                 // 다음 회사 스크래핑 전 대기
                 await new Promise(resolve => setTimeout(resolve, 3000));

@@ -204,17 +204,22 @@ async function scrapeInterviewQuestions(companyName) {
   }
 }
 
-// 커맨드 라인 인자로 회사명 받기
-const companyName = process.argv.slice(2).join(' ');
+// Export function for use as module
+export { scrapeInterviewQuestions };
 
-if (!companyName) {
-  console.error('사용법: node scrape-interview-questions.js "회사명"');
-  process.exit(1);
-}
+// 커맨드 라인에서 직접 실행된 경우에만 실행
+if (import.meta.url === `file://${process.argv[1]}`) {
+  const companyName = process.argv.slice(2).join(' ');
 
-scrapeInterviewQuestions(companyName)
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error('실행 실패:', error);
+  if (!companyName) {
+    console.error('사용법: node scrape-interview-questions.js "회사명"');
     process.exit(1);
-  });
+  }
+
+  scrapeInterviewQuestions(companyName)
+    .then(() => process.exit(0))
+    .catch((error) => {
+      console.error('실행 실패:', error);
+      process.exit(1);
+    });
+}
