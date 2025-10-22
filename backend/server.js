@@ -1361,6 +1361,7 @@ app.get('/api/profile', async (req, res) => {
         up.languages,
         up.awards,
         up.experiences,
+        up.cover_letters,
         up.created_at as profile_created_at,
         up.updated_at as profile_updated_at
       FROM users u
@@ -1681,7 +1682,7 @@ app.post('/api/profile', uploadProfile.single('resume'), async (req, res) => {
         throw new Error('희망지역 데이터 형식이 올바르지 않습니다');
       }
 
-      const insertSQL = 'INSERT INTO user_profiles (user_id, preferred_jobs, experience, preferred_regions, skills, expected_salary, resume_path, education, certificates, languages, awards, experiences, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())';
+      const insertSQL = 'INSERT INTO user_profiles (user_id, preferred_jobs, experience, preferred_regions, skills, expected_salary, resume_path, education, certificates, languages, awards, experiences, cover_letters, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())';
       const insertParams = [
         user_id,
         jobs,
@@ -1694,7 +1695,8 @@ app.post('/api/profile', uploadProfile.single('resume'), async (req, res) => {
         certificates ? (typeof certificates === 'string' ? certificates : JSON.stringify(certificates)) : null,
         languages ? (typeof languages === 'string' ? languages : JSON.stringify(languages)) : null,
         awards ? (typeof awards === 'string' ? awards : JSON.stringify(awards)) : null,
-        req.body.experiences ? (typeof req.body.experiences === 'string' ? req.body.experiences : JSON.stringify(req.body.experiences)) : null
+        req.body.experiences ? (typeof req.body.experiences === 'string' ? req.body.experiences : JSON.stringify(req.body.experiences)) : null,
+        req.body.cover_letters ? (typeof req.body.cover_letters === 'string' ? req.body.cover_letters : JSON.stringify(req.body.cover_letters)) : null
       ];
 
       console.log('[PROFILE] INSERT SQL:', insertSQL);
