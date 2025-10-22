@@ -72,14 +72,14 @@ async function scrapeInterviewQuestions(companyName, pool = null) {
     // Catch.co.kr 로그인
     console.log(`🔐 Catch.co.kr 로그인 시도 (사용자: ${CATCH_LOGIN.id})\n`);
     await page.goto('https://www.catch.co.kr/', { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(2000);
+    await new Promise(r => setTimeout(r, 2000));
 
     // 로그인 버튼 클릭
     try {
       await page.waitForSelector('a:has-text("로그인")', { timeout: 5000 });
       await page.click('a:has-text("로그인")');
       console.log('  로그인 버튼 클릭 완료');
-      await page.waitForTimeout(2000);
+      await new Promise(r => setTimeout(r, 2000));
     } catch (e) {
       console.log('  ⚠️ 로그인 버튼을 찾을 수 없습니다 (이미 로그인 상태일 수 있음)');
     }
@@ -91,7 +91,7 @@ async function scrapeInterviewQuestions(companyName, pool = null) {
       await page.type('#pw_login', CATCH_LOGIN.password);
       await page.keyboard.press('Enter');
       console.log('  로그인 정보 입력 및 제출 완료');
-      await page.waitForTimeout(3000);
+      await new Promise(r => setTimeout(r, 3000));
       console.log('✅ Catch.co.kr 로그인 성공\n');
     } catch (e) {
       console.log('  ⚠️ 로그인 폼을 찾을 수 없습니다 (이미 로그인 상태일 수 있음)\n');
@@ -103,7 +103,7 @@ async function scrapeInterviewQuestions(companyName, pool = null) {
 
     const searchUrl = 'https://www.catch.co.kr/Comp/CompMajor/SearchPage';
     await page.goto(searchUrl, { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(3000);
+    await new Promise(r => setTimeout(r, 3000));
 
     const searchTerm = companyName.trim();
     console.log(`  🔍 검색어: '${searchTerm}'`);
@@ -114,7 +114,7 @@ async function scrapeInterviewQuestions(companyName, pool = null) {
 
     // 검색 버튼 클릭
     await page.click('button.bt_sch');
-    await page.waitForTimeout(3000);
+    await new Promise(r => setTimeout(r, 3000));
 
     // 검색 결과에서 정확한 회사 찾기
     const companyLinks = await page.$$('ul.list_corp_round li p.name a');
@@ -149,7 +149,7 @@ async function scrapeInterviewQuestions(companyName, pool = null) {
 
     // 회사 상세 페이지로 이동
     await page.goto(targetUrl, { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(2000);
+    await new Promise(r => setTimeout(r, 2000));
 
     console.log(`  🔗 회사 URL: ${targetUrl}`);
 
@@ -157,7 +157,7 @@ async function scrapeInterviewQuestions(companyName, pool = null) {
     try {
       await page.waitForSelector('a[href*="InterviewQuestionList"]', { timeout: 5000 });
       await page.click('a[href*="InterviewQuestionList"]');
-      await page.waitForTimeout(3000);
+      await new Promise(r => setTimeout(r, 3000));
       console.log('  ✅ 면접기출 탭 클릭 완료');
     } catch (e) {
       console.log('  ❌ 면접기출 탭을 찾을 수 없음');

@@ -7187,6 +7187,17 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
       // Python 스크립트로 채용공고 스크래핑
       const jobsScriptPath = path.join(__dirname, 'catch-scraper-service', 'scrape_latest_jobs.py');
 
+      // 디버깅: 경로 및 파일 존재 확인
+      console.log(`[SCRAPE-JOBS-BG] [DEBUG] __dirname: ${__dirname}`);
+      console.log(`[SCRAPE-JOBS-BG] [DEBUG] jobsScriptPath: ${jobsScriptPath}`);
+      console.log(`[SCRAPE-JOBS-BG] [DEBUG] 파일 존재: ${fs.existsSync(jobsScriptPath) ? 'YES' : 'NO'}`);
+
+      if (!fs.existsSync(jobsScriptPath)) {
+        console.error(`[SCRAPE-JOBS-BG] ❌ Python 스크립트를 찾을 수 없습니다: ${jobsScriptPath}`);
+        console.log(`[SCRAPE-JOBS-BG] 채용공고 스크래핑 건너뜀, 기업정보/면접질문 스크래핑 진행...`);
+        // 스크래핑 건너뛰고 다음 단계로
+      } else {
+
       await new Promise((resolve, reject) => {
         const jobsProcess = spawn(PYTHON_CMD, [jobsScriptPath], {
           shell: true
@@ -7215,6 +7226,8 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
           resolve();
         });
       });
+
+      } // End if (fs.existsSync(jobsScriptPath))
 
       console.log('[SCRAPE-JOBS-BG] 채용공고 스크래핑 완료, DB 동기화 대기 중 (3초)...');
       await new Promise(resolve => setTimeout(resolve, 3000));
