@@ -22,18 +22,25 @@ const CATCH_LOGIN = {
   password: '#test0808'
 };
 
-async function scrapeInterviewQuestions(companyName) {
+async function scrapeInterviewQuestions(companyName, pool = null) {
   let browser = null;
   let connection = null;
+  let shouldCloseConnection = false;
 
   try {
     console.log(`\n${'='.repeat(60)}`);
     console.log(`🚀 단일 회사 면접질문 스크래핑 시작: ${companyName}`);
     console.log('='.repeat(60) + '\n');
 
-    // MySQL 연결
-    connection = await mysql.createConnection(DB_CONFIG);
-    console.log('✅ AWS RDS MySQL 연결 성공\n');
+    // MySQL 연결 (pool이 있으면 사용, 없으면 새로 생성)
+    if (pool) {
+      connection = pool;
+      console.log('✅ 기존 DB pool 사용\n');
+    } else {
+      connection = await mysql.createConnection(DB_CONFIG);
+      shouldCloseConnection = true;
+      console.log('✅ AWS RDS MySQL 연결 성공\n');
+    }
 
     // Puppeteer 브라우저 실행
     browser = await puppeteer.launch({
@@ -198,7 +205,7 @@ async function scrapeInterviewQuestions(companyName) {
       await browser.close();
       console.log('✅ 리소스 정리 완료\n');
     }
-    if (connection) {
+    if (connection && shouldCloseConnection) {
       await connection.end();
     }
   }

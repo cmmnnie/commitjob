@@ -7298,7 +7298,7 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
                 console.log(`[SCRAPE-JOBS-BG] 🚀 ${company} 기업정보 스크래핑 시작...`);
 
                 try {
-                  await scrapeCompanyInfo(company);
+                  await scrapeCompanyInfo(company, pool);
                   console.log(`[SCRAPE-JOBS-BG] ✅ ${company} 기업정보 스크래핑 완료`);
                 } catch (error) {
                   console.error(`[SCRAPE-JOBS-BG] ❌ ${company} 기업정보 스크래핑 실패:`, error.message);
@@ -7314,7 +7314,7 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
                 console.log(`[SCRAPE-JOBS-BG] 🚀 ${company} 면접질문 스크래핑 시작...`);
 
                 try {
-                  await scrapeInterviewQuestions(company);
+                  await scrapeInterviewQuestions(company, pool);
                   console.log(`[SCRAPE-JOBS-BG] ✅ ${company} 면접질문 스크래핑 완료`);
                 } catch (error) {
                   console.error(`[SCRAPE-JOBS-BG] ❌ ${company} 면접질문 스크래핑 실패:`, error.message);
