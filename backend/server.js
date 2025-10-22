@@ -64,6 +64,10 @@ const PORT = Number(process.env.PORT || 4001);
 const CATCH_SCRAPER_URL = process.env.CATCH_SCRAPER_URL || 'http://localhost:3000';
 console.log(`[CONFIG] Catch Scraper URL: ${CATCH_SCRAPER_URL}`);
 
+// Python 명령어 (환경에 따라 python 또는 python3)
+const PYTHON_CMD = process.env.PYTHON_CMD || 'python';
+console.log(`[CONFIG] Python Command: ${PYTHON_CMD}`);
+
 // 모든 네트워크 인터페이스에서 접근 가능하도록 설정 (프론트엔드 팀 접근용)
 const HOST = process.env.HOST || '0.0.0.0';
 
@@ -7182,7 +7186,7 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
       const jobsScriptPath = path.join(__dirname, 'catch-scraper-service', 'scrape_latest_jobs.py');
 
       await new Promise((resolve, reject) => {
-        const jobsProcess = spawn('python3', [jobsScriptPath], {
+        const jobsProcess = spawn(PYTHON_CMD, [jobsScriptPath], {
           shell: true
         });
 
@@ -7268,7 +7272,7 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
                 console.log(`[SCRAPE-JOBS-BG] 🚀 ${company} 기업정보 스크래핑 시작...`);
 
                 await new Promise((resolve, reject) => {
-                  const companyProcess = spawn('python3', [companyScriptPath, company], {
+                  const companyProcess = spawn(PYTHON_CMD, [companyScriptPath, company], {
                     shell: true
                   });
 
@@ -7306,7 +7310,7 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
                 console.log(`[SCRAPE-JOBS-BG] 🚀 ${company} 면접질문 스크래핑 시작...`);
 
                 await new Promise((resolve, reject) => {
-                  const interviewProcess = spawn('python3', [interviewScriptPath, company], {
+                  const interviewProcess = spawn(PYTHON_CMD, [interviewScriptPath, company], {
                     shell: true
                   });
 
