@@ -1531,7 +1531,15 @@ export default function ResumePage() {
                                     {!isEditingExperience && (
                                         experienceList.length > 0 ? (
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                            {experienceList.map((exp, index) => (
+                                            {[...experienceList].sort((a, b) => {
+                                                // 재직중인 경우 가장 위로
+                                                if (a.is_current && !b.is_current) return -1;
+                                                if (!a.is_current && b.is_current) return 1;
+                                                // start_date 기준 내림차순 (최신이 위)
+                                                const dateA = a.start_date || '';
+                                                const dateB = b.start_date || '';
+                                                return dateB.localeCompare(dateA);
+                                            }).map((exp, index) => (
                                                 <div key={index} style={{
                                                     background: 'rgba(255,255,255,0.7)',
                                                     padding: '12px',
@@ -3097,7 +3105,15 @@ export default function ResumePage() {
                                     {!isEditingExperience && (
                                         experienceList.length > 0 ? (
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                            {experienceList.map((exp, index) => (
+                                            {[...experienceList].sort((a, b) => {
+                                                // 재직중인 경우 가장 위로
+                                                if (a.is_current && !b.is_current) return -1;
+                                                if (!a.is_current && b.is_current) return 1;
+                                                // start_date 기준 내림차순 (최신이 위)
+                                                const dateA = a.start_date || '';
+                                                const dateB = b.start_date || '';
+                                                return dateB.localeCompare(dateA);
+                                            }).map((exp, index) => (
                                                 <div key={index} style={{
                                                     background: 'rgba(255,255,255,0.7)',
                                                     padding: '12px',
