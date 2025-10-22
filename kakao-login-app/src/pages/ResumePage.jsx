@@ -62,6 +62,25 @@ export default function ResumePage() {
         date: ''
     });
 
+    // 경력 데이터
+    const [experienceList, setExperienceList] = useState([]);
+
+    // 경력 편집 모드
+    const [isEditingExperience, setIsEditingExperience] = useState(false);
+    const [editingExperienceIndex, setEditingExperienceIndex] = useState(null);
+    const [experienceForm, setExperienceForm] = useState({
+        company: '',
+        location: '',
+        start_date: '',
+        end_date: '',
+        is_current: false,
+        position: '',
+        rank: '',
+        job_title: '',
+        department: '',
+        achievements: ''
+    });
+
     useEffect(() => {
         checkLoginAndLoadProfile();
     }, []);
@@ -74,6 +93,7 @@ export default function ResumePage() {
         setIsEditingCertificate(false); // 자격증 편집 모드도 해제
         setIsEditingLanguage(false); // 어학 편집 모드도 해제
         setIsEditingAward(false); // 수상 편집 모드도 해제
+        setIsEditingExperience(false); // 경력 편집 모드도 해제
     };
 
     // 학력 추가 버튼 클릭
@@ -416,6 +436,97 @@ export default function ResumePage() {
         }
     };
 
+    // 경력 추가 버튼 클릭
+    const handleAddExperience = () => {
+        setExperienceForm({
+            company: '',
+            location: '',
+            start_date: '',
+            end_date: '',
+            is_current: false,
+            position: '',
+            rank: '',
+            job_title: '',
+            department: '',
+            achievements: ''
+        });
+        setEditingExperienceIndex(null);
+        setIsEditingExperience(true);
+    };
+
+    // 경력 수정 버튼 클릭
+    const handleEditExperience = (index) => {
+        setExperienceForm(experienceList[index]);
+        setEditingExperienceIndex(index);
+        setIsEditingExperience(true);
+    };
+
+    // 경력 삭제
+    const handleDeleteExperience = async (index) => {
+        if (!confirm('정말 삭제하시겠습니까?')) return;
+
+        const newList = experienceList.filter((_, i) => i !== index);
+        setExperienceList(newList);
+
+        // 백엔드에 저장
+        await saveExperienceToBackend(newList);
+    };
+
+    // 경력 저장
+    const handleSaveExperience = async () => {
+        if (!experienceForm.company) {
+            alert('회사명은 필수 입력 항목입니다.');
+            return;
+        }
+
+        let newList;
+        if (editingExperienceIndex !== null) {
+            // 수정
+            newList = experienceList.map((exp, i) =>
+                i === editingExperienceIndex ? experienceForm : exp
+            );
+        } else {
+            // 추가
+            newList = [...experienceList, experienceForm];
+        }
+
+        setExperienceList(newList);
+        setIsEditingExperience(false);
+
+        // 백엔드에 저장
+        await saveExperienceToBackend(newList);
+    };
+
+    // 경력 취소
+    const handleCancelExperience = () => {
+        setIsEditingExperience(false);
+        setEditingExperienceIndex(null);
+    };
+
+    // 백엔드에 경력 데이터 저장
+    const saveExperienceToBackend = async (experienceList) => {
+        try {
+            const formData = new FormData();
+            formData.append('user_id', currentUser.id);
+            formData.append('experiences', JSON.stringify(experienceList));
+
+            const response = await fetch(`${CONFIG.BACKEND_URL}/api/profile`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                alert('경력 정보가 저장되었습니다!');
+                await loadUserProfile(currentUser.id);
+            } else {
+                alert('경력 정보 저장에 실패했습니다.');
+            }
+        } catch (error) {
+            console.error('[EXPERIENCE] 저장 오류:', error);
+            alert('경력 정보 저장 중 오류가 발생했습니다.');
+        }
+    };
+
     const checkLoginAndLoadProfile = async () => {
         try {
             setIsLoading(true);
@@ -517,8 +628,14 @@ export default function ResumePage() {
                                 : data.profile.awards;
                             setAwardsList(Array.isArray(awardsData) ? awardsData : []);
                         }
+                        if (data.profile.experiences) {
+                            const expData = typeof data.profile.experiences === 'string'
+                                ? JSON.parse(data.profile.experiences)
+                                : data.profile.experiences;
+                            setExperienceList(Array.isArray(expData) ? expData : []);
+                        }
                     } catch (parseError) {
-                        console.error('[RESUME] 학력/자격/어학/수상 데이터 파싱 오류:', parseError);
+                        console.error('[RESUME] 학력/자격/어학/수상/경력 데이터 파싱 오류:', parseError);
                     }
                 }
             } else if (response.status === 404) {
@@ -1122,32 +1239,358 @@ export default function ResumePage() {
 
                         {/* 경력 탭 */}
                         {activeTab === 'experience' && (
-                            <div style={{
-                                background: '#f8f9fa',
-                                borderRadius: '12px',
-                                padding: '40px 20px',
-                                textAlign: 'center',
-                                minHeight: '200px',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                            }}>
-                                <div style={{ fontSize: '3rem', marginBottom: '15px' }}>💼</div>
-                                <h3 style={{
-                                    fontSize: '1.2rem',
-                                    color: '#333',
-                                    marginBottom: '10px',
-                                    fontWeight: '700'
-                                }}>경력 정보</h3>
-                                <p style={{
-                                    color: '#666',
-                                    fontSize: '0.9rem',
-                                    lineHeight: '1.6'
+                            <>
+                                <div style={{
+                                    background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
+                                    borderRadius: '15px',
+                                    padding: '18px',
+                                    marginBottom: '12px'
                                 }}>
-                                    상세한 경력 정보를 입력하는 기능은<br/>곧 추가될 예정입니다.
-                                </p>
-                            </div>
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        marginBottom: '12px'
+                                    }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <span style={{ fontSize: '1.2rem' }}>💼</span>
+                                            <h3 style={{
+                                                fontSize: '1.05rem',
+                                                color: '#333',
+                                                fontWeight: '600',
+                                                margin: 0
+                                            }}>경력</h3>
+                                        </div>
+                                        <button
+                                            onClick={handleAddExperience}
+                                            style={{
+                                                padding: '4px 10px',
+                                                background: 'linear-gradient(135deg, #7f8c8d 0%, #5d6d7e 100%)',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '8px',
+                                                fontSize: '0.85rem',
+                                                fontWeight: '600',
+                                                cursor: 'pointer',
+                                                boxShadow: '0 2px 8px rgba(93, 109, 126, 0.4)'
+                                            }}
+                                        >
+                                            추가
+                                        </button>
+                                    </div>
+
+                                    {/* 경력 입력 폼 */}
+                                    {isEditingExperience && (
+                                        <div style={{
+                                            background: 'white',
+                                            padding: '15px',
+                                            borderRadius: '10px',
+                                            marginBottom: '12px',
+                                            border: '2px solid #2196f3'
+                                        }}>
+                                            <div style={{ marginBottom: '12px' }}>
+                                                <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: '600', color: '#333' }}>
+                                                    회사명 *
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={experienceForm.company}
+                                                    onChange={(e) => setExperienceForm({...experienceForm, company: e.target.value})}
+                                                    placeholder="예: (주)삼성전자"
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '8px',
+                                                        borderRadius: '6px',
+                                                        border: '1px solid #ddd',
+                                                        fontSize: '0.9rem'
+                                                    }}
+                                                />
+                                            </div>
+                                            <div style={{ marginBottom: '12px' }}>
+                                                <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: '600', color: '#333' }}>
+                                                    근무지역
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={experienceForm.location}
+                                                    onChange={(e) => setExperienceForm({...experienceForm, location: e.target.value})}
+                                                    placeholder="예: 서울 강남구"
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '8px',
+                                                        borderRadius: '6px',
+                                                        border: '1px solid #ddd',
+                                                        fontSize: '0.9rem'
+                                                    }}
+                                                />
+                                            </div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                                                <div>
+                                                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: '600', color: '#333' }}>
+                                                        입사일
+                                                    </label>
+                                                    <input
+                                                        type="month"
+                                                        value={experienceForm.start_date}
+                                                        onChange={(e) => setExperienceForm({...experienceForm, start_date: e.target.value})}
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '8px',
+                                                            borderRadius: '6px',
+                                                            border: '1px solid #ddd',
+                                                            fontSize: '0.9rem'
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: '600', color: '#333' }}>
+                                                        퇴사일
+                                                    </label>
+                                                    <input
+                                                        type="month"
+                                                        value={experienceForm.end_date}
+                                                        onChange={(e) => setExperienceForm({...experienceForm, end_date: e.target.value})}
+                                                        disabled={experienceForm.is_current}
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '8px',
+                                                            borderRadius: '6px',
+                                                            border: '1px solid #ddd',
+                                                            fontSize: '0.9rem',
+                                                            backgroundColor: experienceForm.is_current ? '#f5f5f5' : 'white'
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div style={{ marginBottom: '12px' }}>
+                                                <label style={{ display: 'flex', alignItems: 'center', fontSize: '0.85rem', color: '#333', cursor: 'pointer' }}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={experienceForm.is_current}
+                                                        onChange={(e) => setExperienceForm({
+                                                            ...experienceForm,
+                                                            is_current: e.target.checked,
+                                                            end_date: e.target.checked ? '' : experienceForm.end_date
+                                                        })}
+                                                        style={{ marginRight: '6px' }}
+                                                    />
+                                                    재직중
+                                                </label>
+                                            </div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                                                <div>
+                                                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: '600', color: '#333' }}>
+                                                        직무
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={experienceForm.position}
+                                                        onChange={(e) => setExperienceForm({...experienceForm, position: e.target.value})}
+                                                        placeholder="예: 백엔드 개발"
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '8px',
+                                                            borderRadius: '6px',
+                                                            border: '1px solid #ddd',
+                                                            fontSize: '0.9rem'
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: '600', color: '#333' }}>
+                                                        직급
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={experienceForm.rank}
+                                                        onChange={(e) => setExperienceForm({...experienceForm, rank: e.target.value})}
+                                                        placeholder="예: 대리"
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '8px',
+                                                            borderRadius: '6px',
+                                                            border: '1px solid #ddd',
+                                                            fontSize: '0.9rem'
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: '600', color: '#333' }}>
+                                                        직책
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={experienceForm.job_title}
+                                                        onChange={(e) => setExperienceForm({...experienceForm, job_title: e.target.value})}
+                                                        placeholder="예: 팀장"
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '8px',
+                                                            borderRadius: '6px',
+                                                            border: '1px solid #ddd',
+                                                            fontSize: '0.9rem'
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div style={{ marginBottom: '12px' }}>
+                                                <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: '600', color: '#333' }}>
+                                                    근무부서
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={experienceForm.department}
+                                                    onChange={(e) => setExperienceForm({...experienceForm, department: e.target.value})}
+                                                    placeholder="예: IT개발팀"
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '8px',
+                                                        borderRadius: '6px',
+                                                        border: '1px solid #ddd',
+                                                        fontSize: '0.9rem'
+                                                    }}
+                                                />
+                                            </div>
+                                            <div style={{ marginBottom: '15px' }}>
+                                                <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: '600', color: '#333' }}>
+                                                    주요 성과
+                                                </label>
+                                                <textarea
+                                                    value={experienceForm.achievements}
+                                                    onChange={(e) => setExperienceForm({...experienceForm, achievements: e.target.value})}
+                                                    placeholder="주요 업무 및 성과를 입력하세요"
+                                                    rows={4}
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '8px',
+                                                        borderRadius: '6px',
+                                                        border: '1px solid #ddd',
+                                                        fontSize: '0.9rem',
+                                                        resize: 'vertical'
+                                                    }}
+                                                />
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                <button
+                                                    onClick={handleCancelExperience}
+                                                    style={{
+                                                        padding: '8px 16px',
+                                                        background: '#e0e0e0',
+                                                        color: '#666',
+                                                        border: 'none',
+                                                        borderRadius: '6px',
+                                                        fontSize: '0.85rem',
+                                                        fontWeight: '600',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    취소
+                                                </button>
+                                                <button
+                                                    onClick={handleSaveExperience}
+                                                    style={{
+                                                        padding: '8px 16px',
+                                                        background: 'linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%)',
+                                                        color: 'white',
+                                                        border: 'none',
+                                                        borderRadius: '8px',
+                                                        fontSize: '0.85rem',
+                                                        fontWeight: '600',
+                                                        cursor: 'pointer',
+                                                        boxShadow: '0 2px 8px rgba(149, 165, 166, 0.3)'
+                                                    }}
+                                                >
+                                                    저장
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* 경력 목록 */}
+                                    {experienceList.length > 0 ? (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                            {experienceList.map((exp, index) => (
+                                                <div key={index} style={{
+                                                    background: 'rgba(255,255,255,0.7)',
+                                                    padding: '12px',
+                                                    borderRadius: '8px',
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'flex-start'
+                                                }}>
+                                                    <div style={{ flex: 1 }}>
+                                                        <div style={{ fontWeight: '600', color: '#333', marginBottom: '4px' }}>
+                                                            {exp.company}
+                                                        </div>
+                                                        <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: '2px' }}>
+                                                            {exp.position && `${exp.position}`}
+                                                            {exp.rank && ` | ${exp.rank}`}
+                                                            {exp.job_title && ` | ${exp.job_title}`}
+                                                        </div>
+                                                        <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: '2px' }}>
+                                                            {exp.department && `${exp.department}`}
+                                                            {exp.location && ` | ${exp.location}`}
+                                                        </div>
+                                                        {exp.start_date && (
+                                                            <div style={{ fontSize: '0.8rem', color: '#999', marginBottom: '4px' }}>
+                                                                {exp.start_date} ~ {exp.is_current ? '재직중' : (exp.end_date || '현재')}
+                                                            </div>
+                                                        )}
+                                                        {exp.achievements && (
+                                                            <div style={{ fontSize: '0.85rem', color: '#555', marginTop: '6px', whiteSpace: 'pre-wrap' }}>
+                                                                {exp.achievements}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div style={{ display: 'flex', gap: '4px', marginLeft: '12px' }}>
+                                                        <button
+                                                            onClick={() => handleEditExperience(index)}
+                                                            style={{
+                                                                padding: '4px 10px',
+                                                                background: 'linear-gradient(135deg, #7f8c8d 0%, #5d6d7e 100%)',
+                                                                color: 'white',
+                                                                border: 'none',
+                                                                borderRadius: '6px',
+                                                                fontSize: '0.75rem',
+                                                                fontWeight: '600',
+                                                                cursor: 'pointer',
+                                                                boxShadow: '0 1px 4px rgba(93, 109, 126, 0.4)'
+                                                            }}
+                                                        >
+                                                            수정
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteExperience(index)}
+                                                            style={{
+                                                                padding: '4px 10px',
+                                                                background: 'linear-gradient(135deg, #ff69b4 0%, #ff1493 100%)',
+                                                                color: 'white',
+                                                                border: 'none',
+                                                                borderRadius: '6px',
+                                                                fontSize: '0.75rem',
+                                                                fontWeight: '600',
+                                                                cursor: 'pointer',
+                                                                boxShadow: '0 1px 4px rgba(255, 105, 180, 0.4)'
+                                                            }}
+                                                        >
+                                                            삭제
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div style={{
+                                            padding: '20px',
+                                            textAlign: 'center',
+                                            color: '#999',
+                                            fontSize: '0.9rem'
+                                        }}>
+                                            등록된 경력이 없습니다
+                                        </div>
+                                    )}
+                                </div>
+                            </>
                         )}
 
                         {/* 학력/자격/수상 탭 */}
@@ -2339,32 +2782,358 @@ export default function ResumePage() {
 
                         {/* 경력 탭 - 편집 모드 */}
                         {activeTab === 'experience' && (
-                            <div style={{
-                                background: '#f8f9fa',
-                                borderRadius: '12px',
-                                padding: '40px 20px',
-                                textAlign: 'center',
-                                minHeight: '200px',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                            }}>
-                                <div style={{ fontSize: '3rem', marginBottom: '15px' }}>💼</div>
-                                <h3 style={{
-                                    fontSize: '1.2rem',
-                                    color: '#333',
-                                    marginBottom: '10px',
-                                    fontWeight: '700'
-                                }}>경력 정보</h3>
-                                <p style={{
-                                    color: '#666',
-                                    fontSize: '0.9rem',
-                                    lineHeight: '1.6'
+                            <>
+                                <div style={{
+                                    background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
+                                    borderRadius: '15px',
+                                    padding: '18px',
+                                    marginBottom: '12px'
                                 }}>
-                                    상세한 경력 정보를 입력하는 기능은<br/>곧 추가될 예정입니다.
-                                </p>
-                            </div>
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        marginBottom: '12px'
+                                    }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <span style={{ fontSize: '1.2rem' }}>💼</span>
+                                            <h3 style={{
+                                                fontSize: '1.05rem',
+                                                color: '#333',
+                                                fontWeight: '600',
+                                                margin: 0
+                                            }}>경력</h3>
+                                        </div>
+                                        <button
+                                            onClick={handleAddExperience}
+                                            style={{
+                                                padding: '4px 10px',
+                                                background: 'linear-gradient(135deg, #7f8c8d 0%, #5d6d7e 100%)',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '8px',
+                                                fontSize: '0.85rem',
+                                                fontWeight: '600',
+                                                cursor: 'pointer',
+                                                boxShadow: '0 2px 8px rgba(93, 109, 126, 0.4)'
+                                            }}
+                                        >
+                                            추가
+                                        </button>
+                                    </div>
+
+                                    {/* 경력 입력 폼 */}
+                                    {isEditingExperience && (
+                                        <div style={{
+                                            background: 'white',
+                                            padding: '15px',
+                                            borderRadius: '10px',
+                                            marginBottom: '12px',
+                                            border: '2px solid #2196f3'
+                                        }}>
+                                            <div style={{ marginBottom: '12px' }}>
+                                                <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: '600', color: '#333' }}>
+                                                    회사명 *
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={experienceForm.company}
+                                                    onChange={(e) => setExperienceForm({...experienceForm, company: e.target.value})}
+                                                    placeholder="예: (주)삼성전자"
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '8px',
+                                                        borderRadius: '6px',
+                                                        border: '1px solid #ddd',
+                                                        fontSize: '0.9rem'
+                                                    }}
+                                                />
+                                            </div>
+                                            <div style={{ marginBottom: '12px' }}>
+                                                <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: '600', color: '#333' }}>
+                                                    근무지역
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={experienceForm.location}
+                                                    onChange={(e) => setExperienceForm({...experienceForm, location: e.target.value})}
+                                                    placeholder="예: 서울 강남구"
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '8px',
+                                                        borderRadius: '6px',
+                                                        border: '1px solid #ddd',
+                                                        fontSize: '0.9rem'
+                                                    }}
+                                                />
+                                            </div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                                                <div>
+                                                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: '600', color: '#333' }}>
+                                                        입사일
+                                                    </label>
+                                                    <input
+                                                        type="month"
+                                                        value={experienceForm.start_date}
+                                                        onChange={(e) => setExperienceForm({...experienceForm, start_date: e.target.value})}
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '8px',
+                                                            borderRadius: '6px',
+                                                            border: '1px solid #ddd',
+                                                            fontSize: '0.9rem'
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: '600', color: '#333' }}>
+                                                        퇴사일
+                                                    </label>
+                                                    <input
+                                                        type="month"
+                                                        value={experienceForm.end_date}
+                                                        onChange={(e) => setExperienceForm({...experienceForm, end_date: e.target.value})}
+                                                        disabled={experienceForm.is_current}
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '8px',
+                                                            borderRadius: '6px',
+                                                            border: '1px solid #ddd',
+                                                            fontSize: '0.9rem',
+                                                            backgroundColor: experienceForm.is_current ? '#f5f5f5' : 'white'
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div style={{ marginBottom: '12px' }}>
+                                                <label style={{ display: 'flex', alignItems: 'center', fontSize: '0.85rem', color: '#333', cursor: 'pointer' }}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={experienceForm.is_current}
+                                                        onChange={(e) => setExperienceForm({
+                                                            ...experienceForm,
+                                                            is_current: e.target.checked,
+                                                            end_date: e.target.checked ? '' : experienceForm.end_date
+                                                        })}
+                                                        style={{ marginRight: '6px' }}
+                                                    />
+                                                    재직중
+                                                </label>
+                                            </div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                                                <div>
+                                                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: '600', color: '#333' }}>
+                                                        직무
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={experienceForm.position}
+                                                        onChange={(e) => setExperienceForm({...experienceForm, position: e.target.value})}
+                                                        placeholder="예: 백엔드 개발"
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '8px',
+                                                            borderRadius: '6px',
+                                                            border: '1px solid #ddd',
+                                                            fontSize: '0.9rem'
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: '600', color: '#333' }}>
+                                                        직급
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={experienceForm.rank}
+                                                        onChange={(e) => setExperienceForm({...experienceForm, rank: e.target.value})}
+                                                        placeholder="예: 대리"
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '8px',
+                                                            borderRadius: '6px',
+                                                            border: '1px solid #ddd',
+                                                            fontSize: '0.9rem'
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: '600', color: '#333' }}>
+                                                        직책
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={experienceForm.job_title}
+                                                        onChange={(e) => setExperienceForm({...experienceForm, job_title: e.target.value})}
+                                                        placeholder="예: 팀장"
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '8px',
+                                                            borderRadius: '6px',
+                                                            border: '1px solid #ddd',
+                                                            fontSize: '0.9rem'
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div style={{ marginBottom: '12px' }}>
+                                                <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: '600', color: '#333' }}>
+                                                    근무부서
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={experienceForm.department}
+                                                    onChange={(e) => setExperienceForm({...experienceForm, department: e.target.value})}
+                                                    placeholder="예: IT개발팀"
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '8px',
+                                                        borderRadius: '6px',
+                                                        border: '1px solid #ddd',
+                                                        fontSize: '0.9rem'
+                                                    }}
+                                                />
+                                            </div>
+                                            <div style={{ marginBottom: '15px' }}>
+                                                <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: '600', color: '#333' }}>
+                                                    주요 성과
+                                                </label>
+                                                <textarea
+                                                    value={experienceForm.achievements}
+                                                    onChange={(e) => setExperienceForm({...experienceForm, achievements: e.target.value})}
+                                                    placeholder="주요 업무 및 성과를 입력하세요"
+                                                    rows={4}
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '8px',
+                                                        borderRadius: '6px',
+                                                        border: '1px solid #ddd',
+                                                        fontSize: '0.9rem',
+                                                        resize: 'vertical'
+                                                    }}
+                                                />
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                <button
+                                                    onClick={handleCancelExperience}
+                                                    style={{
+                                                        padding: '8px 16px',
+                                                        background: '#e0e0e0',
+                                                        color: '#666',
+                                                        border: 'none',
+                                                        borderRadius: '6px',
+                                                        fontSize: '0.85rem',
+                                                        fontWeight: '600',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    취소
+                                                </button>
+                                                <button
+                                                    onClick={handleSaveExperience}
+                                                    style={{
+                                                        padding: '8px 16px',
+                                                        background: 'linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%)',
+                                                        color: 'white',
+                                                        border: 'none',
+                                                        borderRadius: '8px',
+                                                        fontSize: '0.85rem',
+                                                        fontWeight: '600',
+                                                        cursor: 'pointer',
+                                                        boxShadow: '0 2px 8px rgba(149, 165, 166, 0.3)'
+                                                    }}
+                                                >
+                                                    저장
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* 경력 목록 */}
+                                    {experienceList.length > 0 ? (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                            {experienceList.map((exp, index) => (
+                                                <div key={index} style={{
+                                                    background: 'rgba(255,255,255,0.7)',
+                                                    padding: '12px',
+                                                    borderRadius: '8px',
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'flex-start'
+                                                }}>
+                                                    <div style={{ flex: 1 }}>
+                                                        <div style={{ fontWeight: '600', color: '#333', marginBottom: '4px' }}>
+                                                            {exp.company}
+                                                        </div>
+                                                        <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: '2px' }}>
+                                                            {exp.position && `${exp.position}`}
+                                                            {exp.rank && ` | ${exp.rank}`}
+                                                            {exp.job_title && ` | ${exp.job_title}`}
+                                                        </div>
+                                                        <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: '2px' }}>
+                                                            {exp.department && `${exp.department}`}
+                                                            {exp.location && ` | ${exp.location}`}
+                                                        </div>
+                                                        {exp.start_date && (
+                                                            <div style={{ fontSize: '0.8rem', color: '#999', marginBottom: '4px' }}>
+                                                                {exp.start_date} ~ {exp.is_current ? '재직중' : (exp.end_date || '현재')}
+                                                            </div>
+                                                        )}
+                                                        {exp.achievements && (
+                                                            <div style={{ fontSize: '0.85rem', color: '#555', marginTop: '6px', whiteSpace: 'pre-wrap' }}>
+                                                                {exp.achievements}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div style={{ display: 'flex', gap: '4px', marginLeft: '12px' }}>
+                                                        <button
+                                                            onClick={() => handleEditExperience(index)}
+                                                            style={{
+                                                                padding: '4px 10px',
+                                                                background: 'linear-gradient(135deg, #7f8c8d 0%, #5d6d7e 100%)',
+                                                                color: 'white',
+                                                                border: 'none',
+                                                                borderRadius: '6px',
+                                                                fontSize: '0.75rem',
+                                                                fontWeight: '600',
+                                                                cursor: 'pointer',
+                                                                boxShadow: '0 1px 4px rgba(93, 109, 126, 0.4)'
+                                                            }}
+                                                        >
+                                                            수정
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteExperience(index)}
+                                                            style={{
+                                                                padding: '4px 10px',
+                                                                background: 'linear-gradient(135deg, #ff69b4 0%, #ff1493 100%)',
+                                                                color: 'white',
+                                                                border: 'none',
+                                                                borderRadius: '6px',
+                                                                fontSize: '0.75rem',
+                                                                fontWeight: '600',
+                                                                cursor: 'pointer',
+                                                                boxShadow: '0 1px 4px rgba(255, 105, 180, 0.4)'
+                                                            }}
+                                                        >
+                                                            삭제
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div style={{
+                                            padding: '20px',
+                                            textAlign: 'center',
+                                            color: '#999',
+                                            fontSize: '0.9rem'
+                                        }}>
+                                            등록된 경력이 없습니다
+                                        </div>
+                                    )}
+                                </div>
+                            </>
                         )}
 
                         {/* 학력/자격/수상 탭 - 편집 모드 */}

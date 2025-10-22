@@ -1354,6 +1354,7 @@ app.get('/api/profile', async (req, res) => {
         up.certificates,
         up.languages,
         up.awards,
+        up.experiences,
         up.created_at as profile_created_at,
         up.updated_at as profile_updated_at
       FROM users u
@@ -1411,6 +1412,7 @@ app.get('/api/profile', async (req, res) => {
         certificates: safeParseJSON(data.certificates),
         languages: safeParseJSON(data.languages),
         awards: safeParseJSON(data.awards),
+        experiences: safeParseJSON(data.experiences),
         created_at: data.profile_created_at,
         updated_at: data.profile_updated_at
       } : null
@@ -1642,6 +1644,10 @@ app.post('/api/profile', uploadProfile.single('resume'), async (req, res) => {
         updateFields.push('awards = ?');
         updateValues.push(typeof awards === 'string' ? awards : JSON.stringify(awards));
       }
+      if (req.body.experiences) {
+        updateFields.push('experiences = ?');
+        updateValues.push(typeof req.body.experiences === 'string' ? req.body.experiences : JSON.stringify(req.body.experiences));
+      }
 
       updateFields.push('updated_at = CURRENT_TIMESTAMP');
       updateValues.push(user_id);
@@ -1664,7 +1670,7 @@ app.post('/api/profile', uploadProfile.single('resume'), async (req, res) => {
         throw new Error('희망지역 데이터 형식이 올바르지 않습니다');
       }
 
-      const insertSQL = 'INSERT INTO user_profiles (user_id, preferred_jobs, experience, preferred_regions, skills, expected_salary, resume_path, education, certificates, languages, awards, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())';
+      const insertSQL = 'INSERT INTO user_profiles (user_id, preferred_jobs, experience, preferred_regions, skills, expected_salary, resume_path, education, certificates, languages, awards, experiences, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())';
       const insertParams = [
         user_id,
         jobs,
@@ -1676,7 +1682,8 @@ app.post('/api/profile', uploadProfile.single('resume'), async (req, res) => {
         education ? (typeof education === 'string' ? education : JSON.stringify(education)) : null,
         certificates ? (typeof certificates === 'string' ? certificates : JSON.stringify(certificates)) : null,
         languages ? (typeof languages === 'string' ? languages : JSON.stringify(languages)) : null,
-        awards ? (typeof awards === 'string' ? awards : JSON.stringify(awards)) : null
+        awards ? (typeof awards === 'string' ? awards : JSON.stringify(awards)) : null,
+        req.body.experiences ? (typeof req.body.experiences === 'string' ? req.body.experiences : JSON.stringify(req.body.experiences)) : null
       ];
 
       console.log('[PROFILE] INSERT SQL:', insertSQL);
