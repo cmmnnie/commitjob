@@ -7298,7 +7298,8 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
 
                 await new Promise((resolve, reject) => {
                   const companyProcess = spawn('node', [companyScriptPath, company], {
-                    shell: true
+                    shell: true,
+                    env: process.env
                   });
 
                   companyProcess.stdout.on('data', (data) => {
@@ -7336,7 +7337,8 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
 
                 await new Promise((resolve, reject) => {
                   const interviewProcess = spawn('node', [interviewScriptPath, company], {
-                    shell: true
+                    shell: true,
+                    env: process.env
                   });
 
                   interviewProcess.stdout.on('data', (data) => {
