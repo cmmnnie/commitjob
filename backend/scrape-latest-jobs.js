@@ -128,18 +128,32 @@ async function scrapeCategoryJobs(page, connection, categoryName, categoryCode, 
     // 카테고리 선택
     console.log(`📂 카테고리 선택: ${categoryName}`);
 
-    // 직무 버튼 클릭
-    await page.waitForSelector('button.bt:has-text("직무")', { timeout: 10000 });
-    await page.click('button.bt:has-text("직무")');
+    // 직무 버튼 클릭 (XPath 사용)
+    await page.waitForFunction(() => {
+      const buttons = Array.from(document.querySelectorAll('button.bt'));
+      return buttons.some(btn => btn.textContent.includes('직무'));
+    }, { timeout: 10000 });
+
+    await page.evaluate(() => {
+      const buttons = Array.from(document.querySelectorAll('button.bt'));
+      const jobBtn = buttons.find(btn => btn.textContent.includes('직무'));
+      if (jobBtn) jobBtn.click();
+    });
     await new Promise(r => setTimeout(r, 1000));
 
     // 카테고리 선택
-    const categorySelector = categoryCode === 'IT'
-      ? 'button.bt span:has-text("IT개발")'
-      : 'button.bt span:has-text("빅데이터·AI")';
+    const categoryText = categoryCode === 'IT' ? 'IT개발' : '빅데이터·AI';
 
-    await page.waitForSelector(categorySelector, { timeout: 10000 });
-    await page.click(categorySelector);
+    await page.waitForFunction((text) => {
+      const buttons = Array.from(document.querySelectorAll('button.bt'));
+      return buttons.some(btn => btn.textContent.includes(text));
+    }, { timeout: 10000 }, categoryText);
+
+    await page.evaluate((text) => {
+      const buttons = Array.from(document.querySelectorAll('button.bt'));
+      const categoryBtn = buttons.find(btn => btn.textContent.includes(text));
+      if (categoryBtn) categoryBtn.click();
+    }, categoryText);
     await new Promise(r => setTimeout(r, 2000));
     console.log(`✅ ${categoryName} 카테고리 선택 완료\n`);
 
