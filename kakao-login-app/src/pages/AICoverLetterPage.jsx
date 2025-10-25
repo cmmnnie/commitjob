@@ -13,6 +13,7 @@ export default function AICoverLetterPage() {
     const [selectedJobId, setSelectedJobId] = useState('');
     const [isLoadingJobs, setIsLoadingJobs] = useState(false);
     const debounceTimer = useRef(null);
+    const initialJobId = useRef(null); // location.state에서 전달받은 jobId 저장
     const [coverLetter, setCoverLetter] = useState(null);
     const [isCoverLetterLoading, setIsCoverLetterLoading] = useState(false);
     const [userCoverLetter, setUserCoverLetter] = useState('');
@@ -42,7 +43,8 @@ export default function AICoverLetterPage() {
             setCompanyName(location.state.companyName);
         }
         if (location.state?.jobId) {
-            setSelectedJobId(location.state.jobId.toString());
+            initialJobId.current = location.state.jobId.toString();
+            console.log('[AI자소서] location.state에서 jobId 받음:', initialJobId.current);
         }
     }, []);
 
@@ -153,7 +155,21 @@ export default function AICoverLetterPage() {
                 const data = await response.json();
                 if (data.success && data.jobs) {
                     setJobPostings(data.jobs);
-                    setSelectedJobId(''); // 초기화
+
+                    // initialJobId가 있고, 해당 jobId가 목록에 있으면 자동 선택
+                    if (initialJobId.current) {
+                        const jobExists = data.jobs.some(job => job.id.toString() === initialJobId.current);
+                        if (jobExists) {
+                            console.log('[AI자소서] 채용공고 자동 선택:', initialJobId.current);
+                            setSelectedJobId(initialJobId.current);
+                            initialJobId.current = null; // 한번만 사용
+                        } else {
+                            console.log('[AI자소서] 전달받은 jobId가 목록에 없음:', initialJobId.current);
+                            setSelectedJobId(''); // 초기화
+                        }
+                    } else {
+                        setSelectedJobId(''); // 초기화
+                    }
                 } else {
                     setJobPostings([]);
                 }
