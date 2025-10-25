@@ -249,7 +249,9 @@ export default function AICoverLetterPage() {
             });
 
             if (!response.ok) {
-                throw new Error('피드백 생성에 실패했습니다.');
+                const errorData = await response.json().catch(() => ({}));
+                console.error('[피드백 생성] 백엔드 에러:', errorData);
+                throw new Error(errorData.error || '피드백 생성에 실패했습니다.');
             }
 
             const data = await response.json();
@@ -260,7 +262,7 @@ export default function AICoverLetterPage() {
             }
         } catch (err) {
             console.error('[피드백 생성] 오류:', err);
-            alert('피드백 생성에 실패했습니다. 다시 시도해주세요.');
+            alert(`피드백 생성에 실패했습니다: ${err.message}`);
         } finally {
             setIsFeedbackLoading(false);
         }
@@ -418,7 +420,9 @@ export default function AICoverLetterPage() {
             });
 
             if (!response.ok) {
-                throw new Error('피드백 생성에 실패했습니다.');
+                const errorData = await response.json().catch(() => ({}));
+                console.error('[이력서 자소서 피드백 생성] 백엔드 에러:', errorData);
+                throw new Error(errorData.error || '피드백 생성에 실패했습니다.');
             }
 
             const data = await response.json();
@@ -432,7 +436,7 @@ export default function AICoverLetterPage() {
             }
         } catch (err) {
             console.error('[이력서 자소서 피드백 생성] 오류:', err);
-            alert('피드백 생성에 실패했습니다. 다시 시도해주세요.');
+            alert(`피드백 생성에 실패했습니다: ${err.message}`);
         } finally {
             setLoadingResumeFeedbackIndex(null);
         }
