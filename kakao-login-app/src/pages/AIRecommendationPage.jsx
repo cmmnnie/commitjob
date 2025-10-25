@@ -8,7 +8,6 @@ export default function AIRecommendationPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [recommendations, setRecommendations] = useState(null);
     const [error, setError] = useState(null);
-    const [selectedJob, setSelectedJob] = useState(null);
 
     // 이름 마스킹 함수
     const maskName = (name) => {
@@ -163,7 +162,7 @@ export default function AIRecommendationPage() {
                 e.currentTarget.style.boxShadow = 'none';
                 e.currentTarget.style.transform = 'translateY(0)';
             }}
-            onClick={() => setSelectedJob(job)}
+            onClick={() => navigate(`/job-detail/${job.id}`, { state: { job } })}
         >
             <div style={{
                 display: 'flex',

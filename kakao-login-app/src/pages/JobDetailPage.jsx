@@ -141,6 +141,42 @@ export default function JobDetailPage() {
                 maxWidth: '800px',
                 margin: '0 auto'
             }}>
+                {/* 뒤로가기 버튼 */}
+                <button
+                    onClick={() => navigate(-1)}
+                    style={{
+                        background: 'white',
+                        border: '2px solid rgba(102, 126, 234, 0.3)',
+                        borderRadius: '12px',
+                        padding: '12px 24px',
+                        marginBottom: '20px',
+                        fontSize: '1rem',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        color: '#667eea',
+                        transition: 'all 0.2s',
+                        boxShadow: '0 4px 12px rgba(102, 126, 234, 0.15)'
+                    }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#667eea';
+                        e.currentTarget.style.color = 'white';
+                        e.currentTarget.style.transform = 'translateX(-4px)';
+                        e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.25)';
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'white';
+                        e.currentTarget.style.color = '#667eea';
+                        e.currentTarget.style.transform = 'translateX(0)';
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.15)';
+                    }}
+                >
+                    <span style={{ fontSize: '1.2rem' }}>←</span>
+                    <span>뒤로가기</span>
+                </button>
+
                 {/* 헤더 */}
                 <div style={{
                     background: 'linear-gradient(135deg, #ffffff 0%, #fafafa 100%)',
