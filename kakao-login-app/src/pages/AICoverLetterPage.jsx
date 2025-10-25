@@ -1476,6 +1476,35 @@ export default function AICoverLetterPage() {
                         />
                     </div>
 
+                    {/* 불러오기 버튼 */}
+                    <div style={{ marginBottom: '18px' }}>
+                        <button
+                            onClick={() => setShowLoadModal(true)}
+                            style={{
+                                width: '100%',
+                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                color: 'white',
+                                border: 'none',
+                                padding: '13px 20px',
+                                borderRadius: '10px',
+                                fontSize: '1rem',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.4)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
+                            }}>
+                            📂 저장된 자소서 불러오기
+                        </button>
+                    </div>
+
                     <button
                         onClick={getFeedback}
                         disabled={isFeedbackLoading}
