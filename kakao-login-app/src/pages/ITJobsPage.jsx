@@ -263,7 +263,7 @@ export default function ITJobsPage() {
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
-                                // AI면접 기능 추후 개발
+                                navigate('/interview', { state: { companyName: job.company } });
                             }}
                             style={{
                                 background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
