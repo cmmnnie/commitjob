@@ -1474,7 +1474,7 @@ export default function AICoverLetterPage() {
                             placeholder="작성하신 자기소개서를 입력하세요. AI가 피드백을 제공합니다."
                             style={{
                                 width: '100%',
-                                minHeight: '200px',
+                                minHeight: '400px',
                                 padding: '14px',
                                 border: '2px solid #e2e8f0',
                                 borderRadius: '10px',
