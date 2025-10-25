@@ -130,7 +130,10 @@ export default function AICoverLetterPage() {
 
     // 회사명 입력 시 채용공고 조회
     const fetchJobPostings = async (company) => {
+        console.log('[AI자소서-채용공고조회] 시작 - 회사명:', company);
+
         if (!company.trim()) {
+            console.log('[AI자소서-채용공고조회] 회사명이 비어있어 종료');
             setJobPostings([]);
             setSelectedJobId('');
             return;
@@ -139,25 +142,34 @@ export default function AICoverLetterPage() {
         setIsLoadingJobs(true);
         try {
             const token = localStorage.getItem('app_session');
-            const response = await fetch(
-                `${CONFIG.BACKEND_URL}/api/jobs-by-company?company=${encodeURIComponent(company.trim())}&includeAlways=true`,
-                {
-                    method: 'GET',
-                    credentials: 'include',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    }
+            const url = `${CONFIG.BACKEND_URL}/api/jobs-by-company?company=${encodeURIComponent(company.trim())}&includeAlways=true`;
+            console.log('[AI자소서-채용공고조회] API 호출:', url);
+
+            const response = await fetch(url, {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 }
-            );
+            });
+
+            console.log('[AI자소서-채용공고조회] 응답 상태:', response.status, response.statusText);
 
             if (response.ok) {
                 const data = await response.json();
+                console.log('[AI자소서-채용공고조회] 응답 데이터:', data);
+
                 if (data.success && data.jobs) {
+                    console.log('[AI자소서-채용공고조회] 채용공고 수:', data.jobs.length);
+                    data.jobs.forEach((job, idx) => {
+                        console.log(`  [${idx + 1}] ID: ${job.id}, 제목: ${job.title}`);
+                    });
                     setJobPostings(data.jobs);
 
                     // initialJobId가 있고, 해당 jobId가 목록에 있으면 자동 선택
                     if (initialJobId.current) {
+                        console.log('[AI자소서-채용공고조회] initialJobId 확인:', initialJobId.current);
                         const jobExists = data.jobs.some(job => job.id.toString() === initialJobId.current);
                         if (jobExists) {
                             console.log('[AI자소서] 채용공고 자동 선택:', initialJobId.current);
@@ -165,22 +177,29 @@ export default function AICoverLetterPage() {
                             initialJobId.current = null; // 한번만 사용
                         } else {
                             console.log('[AI자소서] 전달받은 jobId가 목록에 없음:', initialJobId.current);
+                            console.log('[AI자소서] 목록의 ID들:', data.jobs.map(j => j.id.toString()));
                             setSelectedJobId(''); // 초기화
                         }
                     } else {
+                        console.log('[AI자소서-채용공고조회] initialJobId 없음, 초기화');
                         setSelectedJobId(''); // 초기화
                     }
                 } else {
+                    console.log('[AI자소서-채용공고조회] ⚠️ data.success가 false이거나 jobs 없음');
                     setJobPostings([]);
                 }
             } else {
+                console.log('[AI자소서-채용공고조회] ⚠️ 응답 실패:', response.status);
+                const errorText = await response.text();
+                console.log('[AI자소서-채용공고조회] 에러 응답:', errorText);
                 setJobPostings([]);
             }
         } catch (err) {
-            console.error('[채용공고 조회] 오류:', err);
+            console.error('[AI자소서-채용공고조회] ❌ 오류:', err);
             setJobPostings([]);
         } finally {
             setIsLoadingJobs(false);
+            console.log('[AI자소서-채용공고조회] 완료');
         }
     };
 
