@@ -57,7 +57,14 @@ async function scrapeCompanyInfo(companyName, pool = null) {
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
-        '--disable-gpu'
+        '--disable-gpu',
+        '--disable-web-security',
+        '--disable-features=IsolateOrigins,site-per-process',
+        '--disable-blink-features=AutomationControlled',
+        '--disable-accelerated-2d-canvas',
+        '--disable-background-timer-throttling',
+        '--disable-backgrounding-occluded-windows',
+        '--disable-renderer-backgrounding'
       ]
     };
 
@@ -71,19 +78,53 @@ async function scrapeCompanyInfo(companyName, pool = null) {
     const page = await browser.newPage();
     await page.setViewport({ width: 1920, height: 1080 });
 
-    // 타임아웃 설정 (Railway 환경에서 네트워크가 느릴 수 있음)
-    page.setDefaultNavigationTimeout(120000); // 120초
+    // User-Agent 설정 (정상 브라우저처럼 보이게)
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+
+    // 불필요한 리소스 차단하여 로딩 속도 향상
+    await page.setRequestInterception(true);
+    page.on('request', (req) => {
+      const resourceType = req.resourceType();
+      if (['image', 'stylesheet', 'font', 'media'].includes(resourceType)) {
+        req.abort();
+      } else {
+        req.continue();
+      }
+    });
+
+    // 타임아웃 설정 (60초로 단축 - 빠르게 실패하고 다음으로)
+    page.setDefaultNavigationTimeout(60000); // 60초
 
     console.log('✅ Chrome 드라이버 초기화 성공\n');
 
     // Catch.co.kr 로그인
     console.log(`🔐 Catch.co.kr 로그인 시도 (사용자: ${CATCH_LOGIN.id})\n`);
-    try {
-      await page.goto('https://www.catch.co.kr/', { waitUntil: 'domcontentloaded', timeout: 120000 });
-    } catch (error) {
-      console.log(`  ⚠️ 초기 로드 실패, 재시도 중... (${error.message})`);
-      await page.goto('https://www.catch.co.kr/', { waitUntil: 'load', timeout: 120000 });
+
+    let retryCount = 0;
+    const maxRetries = 3;
+    let pageLoaded = false;
+
+    while (!pageLoaded && retryCount < maxRetries) {
+      try {
+        if (retryCount > 0) {
+          console.log(`  🔄 재시도 ${retryCount}/${maxRetries}...`);
+        }
+        await page.goto('https://www.catch.co.kr/', {
+          waitUntil: 'domcontentloaded',
+          timeout: 60000
+        });
+        pageLoaded = true;
+        console.log('  ✅ 페이지 로드 성공');
+      } catch (error) {
+        retryCount++;
+        if (retryCount >= maxRetries) {
+          throw new Error(`페이지 로드 실패 (${maxRetries}번 재시도): ${error.message}`);
+        }
+        console.log(`  ⚠️ 로드 실패, 재시도 중... (${error.message.substring(0, 50)}...)`);
+        await new Promise(r => setTimeout(r, 3000)); // 3초 대기 후 재시도
+      }
     }
+
     await new Promise(r => setTimeout(r, 2000));
 
     // 로그인 버튼 클릭
@@ -280,14 +321,14 @@ async function scrapeCompanyInfo(companyName, pool = null) {
       // 업데이트
       await connection.execute(
         `UPDATE catch_companies SET
-          url = ?, industry = ?, company_type = ?, employee_count = ?,
-          revenue = ?, location = ?, ceo = ?, established_date = ?,
-          website = ?, company_logo_url = ?, updated_at = NOW()
+          company_url = ?, industry = ?, company_type = ?, employee_count = ?,
+          revenue = ?, location = ?, ceo = ?, establishment_date = ?,
+          company_logo_url = ?, updated_at = NOW()
         WHERE company = ?`,
         [
           companyInfo.url, companyInfo.industry, companyInfo.company_type,
           companyInfo.employee_count, companyInfo.revenue, companyInfo.location,
-          companyInfo.ceo, companyInfo.established_date, companyInfo.website,
+          companyInfo.ceo, companyInfo.established_date,
           companyInfo.company_logo_url,
           companyInfo.company
         ]
@@ -296,14 +337,14 @@ async function scrapeCompanyInfo(companyName, pool = null) {
     } else {
       // 신규 저장
       await connection.execute(
-        `INSERT INTO catch_companies (company, url, industry, company_type, employee_count,
-          revenue, location, ceo, established_date, website, company_logo_url, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+        `INSERT INTO catch_companies (company, company_url, industry, company_type, employee_count,
+          revenue, location, ceo, establishment_date, company_logo_url, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
         [
           companyInfo.company, companyInfo.url, companyInfo.industry,
           companyInfo.company_type, companyInfo.employee_count, companyInfo.revenue,
           companyInfo.location, companyInfo.ceo, companyInfo.established_date,
-          companyInfo.website, companyInfo.company_logo_url
+          companyInfo.company_logo_url
         ]
       );
       console.log(`  ✅ 회사 정보 신규 저장`);
