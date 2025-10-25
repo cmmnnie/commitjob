@@ -5587,14 +5587,50 @@ app.post('/api/cover-letter-revised', async (req, res) => {
           up.preferred_jobs,
           up.experience,
           up.skills,
-          up.education
+          up.education,
+          up.cover_letters
         FROM user_profiles up
         JOIN users u ON up.user_id = u.id
         WHERE up.user_id = ?
       `, [user_id]);
 
       if (profileRows.length > 0) {
-        userProfile = profileRows[0];
+        const profile = profileRows[0];
+
+        // skills 파싱
+        let skills = [];
+        if (profile.skills) {
+          try {
+            skills = typeof profile.skills === 'string'
+              ? JSON.parse(profile.skills)
+              : profile.skills;
+          } catch (e) {
+            console.warn('[COVER-LETTER-REVISED] skills 파싱 실패:', e);
+            skills = [];
+          }
+        }
+
+        // cover_letters 파싱
+        let coverLetters = [];
+        if (profile.cover_letters) {
+          try {
+            coverLetters = typeof profile.cover_letters === 'string'
+              ? JSON.parse(profile.cover_letters)
+              : profile.cover_letters;
+          } catch (e) {
+            console.warn('[COVER-LETTER-REVISED] cover_letters 파싱 실패:', e);
+            coverLetters = [];
+          }
+        }
+
+        userProfile = {
+          name: profile.name,
+          preferred_jobs: profile.preferred_jobs || '',
+          experience: profile.experience || '',
+          skills: skills,
+          education: profile.education || '',
+          cover_letters: coverLetters
+        };
         console.log(`[COVER-LETTER-REVISED] 프로필 로드 완료: ${userProfile.name}`);
       }
     } catch (profileError) {
@@ -5621,6 +5657,16 @@ app.post('/api/cover-letter-revised', async (req, res) => {
       }
       if (userProfile.skills && userProfile.skills.length > 0) {
         prompt += `- 보유 스킬: ${userProfile.skills.join(', ')}\n`;
+      }
+
+      // 이력서 자기소개서 내용 추가 (구체적인 경험 제공)
+      if (userProfile.cover_letters && userProfile.cover_letters.length > 0) {
+        prompt += `\n[지원자가 작성한 자기소개서 참고]\n`;
+        userProfile.cover_letters.forEach((item, index) => {
+          if (item.content && item.content.trim()) {
+            prompt += `${index + 1}. ${item.question}: ${item.content.substring(0, 200)}${item.content.length > 200 ? '...' : ''}\n`;
+          }
+        });
       }
       prompt += `\n`;
     }

@@ -1,12 +1,13 @@
 const mysql = require('mysql2/promise');
+require('dotenv').config();
 
 async function copyInkyungProfileToMinhee() {
   const pool = mysql.createPool({
-    host: process.env.MYSQL_HOST || 'autorack.proxy.rlwy.net',
-    port: process.env.MYSQL_PORT || 25560,
-    user: process.env.MYSQL_USER || 'root',
-    password: process.env.MYSQL_PASSWORD || 'wjVHZHcqGnJjzbOOkLJVbLgZtdSYEedv',
-    database: process.env.MYSQL_DATABASE || 'railway',
+    host: process.env.DB_HOST || 'database-1.czcg4o8cytan.ap-northeast-2.rds.amazonaws.com',
+    port: process.env.DB_PORT || 3306,
+    user: process.env.DB_USER || 'appuser',
+    password: process.env.DB_PASSWORD || process.env.DB_PASS || 'Woolim114!',
+    database: process.env.DB_NAME || 'appdb',
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0,
