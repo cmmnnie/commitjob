@@ -40,11 +40,21 @@ export default function AICoverLetterPage() {
 
         // location state에서 회사명과 job ID 받아오기
         if (location.state?.companyName) {
-            setCompanyName(location.state.companyName);
-        }
-        if (location.state?.jobId) {
-            initialJobId.current = location.state.jobId.toString();
-            console.log('[AI자소서] location.state에서 jobId 받음:', initialJobId.current);
+            const companyFromState = location.state.companyName;
+            console.log('[AI자소서] location.state에서 회사명 받음:', companyFromState);
+            setCompanyName(companyFromState);
+
+            // location.state에서 온 경우 즉시 채용공고 조회
+            if (location.state?.jobId) {
+                initialJobId.current = location.state.jobId.toString();
+                console.log('[AI자소서] location.state에서 jobId 받음:', initialJobId.current);
+            }
+
+            // 회사명 설정 후 채용공고 조회 (debounce 없이 즉시 실행)
+            setTimeout(() => {
+                console.log('[AI자소서] location.state 회사명으로 채용공고 조회 시작');
+                fetchJobPostings(companyFromState);
+            }, 100);
         }
     }, []);
 
