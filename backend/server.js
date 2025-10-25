@@ -5251,7 +5251,8 @@ app.post('/api/cover-letter', async (req, res) => {
           up.preferred_regions,
           up.skills,
           up.education,
-          up.expected_salary
+          up.expected_salary,
+          up.cover_letters
         FROM users u
         LEFT JOIN user_profiles up ON u.id = up.user_id
         WHERE u.id = ?
@@ -5273,13 +5274,27 @@ app.post('/api/cover-letter', async (req, res) => {
           }
         }
 
+        // cover_letters 파싱
+        let coverLetters = [];
+        if (profile.cover_letters) {
+          try {
+            coverLetters = typeof profile.cover_letters === 'string'
+              ? JSON.parse(profile.cover_letters)
+              : profile.cover_letters;
+          } catch (e) {
+            console.warn('[COVER-LETTER] cover_letters 파싱 실패:', e);
+            coverLetters = [];
+          }
+        }
+
         userProfile = {
           name: profile.user_name || '지원자',
           preferred_jobs: profile.preferred_jobs || '',
           experience: profile.experience || '',
           skills: skills,
           education: profile.education || '',
-          expected_salary: profile.expected_salary || ''
+          expected_salary: profile.expected_salary || '',
+          cover_letters: coverLetters
         };
         console.log(`[COVER-LETTER] 사용자 프로필 로드 완료: ${userProfile.name}`);
       }
@@ -5333,6 +5348,16 @@ app.post('/api/cover-letter', async (req, res) => {
       if (userProfile.education) {
         prompt += `- 학력: ${userProfile.education}\n`;
       }
+
+      // 이력서 자기소개서 내용 추가 (구체적인 경험 제공)
+      if (userProfile.cover_letters && userProfile.cover_letters.length > 0) {
+        prompt += `\n[지원자가 작성한 자기소개서 참고]\n`;
+        userProfile.cover_letters.forEach((item, index) => {
+          if (item.content && item.content.trim()) {
+            prompt += `${index + 1}. ${item.question}: ${item.content.substring(0, 300)}${item.content.length > 300 ? '...' : ''}\n`;
+          }
+        });
+      }
       prompt += `\n`;
     }
 
@@ -5379,8 +5404,8 @@ app.post('/api/cover-letter', async (req, res) => {
           content: prompt
         }
       ],
-      max_tokens: 1500,
-      temperature: 0.7
+      max_tokens: 1200,
+      temperature: 0.4
     });
 
     const coverLetter = completion.choices[0].message.content;
@@ -5517,8 +5542,8 @@ app.post('/api/cover-letter-feedback', async (req, res) => {
           content: prompt
         }
       ],
-      max_tokens: 1200,
-      temperature: 0.5
+      max_tokens: 1000,
+      temperature: 0.3
     });
 
     const feedback = completion.choices[0].message.content;
@@ -5617,8 +5642,8 @@ app.post('/api/cover-letter-revised', async (req, res) => {
           content: prompt
         }
       ],
-      max_tokens: 1800,
-      temperature: 0.5
+      max_tokens: 1500,
+      temperature: 0.3
     });
 
     const revisedCoverLetter = completion.choices[0].message.content;
