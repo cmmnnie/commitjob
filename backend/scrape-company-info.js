@@ -51,7 +51,7 @@ async function scrapeCompanyInfo(companyName, pool = null) {
     }
 
     // Puppeteer 브라우저 실행
-    browser = await puppeteer.launch({
+    const launchOptions = {
       headless: 'new',
       args: [
         '--no-sandbox',
@@ -59,7 +59,14 @@ async function scrapeCompanyInfo(companyName, pool = null) {
         '--disable-dev-shm-usage',
         '--disable-gpu'
       ]
-    });
+    };
+
+    // Use system chromium if available (Railway/nixpacks environment)
+    if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+      launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+    }
+
+    browser = await puppeteer.launch(launchOptions);
 
     const page = await browser.newPage();
     await page.setViewport({ width: 1920, height: 1080 });

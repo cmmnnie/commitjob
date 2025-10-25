@@ -1,7 +1,34 @@
-# Railway Build Optimization v7 - Node.js only (Python scraping moved to external service)
+# Railway Build Optimization v8 - Node.js with Puppeteer support
 [phases.setup]
 nixPkgs = [
-  "nodejs_18"
+  "nodejs_18",
+  "chromium"
+]
+nixPkgsLibs = [
+  "glib",
+  "nss",
+  "nspr",
+  "atk",
+  "at-spi2-atk",
+  "libdrm",
+  "expat",
+  "libxcb",
+  "libxkbcommon",
+  "libx11",
+  "libxcomposite",
+  "libxdamage",
+  "libxext",
+  "libxfixes",
+  "libxrandr",
+  "mesa",
+  "gtk3",
+  "pango",
+  "cairo",
+  "cups",
+  "dbus",
+  "at-spi2-core",
+  "libxshmfence",
+  "alsa-lib"
 ]
 
 [phases.install]
@@ -15,3 +42,7 @@ cmds = ["echo 'Build skipped'"]
 
 [start]
 cmd = "node server.js"
+
+[variables]
+PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = "true"
+PUPPETEER_EXECUTABLE_PATH = "chromium"

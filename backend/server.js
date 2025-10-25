@@ -7340,10 +7340,11 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
                 if (needsCompanyInfo) {
                   console.log(`[SCRAPE-JOBS-BG] 🚀 ${company} 기업정보 스크래핑 시작...`);
                   try {
-                    await scrapeCompanyInfo(company);
+                    await scrapeCompanyInfo(company, pool);
                     console.log(`[SCRAPE-JOBS-BG] ✅ ${company} 기업정보 스크래핑 완료`);
                   } catch (error) {
                     console.error(`[SCRAPE-JOBS-BG] ❌ ${company} 기업정보 스크래핑 실패:`, error.message);
+                    console.error(error);
                   }
                   await new Promise(resolve => setTimeout(resolve, 2000));
                 }
@@ -7352,10 +7353,11 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
                 if (needsInterviewQuestions) {
                   console.log(`[SCRAPE-JOBS-BG] 🚀 ${company} 면접질문 스크래핑 시작...`);
                   try {
-                    await scrapeInterviewQuestions(company);
+                    await scrapeInterviewQuestions(company, pool);
                     console.log(`[SCRAPE-JOBS-BG] ✅ ${company} 면접질문 스크래핑 완료`);
                   } catch (error) {
                     console.error(`[SCRAPE-JOBS-BG] ❌ ${company} 면접질문 스크래핑 실패:`, error.message);
+                    console.error(error);
                   }
                   await new Promise(resolve => setTimeout(resolve, 2000));
                 }
