@@ -183,8 +183,30 @@ class CompanyInfoScraper:
         print(f"📊 Jobs 테이블에서 {len(companies)}개 미등록 회사 발견 (최신 채용공고 순)\n")
         return companies
 
-    def search_company_on_catch(self, company_name):
-        """Catch.co.kr에서 회사 검색"""
+    def generate_search_terms(self, company_name):
+        """단계적 검색어 생성 (예: '우아한형제들 코리아' → ['우아한형제들 코리아', '우아한형제들'])"""
+        terms = [company_name.strip()]
+
+        # 공백으로 구분된 경우, 마지막 단어를 제거한 버전 추가
+        parts = company_name.strip().split()
+        if len(parts) > 1:
+            # 마지막 단어 제거
+            terms.append(' '.join(parts[:-1]))
+
+        # '코리아', 'Korea', '인터내셔널' 등의 접미사 제거
+        import re
+        suffixes = ['코리아', 'korea', '인터내셔널', 'international', '홀딩스', 'holdings']
+        for suffix in suffixes:
+            pattern = re.compile(r'\s*' + suffix + r'\s*$', re.IGNORECASE)
+            if pattern.search(company_name):
+                shortened = pattern.sub('', company_name).strip()
+                if shortened and shortened not in terms:
+                    terms.append(shortened)
+
+        return terms
+
+    def search_company_with_term(self, search_term):
+        """단일 검색어로 회사 검색 시도"""
         try:
             search_url = "https://www.catch.co.kr/Comp/CompMajor/SearchPage"
 
@@ -193,8 +215,7 @@ class CompanyInfoScraper:
 
             wait = WebDriverWait(self.driver, 10)
 
-            # 검색어 정리: 앞뒤 공백 제거
-            search_term = company_name.strip()
+            print(f"  🔍 검색어: '{search_term}'")
 
             # 검색창 찾기
             search_input = wait.until(
@@ -213,32 +234,37 @@ class CompanyInfoScraper:
             time.sleep(3)
 
             # 검색 결과에서 정확한 기업명 찾기
-            company_links = wait.until(
-                EC.presence_of_all_elements_located((By.XPATH, "//ul[@class='list_corp_round']//li//p[@class='name']//a"))
-            )
+            try:
+                company_links = wait.until(
+                    EC.presence_of_all_elements_located((By.XPATH, "//ul[@class='list_corp_round']//li//p[@class='name']//a"))
+                )
+            except:
+                print(f"  📋 검색 결과 0개")
+                return None
+
+            print(f"  📋 검색 결과 {len(company_links)}개")
 
             # 정규화 함수: 띄어쓰기 제거, 소문자 변환, 특수문자 제거
             def normalize_name(name):
                 normalized = name.replace('\u00A0', '').replace(' ', '').lower()
                 normalized = normalized.replace('(주)', '').replace('주식회사', '')
                 normalized = normalized.replace('㈜', '').replace('()', '')
+                # 추가 특수문자 제거
+                import re
+                normalized = re.sub(r'[.,\-_/\[\]()]', '', normalized)
                 return normalized
 
-            normalized_input = normalize_name(company_name.strip())
+            normalized_input = normalize_name(search_term)
             target_company_url = None
-
-            # 디버깅: 검색 결과 출력
-            print(f"  🔍 검색어: '{company_name.strip()}' (정규화: '{normalized_input}')")
-            print(f"  📋 검색 결과 {len(company_links)}개:")
-            for i, link in enumerate(company_links[:5]):  # 상위 5개만 출력
-                print(f"     {i+1}. {link.text.strip()} (정규화: '{normalize_name(link.text.strip())}')")
 
             # 1차 시도: 정규화된 이름으로 정확 매칭
             for link in company_links:
                 company_text = link.text.strip()
-                if normalize_name(company_text) == normalized_input:
+                normalized_result = normalize_name(company_text)
+
+                if normalized_result == normalized_input:
                     target_company_url = link.get_attribute('href')
-                    print(f"  ✅ 정확한 기업명 매칭: '{company_name.strip()}' → '{company_text}'")
+                    print(f"  ✅ 정확한 기업명 매칭: '{search_term}' → '{company_text}'")
                     break
 
             # 2차 시도: 정규화된 이름으로 부분 매칭 (정확한 매칭 실패 시)
@@ -248,13 +274,40 @@ class CompanyInfoScraper:
                     normalized_result = normalize_name(company_text)
                     if normalized_input in normalized_result or normalized_result in normalized_input:
                         target_company_url = link.get_attribute('href')
-                        print(f"  ✅ 부분 매칭으로 기업 발견: '{company_name.strip()}' → '{company_text}'")
+                        print(f"  ✅ 부분 매칭으로 기업 발견: '{search_term}' → '{company_text}'")
                         break
 
-            if not target_company_url:
-                print(f"  ❌ 매칭 실패: 검색 결과에서 '{company_name.strip()}'와 일치하는 기업을 찾을 수 없음")
+            # 3차 시도: 검색 결과가 1개뿐이면 자동 선택
+            if not target_company_url and len(company_links) == 1:
+                target_company_url = company_links[0].get_attribute('href')
+                company_text = company_links[0].text.strip()
+                print(f"  ⚠️  검색 결과가 1개뿐이므로 자동 선택: '{search_term}' → '{company_text}'")
 
             return target_company_url
+
+        except Exception as e:
+            print(f"  ⚠️ 검색 실패: {e}")
+            return None
+
+    def search_company_on_catch(self, company_name):
+        """Catch.co.kr에서 회사 검색 (단계적 재시도 포함)"""
+        try:
+            # 단계적 검색어 생성
+            search_terms = self.generate_search_terms(company_name)
+
+            # 각 검색어로 순차 시도
+            for i, search_term in enumerate(search_terms):
+                if i > 0:
+                    print(f"  🔄 재시도 ({i}/{len(search_terms) - 1})")
+
+                target_url = self.search_company_with_term(search_term)
+
+                if target_url:
+                    return target_url
+
+            # 모든 검색어로 실패
+            print(f"  ❌ 회사를 찾을 수 없음 (시도한 검색어: {', '.join(search_terms)})")
+            return None
 
         except Exception as e:
             print(f"  ⚠️ 검색 실패: {e}")
