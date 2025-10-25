@@ -111,7 +111,10 @@ export default function AIRecommendationPage() {
             );
 
             if (!recommendResponse.ok) {
-                throw new Error('AI 추천을 가져오는데 실패했습니다.');
+                const errorData = await recommendResponse.json().catch(() => ({}));
+                console.error('[AI 추천] 백엔드 에러 응답:', errorData);
+                console.error('[AI 추천] HTTP 상태:', recommendResponse.status);
+                throw new Error(errorData.error || 'AI 추천을 가져오는데 실패했습니다.');
             }
 
             const recommendData = await recommendResponse.json();
