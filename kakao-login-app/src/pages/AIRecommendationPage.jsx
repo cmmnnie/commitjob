@@ -155,9 +155,7 @@ export default function AIRecommendationPage() {
                 padding: '20px',
                 marginBottom: '15px',
                 transition: 'all 0.3s',
-                cursor: 'pointer',
-                display: 'flex',
-                gap: '16px'
+                cursor: 'pointer'
             }}
             onMouseEnter={(e) => {
                 e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.12)';
@@ -169,99 +167,233 @@ export default function AIRecommendationPage() {
             }}
             onClick={() => navigate(`/jobs/detail/${job.id}`, { state: { job } })}
         >
-            {/* 왼쪽: 채용공고 정보 */}
-            <div style={{ flex: 1 }}>
-                <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'start',
-                    marginBottom: '12px'
-                }}>
-                    <h3 style={{
-                        fontSize: '1.1rem',
+            <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'start',
+                marginBottom: '12px'
+            }}>
+                <h3 style={{
+                    fontSize: '1.1rem',
+                    fontWeight: '600',
+                    color: '#333',
+                    marginBottom: '8px',
+                    lineHeight: '1.4',
+                    flex: 1
+                }}>{job.title}</h3>
+                {job.match_score && (
+                    <div style={{
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        color: 'white',
+                        padding: '8px 16px',
+                        borderRadius: '16px',
+                        fontSize: '1rem',
+                        fontWeight: '800',
+                        marginLeft: '10px',
+                        boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',
+                        border: '2px solid rgba(255, 255, 255, 0.3)',
+                        textShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                        letterSpacing: '-0.3px'
+                    }}>
+                        AI 매칭률 {job.match_score}%
+                    </div>
+                )}
+            </div>
+
+            <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'start',
+                gap: '12px'
+            }}>
+                <div style={{ flex: 1 }}>
+                    <p style={{
+                        fontSize: '1.05rem',
+                        color: '#667eea',
                         fontWeight: '600',
-                        color: '#333',
-                        marginBottom: '8px',
-                        lineHeight: '1.4',
-                        flex: 1
-                    }}>{job.title}</h3>
-                    {job.match_score && (
+                        marginBottom: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                    }}>
+                        <span style={{ fontSize: '1.1rem' }}>🏢</span>
+                        {job.company}
+                    </p>
+
+                    <div style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: '8px',
+                        marginBottom: '12px',
+                        fontSize: '0.95rem',
+                        color: '#666'
+                    }}>
+                        {job.location && (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                📍 {Array.isArray(job.location) ? job.location.join(', ') : job.location}
+                            </span>
+                        )}
+                        {job.experience && (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                💼 {job.experience}
+                            </span>
+                        )}
+                        {job.salary && (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                💰 {job.salary}
+                            </span>
+                        )}
+                    </div>
+
+                    {job.skills && job.skills.length > 0 && (
                         <div style={{
-                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                            color: 'white',
-                            padding: '8px 16px',
-                            borderRadius: '16px',
-                            fontSize: '1rem',
-                            fontWeight: '800',
-                            marginLeft: '10px',
-                            boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',
-                            border: '2px solid rgba(255, 255, 255, 0.3)',
-                            textShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                            letterSpacing: '-0.3px'
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: '6px',
+                            marginBottom: '12px'
                         }}>
-                            AI 매칭률 {job.match_score}%
+                            {job.skills.map((skill, idx) => (
+                                <span key={idx} style={{
+                                    background: '#edf2f7',
+                                    color: '#2d3748',
+                                    padding: '4px 10px',
+                                    borderRadius: '12px',
+                                    fontSize: '0.9rem'
+                                }}>
+                                    {skill}
+                                </span>
+                            ))}
                         </div>
                     )}
                 </div>
 
-                <p style={{
-                    fontSize: '1.05rem',
-                    color: '#667eea',
-                    fontWeight: '600',
-                    marginBottom: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                }}>
-                    <span style={{ fontSize: '1.1rem' }}>🏢</span>
-                    {job.company}
-                </p>
-
+                {/* 2x2 버튼 그룹 */}
                 <div style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '8px',
-                    marginBottom: '12px',
-                    fontSize: '0.95rem',
-                    color: '#666'
-                }}>
-                    {job.location && (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            📍 {Array.isArray(job.location) ? job.location.join(', ') : job.location}
-                        </span>
-                    )}
-                    {job.experience && (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            💼 {job.experience}
-                        </span>
-                    )}
-                    {job.salary && (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            💰 {job.salary}
-                        </span>
-                    )}
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, 1fr)',
+                    gap: '6px',
+                    width: '180px',
+                    flexShrink: 0
+                }}
+                onClick={(e) => e.stopPropagation()}>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/jobs/detail/${job.id}`, { state: { job } });
+                        }}
+                        style={{
+                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                            color: 'white',
+                            border: 'none',
+                            padding: '8px 10px',
+                            borderRadius: '6px',
+                            fontSize: '0.75rem',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                            whiteSpace: 'nowrap'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                        }}
+                    >
+                        📋 상세공고
+                    </button>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            // AI면접 기능 추후 개발
+                        }}
+                        style={{
+                            background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                            color: 'white',
+                            border: 'none',
+                            padding: '8px 10px',
+                            borderRadius: '6px',
+                            fontSize: '0.75rem',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                            whiteSpace: 'nowrap'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                        }}
+                    >
+                        🎤 AI면접
+                    </button>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            // AI자소서 기능 추후 개발
+                        }}
+                        style={{
+                            background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                            color: 'white',
+                            border: 'none',
+                            padding: '8px 10px',
+                            borderRadius: '6px',
+                            fontSize: '0.75rem',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                            whiteSpace: 'nowrap'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                        }}
+                    >
+                        ✍️ AI자소서
+                    </button>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            // 코딩Test 기능 추후 개발
+                        }}
+                        style={{
+                            background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+                            color: 'white',
+                            border: 'none',
+                            padding: '8px 10px',
+                            borderRadius: '6px',
+                            fontSize: '0.75rem',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                            whiteSpace: 'nowrap'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                        }}
+                    >
+                        💻 코딩Test
+                    </button>
                 </div>
-
-                {job.skills && job.skills.length > 0 && (
-                    <div style={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: '6px',
-                        marginBottom: '12px'
-                    }}>
-                        {job.skills.map((skill, idx) => (
-                            <span key={idx} style={{
-                                background: '#edf2f7',
-                                color: '#2d3748',
-                                padding: '4px 10px',
-                                borderRadius: '12px',
-                                fontSize: '0.9rem'
-                            }}>
-                                {skill}
-                            </span>
-                        ))}
-                    </div>
-                )}
+            </div>
 
                 {job.match_reasons && job.match_reasons.length > 0 && (
                     <div style={{
@@ -340,133 +472,6 @@ export default function AIRecommendationPage() {
                         </div>
                     </div>
                 )}
-            </div>
-
-            {/* 오른쪽: 버튼 그룹 */}
-            <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '8px',
-                minWidth: '110px'
-            }}
-            onClick={(e) => e.stopPropagation()}>
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/jobs/detail/${job.id}`, { state: { job } });
-                    }}
-                    style={{
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        color: 'white',
-                        border: 'none',
-                        padding: '10px 12px',
-                        borderRadius: '8px',
-                        fontSize: '0.85rem',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                        whiteSpace: 'nowrap'
-                    }}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'translateY(-2px)';
-                        e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-                    }}
-                >
-                    📋 상세공고
-                </button>
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        // AI면접 기능 추후 개발
-                    }}
-                    style={{
-                        background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-                        color: 'white',
-                        border: 'none',
-                        padding: '10px 12px',
-                        borderRadius: '8px',
-                        fontSize: '0.85rem',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                        whiteSpace: 'nowrap'
-                    }}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'translateY(-2px)';
-                        e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-                    }}
-                >
-                    🎤 AI면접
-                </button>
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        // AI자소서 기능 추후 개발
-                    }}
-                    style={{
-                        background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-                        color: 'white',
-                        border: 'none',
-                        padding: '10px 12px',
-                        borderRadius: '8px',
-                        fontSize: '0.85rem',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                        whiteSpace: 'nowrap'
-                    }}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'translateY(-2px)';
-                        e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-                    }}
-                >
-                    ✍️ AI자소서
-                </button>
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        // 코딩Test 기능 추후 개발
-                    }}
-                    style={{
-                        background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-                        color: 'white',
-                        border: 'none',
-                        padding: '10px 12px',
-                        borderRadius: '8px',
-                        fontSize: '0.85rem',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                        whiteSpace: 'nowrap'
-                    }}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'translateY(-2px)';
-                        e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-                    }}
-                >
-                    💻 코딩Test
-                </button>
-            </div>
         </div>
     );
 
