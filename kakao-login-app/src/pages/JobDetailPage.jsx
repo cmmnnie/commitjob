@@ -24,20 +24,32 @@ export default function JobDetailPage() {
     const fetchCompanyData = async (companyName) => {
         try {
             setLoading(true);
+            console.log('='.repeat(80));
+            console.log('[JobDetail] 🔍 API 호출 시작');
             console.log('[JobDetail] API_BASE_URL:', API_BASE_URL);
-            console.log('[JobDetail] Fetching data for company:', companyName);
+            console.log('[JobDetail] Company Name:', `"${companyName}"`);
+            console.log('[JobDetail] Company Name Length:', companyName.length);
+            console.log('='.repeat(80));
 
             // 회사 정보 조회
             const companyUrl = `${API_BASE_URL}/api/company/${encodeURIComponent(companyName)}`;
-            console.log('[JobDetail] Company URL:', companyUrl);
+            console.log('\n[JobDetail] 📞 회사 정보 API 호출');
+            console.log('[JobDetail] URL:', companyUrl);
             const companyRes = await fetch(companyUrl);
-            console.log('[JobDetail] Company response status:', companyRes.status);
+            console.log('[JobDetail] Status:', companyRes.status);
+
+            if (!companyRes.ok) {
+                console.error('[JobDetail] ❌ HTTP Error:', companyRes.status, companyRes.statusText);
+            }
+
             const companyData = await companyRes.json();
-            console.log('[JobDetail] Company data:', companyData);
+            console.log('[JobDetail] Response:', JSON.stringify(companyData, null, 2));
+
             if (companyData.success && companyData.company) {
+                console.log('[JobDetail] ✅ 회사 정보 설정 완료');
                 setCompanyInfo(companyData.company);
             } else {
-                console.log('[JobDetail] No company info found');
+                console.warn('[JobDetail] ⚠️ 회사 정보 없음 - success:', companyData.success, 'company:', !!companyData.company);
             }
 
             // 회사 리뷰 조회
@@ -55,15 +67,23 @@ export default function JobDetailPage() {
 
             // 면접 기출문제 조회
             const questionsUrl = `${API_BASE_URL}/api/company/${encodeURIComponent(companyName)}/interview-questions?limit=5`;
-            console.log('[JobDetail] Questions URL:', questionsUrl);
+            console.log('\n[JobDetail] 📞 면접 기출문제 API 호출');
+            console.log('[JobDetail] URL:', questionsUrl);
             const questionsRes = await fetch(questionsUrl);
-            console.log('[JobDetail] Questions response status:', questionsRes.status);
+            console.log('[JobDetail] Status:', questionsRes.status);
+
+            if (!questionsRes.ok) {
+                console.error('[JobDetail] ❌ HTTP Error:', questionsRes.status, questionsRes.statusText);
+            }
+
             const questionsData = await questionsRes.json();
-            console.log('[JobDetail] Questions data:', questionsData);
+            console.log('[JobDetail] Response:', JSON.stringify(questionsData, null, 2));
+
             if (questionsData.success && questionsData.questions) {
+                console.log('[JobDetail] ✅ 면접질문 설정 완료 -', questionsData.questions.length, '건');
                 setInterviewQuestions(questionsData.questions);
             } else {
-                console.log('[JobDetail] No interview questions found');
+                console.warn('[JobDetail] ⚠️ 면접질문 없음 - success:', questionsData.success, 'questions:', questionsData.questions?.length || 0);
             }
         } catch (error) {
             console.error('[JobDetail] Error fetching company data:', error);
