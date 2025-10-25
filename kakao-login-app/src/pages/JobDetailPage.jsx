@@ -134,8 +134,8 @@ export default function JobDetailPage() {
         <div style={{
             minHeight: 'calc(100vh - 60px)',
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            padding: '40px 20px',
-            paddingBottom: '100px'
+            padding: '20px 20px',
+            paddingBottom: '60px'
         }}>
             <div style={{
                 maxWidth: '800px',
@@ -148,8 +148,8 @@ export default function JobDetailPage() {
                         background: 'white',
                         border: '2px solid rgba(102, 126, 234, 0.3)',
                         borderRadius: '12px',
-                        padding: '12px 24px',
-                        marginBottom: '20px',
+                        padding: '10px 20px',
+                        marginBottom: '12px',
                         fontSize: '1rem',
                         fontWeight: '600',
                         cursor: 'pointer',
@@ -181,8 +181,8 @@ export default function JobDetailPage() {
                 <div style={{
                     background: 'linear-gradient(135deg, #ffffff 0%, #fafafa 100%)',
                     borderRadius: '24px',
-                    padding: '40px',
-                    marginBottom: '24px',
+                    padding: '24px',
+                    marginBottom: '16px',
                     boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
                     border: '1px solid rgba(102, 126, 234, 0.1)',
                     position: 'relative',
@@ -205,8 +205,8 @@ export default function JobDetailPage() {
                         <div style={{
                             display: 'flex',
                             gap: '12px',
-                            marginBottom: '24px',
-                            padding: '16px 20px',
+                            marginBottom: '16px',
+                            padding: '12px 16px',
                             background: 'linear-gradient(135deg, #f5f5f5 0%, #ebebeb 100%)',
                             borderRadius: '16px',
                             border: '1px solid #e0e0e0',
@@ -235,8 +235,8 @@ export default function JobDetailPage() {
                             display: 'inline-flex',
                             alignItems: 'center',
                             gap: '10px',
-                            marginBottom: '16px',
-                            padding: '8px 18px',
+                            marginBottom: '12px',
+                            padding: '6px 14px',
                             background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.12) 0%, rgba(118, 75, 162, 0.08) 100%)',
                             borderRadius: '20px',
                             border: '2px solid rgba(102, 126, 234, 0.25)'
@@ -264,8 +264,8 @@ export default function JobDetailPage() {
                 <div style={{
                     background: 'linear-gradient(135deg, #ffffff 0%, #fafafa 100%)',
                     borderRadius: '24px',
-                    padding: '10px',
-                    marginBottom: '28px',
+                    padding: '8px',
+                    marginBottom: '16px',
                     boxShadow: '0 8px 30px rgba(102, 126, 234, 0.15), 0 2px 8px rgba(0,0,0,0.05)',
                     display: 'flex',
                     gap: '10px',
@@ -295,7 +295,7 @@ export default function JobDetailPage() {
                                 : 'white',
                             color: activeTab === 'job' ? 'white' : '#555',
                             border: activeTab === 'job' ? 'none' : '2px solid #e0e0e0',
-                            padding: '18px 26px',
+                            padding: '14px 20px',
                             borderRadius: '18px',
                             fontSize: '1.1rem',
                             fontWeight: '800',
@@ -343,7 +343,7 @@ export default function JobDetailPage() {
                                 : 'white',
                             color: activeTab === 'company' ? 'white' : '#555',
                             border: activeTab === 'company' ? 'none' : '2px solid #e0e0e0',
-                            padding: '18px 26px',
+                            padding: '14px 20px',
                             borderRadius: '18px',
                             fontSize: '1.1rem',
                             fontWeight: '800',
@@ -391,7 +391,7 @@ export default function JobDetailPage() {
                                 : 'white',
                             color: activeTab === 'interview' ? 'white' : '#555',
                             border: activeTab === 'interview' ? 'none' : '2px solid #e0e0e0',
-                            padding: '18px 26px',
+                            padding: '14px 20px',
                             borderRadius: '18px',
                             fontSize: '1.1rem',
                             fontWeight: '800',
@@ -437,13 +437,13 @@ export default function JobDetailPage() {
                 <div style={{
                     background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
                     borderRadius: '24px',
-                    padding: '40px',
+                    padding: '24px',
                     boxShadow: '0 10px 40px rgba(0,0,0,0.12)',
                     border: '1px solid rgba(102, 126, 234, 0.1)'
                 }}>
                     {/* 직무 정보 */}
                     {job.job_info && job.job_info.length > 0 && (
-                        <div style={{ marginBottom: '36px' }}>
+                        <div style={{ marginBottom: '24px' }}>
                             <div style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -509,12 +509,12 @@ export default function JobDetailPage() {
 
                     {/* 채용 조건 */}
                     {job.conditions && job.conditions.length > 0 && (
-                        <div style={{ marginBottom: '36px' }}>
+                        <div style={{ marginBottom: '24px' }}>
                             <div style={{
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '12px',
-                                marginBottom: '20px',
+                                marginBottom: '16px',
                                 paddingBottom: '12px',
                                 borderBottom: '3px solid',
                                 borderImage: 'linear-gradient(90deg, #4caf50 0%, #8bc34a 100%) 1'
@@ -583,12 +583,12 @@ export default function JobDetailPage() {
 
                     {/* 회사명 검색키 */}
                     {job.company_search_key && (
-                        <div style={{ marginBottom: '36px' }}>
+                        <div style={{ marginBottom: '24px' }}>
                             <div style={{
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '12px',
-                                marginBottom: '20px',
+                                marginBottom: '16px',
                                 paddingBottom: '12px',
                                 borderBottom: '3px solid',
                                 borderImage: 'linear-gradient(90deg, #ff9800 0%, #ffc107 100%) 1'
@@ -630,7 +630,7 @@ export default function JobDetailPage() {
 
                     {/* 원본 공고 링크 */}
                     {job.url && (
-                        <div style={{ marginTop: '40px', textAlign: 'center' }}>
+                        <div style={{ marginTop: '24px', textAlign: 'center' }}>
                             <button
                                 onClick={() => window.open(job.url, '_blank')}
                                 style={{
@@ -711,8 +711,8 @@ export default function JobDetailPage() {
                     <div style={{
                         background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
                         borderRadius: '20px',
-                        padding: '35px',
-                        marginTop: '20px',
+                        padding: '24px',
+                        marginTop: '0px',
                         boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
                         border: '1px solid rgba(102, 126, 234, 0.1)'
                     }}>
@@ -1032,8 +1032,8 @@ export default function JobDetailPage() {
                     <div style={{
                         background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
                         borderRadius: '20px',
-                        padding: '35px',
-                        marginTop: '24px',
+                        padding: '24px',
+                        marginTop: '16px',
                         boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
                         border: '1px solid rgba(255, 193, 7, 0.1)'
                     }}>
@@ -1220,7 +1220,7 @@ export default function JobDetailPage() {
                     <div style={{
                         background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
                         borderRadius: '20px',
-                        padding: '35px',
+                        padding: '24px',
                         boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
                         border: '1px solid rgba(118, 75, 162, 0.1)'
                     }}>
