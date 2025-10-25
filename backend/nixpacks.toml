@@ -1,12 +1,15 @@
-# Railway Build Optimization v4 - Node.js only (All scraping in JavaScript)
+# Railway Build Optimization v5 - Node.js + Python (Selenium scraping)
 [phases.setup]
-nixPkgs = ["nodejs_18"]
+nixPkgs = ["nodejs_18", "python311", "python311Packages.pip"]
 
 [phases.install]
-cmds = ["npm ci --omit=dev --prefer-offline --no-audit --no-fund"]
+cmds = [
+  "npm ci --omit=dev --prefer-offline --no-audit --no-fund",
+  "pip install selenium pymysql webdriver-manager python-dotenv --no-cache-dir"
+]
 
 [phases.build]
-# Skip build phase - no compilation needed for Node.js
+# Skip build phase - no compilation needed
 cmds = ["echo 'Build skipped'"]
 
 [start]
