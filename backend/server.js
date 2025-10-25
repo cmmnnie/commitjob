@@ -5450,12 +5450,13 @@ app.post('/api/cover-letter-feedback', async (req, res) => {
     try {
       const [profileRows] = await pool.execute(`
         SELECT
-          up.name,
+          u.name,
           up.preferred_jobs,
           up.experience,
           up.skills,
           up.education
         FROM user_profiles up
+        JOIN users u ON up.user_id = u.id
         WHERE up.user_id = ?
       `, [user_id]);
 
@@ -5548,12 +5549,13 @@ app.post('/api/cover-letter-revised', async (req, res) => {
     try {
       const [profileRows] = await pool.execute(`
         SELECT
-          up.name,
+          u.name,
           up.preferred_jobs,
           up.experience,
           up.skills,
           up.education
         FROM user_profiles up
+        JOIN users u ON up.user_id = u.id
         WHERE up.user_id = ?
       `, [user_id]);
 
