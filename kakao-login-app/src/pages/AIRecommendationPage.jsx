@@ -337,7 +337,7 @@ export default function AIRecommendationPage() {
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
-                            // AI자소서 기능 추후 개발
+                            navigate('/ai-cover-letter', { state: { companyName: job.company, jobId: job.job_id } });
                         }}
                         style={{
                             background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',

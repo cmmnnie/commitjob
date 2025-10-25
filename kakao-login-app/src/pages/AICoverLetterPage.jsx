@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { CONFIG } from '../config';
 
 export default function AICoverLetterPage() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [currentUser, setCurrentUser] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -35,6 +36,14 @@ export default function AICoverLetterPage() {
 
     useEffect(() => {
         checkLogin();
+
+        // location state에서 회사명과 job ID 받아오기
+        if (location.state?.companyName) {
+            setCompanyName(location.state.companyName);
+        }
+        if (location.state?.jobId) {
+            setSelectedJobId(location.state.jobId.toString());
+        }
     }, []);
 
     useEffect(() => {
