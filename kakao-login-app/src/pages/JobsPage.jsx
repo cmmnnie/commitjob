@@ -114,13 +114,11 @@ export default function JobsPage() {
     };
 
     const getCompanyLogoUrl = (job) => {
-        if (!job.company_url) return null;
-        try {
-            const url = new URL(job.company_url);
-            return `https://www.google.com/s2/favicons?domain=${url.hostname}&sz=128`;
-        } catch (e) {
-            return null;
+        // 회사 로고 URL이 있으면 직접 사용
+        if (job.company_logo_url) {
+            return job.company_logo_url;
         }
+        return null;
     };
 
     const JobCard = ({ job }) => {

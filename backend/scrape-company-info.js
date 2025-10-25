@@ -230,6 +230,39 @@ async function scrapeCompanyInfo(companyName, pool = null) {
       companyInfo.website = '';
     }
 
+    // 회사 로고 이미지
+    try {
+      const companyLogo = await page.evaluate(() => {
+        // 회사 로고를 찾기 위한 다양한 선택자 시도
+        const selectors = [
+          'div.logo_corp img',
+          'div.comp_logo img',
+          'div.company-logo img',
+          'img.corp_logo',
+          'img.company_logo',
+          'div.info_corp img',
+          'div.comp_info img[alt*="로고"]',
+          'div.comp_info img[src*="logo"]',
+          'img[alt*="로고"]',
+          'img[src*="logo"]'
+        ];
+
+        for (const selector of selectors) {
+          const img = document.querySelector(selector);
+          if (img && img.src) {
+            return img.src;
+          }
+        }
+        return '';
+      });
+      companyInfo.company_logo_url = companyLogo || '';
+      if (companyLogo) {
+        console.log(`  🎨 회사 로고 발견: ${companyLogo.substring(0, 60)}...`);
+      }
+    } catch (e) {
+      companyInfo.company_logo_url = '';
+    }
+
     console.log(`  ✅ 기업정보 스크래핑 완료`);
 
     // DB 저장
@@ -244,12 +277,13 @@ async function scrapeCompanyInfo(companyName, pool = null) {
         `UPDATE catch_companies SET
           url = ?, industry = ?, company_type = ?, employee_count = ?,
           revenue = ?, location = ?, ceo = ?, established_date = ?,
-          website = ?, updated_at = NOW()
+          website = ?, company_logo_url = ?, updated_at = NOW()
         WHERE company = ?`,
         [
           companyInfo.url, companyInfo.industry, companyInfo.company_type,
           companyInfo.employee_count, companyInfo.revenue, companyInfo.location,
           companyInfo.ceo, companyInfo.established_date, companyInfo.website,
+          companyInfo.company_logo_url,
           companyInfo.company
         ]
       );
@@ -258,13 +292,13 @@ async function scrapeCompanyInfo(companyName, pool = null) {
       // 신규 저장
       await connection.execute(
         `INSERT INTO catch_companies (company, url, industry, company_type, employee_count,
-          revenue, location, ceo, established_date, website, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+          revenue, location, ceo, established_date, website, company_logo_url, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
         [
           companyInfo.company, companyInfo.url, companyInfo.industry,
           companyInfo.company_type, companyInfo.employee_count, companyInfo.revenue,
           companyInfo.location, companyInfo.ceo, companyInfo.established_date,
-          companyInfo.website
+          companyInfo.website, companyInfo.company_logo_url
         ]
       );
       console.log(`  ✅ 회사 정보 신규 저장`);

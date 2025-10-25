@@ -6829,7 +6829,7 @@ app.get('/api/jobs/:category', async (req, res) => {
     const totalCount = countResult[0].total;
 
     let query = `
-      SELECT j.*, c.company_url
+      SELECT j.*, c.company_url, c.company_logo_url
       FROM jobs j
       LEFT JOIN catch_companies c ON TRIM(j.company) = TRIM(c.company)
       WHERE j.category = ?
@@ -6953,7 +6953,7 @@ app.get('/api/jobs', async (req, res) => {
 
   try {
     let query = `
-      SELECT j.*, c.company_url
+      SELECT j.*, c.company_url, c.company_logo_url
       FROM jobs j
       LEFT JOIN catch_companies c ON TRIM(j.company) = TRIM(c.company)
       ORDER BY j.scraped_at DESC
