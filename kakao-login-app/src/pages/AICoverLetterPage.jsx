@@ -348,6 +348,7 @@ export default function AICoverLetterPage() {
     // 이력서 자기소개서 불러오기
     const loadResumeCoverLetters = async () => {
         try {
+            console.log('[AI자소서] 이력서 자기소개서 불러오기 시작');
             const token = localStorage.getItem('app_session');
             const response = await fetch(`${CONFIG.BACKEND_URL}/api/resume/${currentUser.id}`, {
                 method: 'GET',
@@ -358,12 +359,18 @@ export default function AICoverLetterPage() {
                 }
             });
 
+            console.log('[AI자소서] API 응답:', response.ok);
+
             if (response.ok) {
                 const data = await response.json();
+                console.log('[AI자소서] 받은 데이터:', data);
+                console.log('[AI자소서] cover_letters:', data.profile?.cover_letters);
+
                 if (data.success && data.profile && data.profile.cover_letters) {
                     const coverLetterData = typeof data.profile.cover_letters === 'string'
                         ? JSON.parse(data.profile.cover_letters)
                         : data.profile.cover_letters;
+                    console.log('[AI자소서] 파싱된 자기소개서 데이터:', coverLetterData);
                     setResumeCoverLetters(coverLetterData || []);
 
                     // 이력서의 자기소개서 내용을 입력창에 자동으로 표시
@@ -371,8 +378,13 @@ export default function AICoverLetterPage() {
                         const formattedContent = coverLetterData
                             .map(letter => `[${letter.question}]\n\n${letter.content}`)
                             .join('\n\n---\n\n');
+                        console.log('[AI자소서] 입력창에 표시할 내용:', formattedContent);
                         setUserCoverLetter(formattedContent);
+                    } else {
+                        console.log('[AI자소서] 자기소개서 데이터가 비어있음');
                     }
+                } else {
+                    console.log('[AI자소서] cover_letters 필드가 없거나 유효하지 않음');
                 }
             }
         } catch (err) {
