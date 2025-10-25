@@ -9,6 +9,7 @@
 
 import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
 import { scrapeCompanyInfo } from './scrape-company-info.js';
 
 dotenv.config();
@@ -160,7 +161,9 @@ async function batchScrapeCompanyLogos(limit = null) {
 }
 
 // 커맨드 라인에서 실행
-if (import.meta.url === `file://${process.argv[1]}`) {
+const isMainModule = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+
+if (isMainModule) {
   const limit = process.argv[2] ? parseInt(process.argv[2]) : null;
 
   if (limit && limit > 0) {

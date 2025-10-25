@@ -72,13 +72,18 @@ async function scrapeCompanyInfo(companyName, pool = null) {
     await page.setViewport({ width: 1920, height: 1080 });
 
     // 타임아웃 설정 (Railway 환경에서 네트워크가 느릴 수 있음)
-    page.setDefaultNavigationTimeout(60000); // 60초
+    page.setDefaultNavigationTimeout(120000); // 120초
 
     console.log('✅ Chrome 드라이버 초기화 성공\n');
 
     // Catch.co.kr 로그인
     console.log(`🔐 Catch.co.kr 로그인 시도 (사용자: ${CATCH_LOGIN.id})\n`);
-    await page.goto('https://www.catch.co.kr/', { waitUntil: 'domcontentloaded' });
+    try {
+      await page.goto('https://www.catch.co.kr/', { waitUntil: 'domcontentloaded', timeout: 120000 });
+    } catch (error) {
+      console.log(`  ⚠️ 초기 로드 실패, 재시도 중... (${error.message})`);
+      await page.goto('https://www.catch.co.kr/', { waitUntil: 'load', timeout: 120000 });
+    }
     await new Promise(r => setTimeout(r, 2000));
 
     // 로그인 버튼 클릭
