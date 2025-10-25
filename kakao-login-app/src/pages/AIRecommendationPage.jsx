@@ -337,6 +337,7 @@ export default function AIRecommendationPage() {
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
+                            console.log('[AI자소서] 버튼 클릭됨:', { company: job.company, jobId: job.job_id });
                             navigate('/ai-cover-letter', { state: { companyName: job.company, jobId: job.job_id } });
                         }}
                         style={{
