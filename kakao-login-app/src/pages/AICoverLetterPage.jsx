@@ -28,6 +28,11 @@ export default function AICoverLetterPage() {
     const [showLoadModal, setShowLoadModal] = useState(false);
     const [selectedCoverLetterId, setSelectedCoverLetterId] = useState(null);
 
+    // 이력서 자기소개서 관련 state
+    const [resumeCoverLetters, setResumeCoverLetters] = useState([]);
+    const [resumeCoverLetterFeedbacks, setResumeCoverLetterFeedbacks] = useState({});
+    const [loadingResumeFeedbackIndex, setLoadingResumeFeedbackIndex] = useState(null);
+
     useEffect(() => {
         checkLogin();
     }, []);
@@ -35,6 +40,7 @@ export default function AICoverLetterPage() {
     useEffect(() => {
         if (currentUser) {
             loadSavedCoverLetters();
+            loadResumeCoverLetters();
         }
     }, [currentUser]);
 
@@ -336,6 +342,79 @@ export default function AICoverLetterPage() {
             }
         } catch (err) {
             console.error('[자소서 목록 조회] 오류:', err);
+        }
+    };
+
+    // 이력서 자기소개서 불러오기
+    const loadResumeCoverLetters = async () => {
+        try {
+            const token = localStorage.getItem('app_session');
+            const response = await fetch(`${CONFIG.BACKEND_URL}/api/resume/${currentUser.id}`, {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.profile && data.profile.cover_letters) {
+                    const coverLetterData = typeof data.profile.cover_letters === 'string'
+                        ? JSON.parse(data.profile.cover_letters)
+                        : data.profile.cover_letters;
+                    setResumeCoverLetters(coverLetterData || []);
+                }
+            }
+        } catch (err) {
+            console.error('[이력서 자소서 조회] 오류:', err);
+        }
+    };
+
+    // 이력서 자기소개서 AI 피드백 받기
+    const getResumeCoverLetterFeedback = async (index, question, content) => {
+        if (!content.trim()) {
+            alert('자기소개서 내용이 없습니다.');
+            return;
+        }
+
+        setLoadingResumeFeedbackIndex(index);
+
+        try {
+            const token = localStorage.getItem('app_session');
+            const response = await fetch(`${CONFIG.BACKEND_URL}/api/cover-letter-feedback`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    user_id: currentUser?.id,
+                    company: '',
+                    cover_letter: `[${question}]\n\n${content.trim()}`
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('피드백 생성에 실패했습니다.');
+            }
+
+            const data = await response.json();
+            if (data.success && data.feedback) {
+                setResumeCoverLetterFeedbacks(prev => ({
+                    ...prev,
+                    [index]: data.feedback
+                }));
+            } else {
+                alert('피드백을 생성할 수 없습니다.');
+            }
+        } catch (err) {
+            console.error('[이력서 자소서 피드백 생성] 오류:', err);
+            alert('피드백 생성에 실패했습니다. 다시 시도해주세요.');
+        } finally {
+            setLoadingResumeFeedbackIndex(null);
         }
     };
 
@@ -1496,6 +1575,176 @@ export default function AICoverLetterPage() {
                     )}
                 </div>
             </div>
+
+            {/* 이력서 자기소개서 섹션 */}
+            {resumeCoverLetters.length > 0 && (
+                <div style={{
+                    maxWidth: '1200px',
+                    margin: '40px auto 0',
+                    padding: '0 20px'
+                }}>
+                    <div style={{
+                        background: 'white',
+                        borderRadius: '20px',
+                        padding: '32px',
+                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)'
+                    }}>
+                        <h2 style={{
+                            fontSize: '1.8rem',
+                            fontWeight: '700',
+                            color: '#1e293b',
+                            marginBottom: '8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px'
+                        }}>
+                            <span style={{ fontSize: '2rem' }}>📝</span>
+                            이력서 자기소개서
+                        </h2>
+                        <p style={{
+                            fontSize: '0.95rem',
+                            color: '#64748b',
+                            marginBottom: '24px'
+                        }}>
+                            이력서에 작성한 자기소개서 문항별로 AI 피드백을 받아보세요
+                        </p>
+
+                        <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '20px'
+                        }}>
+                            {resumeCoverLetters.map((letter, index) => (
+                                <div
+                                    key={index}
+                                    style={{
+                                        background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+                                        borderRadius: '16px',
+                                        padding: '24px',
+                                        border: '2px solid #e2e8f0',
+                                        transition: 'all 0.3s'
+                                    }}
+                                >
+                                    {/* 문항 */}
+                                    <h3 style={{
+                                        fontSize: '1.2rem',
+                                        fontWeight: '700',
+                                        color: '#1e293b',
+                                        marginBottom: '16px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px'
+                                    }}>
+                                        <span style={{
+                                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                            color: 'white',
+                                            width: '28px',
+                                            height: '28px',
+                                            borderRadius: '50%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontSize: '0.85rem',
+                                            fontWeight: '700'
+                                        }}>
+                                            {index + 1}
+                                        </span>
+                                        {letter.question}
+                                    </h3>
+
+                                    {/* 내용 */}
+                                    <div style={{
+                                        background: 'white',
+                                        borderRadius: '12px',
+                                        padding: '20px',
+                                        marginBottom: '16px',
+                                        border: '1px solid #e2e8f0'
+                                    }}>
+                                        <p style={{
+                                            color: '#475569',
+                                            fontSize: '0.95rem',
+                                            lineHeight: '1.8',
+                                            whiteSpace: 'pre-wrap',
+                                            margin: 0
+                                        }}>
+                                            {letter.content}
+                                        </p>
+                                    </div>
+
+                                    {/* AI 피드백 받기 버튼 */}
+                                    <button
+                                        onClick={() => getResumeCoverLetterFeedback(index, letter.question, letter.content)}
+                                        disabled={loadingResumeFeedbackIndex === index}
+                                        style={{
+                                            width: '100%',
+                                            padding: '12px 20px',
+                                            background: loadingResumeFeedbackIndex === index
+                                                ? '#cbd5e1'
+                                                : 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '12px',
+                                            fontSize: '1rem',
+                                            fontWeight: '600',
+                                            cursor: loadingResumeFeedbackIndex === index ? 'not-allowed' : 'pointer',
+                                            transition: 'all 0.3s',
+                                            boxShadow: loadingResumeFeedbackIndex === index
+                                                ? 'none'
+                                                : '0 4px 12px rgba(240, 147, 251, 0.3)'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            if (loadingResumeFeedbackIndex !== index) {
+                                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                                e.currentTarget.style.boxShadow = '0 6px 16px rgba(240, 147, 251, 0.4)';
+                                            }
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            if (loadingResumeFeedbackIndex !== index) {
+                                                e.currentTarget.style.transform = 'translateY(0)';
+                                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(240, 147, 251, 0.3)';
+                                            }
+                                        }}
+                                    >
+                                        {loadingResumeFeedbackIndex === index ? 'AI 피드백 생성 중...' : 'AI 피드백 받기'}
+                                    </button>
+
+                                    {/* AI 피드백 결과 */}
+                                    {resumeCoverLetterFeedbacks[index] && (
+                                        <div style={{
+                                            marginTop: '16px',
+                                            padding: '20px',
+                                            background: 'white',
+                                            borderRadius: '12px',
+                                            border: '2px solid #f093fb'
+                                        }}>
+                                            <div style={{
+                                                fontSize: '1.1rem',
+                                                fontWeight: '700',
+                                                color: '#f5576c',
+                                                marginBottom: '12px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '8px'
+                                            }}>
+                                                <span>✨</span>
+                                                <span>AI 피드백</span>
+                                            </div>
+                                            <div style={{
+                                                color: '#475569',
+                                                fontSize: '0.95rem',
+                                                lineHeight: '1.7',
+                                                whiteSpace: 'pre-wrap'
+                                            }}>
+                                                {resumeCoverLetterFeedbacks[index]}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* 채용공고 상세보기 팝업 */}
             {isJobPopupOpen && selectedJobForView && (
