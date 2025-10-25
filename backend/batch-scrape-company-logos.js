@@ -33,15 +33,17 @@ async function batchScrapeCompanyLogos(limit = null) {
     pool = mysql.createPool(DB_CONFIG);
     console.log('✅ MySQL 연결 성공\n');
 
-    // jobs 테이블에서 고유한 회사 목록 조회
-    console.log('🔍 jobs 테이블에서 고유한 회사 목록 조회 중...\n');
+    // jobs 테이블에서 고유한 회사 목록 조회 (최근 insert된 순서대로)
+    console.log('🔍 jobs 테이블에서 고유한 회사 목록 조회 중 (최근 insert된 순서)...\n');
 
     let query = `
-      SELECT DISTINCT TRIM(company) as company, COUNT(*) as job_count
-      FROM jobs
-      WHERE company IS NOT NULL AND TRIM(company) != ''
-      GROUP BY TRIM(company)
-      ORDER BY job_count DESC, company ASC
+      SELECT DISTINCT TRIM(j.company) as company,
+             COUNT(*) as job_count,
+             MAX(j.scraped_at) as latest_scraped
+      FROM jobs j
+      WHERE j.company IS NOT NULL AND TRIM(j.company) != ''
+      GROUP BY TRIM(j.company)
+      ORDER BY latest_scraped DESC, job_count DESC
     `;
 
     if (limit && limit > 0) {
@@ -92,8 +94,9 @@ async function batchScrapeCompanyLogos(limit = null) {
     for (let i = 0; i < companiesNeedingLogo.length; i++) {
       const company = companiesNeedingLogo[i].company.trim();
       const jobCount = companiesNeedingLogo[i].job_count;
+      const latestScraped = companiesNeedingLogo[i].latest_scraped;
 
-      console.log(`\n[${ i + 1}/${companiesNeedingLogo.length}] 🏢 ${company} (채용공고: ${jobCount}건)`);
+      console.log(`\n[${ i + 1}/${companiesNeedingLogo.length}] 🏢 ${company} (채용공고: ${jobCount}건, 최근: ${new Date(latestScraped).toLocaleDateString('ko-KR')})`);
       console.log('-'.repeat(80));
 
       try {
@@ -107,12 +110,17 @@ async function batchScrapeCompanyLogos(limit = null) {
         );
 
         if (logoCheck.length > 0 && logoCheck[0].company_logo_url) {
-          console.log(`  ✅ 로고 스크래핑 성공`);
           successCount++;
+          console.log(`  ✅ 로고 스크래핑 성공 (총 ${successCount}개 완료)`);
         } else {
-          console.log(`  ⚠️  회사 정보는 저장되었으나 로고를 찾지 못함`);
           skipCount++;
+          console.log(`  ⚠️  회사 정보는 저장되었으나 로고를 찾지 못함 (총 ${skipCount}개 건너뜀)`);
         }
+
+        // 진행률 표시
+        const totalProcessed = successCount + skipCount + failCount;
+        const percentage = ((totalProcessed / companiesNeedingLogo.length) * 100).toFixed(1);
+        console.log(`  📊 진행률: ${totalProcessed}/${companiesNeedingLogo.length} (${percentage}%) | ✅ ${successCount}개 | ⚠️ ${skipCount}개 | ❌ ${failCount}개`);
 
         // 요청 간 딜레이 (서버 부하 방지)
         if (i < companiesNeedingLogo.length - 1) {
@@ -122,8 +130,11 @@ async function batchScrapeCompanyLogos(limit = null) {
         }
 
       } catch (error) {
-        console.error(`  ❌ 스크래핑 실패: ${error.message}`);
         failCount++;
+        console.error(`  ❌ 스크래핑 실패: ${error.message} (총 ${failCount}개 실패)`);
+        const totalProcessed = successCount + skipCount + failCount;
+        const percentage = ((totalProcessed / companiesNeedingLogo.length) * 100).toFixed(1);
+        console.log(`  📊 진행률: ${totalProcessed}/${companiesNeedingLogo.length} (${percentage}%) | ✅ ${successCount}개 | ⚠️ ${skipCount}개 | ❌ ${failCount}개`);
       }
     }
 
