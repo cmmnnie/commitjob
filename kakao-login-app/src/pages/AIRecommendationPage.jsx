@@ -162,7 +162,7 @@ export default function AIRecommendationPage() {
                 e.currentTarget.style.boxShadow = 'none';
                 e.currentTarget.style.transform = 'translateY(0)';
             }}
-            onClick={() => navigate(`/job-detail/${job.id}`, { state: { job } })}
+            onClick={() => navigate(`/jobs/detail/${job.id}`, { state: { job } })}
         >
             <div style={{
                 display: 'flex',
