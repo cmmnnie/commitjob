@@ -81,13 +81,27 @@ async function scrapeCompanyInfo(companyName, pool = null) {
     // User-Agent 설정 (정상 브라우저처럼 보이게)
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
 
-    // 불필요한 리소스 차단하여 로딩 속도 향상
+    // 불필요한 리소스 차단하여 로딩 속도 향상 (로고 이미지는 허용)
     await page.setRequestInterception(true);
     page.on('request', (req) => {
       const resourceType = req.resourceType();
-      if (['image', 'stylesheet', 'font', 'media'].includes(resourceType)) {
+      const url = req.url();
+
+      // 로고 이미지는 허용
+      if (resourceType === 'image' && (
+        url.includes('logo') ||
+        url.includes('Logo') ||
+        url.includes('corp') ||
+        url.includes('company')
+      )) {
+        req.continue();
+      }
+      // CSS, 폰트, 기타 이미지, 미디어는 차단
+      else if (['stylesheet', 'font', 'media'].includes(resourceType)) {
         req.abort();
-      } else {
+      }
+      // 나머지는 허용
+      else {
         req.continue();
       }
     });
@@ -321,7 +335,7 @@ async function scrapeCompanyInfo(companyName, pool = null) {
 
     // 회사 로고 이미지
     try {
-      const companyLogo = await page.evaluate(() => {
+      const logoResult = await page.evaluate(() => {
         // 회사 로고를 찾기 위한 다양한 선택자 시도
         const selectors = [
           'div.logo_corp img',
@@ -333,23 +347,47 @@ async function scrapeCompanyInfo(companyName, pool = null) {
           'div.comp_info img[alt*="로고"]',
           'div.comp_info img[src*="logo"]',
           'img[alt*="로고"]',
-          'img[src*="logo"]'
+          'img[src*="logo"]',
+          'div.info_top img',
+          'div.logo img',
+          'div.comp_head img',
+          'div.company_info img',
+          '.logo-img img',
+          '.company-img img'
         ];
+
+        // 모든 이미지 찾기 (디버깅용)
+        const allImages = Array.from(document.querySelectorAll('img')).map(img => ({
+          src: img.src,
+          alt: img.alt,
+          className: img.className
+        }));
 
         for (const selector of selectors) {
           const img = document.querySelector(selector);
-          if (img && img.src) {
-            return img.src;
+          if (img && img.src && !img.src.includes('data:image')) {
+            return { found: true, url: img.src, selector, allImages };
           }
         }
-        return '';
+        return { found: false, url: '', selector: null, allImages };
       });
-      companyInfo.company_logo_url = companyLogo || '';
-      if (companyLogo) {
-        console.log(`  🎨 회사 로고 발견: ${companyLogo.substring(0, 60)}...`);
+
+      if (logoResult.found) {
+        companyInfo.company_logo_url = logoResult.url;
+        console.log(`  🎨 회사 로고 발견 (${logoResult.selector}): ${logoResult.url.substring(0, 60)}...`);
+      } else {
+        companyInfo.company_logo_url = '';
+        console.log(`  ⚠️  로고를 찾을 수 없음 (페이지에서 발견된 이미지 ${logoResult.allImages.length}개)`);
+        if (logoResult.allImages.length > 0) {
+          console.log(`  📋 발견된 이미지 예시:`);
+          logoResult.allImages.slice(0, 3).forEach((img, idx) => {
+            console.log(`    ${idx + 1}. src: ${img.src.substring(0, 50)}... / alt: "${img.alt}" / class: "${img.className}"`);
+          });
+        }
       }
     } catch (e) {
       companyInfo.company_logo_url = '';
+      console.log(`  ❌ 로고 스크래핑 오류: ${e.message}`);
     }
 
     console.log(`  ✅ 기업정보 스크래핑 완료`);
