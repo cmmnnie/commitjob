@@ -5516,8 +5516,8 @@ app.post('/api/cover-letter-feedback', async (req, res) => {
           content: prompt
         }
       ],
-      max_tokens: 1500,
-      temperature: 0.7
+      max_tokens: 1200,
+      temperature: 0.5
     });
 
     const feedback = completion.choices[0].message.content;
@@ -5615,8 +5615,8 @@ app.post('/api/cover-letter-revised', async (req, res) => {
           content: prompt
         }
       ],
-      max_tokens: 2000,
-      temperature: 0.7
+      max_tokens: 1800,
+      temperature: 0.5
     });
 
     const revisedCoverLetter = completion.choices[0].message.content;
