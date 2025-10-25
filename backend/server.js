@@ -367,7 +367,13 @@ const corsOptions = {
     // allowedOrigins에 포함된 경우 허용
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
-    } else {
+    }
+    // Vercel preview URL 패턴 허용: https://commitjob-frontend-*.vercel.app
+    else if (origin.match(/^https:\/\/commitjob-frontend-[a-z0-9]+-cmmnnies-projects\.vercel\.app$/)) {
+      console.log('[CORS] Vercel preview URL allowed:', origin);
+      callback(null, true);
+    }
+    else {
       console.warn('[CORS] Rejected origin:', origin);
       callback(new Error('Not allowed by CORS'));
     }
