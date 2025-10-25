@@ -7548,7 +7548,15 @@ JSON:{"recommendations":[{"job_id":"ID","match_score":85,"match_reasons":["구�
       response_format: { type: "json_object" }
     });
 
-    const chatGPTResponse = completion.choices[0].message.content;
+    const chatGPTResponse = completion.choices[0]?.message?.content;
+
+    // 빈 응답 체크
+    if (!chatGPTResponse || chatGPTResponse.trim() === '') {
+      console.error('[GPT-5] GPT가 빈 응답을 반환했습니다');
+      console.error('[GPT-5] completion:', JSON.stringify(completion, null, 2));
+      return [];
+    }
+
     console.log(`[AI-RECOMMENDATION] 🤖 GPT 응답:\n${chatGPTResponse}`);
 
     // JSON 파싱 시도
@@ -7575,6 +7583,7 @@ JSON:{"recommendations":[{"job_id":"ID","match_score":85,"match_reasons":["구�
       console.log(`[GPT-5] 파싱 성공: ${recommendations.length}개 추천`);
     } catch (parseError) {
       console.error('[GPT-5] JSON 파싱 실패:', parseError.message);
+      console.error('[GPT-5] 응답 내용:', chatGPTResponse ? chatGPTResponse.substring(0, 200) : '(empty)');
       return [];
     }
 
