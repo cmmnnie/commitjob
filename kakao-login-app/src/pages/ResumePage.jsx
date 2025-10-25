@@ -1320,14 +1320,14 @@ export default function ResumePage() {
                                                                 onClick={() => handleEditCoverLetter(originalIndex)}
                                                                 style={{
                                                                     padding: '4px 10px',
-                                                                    background: 'linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%)',
+                                                                    background: 'linear-gradient(135deg, #7f8c8d 0%, #5d6d7e 100%)',
                                                                     color: 'white',
                                                                     border: 'none',
                                                                     borderRadius: '6px',
                                                                     fontSize: '0.75rem',
                                                                     fontWeight: '600',
                                                                     cursor: 'pointer',
-                                                                    boxShadow: '0 1px 4px rgba(0,0,0,0.2)'
+                                                                    boxShadow: '0 1px 4px rgba(93, 109, 126, 0.4)'
                                                                 }}
                                                             >
                                                                 수정
