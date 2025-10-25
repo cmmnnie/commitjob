@@ -5438,10 +5438,10 @@ app.post('/api/cover-letter-feedback', async (req, res) => {
 
     console.log('[COVER-LETTER-FEEDBACK] 피드백 요청:', { user_id, company, coverLetterLength: cover_letter?.length });
 
-    if (!user_id || !company || !cover_letter) {
+    if (!user_id || !cover_letter) {
       return res.status(400).json({
         success: false,
-        error: '사용자 ID, 회사명, 자기소개서 내용을 모두 입력해주세요.'
+        error: '사용자 ID와 자기소개서 내용을 입력해주세요.'
       });
     }
 
@@ -5469,7 +5469,9 @@ app.post('/api/cover-letter-feedback', async (req, res) => {
     }
 
     // 2. GPT 피드백 프롬프트 생성
-    let prompt = `다음은 ${company}에 지원하기 위해 작성한 자기소개서입니다. 전문적인 관점에서 피드백을 제공해주세요.\n\n`;
+    let prompt = company
+      ? `다음은 ${company}에 지원하기 위해 작성한 자기소개서입니다. 전문적인 관점에서 피드백을 제공해주세요.\n\n`
+      : `다음은 작성한 자기소개서입니다. 전문적인 관점에서 피드백을 제공해주세요.\n\n`;
 
     prompt += `[작성된 자기소개서]\n${cover_letter}\n\n`;
 
