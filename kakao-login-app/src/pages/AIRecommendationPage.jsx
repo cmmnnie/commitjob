@@ -155,7 +155,9 @@ export default function AIRecommendationPage() {
                 padding: '20px',
                 marginBottom: '15px',
                 transition: 'all 0.3s',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                display: 'flex',
+                gap: '16px'
             }}
             onMouseEnter={(e) => {
                 e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.12)';
@@ -167,45 +169,185 @@ export default function AIRecommendationPage() {
             }}
             onClick={() => navigate(`/jobs/detail/${job.id}`, { state: { job } })}
         >
-            <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'start',
-                marginBottom: '12px'
-            }}>
-                <h3 style={{
-                    fontSize: '1.1rem',
+            {/* 왼쪽: 채용공고 정보 */}
+            <div style={{ flex: 1 }}>
+                <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'start',
+                    marginBottom: '12px'
+                }}>
+                    <h3 style={{
+                        fontSize: '1.1rem',
+                        fontWeight: '600',
+                        color: '#333',
+                        marginBottom: '8px',
+                        lineHeight: '1.4',
+                        flex: 1
+                    }}>{job.title}</h3>
+                    {job.match_score && (
+                        <div style={{
+                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                            color: 'white',
+                            padding: '8px 16px',
+                            borderRadius: '16px',
+                            fontSize: '1rem',
+                            fontWeight: '800',
+                            marginLeft: '10px',
+                            boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',
+                            border: '2px solid rgba(255, 255, 255, 0.3)',
+                            textShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                            letterSpacing: '-0.3px'
+                        }}>
+                            AI 매칭률 {job.match_score}%
+                        </div>
+                    )}
+                </div>
+
+                <p style={{
+                    fontSize: '1.05rem',
+                    color: '#667eea',
                     fontWeight: '600',
-                    color: '#333',
-                    marginBottom: '8px',
-                    lineHeight: '1.4',
-                    flex: 1
-                }}>{job.title}</h3>
-                {job.match_score && (
+                    marginBottom: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                }}>
+                    <span style={{ fontSize: '1.1rem' }}>🏢</span>
+                    {job.company}
+                </p>
+
+                <div style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '8px',
+                    marginBottom: '12px',
+                    fontSize: '0.95rem',
+                    color: '#666'
+                }}>
+                    {job.location && (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            📍 {Array.isArray(job.location) ? job.location.join(', ') : job.location}
+                        </span>
+                    )}
+                    {job.experience && (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            💼 {job.experience}
+                        </span>
+                    )}
+                    {job.salary && (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            💰 {job.salary}
+                        </span>
+                    )}
+                </div>
+
+                {job.skills && job.skills.length > 0 && (
                     <div style={{
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        color: 'white',
-                        padding: '8px 16px',
-                        borderRadius: '16px',
-                        fontSize: '1rem',
-                        fontWeight: '800',
-                        marginLeft: '10px',
-                        boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',
-                        border: '2px solid rgba(255, 255, 255, 0.3)',
-                        textShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                        letterSpacing: '-0.3px'
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: '6px',
+                        marginBottom: '12px'
                     }}>
-                        AI 매칭률 {job.match_score}%
+                        {job.skills.map((skill, idx) => (
+                            <span key={idx} style={{
+                                background: '#edf2f7',
+                                color: '#2d3748',
+                                padding: '4px 10px',
+                                borderRadius: '12px',
+                                fontSize: '0.9rem'
+                            }}>
+                                {skill}
+                            </span>
+                        ))}
+                    </div>
+                )}
+
+                {job.match_reasons && job.match_reasons.length > 0 && (
+                    <div style={{
+                        background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                        color: '#0c4a6e',
+                        padding: '16px',
+                        borderRadius: '16px',
+                        marginTop: '16px',
+                        border: '3px solid #0ea5e9',
+                        boxShadow: '0 8px 24px rgba(14, 165, 233, 0.25)'
+                    }}>
+                        <div style={{
+                            fontWeight: '800',
+                            fontSize: '1.1rem',
+                            marginBottom: '12px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            textShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                            paddingBottom: '10px',
+                            borderBottom: '2px solid #38bdf8'
+                        }}>
+                            <span style={{ fontSize: '1.4rem' }}>🤖</span>
+                            <span style={{ color: '#0369a1' }}>GPT AI 매칭 분석</span>
+                        </div>
+                        <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '8px'
+                        }}>
+                            {job.match_reasons.map((reason, idx) => (
+                                <div key={idx} style={{
+                                    display: 'flex',
+                                    alignItems: 'flex-start',
+                                    gap: '10px',
+                                    padding: '10px 12px',
+                                    background: 'white',
+                                    borderRadius: '10px',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                                    border: '1px solid #bae6fd',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(14, 165, 233, 0.15)';
+                                    e.currentTarget.style.transform = 'translateX(4px)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)';
+                                    e.currentTarget.style.transform = 'translateX(0)';
+                                }}>
+                                    <div style={{
+                                        minWidth: '28px',
+                                        height: '28px',
+                                        borderRadius: '50%',
+                                        background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)',
+                                        color: 'white',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontWeight: '800',
+                                        fontSize: '0.9rem',
+                                        boxShadow: '0 2px 8px rgba(14, 165, 233, 0.3)'
+                                    }}>
+                                        {idx + 1}
+                                    </div>
+                                    <span style={{
+                                        flex: 1,
+                                        fontSize: '1rem',
+                                        lineHeight: '1.7',
+                                        fontWeight: '600',
+                                        color: '#0c4a6e',
+                                        letterSpacing: '-0.2px'
+                                    }}>{reason}</span>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 )}
             </div>
 
-            {/* 버튼 그룹 - AI 매칭률 아래 */}
+            {/* 오른쪽: 버튼 그룹 */}
             <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(2, 1fr)',
+                display: 'flex',
+                flexDirection: 'column',
                 gap: '8px',
-                marginBottom: '16px'
+                minWidth: '110px'
             }}
             onClick={(e) => e.stopPropagation()}>
                 <button
@@ -217,13 +359,14 @@ export default function AIRecommendationPage() {
                         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                         color: 'white',
                         border: 'none',
-                        padding: '10px 14px',
+                        padding: '10px 12px',
                         borderRadius: '8px',
-                        fontSize: '0.9rem',
+                        fontSize: '0.85rem',
                         fontWeight: '600',
                         cursor: 'pointer',
                         transition: 'all 0.2s',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        whiteSpace: 'nowrap'
                     }}
                     onMouseEnter={(e) => {
                         e.currentTarget.style.transform = 'translateY(-2px)';
@@ -245,13 +388,14 @@ export default function AIRecommendationPage() {
                         background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
                         color: 'white',
                         border: 'none',
-                        padding: '10px 14px',
+                        padding: '10px 12px',
                         borderRadius: '8px',
-                        fontSize: '0.9rem',
+                        fontSize: '0.85rem',
                         fontWeight: '600',
                         cursor: 'pointer',
                         transition: 'all 0.2s',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        whiteSpace: 'nowrap'
                     }}
                     onMouseEnter={(e) => {
                         e.currentTarget.style.transform = 'translateY(-2px)';
@@ -273,13 +417,14 @@ export default function AIRecommendationPage() {
                         background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
                         color: 'white',
                         border: 'none',
-                        padding: '10px 14px',
+                        padding: '10px 12px',
                         borderRadius: '8px',
-                        fontSize: '0.9rem',
+                        fontSize: '0.85rem',
                         fontWeight: '600',
                         cursor: 'pointer',
                         transition: 'all 0.2s',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        whiteSpace: 'nowrap'
                     }}
                     onMouseEnter={(e) => {
                         e.currentTarget.style.transform = 'translateY(-2px)';
@@ -301,13 +446,14 @@ export default function AIRecommendationPage() {
                         background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
                         color: 'white',
                         border: 'none',
-                        padding: '10px 14px',
+                        padding: '10px 12px',
                         borderRadius: '8px',
-                        fontSize: '0.9rem',
+                        fontSize: '0.85rem',
                         fontWeight: '600',
                         cursor: 'pointer',
                         transition: 'all 0.2s',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        whiteSpace: 'nowrap'
                     }}
                     onMouseEnter={(e) => {
                         e.currentTarget.style.transform = 'translateY(-2px)';
@@ -321,143 +467,6 @@ export default function AIRecommendationPage() {
                     💻 코딩Test
                 </button>
             </div>
-
-            <p style={{
-                fontSize: '1.05rem',
-                color: '#667eea',
-                fontWeight: '600',
-                marginBottom: '12px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-            }}>
-                <span style={{ fontSize: '1.1rem' }}>🏢</span>
-                {job.company}
-            </p>
-
-            <div style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: '8px',
-                marginBottom: '12px',
-                fontSize: '0.95rem',
-                color: '#666'
-            }}>
-                {job.location && (
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        📍 {Array.isArray(job.location) ? job.location.join(', ') : job.location}
-                    </span>
-                )}
-                {job.experience && (
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        💼 {job.experience}
-                    </span>
-                )}
-                {job.salary && (
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        💰 {job.salary}
-                    </span>
-                )}
-            </div>
-
-            {job.skills && job.skills.length > 0 && (
-                <div style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '6px',
-                    marginBottom: '12px'
-                }}>
-                    {job.skills.map((skill, idx) => (
-                        <span key={idx} style={{
-                            background: '#edf2f7',
-                            color: '#2d3748',
-                            padding: '4px 10px',
-                            borderRadius: '12px',
-                            fontSize: '0.9rem'
-                        }}>
-                            {skill}
-                        </span>
-                    ))}
-                </div>
-            )}
-
-            {job.match_reasons && job.match_reasons.length > 0 && (
-                <div style={{
-                    background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
-                    color: '#0c4a6e',
-                    padding: '16px',
-                    borderRadius: '16px',
-                    marginTop: '16px',
-                    border: '3px solid #0ea5e9',
-                    boxShadow: '0 8px 24px rgba(14, 165, 233, 0.25)'
-                }}>
-                    <div style={{
-                        fontWeight: '800',
-                        fontSize: '1.1rem',
-                        marginBottom: '12px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        textShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                        paddingBottom: '10px',
-                        borderBottom: '2px solid #38bdf8'
-                    }}>
-                        <span style={{ fontSize: '1.4rem' }}>🤖</span>
-                        <span style={{ color: '#0369a1' }}>GPT AI 매칭 분석</span>
-                    </div>
-                    <div style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '8px'
-                    }}>
-                        {job.match_reasons.map((reason, idx) => (
-                            <div key={idx} style={{
-                                display: 'flex',
-                                alignItems: 'flex-start',
-                                gap: '10px',
-                                padding: '10px 12px',
-                                background: 'white',
-                                borderRadius: '10px',
-                                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                                border: '1px solid #bae6fd',
-                                transition: 'all 0.2s'
-                            }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(14, 165, 233, 0.15)';
-                                e.currentTarget.style.transform = 'translateX(4px)';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)';
-                                e.currentTarget.style.transform = 'translateX(0)';
-                            }}>
-                                <div style={{
-                                    minWidth: '28px',
-                                    height: '28px',
-                                    borderRadius: '50%',
-                                    background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)',
-                                    color: 'white',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    fontWeight: '800',
-                                    fontSize: '0.9rem',
-                                    boxShadow: '0 2px 8px rgba(14, 165, 233, 0.3)'
-                                }}>
-                                    {idx + 1}
-                                </div>
-                                <span style={{
-                                    flex: 1,
-                                    fontSize: '1rem',
-                                    lineHeight: '1.7',
-                                    fontWeight: '600',
-                                    color: '#0c4a6e',
-                                    letterSpacing: '-0.2px'
-                                }}>{reason}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
         </div>
     );
 
