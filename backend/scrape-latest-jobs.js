@@ -128,6 +128,31 @@ async function scrapeCategoryJobs(page, connection, categoryName, categoryCode, 
     // 카테고리 선택
     console.log(`📂 카테고리 선택: ${categoryName}`);
 
+    // 페이지 HTML 디버깅
+    console.log('  [DEBUG] 페이지 로딩 완료, 버튼 찾기 시도...');
+    const buttonsDebug = await page.evaluate(() => {
+      const buttons = Array.from(document.querySelectorAll('button.bt'));
+      return buttons.map(btn => ({
+        text: btn.textContent.trim(),
+        classes: btn.className,
+        visible: btn.offsetParent !== null
+      }));
+    });
+    console.log(`  [DEBUG] 찾은 button.bt 버튼 수: ${buttonsDebug.length}`);
+    if (buttonsDebug.length > 0) {
+      console.log(`  [DEBUG] 버튼 목록:`, JSON.stringify(buttonsDebug, null, 2));
+    } else {
+      // button.bt가 없으면 모든 버튼 찾기
+      const allButtons = await page.evaluate(() => {
+        const buttons = Array.from(document.querySelectorAll('button'));
+        return buttons.slice(0, 10).map(btn => ({
+          text: btn.textContent.trim(),
+          classes: btn.className
+        }));
+      });
+      console.log(`  [DEBUG] 모든 버튼 (최대 10개):`, JSON.stringify(allButtons, null, 2));
+    }
+
     // 직무 버튼 클릭 (XPath 사용)
     await page.waitForFunction(() => {
       const buttons = Array.from(document.querySelectorAll('button.bt'));
