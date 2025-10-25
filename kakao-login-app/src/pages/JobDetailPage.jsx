@@ -65,8 +65,8 @@ export default function JobDetailPage() {
                 console.log('[JobDetail] No reviews found');
             }
 
-            // 면접 기출문제 조회
-            const questionsUrl = `${API_BASE_URL}/api/company/${encodeURIComponent(companyName)}/interview-questions?limit=5`;
+            // 면접 기출문제 조회 (모든 질문 가져오기)
+            const questionsUrl = `${API_BASE_URL}/api/company/${encodeURIComponent(companyName)}/interview-questions?limit=1000`;
             console.log('\n[JobDetail] 📞 면접 기출문제 API 호출');
             console.log('[JobDetail] URL:', questionsUrl);
             const questionsRes = await fetch(questionsUrl);
