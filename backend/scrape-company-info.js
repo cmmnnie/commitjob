@@ -127,27 +127,70 @@ async function scrapeCompanyInfo(companyName, pool = null) {
 
     await new Promise(r => setTimeout(r, 2000));
 
-    // 로그인 버튼 클릭
-    try {
-      await page.waitForSelector('a:has-text("로그인")', { timeout: 5000 });
-      await page.click('a:has-text("로그인")');
-      console.log('  로그인 버튼 클릭 완료');
-      await new Promise(r => setTimeout(r, 2000));
-    } catch (e) {
-      console.log('  ⚠️ 로그인 버튼을 찾을 수 없습니다 (이미 로그인 상태일 수 있음)');
-    }
+    // 로그인 확인 및 처리
+    const isLoggedIn = await page.evaluate(() => {
+      // 로그인 상태 확인 (로그인 버튼이 없으면 이미 로그인됨)
+      const loginButton = Array.from(document.querySelectorAll('a')).find(a =>
+        a.textContent.includes('로그인') && !a.textContent.includes('로그아웃')
+      );
+      return !loginButton;
+    });
 
-    // 로그인 폼 입력
-    try {
-      await page.waitForSelector('#id_login', { timeout: 5000 });
-      await page.type('#id_login', CATCH_LOGIN.id);
-      await page.type('#pw_login', CATCH_LOGIN.password);
-      await page.keyboard.press('Enter');
-      console.log('  로그인 정보 입력 및 제출 완료');
-      await new Promise(r => setTimeout(r, 3000));
-      console.log('✅ Catch.co.kr 로그인 성공\n');
-    } catch (e) {
-      console.log('  ⚠️ 로그인 폼을 찾을 수 없습니다 (이미 로그인 상태일 수 있음)\n');
+    if (isLoggedIn) {
+      console.log('  ✅ 이미 로그인된 상태입니다\n');
+    } else {
+      console.log('  🔐 로그인 시도 중...');
+
+      // 로그인 버튼 클릭
+      try {
+        const loginClicked = await page.evaluate(() => {
+          const loginButton = Array.from(document.querySelectorAll('a')).find(a =>
+            a.textContent.includes('로그인') && !a.textContent.includes('로그아웃')
+          );
+          if (loginButton) {
+            loginButton.click();
+            return true;
+          }
+          return false;
+        });
+
+        if (loginClicked) {
+          console.log('  ✅ 로그인 버튼 클릭 완료');
+          await new Promise(r => setTimeout(r, 2000));
+        }
+      } catch (e) {
+        console.log('  ⚠️ 로그인 버튼 클릭 실패:', e.message);
+      }
+
+      // 로그인 폼 입력
+      try {
+        await page.waitForSelector('#id_login', { timeout: 5000 });
+        await page.type('#id_login', CATCH_LOGIN.id);
+        await page.type('#pw_login', CATCH_LOGIN.password);
+
+        // Enter 대신 로그인 버튼 클릭
+        const loginSubmitted = await page.evaluate(() => {
+          const submitButton = document.querySelector('button[type="submit"]') ||
+                               document.querySelector('.btn_login') ||
+                               document.querySelector('button.login');
+          if (submitButton) {
+            submitButton.click();
+            return true;
+          }
+          return false;
+        });
+
+        if (!loginSubmitted) {
+          await page.keyboard.press('Enter');
+        }
+
+        console.log('  ✅ 로그인 정보 입력 및 제출 완료');
+        await new Promise(r => setTimeout(r, 3000));
+        console.log('  ✅ Catch.co.kr 로그인 성공\n');
+      } catch (e) {
+        console.log('  ⚠️ 로그인 폼 입력 실패:', e.message);
+        console.log('  ⚠️ 로그인 없이 계속 진행합니다\n');
+      }
     }
 
     // 회사 검색
