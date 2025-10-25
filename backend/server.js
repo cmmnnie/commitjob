@@ -6828,7 +6828,13 @@ app.get('/api/jobs/:category', async (req, res) => {
     );
     const totalCount = countResult[0].total;
 
-    let query = 'SELECT * FROM jobs WHERE category = ? ORDER BY scraped_at DESC';
+    let query = `
+      SELECT j.*, c.company_url
+      FROM jobs j
+      LEFT JOIN catch_companies c ON TRIM(j.company) = TRIM(c.company)
+      WHERE j.category = ?
+      ORDER BY j.scraped_at DESC
+    `;
 
     if (limit && limit > 0) {
       query += ` LIMIT ${limit}`;
@@ -6946,7 +6952,12 @@ app.get('/api/jobs', async (req, res) => {
   const limit = parseInt(req.query.limit) || null;
 
   try {
-    let query = 'SELECT * FROM jobs ORDER BY scraped_at DESC';
+    let query = `
+      SELECT j.*, c.company_url
+      FROM jobs j
+      LEFT JOIN catch_companies c ON TRIM(j.company) = TRIM(c.company)
+      ORDER BY j.scraped_at DESC
+    `;
 
     if (limit && limit > 0) {
       query += ` LIMIT ${limit}`;

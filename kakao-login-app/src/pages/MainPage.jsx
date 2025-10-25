@@ -422,88 +422,120 @@ export default function MainPage() {
         });
     };
 
-    const JobCard = ({ job }) => (
-        <div style={{
-            background: 'white',
-            borderRadius: '16px',
-            border: '1px solid #e0e0e0',
-            overflow: 'hidden',
-            transition: 'all 0.3s',
-            cursor: 'pointer',
-            display: 'flex',
-            flexDirection: 'column'
-        }}
-        onMouseEnter={(e) => {
-            e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.12)';
-            e.currentTarget.style.transform = 'translateY(-4px)';
-        }}
-        onMouseLeave={(e) => {
-            e.currentTarget.style.boxShadow = 'none';
-            e.currentTarget.style.transform = 'translateY(0)';
-        }}
-        onClick={() => navigate(`/jobs/detail/${job.id}`, { state: { job } })}>
-            {/* 이미지 영역 */}
-            <div style={{
-                width: '100%',
-                paddingBottom: '60%',
-                position: 'relative',
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-            }}>
-                <div style={{
-                    position: 'absolute',
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    color: 'white',
-                    fontSize: '2.5rem',
-                    textAlign: 'center',
-                    width: '80%'
-                }}>
-                    📊
-                    <div style={{
-                        fontSize: '0.85rem',
-                        marginTop: '8px',
-                        fontWeight: '600',
-                        lineHeight: '1.3',
-                        wordBreak: 'keep-all'
-                    }}>
-                        {job.company}
-                    </div>
-                </div>
-            </div>
+    const getCompanyLogoUrl = (job) => {
+        if (!job.company_url) return null;
+        try {
+            const url = new URL(job.company_url);
+            return `https://www.google.com/s2/favicons?domain=${url.hostname}&sz=128`;
+        } catch (e) {
+            return null;
+        }
+    };
 
-            {/* 제목 및 회사명 */}
-            <div style={{ padding: '20px' }}>
-                <h3 style={{
-                    fontSize: '1rem',
-                    fontWeight: '600',
-                    color: '#333',
-                    marginBottom: '8px',
-                    lineHeight: '1.4',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                    minHeight: '2.8em'
-                }}>{job.title}</h3>
-                <p style={{
-                    fontSize: '0.9rem',
-                    color: '#666',
-                    fontWeight: '500',
+    const JobCard = ({ job }) => {
+        const logoUrl = getCompanyLogoUrl(job);
+        const [logoError, setLogoError] = useState(false);
+
+        return (
+            <div style={{
+                background: 'white',
+                borderRadius: '16px',
+                border: '1px solid #e0e0e0',
+                overflow: 'hidden',
+                transition: 'all 0.3s',
+                cursor: 'pointer',
+                display: 'flex',
+                flexDirection: 'column'
+            }}
+            onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.12)';
+                e.currentTarget.style.transform = 'translateY(-4px)';
+            }}
+            onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow = 'none';
+                e.currentTarget.style.transform = 'translateY(0)';
+            }}
+            onClick={() => navigate(`/jobs/detail/${job.id}`, { state: { job } })}>
+                {/* 이미지 영역 */}
+                <div style={{
+                    width: '100%',
+                    paddingBottom: '60%',
+                    position: 'relative',
+                    background: logoUrl && !logoError ? 'white' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '6px'
+                    justifyContent: 'center'
                 }}>
-                    <span style={{ fontSize: '1rem' }}>🏢</span>
-                    {job.company}
-                </p>
+                    {logoUrl && !logoError ? (
+                        <img
+                            src={logoUrl}
+                            alt={`${job.company} 로고`}
+                            onError={() => setLogoError(true)}
+                            style={{
+                                position: 'absolute',
+                                top: '50%',
+                                left: '50%',
+                                transform: 'translate(-50%, -50%)',
+                                maxWidth: '70%',
+                                maxHeight: '70%',
+                                objectFit: 'contain'
+                            }}
+                        />
+                    ) : (
+                        <div style={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            color: 'white',
+                            fontSize: '2.5rem',
+                            textAlign: 'center',
+                            width: '80%'
+                        }}>
+                            📊
+                            <div style={{
+                                fontSize: '0.85rem',
+                                marginTop: '8px',
+                                fontWeight: '600',
+                                lineHeight: '1.3',
+                                wordBreak: 'keep-all'
+                            }}>
+                                {job.company}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* 제목 및 회사명 */}
+                <div style={{ padding: '20px' }}>
+                    <h3 style={{
+                        fontSize: '1rem',
+                        fontWeight: '600',
+                        color: '#333',
+                        marginBottom: '8px',
+                        lineHeight: '1.4',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        minHeight: '2.8em'
+                    }}>{job.title}</h3>
+                    <p style={{
+                        fontSize: '0.9rem',
+                        color: '#666',
+                        fontWeight: '500',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                    }}>
+                        <span style={{ fontSize: '1rem' }}>🏢</span>
+                        {job.company}
+                    </p>
+                </div>
             </div>
-        </div>
-    );
+        );
+    };
 
     return (
         <div style={{
