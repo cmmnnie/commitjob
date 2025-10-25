@@ -350,7 +350,7 @@ export default function AICoverLetterPage() {
         try {
             console.log('[AI자소서] 이력서 자기소개서 불러오기 시작');
             const token = localStorage.getItem('app_session');
-            const response = await fetch(`${CONFIG.BACKEND_URL}/api/resume/${currentUser.id}`, {
+            const response = await fetch(`${CONFIG.BACKEND_URL}/api/profile?user_id=${currentUser.id}`, {
                 method: 'GET',
                 credentials: 'include',
                 headers: {
