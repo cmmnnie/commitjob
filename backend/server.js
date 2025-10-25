@@ -5545,10 +5545,10 @@ app.post('/api/cover-letter-revised', async (req, res) => {
 
     console.log('[COVER-LETTER-REVISED] 수정 자소서 요청:', { user_id, company, coverLetterLength: cover_letter?.length, feedbackLength: feedback?.length });
 
-    if (!user_id || !company || !cover_letter || !feedback) {
+    if (!user_id || !cover_letter || !feedback) {
       return res.status(400).json({
         success: false,
-        error: '사용자 ID, 회사명, 자기소개서, 피드백을 모두 입력해주세요.'
+        error: '사용자 ID, 자기소개서, 피드백을 모두 입력해주세요.'
       });
     }
 
@@ -5576,7 +5576,9 @@ app.post('/api/cover-letter-revised', async (req, res) => {
     }
 
     // 2. GPT 수정 자소서 프롬프트 생성
-    let prompt = `다음은 ${company}에 지원하기 위해 작성한 자기소개서와 받은 피드백입니다. 피드백을 반영하여 자기소개서를 개선해주세요.\n\n`;
+    let prompt = company
+      ? `다음은 ${company}에 지원하기 위해 작성한 자기소개서와 받은 피드백입니다. 피드백을 반영하여 자기소개서를 개선해주세요.\n\n`
+      : `다음은 작성한 자기소개서와 받은 피드백입니다. 피드백을 반영하여 자기소개서를 개선해주세요.\n\n`;
 
     prompt += `[원본 자기소개서]\n${cover_letter}\n\n`;
     prompt += `[받은 피드백]\n${feedback}\n\n`;
