@@ -365,6 +365,14 @@ export default function AICoverLetterPage() {
                         ? JSON.parse(data.profile.cover_letters)
                         : data.profile.cover_letters;
                     setResumeCoverLetters(coverLetterData || []);
+
+                    // 이력서의 자기소개서 내용을 입력창에 자동으로 표시
+                    if (coverLetterData && coverLetterData.length > 0) {
+                        const formattedContent = coverLetterData
+                            .map(letter => `[${letter.question}]\n\n${letter.content}`)
+                            .join('\n\n---\n\n');
+                        setUserCoverLetter(formattedContent);
+                    }
                 }
             }
         } catch (err) {
