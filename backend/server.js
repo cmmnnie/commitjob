@@ -5504,6 +5504,7 @@ app.post('/api/cover-letter-feedback', async (req, res) => {
 
     // 3. OpenAI API 호출
     console.log('[COVER-LETTER-FEEDBACK] OpenAI API 호출 중...');
+    console.log('[COVER-LETTER-FEEDBACK] 프롬프트:\n', prompt);
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
@@ -5603,6 +5604,7 @@ app.post('/api/cover-letter-revised', async (req, res) => {
 
     // 3. OpenAI API 호출
     console.log('[COVER-LETTER-REVISED] OpenAI API 호출 중...');
+    console.log('[COVER-LETTER-REVISED] 프롬프트:\n', prompt);
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
