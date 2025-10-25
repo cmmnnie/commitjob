@@ -211,26 +211,6 @@ async function scrapeCompanyInfo(companyName, pool = null) {
     console.log(`\n[1/1] 🏢 ${companyName}`);
     console.log('-'.repeat(60));
 
-    const searchUrl = 'https://www.catch.co.kr/Comp/CompMajor/SearchPage';
-    await page.goto(searchUrl, { waitUntil: 'domcontentloaded' });
-    await new Promise(r => setTimeout(r, 3000));
-
-    const searchTerm = companyName.trim();
-    console.log(`  🔍 검색어: '${searchTerm}'`);
-
-    // 검색창에 입력
-    await page.waitForSelector('input[placeholder*="궁금한 기업을 검색"]', { timeout: 10000 });
-    await page.type('input[placeholder*="궁금한 기업을 검색"]', searchTerm);
-
-    // 검색 버튼 클릭
-    await page.click('button.bt_sch');
-    await new Promise(r => setTimeout(r, 3000));
-
-    // 검색 결과에서 정확한 회사 찾기
-    const companyLinks = await page.$$('ul.list_corp_round li p.name a');
-
-    console.log(`  📋 검색 결과 ${companyLinks.length}개`);
-
     // 정규화 함수 - 더 강력하게 개선
     const normalize = (name) => {
       return name
@@ -245,45 +225,121 @@ async function scrapeCompanyInfo(companyName, pool = null) {
         .trim();
     };
 
-    const normalizedInput = normalize(searchTerm);
+    // 단계적 검색어 생성 함수 (예: "우아한형제들 코리아" → ["우아한형제들 코리아", "우아한형제들"])
+    const generateSearchTerms = (companyName) => {
+      const terms = [companyName.trim()];
+
+      // 공백으로 구분된 경우, 마지막 단어를 제거한 버전 추가
+      const parts = companyName.trim().split(/\s+/);
+      if (parts.length > 1) {
+        // 마지막 단어 제거
+        terms.push(parts.slice(0, -1).join(' '));
+      }
+
+      // "코리아", "Korea", "인터내셔널" 등의 접미사 제거
+      const suffixes = ['코리아', 'korea', '인터내셔널', 'international', '홀딩스', 'holdings'];
+      for (const suffix of suffixes) {
+        const regex = new RegExp(`\\s*${suffix}\\s*$`, 'i');
+        if (regex.test(companyName)) {
+          const shortened = companyName.replace(regex, '').trim();
+          if (shortened && !terms.includes(shortened)) {
+            terms.push(shortened);
+          }
+        }
+      }
+
+      return terms;
+    };
+
+    // 단일 검색어로 회사 검색 시도
+    const searchCompany = async (searchTerm) => {
+      console.log(`  🔍 검색어: '${searchTerm}'`);
+
+      const searchUrl = 'https://www.catch.co.kr/Comp/CompMajor/SearchPage';
+      await page.goto(searchUrl, { waitUntil: 'domcontentloaded' });
+      await new Promise(r => setTimeout(r, 3000));
+
+      // 검색창에 입력
+      await page.waitForSelector('input[placeholder*="궁금한 기업을 검색"]', { timeout: 10000 });
+
+      // 기존 입력값 초기화
+      await page.evaluate(() => {
+        const input = document.querySelector('input[placeholder*="궁금한 기업을 검색"]');
+        if (input) input.value = '';
+      });
+
+      await page.type('input[placeholder*="궁금한 기업을 검색"]', searchTerm);
+
+      // 검색 버튼 클릭
+      await page.click('button.bt_sch');
+      await new Promise(r => setTimeout(r, 3000));
+
+      // 검색 결과에서 정확한 회사 찾기
+      const companyLinks = await page.$$('ul.list_corp_round li p.name a');
+      console.log(`  📋 검색 결과 ${companyLinks.length}개`);
+
+      const normalizedInput = normalize(searchTerm);
+      let targetUrl = null;
+      let matchedText = null;
+
+      // 정확한 매칭 찾기
+      for (const link of companyLinks) {
+        const text = await page.evaluate(el => el.textContent.trim(), link);
+        const normalizedText = normalize(text);
+
+        console.log(`  🔍 비교: '${text}' (정규화: '${normalizedText}') vs '${searchTerm}' (정규화: '${normalizedInput}')`);
+
+        // 1. 정확한 매칭
+        if (normalizedText === normalizedInput) {
+          targetUrl = await page.evaluate(el => el.href, link);
+          matchedText = text;
+          console.log(`  ✅ 정확한 기업명 매칭: '${searchTerm}' → '${text}'`);
+          break;
+        }
+
+        // 2. 포함 관계 매칭 (정규화된 텍스트가 입력을 포함하거나 입력이 텍스트를 포함)
+        if (normalizedText.includes(normalizedInput) || normalizedInput.includes(normalizedText)) {
+          targetUrl = await page.evaluate(el => el.href, link);
+          matchedText = text;
+          console.log(`  ✅ 부분 매칭 성공: '${searchTerm}' → '${text}'`);
+          break;
+        }
+      }
+
+      // 3. 매칭 실패 시, 검색 결과가 1개뿐이면 해당 결과 사용
+      if (!targetUrl && companyLinks.length === 1) {
+        const link = companyLinks[0];
+        const text = await page.evaluate(el => el.textContent.trim(), link);
+        targetUrl = await page.evaluate(el => el.href, link);
+        matchedText = text;
+        console.log(`  ⚠️  검색 결과가 1개뿐이므로 자동 선택: '${searchTerm}' → '${text}'`);
+      }
+
+      return { targetUrl, matchedText };
+    };
+
+    // 단계적으로 검색 시도
+    const searchTerms = generateSearchTerms(companyName);
     let targetUrl = null;
     let matchedText = null;
 
-    // 정확한 매칭 찾기
-    for (const link of companyLinks) {
-      const text = await page.evaluate(el => el.textContent.trim(), link);
-      const normalizedText = normalize(text);
-
-      console.log(`  🔍 비교: '${text}' (정규화: '${normalizedText}') vs '${searchTerm}' (정규화: '${normalizedInput}')`);
-
-      // 1. 정확한 매칭
-      if (normalizedText === normalizedInput) {
-        targetUrl = await page.evaluate(el => el.href, link);
-        matchedText = text;
-        console.log(`  ✅ 정확한 기업명 매칭: '${searchTerm}' → '${text}'`);
-        break;
+    for (let i = 0; i < searchTerms.length; i++) {
+      const searchTerm = searchTerms[i];
+      if (i > 0) {
+        console.log(`  🔄 재시도 (${i}/${searchTerms.length - 1})`);
       }
 
-      // 2. 포함 관계 매칭 (정규화된 텍스트가 입력을 포함하거나 입력이 텍스트를 포함)
-      if (normalizedText.includes(normalizedInput) || normalizedInput.includes(normalizedText)) {
-        targetUrl = await page.evaluate(el => el.href, link);
-        matchedText = text;
-        console.log(`  ✅ 부분 매칭 성공: '${searchTerm}' → '${text}'`);
+      const result = await searchCompany(searchTerm);
+      targetUrl = result.targetUrl;
+      matchedText = result.matchedText;
+
+      if (targetUrl) {
         break;
       }
-    }
-
-    // 3. 매칭 실패 시, 검색 결과가 1개뿐이면 해당 결과 사용
-    if (!targetUrl && companyLinks.length === 1) {
-      const link = companyLinks[0];
-      const text = await page.evaluate(el => el.textContent.trim(), link);
-      targetUrl = await page.evaluate(el => el.href, link);
-      matchedText = text;
-      console.log(`  ⚠️  검색 결과가 1개뿐이므로 자동 선택: '${searchTerm}' → '${text}'`);
     }
 
     if (!targetUrl) {
-      console.log(`  ❌ 회사를 찾을 수 없음`);
+      console.log(`  ❌ 회사를 찾을 수 없음 (시도한 검색어: ${searchTerms.join(', ')})`);
       return;
     }
 
