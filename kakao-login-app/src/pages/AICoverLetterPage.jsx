@@ -243,7 +243,7 @@ export default function AICoverLetterPage() {
                 },
                 body: JSON.stringify({
                     user_id: currentUser?.id,
-                    company: companyName.trim(),
+                    company: companyName.trim() || '',
                     cover_letter: userCoverLetter.trim()
                 })
             });
