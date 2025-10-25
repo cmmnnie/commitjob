@@ -133,7 +133,7 @@ export default function ITJobsPage() {
                 {/* 이미지 영역 (세로 축소) */}
                 <div style={{
                     width: '100%',
-                    paddingBottom: '60%',
+                    paddingBottom: '40%',
                     position: 'relative',
                     background: logoUrl && !logoError ? 'white' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                     display: 'flex',
