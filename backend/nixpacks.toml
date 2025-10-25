@@ -1,11 +1,17 @@
-# Railway Build Optimization v5 - Node.js + Python (Selenium scraping)
+# Railway Build Optimization v6 - Node.js + Python (Selenium scraping via nixPkgs)
 [phases.setup]
-nixPkgs = ["nodejs_18", "python311", "python311Packages.pip"]
+nixPkgs = [
+  "nodejs_18",
+  "python311",
+  "python311Packages.selenium",
+  "python311Packages.pymysql",
+  "python311Packages.python-dotenv"
+]
 
 [phases.install]
 cmds = [
   "npm ci --omit=dev --prefer-offline --no-audit --no-fund",
-  "pip install selenium pymysql webdriver-manager python-dotenv --no-cache-dir"
+  "pip install webdriver-manager --break-system-packages --no-cache-dir"
 ]
 
 [phases.build]
