@@ -231,25 +231,55 @@ async function scrapeCompanyInfo(companyName, pool = null) {
 
     console.log(`  📋 검색 결과 ${companyLinks.length}개`);
 
-    // 정규화 함수
+    // 정규화 함수 - 더 강력하게 개선
     const normalize = (name) => {
-      return name.replace(/\s/g, '').replace(/\(주\)/g, '').replace(/주식회사/g, '')
-        .replace(/㈜/g, '').replace(/\(\)/g, '').toLowerCase();
+      return name
+        .replace(/\s/g, '')                    // 모든 공백 제거
+        .replace(/\(주\)/g, '')                // (주) 제거
+        .replace(/주식회사/g, '')              // 주식회사 제거
+        .replace(/㈜/g, '')                    // ㈜ 제거
+        .replace(/\([^)]*\)/g, '')            // 모든 괄호 및 내용 제거
+        .replace(/\[[^\]]*\]/g, '')           // 대괄호 및 내용 제거
+        .replace(/[.,\-_\/]/g, '')            // 특수문자 제거
+        .toLowerCase()
+        .trim();
     };
 
     const normalizedInput = normalize(searchTerm);
     let targetUrl = null;
+    let matchedText = null;
 
     // 정확한 매칭 찾기
     for (const link of companyLinks) {
       const text = await page.evaluate(el => el.textContent.trim(), link);
       const normalizedText = normalize(text);
 
+      console.log(`  🔍 비교: '${text}' (정규화: '${normalizedText}') vs '${searchTerm}' (정규화: '${normalizedInput}')`);
+
+      // 1. 정확한 매칭
       if (normalizedText === normalizedInput) {
         targetUrl = await page.evaluate(el => el.href, link);
+        matchedText = text;
         console.log(`  ✅ 정확한 기업명 매칭: '${searchTerm}' → '${text}'`);
         break;
       }
+
+      // 2. 포함 관계 매칭 (정규화된 텍스트가 입력을 포함하거나 입력이 텍스트를 포함)
+      if (normalizedText.includes(normalizedInput) || normalizedInput.includes(normalizedText)) {
+        targetUrl = await page.evaluate(el => el.href, link);
+        matchedText = text;
+        console.log(`  ✅ 부분 매칭 성공: '${searchTerm}' → '${text}'`);
+        break;
+      }
+    }
+
+    // 3. 매칭 실패 시, 검색 결과가 1개뿐이면 해당 결과 사용
+    if (!targetUrl && companyLinks.length === 1) {
+      const link = companyLinks[0];
+      const text = await page.evaluate(el => el.textContent.trim(), link);
+      targetUrl = await page.evaluate(el => el.href, link);
+      matchedText = text;
+      console.log(`  ⚠️  검색 결과가 1개뿐이므로 자동 선택: '${searchTerm}' → '${text}'`);
     }
 
     if (!targetUrl) {
