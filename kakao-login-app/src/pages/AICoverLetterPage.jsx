@@ -366,7 +366,7 @@ export default function AICoverLetterPage() {
                 console.log('[AI자소서] 받은 데이터:', data);
                 console.log('[AI자소서] cover_letters:', data.profile?.cover_letters);
 
-                if (data.success && data.profile && data.profile.cover_letters) {
+                if (data.profile && data.profile.cover_letters) {
                     const coverLetterData = typeof data.profile.cover_letters === 'string'
                         ? JSON.parse(data.profile.cover_letters)
                         : data.profile.cover_letters;
