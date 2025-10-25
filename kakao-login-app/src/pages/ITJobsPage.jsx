@@ -181,12 +181,12 @@ export default function ITJobsPage() {
                 </div>
 
                 {/* 제목 및 회사명 */}
-                <div style={{ padding: '20px' }}>
+                <div style={{ padding: '12px 16px' }}>
                     <h3 style={{
                         fontSize: '1rem',
                         fontWeight: '600',
                         color: '#333',
-                        marginBottom: '8px',
+                        marginBottom: '6px',
                         lineHeight: '1.4',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
