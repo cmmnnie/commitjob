@@ -1,0 +1,50 @@
+기본
+- BASE_URL: http://아이피:3000/api
+- 모든 응답은 JSON. 프론트는 results.*를 사용.
+- 중복 제거 목록은 results.unique_jobs.
+
+홈페이지
+// 수집/저장
+await fetch(`${BASE_URL}/db/refresh/homepage`, { method: 'POST' });
+
+// 조회(중복제거 목록 사용)
+const res = await fetch(`${BASE_URL}/db/homepage`).then(r=>r.json());
+const unique = res.results.unique_jobs; // 표시에 사용
+
+전체 공고
+// 수집/저장(전체 또는 ?max_pages=N)
+await fetch(`${BASE_URL}/db/refresh/all`, { method: 'POST' });
+
+// 조회(중복제거 목록 사용)
+const res = await fetch(`${BASE_URL}/extract-all-jobs`).then(r=>r.json());
+const unique = res.results.unique_jobs;
+
+특정 기업 공고
+// GET 권장(한글 쿼리)
+const q = encodeURIComponent('카카오');
+const res = await fetch(`${BASE_URL}/db/company-jobs?company_name=${q}`).then(r=>r.json());
+const unique = res.results.unique_jobs;
+
+개별 공고 상세
+const detail = await fetch(`${BASE_URL}/job-detail`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json; charset=utf-8' },
+  body: JSON.stringify({ job_url }),
+}).then(r=>r.json());
+
+기업 정보(프로필/리뷰)
+const info = await fetch(`${BASE_URL}/search-company-info`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json; charset=utf-8' },
+  body: JSON.stringify({ company_name: '카카오' }),
+}).then(r=>r.json());
+
+
+인증/상태
+await fetch(`${BASE_URL}/init`, { method: 'POST' });
+await fetch(`${BASE_URL}/login`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ username: 'test0137', password: '#test0808' }),
+});
+

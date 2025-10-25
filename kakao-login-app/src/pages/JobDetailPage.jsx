@@ -1265,53 +1265,42 @@ export default function JobDetailPage() {
                             </span>
                         </div>
                         {interviewQuestions.length > 0 ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                 {interviewQuestions.map((item, index) => (
                                     <div key={index} style={{
                                         background: 'white',
-                                        padding: '24px',
-                                        borderRadius: '16px',
-                                        boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
-                                        border: '2px solid transparent',
-                                        transition: 'all 0.3s',
-                                        position: 'relative',
-                                        overflow: 'hidden'
+                                        padding: '16px',
+                                        borderRadius: '12px',
+                                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                                        border: '1px solid #e0e0e0',
+                                        transition: 'all 0.2s'
                                     }}
                                     onMouseEnter={(e) => {
-                                        e.currentTarget.style.transform = 'translateY(-4px)';
-                                        e.currentTarget.style.boxShadow = '0 8px 24px rgba(118, 75, 162, 0.2)';
+                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(118, 75, 162, 0.15)';
                                         e.currentTarget.style.borderColor = '#764ba2';
                                     }}
                                     onMouseLeave={(e) => {
-                                        e.currentTarget.style.transform = 'translateY(0)';
-                                        e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.08)';
-                                        e.currentTarget.style.borderColor = 'transparent';
+                                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)';
+                                        e.currentTarget.style.borderColor = '#e0e0e0';
                                     }}>
-                                        <div style={{
-                                            position: 'absolute',
-                                            top: '0',
-                                            left: '0',
-                                            width: '5px',
-                                            height: '100%',
-                                            background: 'linear-gradient(180deg, #764ba2 0%, #667eea 100%)'
-                                        }}></div>
+                                        {/* 첫 줄: 번호 + 직무 + 시기 + 경력 */}
                                         <div style={{
                                             display: 'flex',
                                             alignItems: 'center',
-                                            gap: '12px',
-                                            marginBottom: '16px',
-                                            marginLeft: '10px'
+                                            gap: '8px',
+                                            marginBottom: '10px',
+                                            flexWrap: 'wrap'
                                         }}>
                                             <div style={{
                                                 background: 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)',
                                                 color: 'white',
-                                                width: '32px',
-                                                height: '32px',
+                                                minWidth: '28px',
+                                                height: '28px',
                                                 borderRadius: '50%',
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                fontSize: '1rem',
+                                                fontSize: '0.9rem',
                                                 fontWeight: '800',
                                                 flexShrink: 0
                                             }}>
@@ -1319,68 +1308,22 @@ export default function JobDetailPage() {
                                             </div>
                                             {item.position && (
                                                 <span style={{
-                                                    background: 'linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%)',
+                                                    background: '#f3e5f5',
                                                     color: '#6a1b9a',
-                                                    padding: '6px 14px',
-                                                    borderRadius: '16px',
+                                                    padding: '4px 10px',
+                                                    borderRadius: '12px',
                                                     fontSize: '0.85rem',
-                                                    fontWeight: '700',
-                                                    border: '1px solid #9c27b0'
+                                                    fontWeight: '700'
                                                 }}>
                                                     📌 {item.position}
                                                 </span>
-                                            )}
-                                        </div>
-                                        {item.question && (
-                                            <div style={{
-                                                fontSize: '1.1rem',
-                                                color: '#333',
-                                                lineHeight: '1.8',
-                                                marginBottom: '16px',
-                                                marginLeft: '10px',
-                                                fontWeight: '500',
-                                                padding: '16px',
-                                                background: 'linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%)',
-                                                borderRadius: '12px',
-                                                borderLeft: '4px solid #764ba2'
-                                            }}>
-                                                <span style={{ fontWeight: '800', color: '#764ba2', fontSize: '1.2rem' }}>Q. </span>
-                                                {item.question}
-                                            </div>
-                                        )}
-                                        <div style={{
-                                            display: 'flex',
-                                            gap: '10px',
-                                            alignItems: 'center',
-                                            marginLeft: '10px'
-                                        }}>
-                                            {item.difficulty && (
-                                                <div style={{
-                                                    display: 'inline-flex',
-                                                    alignItems: 'center',
-                                                    gap: '6px',
-                                                    background: item.difficulty === '어려움'
-                                                        ? 'linear-gradient(135deg, #f44336 0%, #e91e63 100%)'
-                                                        : item.difficulty === '보통'
-                                                        ? 'linear-gradient(135deg, #ff9800 0%, #ffc107 100%)'
-                                                        : 'linear-gradient(135deg, #4caf50 0%, #8bc34a 100%)',
-                                                    color: 'white',
-                                                    padding: '8px 16px',
-                                                    borderRadius: '20px',
-                                                    fontSize: '0.9rem',
-                                                    fontWeight: '700',
-                                                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-                                                }}>
-                                                    <span>{item.difficulty === '어려움' ? '🔥' : item.difficulty === '보통' ? '⚡' : '✨'}</span>
-                                                    난이도: {item.difficulty}
-                                                </div>
                                             )}
                                             {item.period && (
                                                 <span style={{
                                                     background: '#e3f2fd',
                                                     color: '#1976d2',
-                                                    padding: '6px 12px',
-                                                    borderRadius: '16px',
+                                                    padding: '4px 10px',
+                                                    borderRadius: '12px',
                                                     fontSize: '0.85rem',
                                                     fontWeight: '600'
                                                 }}>
@@ -1391,8 +1334,8 @@ export default function JobDetailPage() {
                                                 <span style={{
                                                     background: '#fff3e0',
                                                     color: '#f57c00',
-                                                    padding: '6px 12px',
-                                                    borderRadius: '16px',
+                                                    padding: '4px 10px',
+                                                    borderRadius: '12px',
                                                     fontSize: '0.85rem',
                                                     fontWeight: '600'
                                                 }}>
@@ -1400,6 +1343,22 @@ export default function JobDetailPage() {
                                                 </span>
                                             )}
                                         </div>
+                                        {/* 질문 */}
+                                        {item.question && (
+                                            <div style={{
+                                                fontSize: '1rem',
+                                                color: '#333',
+                                                lineHeight: '1.6',
+                                                fontWeight: '500',
+                                                padding: '12px',
+                                                background: '#fafafa',
+                                                borderRadius: '8px',
+                                                borderLeft: '3px solid #764ba2'
+                                            }}>
+                                                <span style={{ fontWeight: '800', color: '#764ba2', fontSize: '1.1rem' }}>Q. </span>
+                                                {item.question}
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
                             </div>

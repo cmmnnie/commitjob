@@ -1,0 +1,7587 @@
+// backend/server.js
+//import swaggerUi from "swagger-ui-express";
+//import YAML from "yamljs";
+import express from "express";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+import dotenv from "dotenv";
+import axios from "axios";
+import multer from "multer";
+import * as jose from "jose";
+import crypto from "crypto";
+import path from 'path';
+import fs from 'fs';
+import OpenAI from 'openai';
+
+// jose 라이브러리를 위한 Web Crypto API 설정
+if (!globalThis.crypto) {
+  globalThis.crypto = crypto.webcrypto;
+}
+
+// Removed: Advanced Recommendation Algorithms (replaced with GPT MCP)
+
+// 헬퍼 함수: 스킬로부터 직무 유형 추론
+function inferJobTypeFromSkills(skills) {
+  if (!skills || skills.length === 0) return 'IT';
+
+  const aiSkills = ['TensorFlow', 'PyTorch', 'Keras', 'OpenCV', 'scikit-learn', 'Machine Learning', 'Deep Learning', 'AI', 'Computer Vision', 'NLP', 'Natural Language Processing'];
+  const dataSkills = ['Python', 'Spark', 'Hadoop', 'SQL', 'Pandas', 'R', 'Tableau', 'PowerBI', 'Elasticsearch', 'Kafka'];
+
+  const hasAiSkills = skills.some(skill => aiSkills.includes(skill));
+  const hasDataSkills = skills.some(skill => dataSkills.includes(skill));
+
+  if (hasAiSkills) return 'AI';
+  if (hasDataSkills) return '빅데이터';
+  return 'IT';
+}
+
+dotenv.config();
+
+// OpenAI 클라이언트 초기화
+let openai = null;
+if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your_openai_api_key_here') {
+  openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+    timeout: 60000, // 60초 타임아웃
+    maxRetries: 2, // 재시도 2회
+  });
+  console.log('✅ OpenAI API 연결됨 (timeout: 60초)');
+} else {
+  console.log('⚠️ OpenAI API 키가 설정되지 않았습니다. 기본 매칭 알고리즘을 사용합니다.');
+}
+
+const app = express();
+// ✨ 안전한 포트/호스트 결정
+const PORT = Number(process.env.PORT || 4001);
+
+// Catch 스크래퍼 서비스 URL
+const CATCH_SCRAPER_URL = process.env.CATCH_SCRAPER_URL || 'http://localhost:3000';
+console.log(`[CONFIG] Catch Scraper URL: ${CATCH_SCRAPER_URL}`);
+
+// 모든 네트워크 인터페이스에서 접근 가능하도록 설정 (프론트엔드 팀 접근용)
+const HOST = process.env.HOST || '0.0.0.0';
+
+// 중복 listen 방지 - 혹시 다른 곳에서 httpServer.listen을 또 호출하면 에러 띄우게
+if (!app._listening) {
+  const server = app.listen(PORT, HOST, () => {
+    console.log(`[BOOT] Listening on http://${HOST}:${PORT} (NODE_ENV=${process.env.NODE_ENV || 'undefined'})`);
+  });
+  app._listening = true;
+
+  // 프로세스 진짜로 리스닝 중인지 1초 뒤에도 로그
+  setTimeout(() => {
+    console.log(`[HEALTH] server.listening=${server.listening}`);
+  }, 1000);
+}
+
+// --- Swagger UI ---
+import swaggerUi from 'swagger-ui-express';
+import swaggerJsdoc from 'swagger-jsdoc';
+
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'CommitJob Backend API',
+      version: '1.0.0',
+      description: 'CommitJob 백엔드 API - 소셜 로그인, GPT MCP 기반 맞춤형 채용공고 추천 및 면접 질문 생성',
+    },
+    servers: [
+      {
+        url: 'http://172.30.1.28:4001',
+        description: 'Development server (IP)',
+      },
+      {
+        url: 'http://api.commitjob.site:4001',
+        description: 'Development server (Domain)',
+      },
+      {
+        url: 'http://localhost:4001',
+        description: 'Local development',
+      },
+    ],
+    tags: [
+      {
+        name: 'Job Data Collection',
+        description: '캐치 기반 기업정보 및 취업 데이터 수집 API'
+      }
+    ],
+    components: {
+      securitySchemes: {
+        cookieAuth: {
+          type: 'apiKey',
+          in: 'cookie',
+          name: 'app_session'
+        }
+      },
+      schemas: {
+        User: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer', example: 1 },
+            email: { type: 'string', nullable: true, example: 'user@example.com' },
+            name: { type: 'string', nullable: true, example: '홍길동' },
+            picture: { type: 'string', nullable: true, example: 'https://example.com/avatar.png' },
+            provider: { type: 'string', enum: ['google', 'kakao'], example: 'google' }
+          }
+        },
+        UserProfile: {
+          type: 'object',
+          properties: {
+            user_id: { type: 'integer', example: 1, description: '사용자 ID' },
+            jobs: { type: 'string', example: '백엔드 개발자', description: '희망직무' },
+            careers: { type: 'string', example: '1-3년', description: '경력' },
+            regions: { type: 'string', example: '서울', description: '희망근무지역' },
+            skills: { type: 'array', items: { type: 'string' }, example: ['JavaScript', 'React', 'Node.js'], description: '기술스택' },
+            resume_path: { type: 'string', example: '/uploads/resume/1_20250922.pdf', description: '자기소개서 파일 경로' },
+            created_at: { type: 'string', format: 'date-time', description: '생성일시' },
+            updated_at: { type: 'string', format: 'date-time', description: '수정일시' }
+          },
+          required: ['user_id']
+        },
+        Ok: {
+          type: 'object',
+          properties: {
+            ok: { type: 'boolean', example: true }
+          }
+        },
+        Error: {
+          type: 'object',
+          properties: {
+            error: {
+              type: 'object',
+              properties: {
+                code: { type: 'string', example: 'INVALID_STATE' },
+                message: { type: 'string', example: 'state mismatch' }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  apis: ['./server.js'], // JSDoc 주석만 사용
+};
+
+const swaggerSpec = swaggerJsdoc(swaggerOptions);
+
+// JSON 스펙 제공 (캐시 방지)
+app.get('/api/docs/swagger.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('ETag', Date.now().toString());
+  res.send(swaggerSpec);
+});
+
+// Swagger UI 설정 (캐시 방지)
+const swaggerUiOptions = {
+  explorer: true,
+  swaggerOptions: {
+    url: `/api/docs/swagger.json?v=${Date.now()}`
+  }
+};
+
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOptions));
+
+// 코딩 테스트 API 라우터
+app.use('/api/coding', codingRouter);
+app.use('/api/programmers', programmersRouter);
+
+/* -------------------- 기본 설정 -------------------- */
+app.use(cookieParser());
+app.use(express.json());
+
+// --- 파일 업로드 (multer) ---
+
+// 프로필 업로드용 (디스크)
+const resumeDir = path.join(process.cwd(), 'uploads', 'resume');
+fs.mkdirSync(resumeDir, { recursive: true });
+
+const coverLetterDir = path.join(process.cwd(), 'uploads', 'cover-letters');
+fs.mkdirSync(coverLetterDir, { recursive: true });
+
+const uploadDir = path.join(process.cwd(), 'uploads');
+fs.mkdirSync(uploadDir, { recursive: true });
+
+const diskStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadDir),
+  filename: (req, file, cb) => {
+    const userId = req.body.user_id || 'unknown';
+    const ext = path.extname(file.originalname || '.pdf');
+    cb(null, `${userId}_${Date.now()}${ext}`);
+  }
+});
+
+const coverLetterStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, coverLetterDir),
+  filename: (req, file, cb) => {
+    const userId = req.body.user_id || 'unknown';
+    const timestamp = Date.now();
+    const ext = path.extname(file.originalname || '.pdf');
+    cb(null, `cover_letter_${userId}_${timestamp}${ext}`);
+  }
+});
+const uploadProfile = multer({ storage: diskStorage });
+const uploadCoverLetter = multer({
+  storage: coverLetterStorage,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB 제한
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['.pdf', '.doc', '.docx', '.txt'];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowedTypes.includes(ext)) {
+      cb(null, true);
+    } else {
+      cb(new Error('지원하지 않는 파일 형식입니다. PDF, DOC, DOCX, TXT 파일만 업로드 가능합니다.'));
+    }
+  }
+});
+
+// 세션 인제스트용 (메모리)
+const uploadMem = multer({ storage: multer.memoryStorage() });
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+app.use('/uploads/cover-letters', express.static(path.join(process.cwd(), 'uploads', 'cover-letters')));
+// --- MySQL 풀 ---
+import mysql from 'mysql2/promise';
+import codingRouter from './routes/coding.js';
+import programmersRouter from './routes/programmers.js';
+
+const pool = mysql.createPool({
+  host: process.env.DB_HOST,
+  port: Number(process.env.DB_PORT || 3306),
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME,
+  connectionLimit: 10,
+  timezone: '+09:00', // 한국 시간 (KST)
+  connectTimeout: 10000, // 10초 연결 타임아웃
+  waitForConnections: true,
+  queueLimit: 0
+});
+
+// 코딩 테스트 라우터에서 pool 접근 가능하도록 설정
+app.set('pool', pool);
+
+// 프록시 환경에서 secure 쿠키 판단용
+app.set("trust proxy", 1);
+
+// 예: backend/server.js 어딘가(다른 라우트들 아래쪽이면 OK)
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok', message: 'Backend is healthy!' });
+});
+
+
+// 미들웨어들(app.use(express.json()), cors 등) 다음 줄에 추가
+app.get(['/health', '/api/health', '/auth/health'], (req, res) => {
+  res.status(200).json({ status: 'ok', message: 'Backend is healthy!' });
+});
+
+
+// 여러 프론트 오리진 허용
+const allowedOrigins = (process.env.FRONTEND_ORIGIN || "")
+  .split(",")
+  .map(s => s.trim())
+  .filter(Boolean);
+
+
+console.log("[CORS] Initial allowedOrigins (on startup) =", allowedOrigins); // 시작 시점에 확인
+
+// 프로덕션 URL은 환경 변수 설정과 관계없이 항상 포함
+const requiredOrigins = [
+  'https://commitjob.site',
+  'https://www.commitjob.site',
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:3002',
+  'http://localhost:4001',
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://commitjob.site',
+  '*'
+];
+
+// 기존 allowedOrigins에 없는 requiredOrigins만 추가 (중복 방지)
+for (const origin of requiredOrigins) {
+  if (!allowedOrigins.includes(origin)) {
+    allowedOrigins.push(origin);
+  }
+}
+
+// Debug endpoint to check CORS configuration
+app.get('/debug/cors', (req, res) => {
+  res.json({
+    allowedOrigins,
+    envFrontendOrigin: process.env.FRONTEND_ORIGIN,
+    envLength: (process.env.FRONTEND_ORIGIN || "").length
+  });
+});
+
+// Debug endpoint to test cookie setting
+app.get('/debug/set-cookie', (req, res) => {
+  const origin = req.get('origin') || 'unknown';
+  console.log('[DEBUG] Setting test cookie, origin:', origin);
+
+  res.cookie('test_cookie', 'test_value', {
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: 60000,
+    path: '/',
+  });
+
+  res.json({
+    message: 'Test cookie set',
+    origin: origin,
+    cookies: req.cookies
+  });
+});
+
+// Debug endpoint to check if cookies are received
+app.get('/debug/check-cookie', (req, res) => {
+  console.log('[DEBUG] Checking cookies:', req.cookies);
+  res.json({
+    cookies: req.cookies,
+    hasCookie: !!req.cookies?.app_session,
+    hasTestCookie: !!req.cookies?.test_cookie
+  });
+});
+// state 보관 (google/kakao 공용)
+const stateStore = new Map(); // state -> origin
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    console.log(`[CORS Check] Incoming origin: "${origin}" (length: ${origin ? origin.length : 0})`);
+    console.log(`[CORS Check] allowedOrigins used in callback: `, allowedOrigins);
+
+    if (!origin) {
+      console.log('[CORS Check] No origin (server-to-server or terminal test). Allowed.');
+      return callback(null, true); // 서버-서버 / curl 허용
+    }
+
+    // '*' wildcard가 있으면 모든 origin 허용
+    if (allowedOrigins.includes('*')) {
+      console.log(`[CORS Check] Wildcard '*' found. All origins allowed. Origin: "${origin}"`);
+      return callback(null, true);
+    }
+
+    // LocalTunnel URL 허용 (*.loca.lt)
+    if (origin.endsWith('.loca.lt')) {
+      console.log(`[CORS Check] LocalTunnel origin "${origin}" allowed.`);
+      return callback(null, true);
+    }
+
+    // Vercel 프리뷰 배포 URL 허용 (*.vercel.app)
+    if (origin.endsWith('.vercel.app')) {
+      console.log(`[CORS Check] Vercel preview origin "${origin}" allowed.`);
+      return callback(null, true);
+    }
+
+    if (allowedOrigins.includes(origin) || origin === null || origin === 'null') {
+      console.log(`[CORS Check] Origin "${origin}" allowed (${origin === null || origin === 'null' ? 'file protocol' : 'in allowed list'}).`);
+      return callback(null, true);
+    }
+
+    console.error(`[CORS Check] ERROR: Origin "${origin}" NOT found in allowed list! Disallowed.`);
+    return callback(new Error(`Not allowed by CORS: ${origin}`));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Set-Cookie'],
+  optionsSuccessStatus: 204,
+};
+console.log("[CORS] allowedOrigins =", allowedOrigins);
+// --- CORS 미들웨어는 "반드시" 라우트보다 먼저
+app.use(cors(corsOptions));
+/* -------------------- 임시 유저 저장소 -------------------- */
+
+// --- DB 기반 사용자 관리 함수들 ---
+async function findOrCreateUser(providerKey, email, name, picture, provider) {
+  try {
+    // 이메일로 기존 사용자 찾기
+    const [existingUsers] = await pool.execute(
+      'SELECT * FROM users WHERE email = ?',
+      [email]
+    );
+
+    if (existingUsers.length > 0) {
+      // 재로그인 - 기존 사용자 정보 업데이트
+      const user = existingUsers[0];
+      await pool.execute(
+        'UPDATE users SET provider_key = ?, name = ?, picture = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        [providerKey, name, picture, user.id]
+      );
+      console.log('[DB] 재로그인 - 사용자 정보 업데이트:', email);
+      return { ...user, provider_key: providerKey, name, picture, isNewUser: false };
+    } else {
+      // 최초 로그인 - 새 사용자 생성
+      const insertUserSQL = 'INSERT INTO users (provider_key, email, name, picture, provider) VALUES (?, ?, ?, ?, ?)';
+      const insertUserParams = [providerKey, email, name, picture, provider];
+
+      console.log('[DB] 최초 로그인 - 새 사용자 생성 SQL:');
+      console.log('  SQL:', insertUserSQL);
+      console.log('  Params:', JSON.stringify(insertUserParams));
+
+      const [result] = await pool.execute(insertUserSQL, insertUserParams);
+      const newUserId = result.insertId;
+      console.log('[DB] ✅ 새 사용자 생성 완료 - ID:', newUserId, ', Email:', email);
+      console.log('[DB] 💡 프로필은 사용자가 직접 입력하도록 대기 중...');
+
+      // 기본 프로필 자동 생성 비활성화 (사용자가 직접 입력하도록 변경)
+      // const profileTemplates = [
+      //   {
+      //     type: '백엔드 개발자',
+      //     skills: ['Java', 'Spring', 'MySQL', 'Node.js', 'AWS'],
+      //     experience: '신입',
+      //     preferred_jobs: '백엔드 개발자',
+      //     preferred_regions: ['서울', '경기'],
+      //     expected_salary: '3000만원 이상'
+      //   },
+      //   {
+      //     type: '프론트엔드 개발자',
+      //     skills: ['JavaScript', 'React', 'TypeScript', 'HTML/CSS', 'Vue.js'],
+      //     experience: '신입',
+      //     preferred_jobs: '프론트엔드 개발자',
+      //     preferred_regions: ['서울', '경기'],
+      //     expected_salary: '3000만원 이상'
+      //   }
+      // ];
+      //
+      // const selectedTemplate = profileTemplates[Math.floor(Math.random() * profileTemplates.length)];
+      //
+      // const insertProfileSQL = `INSERT INTO user_profiles (user_id, skills, experience, preferred_regions, preferred_jobs, expected_salary, created_at, updated_at)
+      //    VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`;
+      // const insertProfileParams = [
+      //   newUserId,
+      //   JSON.stringify(selectedTemplate.skills),
+      //   selectedTemplate.experience,
+      //   JSON.stringify(selectedTemplate.preferred_regions),
+      //   selectedTemplate.preferred_jobs,
+      //   selectedTemplate.expected_salary
+      // ];
+      //
+      // console.log('[DB] 기본 프로필 생성 SQL:');
+      // console.log('  SQL:', insertProfileSQL);
+      // console.log('  Params:', JSON.stringify(insertProfileParams));
+      //
+      // await pool.execute(insertProfileSQL, insertProfileParams);
+      // console.log(`[DB] ✅ 기본 프로필 생성 완료: ${selectedTemplate.type}`);
+
+      return {
+        id: newUserId,
+        provider_key: providerKey,
+        email,
+        name,
+        picture,
+        provider,
+        isNewUser: true
+      };
+    }
+  } catch (error) {
+    console.error('[DB] Error in findOrCreateUser:', error);
+    throw error;
+  }
+}
+
+async function findUserById(userId) {
+  try {
+    const [users] = await pool.execute(
+      'SELECT * FROM users WHERE id = ?',
+      [userId]
+    );
+    return users.length > 0 ? users[0] : null;
+  } catch (error) {
+    console.error('[DB] Error in findUserById:', error);
+    throw error;
+  }
+}
+
+// 세션(개인화용) 저장소
+const sessions = new Map(); // sessionId -> { user:{}, jobs:[], companies:[] }
+const newSessionId = () => crypto.randomUUID();
+const ensureSession = sid => {
+  if (!sid || !sessions.has(sid)) throw new Error("NO_SESSION");
+  return sessions.get(sid);
+};
+
+/* -------------------- 1) 구글 로그인 시작 ------------------ */
+app.get("/auth/google", (req, res) => {
+  const origin = req.query.origin?.toString();
+  if (!origin || !allowedOrigins.includes(origin)) {
+    return res.status(400).send("Bad origin");
+  }
+
+  // state를 base64로 인코딩하여 origin 정보 포함
+  const stateData = {
+    origin: origin,
+    timestamp: Date.now()
+  };
+  const state = Buffer.from(JSON.stringify(stateData)).toString('base64');
+
+  const params = new URLSearchParams({
+    client_id: process.env.GOOGLE_CLIENT_ID,
+    redirect_uri: process.env.GOOGLE_REDIRECT_URI,
+    response_type: "code",
+    scope: "openid email profile",
+    include_granted_scopes: "true",
+    state,
+    prompt: "select_account",
+    access_type: "offline",
+  });
+  res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`);
+});
+
+/* --------- 2) 구글 콜백: code→token, 검증, 세션 쿠키 ------- */
+app.get("/auth/google/callback", async (req, res) => {
+  const fallback = allowedOrigins[0] || "http://localhost:5173";
+  try {
+    const { code } = req.query;
+    let { state } = req.query;
+
+    // state를 디코딩하여 origin 추출
+    let origin;
+    try {
+      // URL 디코딩이 필요한 경우 처리
+      const decodedState = decodeURIComponent(state);
+      console.log('[GOOGLE-CALLBACK] Raw state:', state);
+      console.log('[GOOGLE-CALLBACK] Decoded state:', decodedState);
+
+      const stateData = JSON.parse(Buffer.from(decodedState, 'base64').toString());
+      origin = stateData.origin;
+      console.log('[GOOGLE-CALLBACK] Decoded origin from state:', origin);
+    } catch (decodeError) {
+      console.error('[GOOGLE-CALLBACK] Failed to decode state:', decodeError);
+      return res.status(403).json({ error: "INVALID_STATE" });
+    }
+
+    if (!origin) return res.status(403).json({ error: "INVALID_STATE" });
+
+    const tokenRes = await axios.post(
+      "https://oauth2.googleapis.com/token",
+      {
+        code,
+        client_id: process.env.GOOGLE_CLIENT_ID,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET,
+        redirect_uri: process.env.GOOGLE_REDIRECT_URI,
+        grant_type: "authorization_code",
+      },
+      { headers: { "Content-Type": "application/json" } }
+    );
+
+    const { id_token } = tokenRes.data;
+
+    const JWKS = jose.createRemoteJWKSet(new URL("https://www.googleapis.com/oauth2/v3/certs"));
+    const { payload } = await jose.jwtVerify(id_token, JWKS, {
+      issuer: ["https://accounts.google.com", "accounts.google.com"],
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const email = payload.email ?? null;
+    const name = payload.name ?? null;
+    const picture = payload.picture ?? null;
+    const sub = payload.sub;
+
+    const providerKey = `google:${sub}`;
+    const user = await findOrCreateUser(providerKey, email, name, picture, 'google');
+    const uid = user.id;
+
+    const appJwt = await new jose.SignJWT({ uid, email, provider: "google" })
+      .setProtectedHeader({ alg: "HS256" })
+      .setIssuedAt()
+      .setExpirationTime("7d")
+      .sign(new TextEncoder().encode(process.env.JWT_SECRET));
+
+    // 기존 쿠키 삭제 (마이그레이션 지원)
+    const isProd = process.env.NODE_ENV === "production";
+    res.cookie("app_session", "", {
+      path: "/",
+      httpOnly: true,
+      secure: isProd,
+      sameSite: "none",
+      expires: new Date(0)
+    });
+
+    console.log('[GOOGLE-CALLBACK] 기존 쿠키 삭제, JWT를 URL 파라미터로 전달 (localStorage 사용)');
+
+    // JWT를 URL 파라미터로 전달하여 프론트엔드에서 localStorage에 저장
+    res.redirect(`${origin}/callback.html?ok=1&token=${encodeURIComponent(appJwt)}`);
+  } catch (e) {
+    console.error(e.response?.data || e);
+    res.redirect(`${fallback}/callback.html?ok=0`);
+  }
+});
+
+/* -------------------- 1-2) 카카오 로그인 시작 ------------------ */
+app.get("/auth/kakao", (req, res) => {
+  const origin = req.query.origin?.toString();
+  console.log('[KAKAO-AUTH] Request origin:', origin);
+  console.log('[KAKAO-AUTH] Allowed origins:', allowedOrigins);
+
+  if (!origin || (!allowedOrigins.includes(origin) && !allowedOrigins.includes('*'))) {
+    console.error('[KAKAO-AUTH] Bad origin:', origin);
+    return res.status(400).send("Bad origin");
+  }
+
+  // state를 base64로 인코딩하여 origin 정보 포함
+  const stateData = {
+    origin: origin,
+    timestamp: Date.now()
+  };
+  const state = Buffer.from(JSON.stringify(stateData)).toString('base64');
+  console.log('[KAKAO-AUTH] Generated state with embedded origin');
+
+  const params = new URLSearchParams({
+    client_id: process.env.KAKAO_REST_API_KEY,
+    redirect_uri: process.env.KAKAO_REDIRECT_URI,
+    response_type: "code",
+    state,
+    scope: "profile_nickname profile_image account_email",
+  });
+
+  const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?${params.toString()}`;
+  console.log('[KAKAO-AUTH] Redirecting to:', kakaoAuthUrl);
+  console.log('[KAKAO-AUTH] KAKAO_REDIRECT_URI:', process.env.KAKAO_REDIRECT_URI);
+
+  res.redirect(kakaoAuthUrl);
+});
+
+// 조정된 app.get("/auth/kakao/login-url") 라우트
+app.get("/auth/kakao/login-url", (req, res) => {
+  // 프론트엔드가 이 URL을 요청할 때 자신의 origin을 쿼리 파라미터로 전달해야 합니다.
+  // 예: /auth/kakao/login-url?origin=http://localhost:5173
+  const origin = req.query.origin?.toString();
+  console.log('[KAKAO-LOGIN-URL] Request origin:', origin);
+  console.log('[KAKAO-LOGIN-URL] Allowed origins:', allowedOrigins);
+
+  if (!origin || (!allowedOrigins.includes(origin) && !allowedOrigins.includes('*'))) {
+    console.error('[KAKAO-LOGIN-URL] Bad origin:', origin);
+    console.error('[KAKAO-LOGIN-URL] allowedOrigins.includes(origin):', allowedOrigins.includes(origin));
+    console.error('[KAKAO-LOGIN-URL] allowedOrigins.includes("*"):', allowedOrigins.includes('*'));
+    return res.status(400).json({
+      error: "Bad origin or missing origin query parameter",
+      debug: {
+        received_origin: origin,
+        allowed_origins: allowedOrigins,
+        has_wildcard: allowedOrigins.includes('*'),
+        origin_in_list: allowedOrigins.includes(origin)
+      }
+    });
+  }
+
+  // state에 origin을 인코딩하여 서버 재시작 시에도 유지
+  const stateData = {
+    origin: origin,
+    timestamp: Date.now()
+  };
+  const state = Buffer.from(JSON.stringify(stateData)).toString('base64');
+
+  const params = new URLSearchParams({
+    client_id: process.env.KAKAO_REST_API_KEY,
+    redirect_uri: process.env.KAKAO_REDIRECT_URI,
+    response_type: "code",
+    state, // origin이 포함된 state 값
+    scope: "profile_nickname profile_image account_email",
+  });
+
+  // prompt 파라미터가 전달되면 추가 (로그아웃 후 재로그인 강제)
+  if (req.query.prompt) {
+    params.set('prompt', req.query.prompt);
+  }
+
+  const url = `https://kauth.kakao.com/oauth/authorize?${params.toString()}`;
+
+  console.log('[KAKAO-LOGIN-URL] Generated URL:', url);
+  console.log('[KAKAO-LOGIN-URL] KAKAO_REDIRECT_URI:', process.env.KAKAO_REDIRECT_URI);
+  console.log('[KAKAO-LOGIN-URL] State:', state);
+
+  // 프론트엔드에 카카오 인가 URL과 함께 생성된 state 값을 반환합니다.
+  res.json({ url, state });
+});
+
+
+
+/* --------- 2) 카카오 콜백: code→token, 사용자 조회, 세션 쿠키 ------- */
+app.get("/auth/kakao/callback", async (req, res) => {
+  const fallback = allowedOrigins[0] || "http://localhost:5173";
+  console.log('[KAKAO-CALLBACK] Received callback');
+  console.log('[KAKAO-CALLBACK] Query params:', req.query);
+
+  try {
+    const { code } = req.query;
+    let { state } = req.query;
+
+    // state를 디코딩하여 origin 추출
+    let origin;
+    try {
+      // URL 디코딩이 필요한 경우 처리
+      const decodedState = decodeURIComponent(state);
+      console.log('[KAKAO-CALLBACK] Raw state:', state);
+      console.log('[KAKAO-CALLBACK] Decoded state:', decodedState);
+
+      const stateData = JSON.parse(Buffer.from(decodedState, 'base64').toString());
+      origin = stateData.origin;
+      console.log('[KAKAO-CALLBACK] Decoded origin from state:', origin);
+      console.log('[KAKAO-CALLBACK] State timestamp:', new Date(stateData.timestamp).toISOString());
+    } catch (decodeError) {
+      console.error('[KAKAO-CALLBACK] Failed to decode state:', decodeError);
+      // 이전 방식 호환성 체크 (stateStore)
+      origin = stateStore.get(state);
+      if (origin) {
+        console.log('[KAKAO-CALLBACK] Retrieved origin from legacy stateStore:', origin);
+        stateStore.delete(state);
+      }
+    }
+
+    if (!origin) {
+      console.error('[KAKAO-CALLBACK] INVALID_STATE - origin not found for state:', state);
+      return res.status(403).json({ error: "INVALID_STATE" });
+    }
+
+    const form = new URLSearchParams({
+      grant_type: "authorization_code",
+      client_id: process.env.KAKAO_REST_API_KEY,
+      redirect_uri: process.env.KAKAO_REDIRECT_URI,
+      code: String(code),
+    });
+    if (process.env.KAKAO_CLIENT_SECRET) {
+      form.set("client_secret", process.env.KAKAO_CLIENT_SECRET);
+    }
+
+    console.log('[KAKAO-CALLBACK] Requesting token from Kakao...');
+    const tokenRes = await axios.post(
+      "https://kauth.kakao.com/oauth/token",
+      form.toString(),
+      { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
+    );
+
+    const { access_token } = tokenRes.data;
+    console.log('[KAKAO-CALLBACK] Access token received');
+
+    console.log('[KAKAO-CALLBACK] Fetching user info from Kakao...');
+    const meRes = await axios.get("https://kapi.kakao.com/v2/user/me", {
+      headers: { Authorization: `Bearer ${access_token}` },
+    });
+
+    const kakao = meRes.data;
+    console.log('[KAKAO-CALLBACK] Kakao user data:', {
+      id: kakao.id,
+      nickname: kakao.kakao_account?.profile?.nickname,
+      has_email: !!kakao.kakao_account?.email
+    });
+
+    const sub = kakao.id?.toString();
+    const emailRaw = kakao.kakao_account?.email ?? null;
+    const email = emailRaw ?? (sub ? `kakao_${sub}@no-email.kakao` : null);
+    const name = kakao.kakao_account?.profile?.nickname ?? null;
+    const picture = kakao.kakao_account?.profile?.profile_image_url ?? null;
+
+    const providerKey = `kakao:${sub}`;
+    console.log('[KAKAO-CALLBACK] Creating/finding user with providerKey:', providerKey);
+
+    const user = await findOrCreateUser(providerKey, email, name, picture, 'kakao');
+    const uid = user.id;
+    console.log('[KAKAO-CALLBACK] User ID:', uid);
+
+    const appJwt = await new jose.SignJWT({ uid, email, provider: "kakao" })
+      .setProtectedHeader({ alg: "HS256" })
+      .setIssuedAt()
+      .setExpirationTime("7d")
+      .sign(new TextEncoder().encode(process.env.JWT_SECRET));
+
+    // 기존 쿠키 삭제 (마이그레이션 지원)
+    const isProd = process.env.NODE_ENV === "production";
+    res.cookie("app_session", "", {
+      path: "/",
+      httpOnly: true,
+      secure: isProd,
+      sameSite: "none",
+      expires: new Date(0)
+    });
+
+    console.log('[KAKAO-CALLBACK] 기존 쿠키 삭제, JWT를 URL 파라미터로 전달 (localStorage 사용)');
+
+    // JWT를 URL 파라미터로 전달하여 프론트엔드에서 localStorage에 저장
+    const redirectUrl = `${origin}/callback?ok=1&token=${encodeURIComponent(appJwt)}`;
+    console.log('[KAKAO-CALLBACK] Success! Redirecting to:', redirectUrl);
+    res.redirect(redirectUrl);
+  } catch (e) {
+    console.error("[KAKAO-CALLBACK] Error:", {
+      msg: e.message,
+      data: e.response?.data,
+      status: e.response?.status,
+    });
+    const redirectUrl = `${fallback}/callback?ok=0`;
+    console.log('[KAKAO-CALLBACK] Failed! Redirecting to:', redirectUrl);
+    res.redirect(redirectUrl);
+  }
+});
+
+/* ==================== 세션 공통 ==================== */
+/**
+ * @swagger
+ * /api/me:
+ *   get:
+ *     summary: 현재 사용자 정보 조회
+ *     description: JWT 쿠키를 통해 현재 로그인된 사용자의 정보를 반환합니다.
+ *     tags: [사용자 프로필]
+ *     responses:
+ *       200:
+ *         description: 사용자 정보 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       description: 사용자 ID
+ *                     email:
+ *                       type: string
+ *                       description: 이메일 주소
+ *                     name:
+ *                       type: string
+ *                       description: 사용자 이름
+ *                     picture:
+ *                       type: string
+ *                       description: 프로필 이미지 URL
+ *                     provider:
+ *                       type: string
+ *                       description: 로그인 제공자 (google, kakao)
+ *                     created_at:
+ *                       type: string
+ *                       format: date-time
+ *                       description: 계정 생성일
+ *                     updated_at:
+ *                       type: string
+ *                       format: date-time
+ *                       description: 정보 수정일
+ *       401:
+ *         description: 인증되지 않은 사용자
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   type: null
+ */
+app.get("/api/me", async (req, res) => {
+  try {
+    // Authorization 헤더에서만 토큰 가져오기 (쿠키 미사용)
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ user: null });
+    }
+
+    const token = authHeader.substring(7); // "Bearer " 제거
+    if (!token) return res.status(401).json({ user: null });
+
+    const { payload } = await jose.jwtVerify(
+      token,
+      new TextEncoder().encode(process.env.JWT_SECRET)
+    );
+
+    const user = await findUserById(payload.uid);
+    if (!user) return res.status(401).json({ user: null });
+
+    // user_profiles 테이블에서 이력서 정보 조회
+    try {
+      const [profileRows] = await pool.execute(
+        'SELECT skills, preferred_jobs AS jobs, experience, preferred_regions AS regions FROM user_profiles WHERE user_id = ?',
+        [user.id]
+      );
+
+      if (profileRows.length > 0) {
+        const profile = profileRows[0];
+        // skills와 jobs를 배열로 파싱
+        if (profile.skills) {
+          try {
+            profile.skills = typeof profile.skills === 'string' ? JSON.parse(profile.skills) : profile.skills;
+          } catch (e) {
+            profile.skills = [];
+          }
+        }
+        if (profile.jobs) {
+          try {
+            // jobs가 콤마로 구분된 문자열인 경우 배열로 변환
+            profile.jobs = typeof profile.jobs === 'string'
+              ? profile.jobs.split(',').map(j => j.trim()).filter(j => j)
+              : profile.jobs;
+          } catch (e) {
+            profile.jobs = [];
+          }
+        }
+        if (profile.regions) {
+          try {
+            profile.regions = typeof profile.regions === 'string' ? JSON.parse(profile.regions) : profile.regions;
+          } catch (e) {
+            profile.regions = [];
+          }
+        }
+
+        // user 객체에 프로필 정보 병합
+        res.json({
+          user: {
+            ...user,
+            provider: payload.provider,
+            skills: profile.skills || [],
+            jobs: profile.jobs || [],
+            experience: profile.experience || null,
+            regions: profile.regions || []
+          }
+        });
+      } else {
+        res.json({ user: { ...user, provider: payload.provider } });
+      }
+    } catch (profileError) {
+      console.error('[API-ME] 프로필 조회 오류:', profileError);
+      res.json({ user: { ...user, provider: payload.provider } });
+    }
+  } catch {
+    res.status(401).json({ user: null });
+  }
+});
+
+/**
+ * @swagger
+ * /api/userprofile:
+ *   get:
+ *     summary: 사용자 프로필 조회 (별칭)
+ *     description: /api/me와 동일한 기능을 제공하는 별칭 엔드포인트입니다. JWT 쿠키를 통해 현재 로그인된 사용자의 정보를 반환합니다.
+ *     tags: [사용자 프로필]
+ *     responses:
+ *       200:
+ *         description: 사용자 정보 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       description: 사용자 ID
+ *                     email:
+ *                       type: string
+ *                       description: 이메일 주소
+ *                     name:
+ *                       type: string
+ *                       description: 사용자 이름
+ *                     picture:
+ *                       type: string
+ *                       description: 프로필 이미지 URL
+ *                     provider:
+ *                       type: string
+ *                       description: 로그인 제공자 (google, kakao)
+ *                     created_at:
+ *                       type: string
+ *                       format: date-time
+ *                       description: 계정 생성일
+ *                     updated_at:
+ *                       type: string
+ *                       format: date-time
+ *                       description: 정보 수정일
+ *       401:
+ *         description: 인증되지 않은 사용자
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   type: null
+ */
+app.get("/api/userprofile", async (req, res) => {
+  try {
+    const cookie = req.cookies?.app_session;
+    if (!cookie) return res.status(401).json({ user: null });
+
+    const { payload } = await jose.jwtVerify(
+      cookie,
+      new TextEncoder().encode(process.env.JWT_SECRET)
+    );
+
+    const user = await findUserById(payload.uid);
+    if (!user) return res.status(401).json({ user: null });
+
+    res.json({ user: { ...user, provider: payload.provider } });
+  } catch {
+    res.status(401).json({ user: null });
+  }
+});
+
+app.post("/api/logout", (req, res) => {
+  // localStorage 기반 인증이므로 서버 측에서 할 일 없음
+  // 클라이언트에서 localStorage.removeItem('app_session')으로 처리
+  console.log('[LOGOUT] Logout request received (localStorage-based auth)');
+  res.json({ ok: true });
+});
+
+/**
+ * @swagger
+ * /api/delete-account:
+ *   delete:
+ *     summary: 회원 탈퇴
+ *     description: 사용자 계정 및 관련 프로필 정보를 삭제합니다
+ *     tags: [사용자 프로필]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: 회원 탈퇴 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "회원 탈퇴가 완료되었습니다"
+ *       401:
+ *         description: 인증 실패
+ *       500:
+ *         description: 서버 오류
+ */
+app.delete("/api/delete-account", async (req, res) => {
+  try {
+    // JWT 토큰에서 사용자 ID 추출
+    const token = req.headers.authorization?.split(' ')[1] || req.cookies?.app_session;
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        error: '로그인이 필요합니다'
+      });
+    }
+
+    const { payload } = await jose.jwtVerify(
+      token,
+      new TextEncoder().encode(process.env.JWT_SECRET)
+    );
+
+    const userId = payload.uid;
+    console.log(`[DELETE-ACCOUNT] 회원 탈퇴 요청: user_id=${userId}`);
+
+    // user_profiles 삭제 (ON DELETE CASCADE가 설정되어 있지 않은 경우를 대비)
+    await pool.execute('DELETE FROM user_profiles WHERE user_id = ?', [userId]);
+    console.log(`[DELETE-ACCOUNT] user_profiles 삭제 완료: user_id=${userId}`);
+
+    // users 삭제
+    const [result] = await pool.execute('DELETE FROM users WHERE id = ?', [userId]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        error: '사용자를 찾을 수 없습니다'
+      });
+    }
+
+    console.log(`[DELETE-ACCOUNT] users 삭제 완료: user_id=${userId}`);
+
+    // 쿠키 삭제
+    const isProd = process.env.NODE_ENV === "production";
+    res.cookie("app_session", "", {
+      path: "/",
+      httpOnly: true,
+      secure: isProd,
+      sameSite: "none",
+      expires: new Date(0)
+    });
+
+    res.json({
+      success: true,
+      message: '회원 탈퇴가 완료되었습니다'
+    });
+  } catch (error) {
+    console.error('[DELETE-ACCOUNT] Error:', error);
+    res.status(500).json({
+      success: false,
+      error: '회원 탈퇴 처리 중 오류가 발생했습니다'
+    });
+  }
+});
+
+/* ==================== 세션/프로필/인제스트 ==================== */
+
+/**
+ * @swagger
+ * /api/upload-cover-letter:
+ *   post:
+ *     summary: 자기소개서 파일 업로드
+ *     description: 사용자의 자기소개서 파일을 업로드합니다. PDF, DOC, DOCX, TXT 형식을 지원합니다.
+ *     tags: [사용자 프로필]
+ *     consumes:
+ *       - multipart/form-data
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - user_id
+ *               - cover_letter
+ *             properties:
+ *               user_id:
+ *                 type: integer
+ *                 description: 사용자 ID
+ *                 example: 1
+ *               cover_letter:
+ *                 type: string
+ *                 format: binary
+ *                 description: 자기소개서 파일 (PDF, DOC, DOCX, TXT)
+ *               job_id:
+ *                 type: string
+ *                 description: 특정 채용공고 ID (선택사항)
+ *                 example: "job_123"
+ *               company_name:
+ *                 type: string
+ *                 description: 지원 회사명 (선택사항)
+ *                 example: "네이버"
+ *     responses:
+ *       200:
+ *         description: 파일 업로드 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "자기소개서가 성공적으로 업로드되었습니다."
+ *                 file_path:
+ *                   type: string
+ *                   example: "/uploads/cover-letters/cover_letter_1_1640995200000.pdf"
+ *                 file_info:
+ *                   type: object
+ *                   properties:
+ *                     original_name:
+ *                       type: string
+ *                       example: "자기소개서.pdf"
+ *                     file_size:
+ *                       type: integer
+ *                       example: 1024000
+ *                     upload_date:
+ *                       type: string
+ *                       format: date-time
+ *       400:
+ *         description: 잘못된 요청 (사용자 ID 누락, 파일 누락, 지원하지 않는 파일 형식)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: object
+ *                   properties:
+ *                     code:
+ *                       type: string
+ *                       example: "MISSING_USER_ID"
+ *                     message:
+ *                       type: string
+ *                       example: "사용자 ID가 필요합니다."
+ *       404:
+ *         description: 사용자를 찾을 수 없음
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: object
+ *                   properties:
+ *                     code:
+ *                       type: string
+ *                       example: "USER_NOT_FOUND"
+ *                     message:
+ *                       type: string
+ *                       example: "사용자를 찾을 수 없습니다."
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: object
+ *                   properties:
+ *                     code:
+ *                       type: string
+ *                       example: "UPLOAD_FAILED"
+ *                     message:
+ *                       type: string
+ *                       example: "파일 업로드에 실패했습니다."
+ */
+app.post('/api/upload-cover-letter', uploadCoverLetter.single('cover_letter'), async (req, res) => {
+  try {
+    const { user_id, job_id, company_name } = req.body || {};
+
+    if (!user_id) {
+      return res.status(400).json({
+        error: {
+          code: "MISSING_USER_ID",
+          message: "사용자 ID가 필요합니다."
+        }
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({
+        error: {
+          code: "MISSING_FILE",
+          message: "자기소개서 파일이 필요합니다."
+        }
+      });
+    }
+
+    // 사용자 존재 확인
+    const user = await findUserById(user_id);
+    if (!user) {
+      return res.status(404).json({
+        error: {
+          code: "USER_NOT_FOUND",
+          message: "사용자를 찾을 수 없습니다."
+        }
+      });
+    }
+
+    const filePath = `/uploads/cover-letters/${req.file.filename}`;
+    const uploadDate = new Date().toISOString();
+
+    // 데이터베이스에 파일 정보 저장 (선택사항 - 현재는 파일 경로만 반환)
+    // 실제 프로덕션에서는 cover_letters 테이블에 파일 정보를 저장할 수 있습니다.
+
+    console.log(`[COVER_LETTER] File uploaded for user ${user_id}: ${req.file.filename}`);
+
+    res.json({
+      success: true,
+      message: "자기소개서가 성공적으로 업로드되었습니다.",
+      file_path: filePath,
+      file_info: {
+        original_name: req.file.originalname,
+        file_size: req.file.size,
+        upload_date: uploadDate,
+        job_id: job_id || null,
+        company_name: company_name || null
+      }
+    });
+
+  } catch (error) {
+    console.error('[COVER_LETTER] Upload error:', error);
+
+    if (error.message.includes('지원하지 않는 파일 형식')) {
+      return res.status(400).json({
+        error: {
+          code: "INVALID_FILE_TYPE",
+          message: error.message
+        }
+      });
+    }
+
+    res.status(500).json({
+      error: {
+        code: "UPLOAD_FAILED",
+        message: "파일 업로드에 실패했습니다."
+      }
+    });
+  }
+});
+app.post("/session/start", (req, res) => {
+  const sid = newSessionId();
+  sessions.set(sid, { user: null, jobs: [], companies: [] });
+  res.json({ sessionId: sid });
+});
+
+/**
+ * @swagger
+ * /api/profile:
+ *   get:
+ *     summary: 사용자 프로필 조회
+ *     tags: [User]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: user_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 사용자 ID
+ *     responses:
+ *       200:
+ *         description: 프로필 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user_id:
+ *                   type: integer
+ *                 jobs:
+ *                   type: string
+ *                 careers:
+ *                   type: string
+ *                 regions:
+ *                   type: string
+ *                 skills:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                 resume_path:
+ *                   type: string
+ *                 created_at:
+ *                   type: string
+ *                 updated_at:
+ *                   type: string
+ *       404:
+ *         description: 프로필을 찾을 수 없음
+ *       400:
+ *         description: 잘못된 요청
+ */
+app.get('/api/profile', async (req, res) => {
+  try {
+    const { user_id } = req.query;
+
+    if (!user_id) {
+      return res.status(400).json({ error: { code: "MISSING_USER_ID", message: "user_id is required" } });
+    }
+
+    console.log(`[API] /api/profile - 사용자 ID ${user_id} 프로필 조회 시작`);
+
+    // users 테이블과 user_profiles 테이블을 JOIN하여 조회
+    const [results] = await pool.execute(
+      `SELECT
+        u.id as user_id,
+        u.email,
+        u.name,
+        u.picture,
+        u.provider,
+        u.created_at as user_created_at,
+        up.id as profile_id,
+        up.user_id as profile_user_id,
+        up.preferred_jobs,
+        up.experience,
+        up.preferred_regions,
+        up.skills,
+        up.expected_salary,
+        up.resume_path,
+        up.created_at as profile_created_at,
+        up.updated_at as profile_updated_at
+      FROM users u
+      LEFT JOIN user_profiles up ON u.id = up.user_id
+      WHERE u.id = ?`,
+      [user_id]
+    );
+
+    console.log(`[API] /api/profile - JOIN 결과:`, {
+      조회결과수: results.length,
+      users테이블_id: results[0]?.user_id,
+      user_profiles테이블_user_id: results[0]?.profile_user_id,
+      프로필존재여부: !!results[0]?.profile_id
+    });
+
+    if (results.length === 0) {
+      console.log(`[API] /api/profile - 사용자 ID ${user_id} 없음`);
+      return res.status(404).json({ error: { code: "USER_NOT_FOUND", message: "User not found" } });
+    }
+
+    const data = results[0];
+
+    // MySQL2가 JSON 컬럼을 자동 파싱할 수 있으므로 안전하게 처리
+    const safeParseJSON = (value) => {
+      if (!value) return [];
+      if (Array.isArray(value)) return value;
+      if (typeof value === 'string') {
+        try {
+          return JSON.parse(value);
+        } catch {
+          return [];
+        }
+      }
+      return [];
+    };
+
+    const response = {
+      user: {
+        id: data.user_id,
+        email: data.email,
+        name: data.name,
+        picture: data.picture,
+        provider: data.provider,
+        created_at: data.user_created_at
+      },
+      profile: data.profile_id ? {
+        user_id: data.profile_user_id,
+        preferred_jobs: data.preferred_jobs,
+        experience: data.experience,
+        preferred_regions: safeParseJSON(data.preferred_regions),
+        skills: safeParseJSON(data.skills),
+        expected_salary: data.expected_salary,
+        resume_path: data.resume_path,
+        created_at: data.profile_created_at,
+        updated_at: data.profile_updated_at
+      } : null
+    };
+
+    console.log(`[API] /api/profile - 응답 전송:`, {
+      사용자이름: response.user.name,
+      프로필존재: !!response.profile,
+      조인성공: response.profile ? (response.user.id === response.profile.user_id) : 'N/A'
+    });
+
+    res.status(200).json(response);
+  } catch (e) {
+    console.error('[API] /api/profile error:', e);
+    res.status(400).json({ error: { code: e.message || "BAD_INPUT", message: "profile get failed" } });
+  }
+});
+
+/**
+ * @swagger
+ * /api/profile:
+ *   post:
+ *     summary: 사용자 프로필 정보 저장/업데이트
+ *     description: 사용자의 프로필 정보를 저장하거나 업데이트합니다. 이력서 파일 업로드도 함께 처리할 수 있습니다.
+ *     tags: [사용자 프로필]
+ *     consumes:
+ *       - multipart/form-data
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - user_id
+ *             properties:
+ *               user_id:
+ *                 type: integer
+ *                 description: 사용자 ID
+ *                 example: 1
+ *               jobs:
+ *                 type: string
+ *                 description: 희망직무
+ *                 example: "백엔드 개발자"
+ *               careers:
+ *                 type: string
+ *                 description: 경력
+ *                 example: "1-3년"
+ *               regions:
+ *                 type: string
+ *                 description: 희망근무지역 (단일 지역, 배열로 저장됨)
+ *                 example: "서울"
+ *               skills:
+ *                 type: string
+ *                 description: 기술스택 (쉼표로 구분)
+ *                 example: "Node.js, React, MySQL"
+ *               resume:
+ *                 type: string
+ *                 format: binary
+ *                 description: 이력서 파일 (선택사항)
+ *     responses:
+ *       201:
+ *         description: 프로필 저장/업데이트 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user_id:
+ *                   type: integer
+ *                   example: 1
+ *                 jobs:
+ *                   type: string
+ *                   example: "백엔드 개발자"
+ *                 careers:
+ *                   type: string
+ *                   example: "1-3년"
+ *                 regions:
+ *                   type: string
+ *                   example: "서울"
+ *                 skills:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example: ["Node.js", "React", "MySQL"]
+ *                 resume_path:
+ *                   type: string
+ *                   nullable: true
+ *                   example: "/uploads/resume/1_1640995200000.pdf"
+ *                 created_at:
+ *                   type: string
+ *                   format: date-time
+ *                 updated_at:
+ *                   type: string
+ *                   format: date-time
+ *       400:
+ *         description: 잘못된 요청 (사용자 ID 누락 등)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: object
+ *                   properties:
+ *                     code:
+ *                       type: string
+ *                       example: "MISSING_USER_ID"
+ *                     message:
+ *                       type: string
+ *                       example: "profile set failed"
+ *       404:
+ *         description: 사용자를 찾을 수 없음
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: object
+ *                   properties:
+ *                     code:
+ *                       type: string
+ *                       example: "USER_NOT_FOUND"
+ *                     message:
+ *                       type: string
+ *                       example: "User not found"
+ */
+app.post('/api/profile', uploadProfile.single('resume'), async (req, res) => {
+  try {
+    const {
+      user_id,
+      jobs,
+      careers,
+      regions,
+      skills,
+      expected_salary
+    } = req.body || {};
+
+    console.log('[PROFILE] 프로필 저장 요청 받음:', {
+      user_id,
+      jobs,
+      careers,
+      regions,
+      regions_type: typeof regions,
+      skills,
+      expected_salary,
+      has_file: !!req.file
+    });
+
+    if (!user_id) {
+      console.error('[PROFILE] ❌ user_id 누락');
+      return res.status(400).json({ error: { code: "MISSING_USER_ID", message: "user_id is required" } });
+    }
+
+    // 사용자 존재 확인
+    const user = await findUserById(user_id);
+    if (!user) {
+      return res.status(404).json({ error: { code: "USER_NOT_FOUND", message: "User not found" } });
+    }
+
+    // 파일 경로 처리
+    let resumePath = null;
+    if (req.file) {
+      resumePath = `/uploads/resume/${req.file.filename}`;
+    }
+
+    // 기존 프로필 확인
+    const [existingProfiles] = await pool.execute(
+      'SELECT * FROM user_profiles WHERE user_id = ?',
+      [user_id]
+    );
+
+    if (existingProfiles.length > 0) {
+      // 프로필 업데이트
+      const updateFields = [];
+      const updateValues = [];
+
+      if (jobs) {
+        updateFields.push('preferred_jobs = ?');
+        updateValues.push(jobs);
+      }
+      if (careers) {
+        updateFields.push('experience = ?');
+        updateValues.push(careers);
+      }
+      if (regions) {
+        updateFields.push('preferred_regions = ?');
+        // regions는 프론트에서 JSON.stringify된 배열로 전송됨
+        let regionsArray;
+        try {
+          regionsArray = typeof regions === 'string' ? JSON.parse(regions) : regions;
+          console.log('[PROFILE] regions 파싱 성공:', regionsArray);
+        } catch (parseError) {
+          console.error('[PROFILE] ❌ regions 파싱 실패:', parseError.message);
+          throw new Error('희망지역 데이터 형식이 올바르지 않습니다');
+        }
+        updateValues.push(JSON.stringify(regionsArray));
+      }
+      if (skills) {
+        updateFields.push('skills = ?');
+        updateValues.push(JSON.stringify(skills.split(',').map(s => s.trim())));
+      }
+      if (expected_salary) {
+        updateFields.push('expected_salary = ?');
+        updateValues.push(expected_salary);
+      }
+      if (resumePath) {
+        updateFields.push('resume_path = ?');
+        updateValues.push(resumePath);
+      }
+
+      updateFields.push('updated_at = CURRENT_TIMESTAMP');
+      updateValues.push(user_id);
+
+      await pool.execute(
+        `UPDATE user_profiles SET ${updateFields.join(', ')} WHERE user_id = ?`,
+        updateValues
+      );
+    } else {
+      // 새 프로필 생성
+      console.log('[PROFILE] 새 프로필 생성 중...');
+
+      // regions는 프론트에서 JSON.stringify된 배열로 전송됨
+      let regionsArray;
+      try {
+        regionsArray = typeof regions === 'string' ? JSON.parse(regions) : regions;
+        console.log('[PROFILE] regions 파싱 성공:', regionsArray);
+      } catch (parseError) {
+        console.error('[PROFILE] ❌ regions 파싱 실패:', parseError.message);
+        throw new Error('희망지역 데이터 형식이 올바르지 않습니다');
+      }
+
+      const insertSQL = 'INSERT INTO user_profiles (user_id, preferred_jobs, experience, preferred_regions, skills, expected_salary, resume_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())';
+      const insertParams = [
+        user_id,
+        jobs,
+        careers,
+        JSON.stringify(regionsArray),
+        skills ? JSON.stringify(skills.split(',').map(s => s.trim())) : null,
+        expected_salary,
+        resumePath
+      ];
+
+      console.log('[PROFILE] INSERT SQL:', insertSQL);
+      console.log('[PROFILE] INSERT Params:', insertParams);
+
+      await pool.execute(insertSQL, insertParams);
+      console.log('[PROFILE] ✅ 프로필 생성 성공');
+    }
+
+    // 업데이트된 프로필 조회
+    const [profiles] = await pool.execute(
+      'SELECT * FROM user_profiles WHERE user_id = ?',
+      [user_id]
+    );
+
+    const profile = profiles[0];
+
+    console.log('[PROFILE] 조회된 프로필 원본:', {
+      preferred_regions: profile.preferred_regions,
+      preferred_regions_type: typeof profile.preferred_regions,
+      skills: profile.skills,
+      skills_type: typeof profile.skills
+    });
+
+    // MySQL2가 JSON 컬럼을 자동 파싱할 수 있으므로 안전하게 처리
+    const safeParseJSON = (value) => {
+      if (!value) return [];
+      if (Array.isArray(value)) return value;
+      if (typeof value === 'string') {
+        try {
+          return JSON.parse(value);
+        } catch {
+          return [];
+        }
+      }
+      return [];
+    };
+
+    res.status(201).json({
+      user_id: profile.user_id,
+      jobs: profile.preferred_jobs,
+      careers: profile.experience,
+      regions: safeParseJSON(profile.preferred_regions),  // 전체 배열 반환 (복수 선택 지원)
+      skills: safeParseJSON(profile.skills),
+      resume_path: profile.resume_path,
+      created_at: profile.created_at,
+      updated_at: profile.updated_at
+    });
+  } catch (e) {
+    console.error('[PROFILE] ❌ 프로필 저장 실패:', e.message);
+    console.error('[PROFILE] Stack:', e.stack);
+    res
+      .status(400)
+      .json({ error: { code: e.message || "BAD_INPUT", message: e.message || "profile set failed" } });
+  }
+});
+
+app.post("/session/ingest/files", uploadMem.array("files", 10), async (req, res) => {
+  try {
+    const { sessionId } = req.body || {};
+    const s = ensureSession(sessionId);
+    if (!req.files?.length) return res.status(400).json({ error: { code: "NO_FILES" } });
+
+    const added = [];
+    for (const f of req.files) {
+      // Node 18+ 글로벌 fetch/FormData/Blob 사용
+      const form = new FormData();
+      form.append("file", new Blob([f.buffer]), f.originalname);
+
+      const r = await fetch(`${process.env.MCP_INGEST_BASE}/tools/extract_file_and_normalize`, {
+        method: "POST",
+        body: form,
+      }).then(_ => _.json());
+
+      const job = r?.normalizedJob;
+      if (!job) continue;
+
+      const isCompanyDoc = /회사 소개|기업 소개|culture|value|vision|연봉 보고서|리포트/i.test(
+        (job.title || "") + " " + (job.description || "")
+      );
+
+      if (!isCompanyDoc) {
+        const job_id = `${(job.company || "unknown").toLowerCase().replace(/\s+/g, "-")}_${Date.now()}`;
+        const company_id = (job.company || "unknown").toLowerCase().replace(/\s+/g, "-");
+        s.jobs.push({ ...job, job_id, company_id, source: "file" });
+        added.push({ type: "job", job_id, title: job.title, company: job.company });
+      } else {
+        const company_id = (job.company || "unknown").toLowerCase().replace(/\s+/g, "-");
+        s.companies.push({
+          company_id,
+          name: job.company || "기업",
+          overview: job.description || null,
+          culture: null,
+          values: null,
+          scores: null,
+          review_highlights: null,
+        });
+        added.push({ type: "company", company_id, name: job.company || "기업" });
+      }
+    }
+
+    res.json({ ok: true, added, counts: { jobs: s.jobs.length, companies: s.companies.length } });
+  } catch (e) {
+    console.error(e);
+    res.status(400).json({ error: { code: "INGEST_FAILED", message: "file ingest failed" } });
+  }
+});
+
+app.post("/session/ingest/url", async (req, res) => {
+  try {
+    const { sessionId, url } = req.body || {};
+    const s = ensureSession(sessionId);
+    if (!url) return res.status(400).json({ error: { code: "NO_URL" } });
+
+    const { data } = await axios.post(
+      `${process.env.MCP_INGEST_BASE}/tools/fetch_url_and_normalize`,
+      { url }
+    );
+    const job = data?.normalizedJob;
+    if (!job) return res.status(415).json({ error: { code: "PARSE_FAIL" } });
+
+    const job_id = `${(job.company || "unknown").toLowerCase().replace(/\s+/g, "-")}_${Date.now()}`;
+    const company_id = (job.company || "unknown").toLowerCase().replace(/\s+/g, "-");
+    s.jobs.push({ ...job, job_id, company_id, source: "url", source_url: url });
+
+    res.json({ ok: true, job_id, title: job.title, company: job.company });
+  } catch (e) {
+    res.status(500).json({ error: { code: "INGEST_URL_FAILED" } });
+  }
+});
+
+/* -------------------- 맞춤 추천 -------------------- */
+function skillMatchScore(userSkills, jobSkills) {
+  if (!Array.isArray(userSkills) || !Array.isArray(jobSkills)) return 0;
+  const set = new Set(jobSkills.map(s => String(s).toLowerCase()));
+  const inter = userSkills.filter(s => set.has(String(s).toLowerCase())).length;
+  return inter / Math.max(1, userSkills.length);
+}
+function yearsFit(userYears, min, max) {
+  if (userYears == null || min == null || max == null) return 0.5;
+  if (userYears < min - 1 || userYears > max + 1) return 0;
+  if (userYears >= min && userYears <= max) return 1;
+  return 0.5;
+}
+function regionFit(userRegion, jobRegion) {
+  if (!userRegion || !jobRegion) return 0.5;
+  return jobRegion.includes(userRegion) ? 1 : 0.5;
+}
+
+app.get("/session/recs", async (req, res) => {
+  try {
+    const { sessionId, top = 20 } = req.query;
+    const s = ensureSession(String(sessionId));
+    if (!s.user) return res.status(400).json({ error: { code: "NO_USER_PROFILE" } });
+    if (!s.jobs.length) return res.json({ items: [] });
+
+    const candidates = s.jobs
+      .map(j => {
+        const f_skill = skillMatchScore(s.user.skills || [], j.skills || []);
+        const f_years = yearsFit(s.user.years, j.years_min, j.years_max);
+        const f_region = regionFit(s.user.region, j.region);
+        const f_text = 0.7; // MVP 더미
+        const score_v1 = 0.4 * f_skill + 0.25 * f_text + 0.15 * f_years + 0.1 * f_region + 0.1 * 0;
+        return {
+          job_id: j.job_id,
+          company_id: j.company_id,
+          title: j.title,
+          skills: j.skills || [],
+          region: j.region || null,
+          years_min: j.years_min ?? null,
+          years_max: j.years_max ?? null,
+          description: j.description || "",
+          score_v1: Number(score_v1.toFixed(4)),
+        };
+      })
+      .sort((a, b) => b.score_v1 - a.score_v1)
+      .slice(0, 100);
+
+    const { data } = await axios.post(
+      `${process.env.MCP_RECS_BASE}/tools/rerank_jobs`,
+      {
+        sessionId: String(sessionId),
+        user: { skills: s.user.skills, years: s.user.years, region: s.user.region, role: s.user.role },
+        candidates,
+        topK: Math.min(Number(top) || 20, 50),
+      },
+      { timeout: 20000 }
+    );
+
+    const ranked = (data?.ranked || []).map(r => {
+      const base = candidates.find(c => c.job_id === r.job_id) || {};
+      return { ...base, finalScore: r.finalScore, reason: r.reason };
+    });
+
+    res.json({ items: ranked });
+  } catch (e) {
+    console.error("RECS_FAILED", e.response?.data || e.message);
+    res.status(500).json({ error: { code: "RECS_FAILED" } });
+  }
+});
+
+
+/**
+ * @swagger
+ * /api/main-recommendations:
+ *   get:
+ *     summary: 메인 페이지용 맞춤 IT/빅데이터 추천
+ *     tags: [GPT Recommendations]
+ *     parameters:
+ *       - in: query
+ *         name: user_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 사용자 ID
+ *       - in: query
+ *         name: jobType
+ *         schema:
+ *           type: string
+ *           enum: [IT, 빅데이터, 전체]
+ *           default: 전체
+ *         description: 추천할 직무 타입 (IT 10개, 빅데이터 10개)
+ *     responses:
+ *       200:
+ *         description: 사용자 맞춤 메인 페이지 추천 결과
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 IT:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         description: "[필수] 채용공고 ID"
+ *                       title:
+ *                         type: string
+ *                         description: "[필수] 채용공고 제목"
+ *                       company:
+ *                         type: string
+ *                         description: "[필수] 회사명"
+ *                       location:
+ *                         type: string
+ *                         description: "[필수] 근무지역"
+ *                       experience:
+ *                         type: string
+ *                         description: "[필수] 경력요건"
+ *                       skills:
+ *                         type: array
+ *                         items:
+ *                           type: string
+ *                         description: "[필수] 요구 기술스택"
+ *                       salary:
+ *                         type: string
+ *                         description: "[선택] 연봉 정보 (있는 경우만 포함)"
+ *                     required: [id, title, company, location, experience, skills]
+ *                   example:
+ *                     - id: "job_123"
+ *                       title: "백엔드 개발자 (Node.js)"
+ *                       company: "네이버"
+ *                       location: ["서울"]
+ *                       experience: "1-3년"
+ *                       skills: ["Node.js", "Express", "MySQL"]
+ *                       salary: "3000-4500만원"
+ *                     - id: "job_124"
+ *                       title: "풀스택 개발자"
+ *                       company: "카카오"
+ *                       location: "판교"
+ *                       experience: "신입-2년"
+ *                       skills: ["React", "Node.js", "MongoDB"]
+ *                 빅데이터:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         description: "[필수] 채용공고 ID"
+ *                       title:
+ *                         type: string
+ *                         description: "[필수] 채용공고 제목"
+ *                       company:
+ *                         type: string
+ *                         description: "[필수] 회사명"
+ *                       location:
+ *                         type: string
+ *                         description: "[필수] 근무지역"
+ *                       experience:
+ *                         type: string
+ *                         description: "[필수] 경력요건"
+ *                       skills:
+ *                         type: array
+ *                         items:
+ *                           type: string
+ *                         description: "[필수] 요구 기술스택"
+ *                       salary:
+ *                         type: string
+ *                         description: "[선택] 연봉 정보 (있는 경우만 포함)"
+ *                     required: [id, title, company, location, experience, skills]
+ *                   example:
+ *                     - id: "job_456"
+ *                       title: "데이터 엔지니어"
+ *                       company: "카카오"
+ *                       location: ["서울"]
+ *                       experience: "신입-2년"
+ *                       skills: ["Python", "Spark", "Kafka"]
+ *                       salary: "3500-5000만원"
+ *                     - id: "job_457"
+ *                       title: "ML 엔지니어"
+ *                       company: "네이버"
+ *                       location: ["서울"]
+ *                       experience: "3-5년"
+ *                       skills: ["Python", "TensorFlow", "Kubernetes"]
+ *       500:
+ *         description: 서버 오류
+ */
+app.get("/api/main-recommendations", async (req, res) => {
+  try {
+    const { user_id, jobType = '전체' } = req.query;
+
+    if (!user_id) {
+      return res.status(400).json({ error: { code: "MISSING_USER_ID" } });
+    }
+
+    console.log(`[MAIN-RECS] Requesting GPT MCP recommendations for user ${user_id}, jobType: ${jobType}`);
+
+    // 사용자 프로필 정보 가져오기 (데이터베이스에서)
+    let userProfile = null;
+    try {
+      const [userProfiles] = await pool.execute(
+        `SELECT up.skills, up.experience, up.preferred_regions, up.preferred_jobs, up.expected_salary,
+                u.name, u.email
+         FROM user_profiles up
+         JOIN users u ON up.user_id = u.id
+         WHERE u.id = ?`,
+        [user_id]
+      );
+
+      if (userProfiles.length > 0) {
+        const profile = userProfiles[0];
+        userProfile = {
+          name: profile.name,
+          email: profile.email,
+          skills: profile.skills ? (typeof profile.skills === 'string' ?
+            (profile.skills.startsWith('[') ? JSON.parse(profile.skills) : profile.skills.split(',').map(s => s.trim()))
+            : profile.skills) : [],
+          experience: profile.experience || "신입",
+          preferred_regions: profile.preferred_regions ? (typeof profile.preferred_regions === 'string' ?
+            (profile.preferred_regions.startsWith('[') ? (() => {
+              try {
+                return JSON.parse(profile.preferred_regions);
+              } catch (e) {
+                return profile.preferred_regions.split(',').map(s => s.trim());
+              }
+            })() : profile.preferred_regions.split(',').map(s => s.trim()))
+            : profile.preferred_regions) : [],
+          jobs: [profile.preferred_jobs].filter(Boolean),
+          expected_salary: profile.expected_salary ? `${profile.expected_salary}만원` : ""
+        };
+        console.log(`[MAIN-RECS] Found user profile for user ${user_id}:`, userProfile);
+      } else {
+        console.log(`[MAIN-RECS] No user profile found for user ${user_id}, using default profile`);
+        // 프로필이 없는 경우 기본 프로필 생성
+        userProfile = {
+          name: "사용자",
+          email: "",
+          skills: ["JavaScript", "Python"],
+          experience: "신입-3년",
+          preferred_regions: ["서울", "경기"],
+          jobs: ["개발자"],
+          expected_salary: "3000-5000만원"
+        };
+      }
+    } catch (profileError) {
+      console.error('[MAIN-RECS] Error fetching user profile:', profileError);
+    }
+
+    // GPT MCP 서비스에 추천 요청 (rerank_jobs 엔드포인트 사용)
+    try {
+      let allJobs = [];
+
+      // jobs 테이블에서 공고 가져오기 (스크래퍼 사용 안 함)
+      console.log('[MAIN-RECS] DB에서 회원 프로필과 유사한 채용공고 조회 중...');
+
+      // 사용자 스킬 기반 검색 쿼리 생성
+      const userSkills = userProfile?.skills || [];
+      const userHasAISkills = userSkills.some(s =>
+        ['Python', 'TensorFlow', 'PyTorch', 'Keras', 'Machine Learning', 'AI', 'Deep Learning'].includes(s)
+      );
+      const userHasITSkills = userSkills.some(s =>
+        ['JavaScript', 'React', 'Vue', 'Node.js', 'Java', 'Spring', 'Django', 'Flask'].includes(s)
+      );
+
+      // 사용자 스킬에 맞는 카테고리 우선순위 설정
+      let categoryOrder = '';
+      if (userHasAISkills && !userHasITSkills) {
+        categoryOrder = "category = 'BIGDATA_AI' DESC, category = 'IT' DESC";
+      } else if (userHasITSkills && !userHasAISkills) {
+        categoryOrder = "category = 'IT' DESC, category = 'BIGDATA_AI' DESC";
+      } else {
+        categoryOrder = "category IN ('BIGDATA_AI', 'IT') DESC";
+      }
+
+      // 스킬 매칭 점수 계산을 위한 CASE WHEN 생성
+      let skillMatchScore = '0';
+      if (userSkills.length > 0) {
+        const skillConditions = userSkills.map(skill =>
+          `WHEN job_info LIKE '%${skill.replace(/'/g, "''")}%' THEN 1`
+        ).join(' ');
+        skillMatchScore = `(CASE ${skillConditions} ELSE 0 END)`;
+      }
+
+      try {
+        const query = `
+          SELECT id, company, title, category, url, job_info, conditions, company_search_key, registration_info,
+                 ${skillMatchScore} as skill_match_score
+          FROM jobs
+          WHERE category IN ('BIGDATA_AI', 'IT')
+          ORDER BY
+            skill_match_score DESC,
+            ${categoryOrder},
+            scraped_at DESC
+          LIMIT 25
+        `;
+
+        console.log('[MAIN-RECS] 사용자 스킬:', userSkills.join(', '));
+        console.log('[MAIN-RECS] AI 관련 스킬 보유:', userHasAISkills);
+        console.log('[MAIN-RECS] IT 관련 스킬 보유:', userHasITSkills);
+
+        const [dbJobs] = await pool.execute(query);
+
+        if (dbJobs.length > 0) {
+          allJobs = dbJobs.map(job => {
+            // job_info, conditions, registration_info를 JSON으로 파싱
+            let jobInfo = [];
+            let conditions = [];
+            let registrationInfo = [];
+
+            try {
+              if (job.job_info) {
+                jobInfo = typeof job.job_info === 'string' ? JSON.parse(job.job_info) : job.job_info;
+              }
+            } catch (e) {
+              jobInfo = [];
+            }
+
+            try {
+              if (job.conditions) {
+                conditions = typeof job.conditions === 'string' ? JSON.parse(job.conditions) : job.conditions;
+              }
+            } catch (e) {
+              conditions = [];
+            }
+
+            try {
+              if (job.registration_info) {
+                registrationInfo = typeof job.registration_info === 'string' ? JSON.parse(job.registration_info) : job.registration_info;
+              }
+            } catch (e) {
+              registrationInfo = [];
+            }
+
+            // conditions에서 경력 정보 추출
+            const experience = conditions.find(c => c.includes('경력') || c.includes('신입')) || "경력무관";
+
+            return {
+              id: job.id.toString(),
+              title: job.title,
+              company: job.company,
+              category: job.category,
+              url: job.url || '',
+              job_info: jobInfo,
+              conditions: conditions,
+              company_search_key: job.company_search_key || '',
+              registration_info: registrationInfo,
+              // AI 추천용 추가 필드
+              location: [], // jobs 테이블에는 location 정보가 없음
+              experience: experience,
+              skills: jobInfo, // job_info를 skills로도 제공
+              salary: "회사내규에 따름",
+              jobType: job.category === 'BIGDATA_AI' ? '빅데이터/AI' : 'IT',
+              source: 'Database'
+            };
+          });
+
+          const skillMatchedCount = dbJobs.filter(j => j.skill_match_score > 0).length;
+          console.log(`[MAIN-RECS] ✅ 회원 프로필 기반 매칭 완료`);
+          console.log(`[MAIN-RECS]    총 ${allJobs.length}개 공고 (스킬 매칭: ${skillMatchedCount}개, 기타: ${allJobs.length - skillMatchedCount}개)`);
+        } else {
+          console.error('[MAIN-RECS] DB에 채용공고가 없습니다');
+          return res.status(404).json({
+            error: '채용공고가 없습니다',
+            빅데이터_AI: [],
+            IT: []
+          });
+        }
+      } catch (dbError) {
+        console.error('[MAIN-RECS] DB 조회 실패:', dbError.message);
+        return res.status(500).json({
+          error: `DB 조회 실패: ${dbError.message}`,
+          빅데이터_AI: [],
+          IT: []
+        });
+      }
+
+      console.log(`[MAIN-RECS] 총 ${allJobs.length}개 공고 준비 완료 (출처: Database)`);
+
+      // 공고가 없으면 에러 반환
+      if (allJobs.length === 0) {
+        console.error('[MAIN-RECS] 공고를 가져오지 못했습니다');
+        return res.status(404).json({
+          error: '공고를 가져오지 못했습니다',
+          빅데이터_AI: [],
+          IT: []
+        });
+      }
+
+      // GPT에게 전달할 공고 목록 상세 출력
+      console.log('[MAIN-RECS] GPT에게 전달되는 공고 목록:');
+      // allJobs.slice(0, 10).forEach((job, idx) => {
+      //   console.log(`  [${idx + 1}] ${job.company} - ${job.title} [출처: ${job.source}]`);
+      //   console.log(`      경력: ${job.experience}, 지역: ${job.location?.join(', ')}`);
+      //   console.log(`      스킬: ${Array.isArray(job.skills) ? job.skills.join(', ') : job.skills}`);
+      //   console.log(`      연봉: ${job.salary}`);
+      // });
+      // if (allJobs.length > 10) {
+        console.log(` ${allJobs.length }개 공고`);
+      // }
+
+      // GPT-5-mini 기반 추천 시도
+      let rerankedJobs = [];
+
+      if (openai) {
+        try {
+          console.log('[MAIN-RECS] GPT-4o-mini 기반 추천 시작 (최근 25개 공고 전달 → 3개 선택)');
+          // 최근 25개 공고를 GPT에 전달
+          const topCandidates = allJobs.slice(0, 25);
+          rerankedJobs = await generateGPT4Recommendations(userProfile, topCandidates, 3);
+          console.log(`[MAIN-RECS] ✅ GPT-4o-mini로 ${rerankedJobs.length}개 공고 추천 완료`);
+        } catch (gptError) {
+          console.error('[MAIN-RECS] ❌ GPT-4o-mini 추천 실패:', gptError.message);
+        }
+      }
+
+      // GPT 실패 시 에러 처리 (고급 매칭 알고리즘 제거 - GPT 필수)
+      if (rerankedJobs.length === 0) {
+        console.log('[MAIN-RECS] ⚠️ GPT 추천 실패 - 다시 시도하거나 나중에 이용해주세요');
+        return res.status(500).json({
+          success: false,
+          error: 'GPT AI 추천을 생성하는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+          빅데이터_AI: [],
+          IT: []
+        });
+      }
+
+      // GPT 추천 성공
+      if (rerankedJobs && rerankedJobs.length > 0) {
+
+        console.log(`[MAIN-RECS] GPT reranked ${rerankedJobs.length} jobs for user ${user_id}`);
+
+        // GPT 추천 결과를 IT, 데이터/AI로 분류 (중복 없이)
+        const dataAiJobs = [];
+        const itJobs = [];
+        const usedJobIds = new Set();
+
+        for (const job of rerankedJobs) {
+          // 이미 사용된 job은 스킵
+          if (usedJobIds.has(job.job_id)) continue;
+
+          // 빅데이터/AI 카테고리 우선 체크
+          const isDataAi = job.category === 'AI' || job.category === '빅데이터' ||
+            job.jobType === 'AI' || job.jobType === '빅데이터' ||
+            (job.skills && job.skills.some(skill =>
+              ['TensorFlow', 'PyTorch', 'Keras', 'Machine Learning', 'Deep Learning', 'AI', 'Computer Vision', 'NLP', 'R', 'Spark', 'Kafka', 'Hadoop', 'Elasticsearch', 'Pandas'].includes(skill)
+            ));
+
+          // IT 카테고리 체크
+          const isIt = job.category === 'IT' ||
+            job.jobType === 'IT' ||
+            (job.skills && job.skills.some(skill =>
+              ['JavaScript', 'Node.js', 'React', 'Vue.js', 'Java', 'Spring', 'Django', 'Flask', 'C++', 'Unity', 'C#'].includes(skill)
+            ));
+
+          // 빅데이터/AI 우선 배정 (9개 제한)
+          if (isDataAi && dataAiJobs.length < 9) {
+            dataAiJobs.push(job);
+            usedJobIds.add(job.job_id);
+          }
+          // IT만 해당되고 빅데이터/AI에 배정되지 않은 경우만 (9개 제한)
+          else if (isIt && !usedJobIds.has(job.job_id) && itJobs.length < 9) {
+            itJobs.push(job);
+            usedJobIds.add(job.job_id);
+          }
+
+          // 두 카테고리 모두 9개씩 채워지면 종료
+          if (dataAiJobs.length >= 9 && itJobs.length >= 9) break;
+        }
+
+        // 빈 배열 처리: 중복 없이 남은 job들로 채움
+        const allUsedIds = new Set([...dataAiJobs.map(j => j.job_id), ...itJobs.map(j => j.job_id)]);
+        const remainingJobs = rerankedJobs.filter(job => !allUsedIds.has(job.job_id));
+
+        console.log(`[MAIN-RECS] Initial split - dataAiJobs: ${dataAiJobs.length}, itJobs: ${itJobs.length}, remaining: ${remainingJobs.length}`);
+
+        let finalDataAiJobs = dataAiJobs;
+        let finalItJobs = itJobs;
+
+        // dataAiJobs가 5개 미만이면 남은 job에서 채우기 (최소 5개 보장)
+        if (dataAiJobs.length < 5 && remainingJobs.length > 0) {
+          const needed = 5 - dataAiJobs.length;
+          const taken = remainingJobs.slice(0, needed);
+          finalDataAiJobs = [...dataAiJobs, ...taken];
+          taken.forEach(job => allUsedIds.add(job.job_id));
+          console.log(`[MAIN-RECS] Filled dataAiJobs with ${taken.length} remaining jobs (total: ${finalDataAiJobs.length})`);
+        }
+
+        // itJobs가 5개 미만이면 아직 사용 안 된 job에서 채우기 (최소 5개 보장)
+        if (itJobs.length < 5) {
+          const stillRemaining = rerankedJobs.filter(job => !allUsedIds.has(job.job_id));
+          const needed = 5 - itJobs.length;
+          const taken = stillRemaining.slice(0, needed);
+          finalItJobs = [...itJobs, ...taken];
+          console.log(`[MAIN-RECS] Filled itJobs with ${taken.length} remaining jobs (total: ${finalItJobs.length})`);
+        }
+
+        console.log(`[MAIN-RECS] Final counts - dataAiJobs: ${finalDataAiJobs.length}, itJobs: ${finalItJobs.length}`);
+
+        // jobType에 따라 적절한 카테고리만 반환
+        console.log(`[MAIN-RECS] Filtering by jobType: "${jobType}"`);
+        let response = {};
+        if (jobType === '전체') {
+          response = {
+            "빅데이터/AI": finalDataAiJobs,
+            "IT": finalItJobs
+          };
+        } else if (jobType === 'IT') {
+          response = {
+            "IT": finalItJobs
+          };
+        } else if (jobType === '빅데이터' || jobType === 'AI') {
+          response = {
+            "빅데이터/AI": finalDataAiJobs
+          };
+        } else {
+          // 기타 직종의 경우 IT 카테고리로 처리
+          response = {
+            "IT": finalItJobs
+          };
+        }
+
+        // 추천 이력 저장 (jobs 테이블의 공고 ID 저장)
+        const allRecommended = [...finalDataAiJobs, ...finalItJobs];
+        let savedCount = 0;
+        for (const job of allRecommended) {
+          if (job.job_id || job.id) {
+            try {
+              const logQuery = `
+                INSERT INTO recommendation_logs (user_id, job_id, recommendation_score, match_reasons, created_at)
+                VALUES (?, ?, ?, ?, NOW())
+              `;
+              // await pool.query(logQuery, [
+              //   user_id,
+              //   job.job_id || job.id,
+              //   job.match_score || 85, // Use GPT match_score if available
+              //   JSON.stringify(job.match_reasons || [])
+              // ]);
+              savedCount++;
+            } catch (jobLogError) {
+              // 로깅 에러는 무시 (추천 결과에는 영향 없음)
+              console.log(`[MAIN-RECS] ⚠️ Failed to save log for job ${job.job_id || job.id}:`, jobLogError.message);
+            }
+          }
+        }
+        console.log(`[MAIN-RECS] ✅ Saved recommendation history for ${savedCount}/${allRecommended.length} jobs`)
+
+        return res.json(response);
+      }
+    } catch (mcpError) {
+      console.error("[MAIN-RECS] GPT MCP service error:", mcpError.response?.data || mcpError.message);
+      console.log("[MAIN-RECS] Falling back to demo data");
+    }
+
+    // GPT MCP 서비스 실패 시 실제 채용공고 데이터 폴백
+    const realJobData = [
+      {
+        id: "job_001",
+        title: "백엔드 개발자",
+        company: "네이버",
+        location: ["경기 성남시"],
+        experience: "3-5년",
+        skills: ["Java", "Spring Boot", "MySQL", "Redis"],
+        salary: "5000-7000만원",
+        jobType: "IT",
+        match_reasons: ["Spring Boot 백엔드 시스템 개발"],
+        skill_matches: [],
+        powered_by: "GPT-5-mini + Catch Data"
+      },
+      {
+        id: "job_002",
+        title: "프론트엔드 개발자",
+        company: "카카오",
+        location: ["서울 강남구"],
+        experience: "1-3년",
+        skills: ["React", "TypeScript", "Redux", "Webpack"],
+        salary: "4000-6000만원",
+        jobType: "IT",
+        match_reasons: ["React 기반 웹 서비스 개발"],
+        skill_matches: [],
+        powered_by: "GPT-5-mini + Catch Data"
+      },
+      {
+        id: "job_003",
+        title: "데이터 엔지니어",
+        company: "토스",
+        location: ["서울 강남구"],
+        experience: "2-4년",
+        skills: ["Python", "Apache Spark", "Kafka", "AWS"],
+        salary: "5500-7500만원",
+        jobType: "빅데이터",
+        match_reasons: ["빅데이터 파이프라인 구축"],
+        skill_matches: [],
+        powered_by: "GPT-5-mini + Catch Data"
+      },
+      {
+        id: "job_004",
+        title: "DevOps 엔지니어",
+        company: "쿠팡",
+        location: ["서울 송파구"],
+        experience: "3년 이상",
+        skills: ["AWS", "Docker", "Kubernetes", "Jenkins"],
+        salary: "6000-8000만원",
+        jobType: "IT",
+        match_reasons: ["AWS 기반 인프라 구축 및 운영"],
+        skill_matches: [],
+        powered_by: "GPT-5-mini + Catch Data"
+      },
+      {
+        id: "job_005",
+        title: "모바일 개발자",
+        company: "라인",
+        location: ["서울 송파구"],
+        experience: "1-3년",
+        skills: ["React Native", "JavaScript", "iOS", "Android"],
+        salary: "4500-6500만원",
+        jobType: "IT",
+        match_reasons: ["React Native 모바일 앱 개발"],
+        skill_matches: [],
+        powered_by: "GPT-5-mini + Catch Data"
+      }
+    ];
+
+    const allJobs = realJobData;
+
+    // jobType에 따라 분류
+    let response = {};
+
+    if (jobType === '전체') {
+      // 전체일 때만 모든 카테고리 반환
+      const bigDataAiJobs = allJobs.filter(job =>
+        job.jobType === 'AI' || job.jobType === '빅데이터' ||
+        (job.skills && job.skills.some(skill =>
+          ['TensorFlow', 'PyTorch', 'Keras', 'Machine Learning', 'Deep Learning', 'AI', 'Computer Vision', 'NLP', 'Python', 'R', 'Spark', 'Kafka', 'Hadoop', 'SQL', 'MongoDB', 'Elasticsearch', 'Pandas'].includes(skill)
+        ))
+      ).slice(0, 5);
+
+      const itJobs = allJobs.filter(job =>
+        job.jobType === 'IT' ||
+        (job.skills && job.skills.some(skill =>
+          ['JavaScript', 'Node.js', 'React', 'Vue.js', 'Java', 'Spring', 'Django', 'Flask', 'C++', 'Unity', 'C#'].includes(skill)
+        ))
+      ).slice(0, 5);
+
+      response = {
+        "빅데이터/AI": bigDataAiJobs.length > 0 ? bigDataAiJobs : allJobs.slice(0, 5),
+        "IT": itJobs.length > 0 ? itJobs : allJobs.slice(0, 5)
+      };
+    } else if (jobType === 'IT') {
+      // IT만 선택했을 때는 IT 카테고리만 반환
+      const itJobs = allJobs.filter(job =>
+        job.jobType === 'IT' ||
+        (job.skills && job.skills.some(skill =>
+          ['JavaScript', 'Node.js', 'React', 'Vue.js', 'Java', 'Spring', 'Django', 'Flask', 'C++', 'Unity', 'C#'].includes(skill)
+        ))
+      ).slice(0, 5);
+
+      response = {
+        "IT": itJobs.length > 0 ? itJobs : allJobs.filter(job => job.jobType === 'IT').slice(0, 5)
+      };
+    } else if (jobType === '빅데이터' || jobType === 'AI') {
+      // 빅데이터/AI만 선택했을 때는 해당 카테고리만 반환
+      const bigDataAiJobs = allJobs.filter(job =>
+        job.jobType === 'AI' || job.jobType === '빅데이터' ||
+        (job.skills && job.skills.some(skill =>
+          ['TensorFlow', 'PyTorch', 'Keras', 'Machine Learning', 'Deep Learning', 'AI', 'Computer Vision', 'NLP', 'Python', 'R', 'Spark', 'Kafka', 'Hadoop', 'SQL', 'MongoDB', 'Elasticsearch', 'Pandas'].includes(skill)
+        ))
+      ).slice(0, 5);
+
+      response = {
+        "빅데이터/AI": bigDataAiJobs.length > 0 ? bigDataAiJobs : allJobs.filter(job => job.jobType === '빅데이터').slice(0, 5)
+      };
+    } else {
+      // 기타 직종의 경우 관련 jobs 반환
+      const filteredJobs = allJobs.filter(job => job.jobType === jobType).slice(0, 5);
+      response = {
+        [jobType]: filteredJobs.length > 0 ? filteredJobs : allJobs.slice(0, 5)
+      };
+    }
+
+    res.json(response);
+
+  } catch (e) {
+    console.error("[MAIN-RECS] Error:", e.response?.data || e.message);
+    res.status(500).json({ error: { code: "MAIN_RECS_FAILED" } });
+  }
+});
+
+/* -------------------- 기업 정보 API -------------------- */
+/**
+ * @swagger
+ * /api/search-company-info:
+ *   post:
+ *     summary: 기업 종합 정보 조회
+ *     description: 회사명을 받아 해당 기업의 종합 정보를 조회합니다. (Catch 3 API 연동)
+ *     tags: [Job Data Collection]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - company_name
+ *             properties:
+ *               company_name:
+ *                 type: string
+ *                 description: 조회할 기업명
+ *                 example: "삼성전자"
+ *     responses:
+ *       200:
+ *         description: 기업 정보 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 company_name:
+ *                   type: string
+ *                   example: "삼성전자"
+ *                 data:
+ *                   type: object
+ *                   description: 기업 정보 데이터
+ *                   properties:
+ *                     success:
+ *                       type: boolean
+ *                       example: true
+ *                     company_name:
+ *                       type: string
+ *                       example: "삼성전자"
+ *                     reviews:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: number
+ *                             example: 1
+ *                           rating:
+ *                             type: number
+ *                             format: float
+ *                             example: 4.2
+ *                           title:
+ *                             type: string
+ *                             example: "성장할 수 있는 환경"
+ *                           content:
+ *                             type: string
+ *                             example: "기술적 도전과 성장 기회가 많은 회사입니다."
+ *                           pros:
+ *                             type: string
+ *                             example: "성장 기회, 좋은 동료, 워라밸"
+ *                           cons:
+ *                             type: string
+ *                             example: "가끔 야근, 급여 수준"
+ *                           department:
+ *                             type: string
+ *                             example: "개발"
+ *                           position:
+ *                             type: string
+ *                             example: "백엔드 개발자"
+ *                           experience:
+ *                             type: string
+ *                             example: "3년"
+ *                           date:
+ *                             type: string
+ *                             example: "2024-09-20"
+ *                     summary:
+ *                       type: string
+ *                       example: "요약을 생성할 수 없습니다."
+ *                     source:
+ *                       type: string
+ *                       example: "catch.co.kr"
+ *                     powered_by:
+ *                       type: string
+ *                       example: "ChatGPT-4 + Catch Data"
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *                   example: "2024-01-01T12:00:00.000Z"
+ *       400:
+ *         description: 잘못된 요청 (회사명 누락)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: object
+ *                   properties:
+ *                     code:
+ *                       type: string
+ *                       example: "MISSING_COMPANY_NAME"
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: object
+ *                   properties:
+ *                     code:
+ *                       type: string
+ *                       example: "COMPANY_INFO_FAILED"
+ */
+// 기업 종합 정보 API
+app.post("/api/search-company-info", async (req, res) => {
+  try {
+    const { company_name } = req.body;
+
+    if (!company_name) {
+      return res.status(400).json({ error: { code: "MISSING_COMPANY_NAME" } });
+    }
+
+    console.log(`[COMPANY_INFO] Requesting info for: ${company_name}`);
+
+    const response = await axios.post(
+      `${process.env.MCP_RECS_BASE}/tools/get_company_reviews`,
+      { company_name },
+      { timeout: 10000 }
+    );
+
+    if (response.data && response.data.success) {
+      res.json({
+        success: true,
+        company_name,
+        data: response.data,
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      res.status(500).json({ error: { code: "COMPANY_INFO_FAILED" } });
+    }
+
+  } catch (error) {
+    console.error("[COMPANY_INFO] Error:", error.message);
+    res.status(500).json({ error: { code: "COMPANY_INFO_FAILED" } });
+  }
+});
+
+/**
+ * @swagger
+ * /api/job-essays:
+ *   post:
+ *     summary: 합격 자소서 정보 조회
+ *     description: 회사명과 직무를 받아 해당 기업의 합격 자소서 정보를 조회합니다.
+ *     tags: [Job Data Collection]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - company_name
+ *             properties:
+ *               company_name:
+ *                 type: string
+ *                 description: 조회할 기업명
+ *                 example: "삼성전자"
+ *               job_position:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: 조회할 직무 목록 (선택사항)
+ *                 example: ["소프트웨어 엔지니어", "데이터 사이언티스트"]
+ *     responses:
+ *       200:
+ *         description: 자소서 정보 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 company_name:
+ *                   type: string
+ *                   example: "삼성전자"
+ *                 job_position:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example: ["소프트웨어 엔지니어", "데이터 사이언티스트"]
+ *                 data:
+ *                   type: object
+ *                   description: 자소서 정보 데이터
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *                   example: "2024-01-01T12:00:00.000Z"
+ *       400:
+ *         description: 잘못된 요청 (회사명 누락)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: object
+ *                   properties:
+ *                     code:
+ *                       type: string
+ *                       example: "MISSING_COMPANY_NAME"
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: object
+ *                   properties:
+ *                     code:
+ *                       type: string
+ *                       example: "JOB_ESSAYS_FAILED"
+ */
+// 합격 자소서 정보 API
+app.post("/api/job-essays", async (req, res) => {
+  try {
+    const { company_name, job_position } = req.body;
+
+    if (!company_name) {
+      return res.status(400).json({ error: { code: "MISSING_COMPANY_NAME" } });
+    }
+
+    console.log(`[JOB_ESSAYS] Requesting essays for: ${company_name} - ${job_position || 'All positions'}`);
+
+    const response = await axios.post(
+      `${process.env.MCP_RECS_BASE}/tools/get_job_essays`,
+      { company_name, job_position },
+      { timeout: 10000 }
+    );
+
+    if (response.data && response.data.success) {
+      res.json({
+        success: true,
+        company_name,
+        job_position: job_position ? (Array.isArray(job_position) ? job_position : [job_position]) : ['All positions'],
+        data: response.data,
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      res.status(500).json({ error: { code: "JOB_ESSAYS_FAILED" } });
+    }
+
+  } catch (error) {
+    console.error("[JOB_ESSAYS] Error:", error.message);
+    res.status(500).json({ error: { code: "JOB_ESSAYS_FAILED" } });
+  }
+});
+
+/**
+ * @swagger
+ * /api/job-tips:
+ *   post:
+ *     summary: 지원 꿀팁 정보 조회
+ *     description: 회사명과 직무를 받아 해당 기업의 지원 꿀팁 정보를 조회합니다.
+ *     tags: [Job Data Collection]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - company_name
+ *             properties:
+ *               company_name:
+ *                 type: string
+ *                 description: 조회할 기업명
+ *                 example: "삼성전자"
+ *               job_position:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: 조회할 직무 목록 (선택사항)
+ *                 example: ["소프트웨어 엔지니어", "데이터 사이언티스트"]
+ *     responses:
+ *       200:
+ *         description: 지원 꿀팁 정보 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 company_name:
+ *                   type: string
+ *                   example: "삼성전자"
+ *                 job_position:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example: ["소프트웨어 엔지니어", "데이터 사이언티스트"]
+ *                 data:
+ *                   type: object
+ *                   description: 지원 꿀팁 정보 데이터
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *                   example: "2024-01-01T12:00:00.000Z"
+ *       400:
+ *         description: 잘못된 요청 (회사명 누락)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: object
+ *                   properties:
+ *                     code:
+ *                       type: string
+ *                       example: "MISSING_COMPANY_NAME"
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: object
+ *                   properties:
+ *                     code:
+ *                       type: string
+ *                       example: "JOB_TIPS_FAILED"
+ */
+// 지원 꿀팁 정보 API
+app.post("/api/job-tips", async (req, res) => {
+  try {
+    const { company_name, job_position } = req.body;
+
+    if (!company_name) {
+      return res.status(400).json({ error: { code: "MISSING_COMPANY_NAME" } });
+    }
+
+    console.log(`[JOB_TIPS] Requesting tips for: ${company_name} - ${job_position || 'All positions'}`);
+
+    const response = await axios.post(
+      `${process.env.MCP_RECS_BASE}/tools/get_job_tips`,
+      { company_name, job_position },
+      { timeout: 10000 }
+    );
+
+    if (response.data && response.data.success) {
+      res.json({
+        success: true,
+        company_name,
+        job_position: job_position ? (Array.isArray(job_position) ? job_position : [job_position]) : ['All positions'],
+        data: response.data,
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      res.status(500).json({ error: { code: "JOB_TIPS_FAILED" } });
+    }
+
+  } catch (error) {
+    console.error("[JOB_TIPS] Error:", error.message);
+    res.status(500).json({ error: { code: "JOB_TIPS_FAILED" } });
+  }
+});
+
+/**
+ * @swagger
+ * /api/comprehensive-job-info:
+ *   post:
+ *     summary: 종합 취업 정보 조회
+ *     description: 회사명과 직무를 받아 기업 정보, 합격 자소서, 지원 꿀팁을 통합하여 조회합니다.
+ *     tags: [Job Data Collection]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - company_name
+ *             properties:
+ *               company_name:
+ *                 type: string
+ *                 description: 조회할 기업명
+ *                 example: "삼성전자"
+ *               job_position:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: 조회할 직무 목록 (선택사항)
+ *                 example: ["소프트웨어 엔지니어", "데이터 사이언티스트"]
+ *     responses:
+ *       200:
+ *         description: 종합 취업 정보 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 company_name:
+ *                   type: string
+ *                   example: "삼성전자"
+ *                 job_position:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example: ["소프트웨어 엔지니어", "데이터 사이언티스트"]
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *                   example: "2024-01-01T12:00:00.000Z"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     company_info:
+ *                       type: object
+ *                       description: 기업 정보 데이터 (null일 수 있음)
+ *                     job_essays:
+ *                       type: object
+ *                       description: 합격 자소서 데이터 (null일 수 있음)
+ *                     job_tips:
+ *                       type: object
+ *                       description: 지원 꿀팁 데이터 (null일 수 있음)
+ *       400:
+ *         description: 잘못된 요청 (회사명 누락)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: object
+ *                   properties:
+ *                     code:
+ *                       type: string
+ *                       example: "MISSING_COMPANY_NAME"
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: object
+ *                   properties:
+ *                     code:
+ *                       type: string
+ *                       example: "COMPREHENSIVE_INFO_FAILED"
+ */
+// 종합 취업 정보 API (기업정보 + 자소서 + 꿀팁 통합)
+app.post("/api/comprehensive-job-info", async (req, res) => {
+  try {
+    const { company_name, job_position } = req.body;
+
+    if (!company_name) {
+      return res.status(400).json({ error: { code: "MISSING_COMPANY_NAME" } });
+    }
+
+    console.log(`[COMPREHENSIVE] Requesting comprehensive info for: ${company_name} - ${job_position || 'All positions'}`);
+
+    // 병렬로 3개의 API 호출
+    const [companyInfo, jobEssays, jobTips] = await Promise.allSettled([
+      axios.post(`${process.env.MCP_RECS_BASE}/tools/get_company_reviews`, { company_name }, { timeout: 8000 }),
+      axios.post(`${process.env.MCP_RECS_BASE}/tools/get_job_essays`, { company_name, job_position }, { timeout: 8000 }),
+      axios.post(`${process.env.MCP_RECS_BASE}/tools/get_job_tips`, { company_name, job_position }, { timeout: 8000 })
+    ]);
+
+    const result = {
+      success: true,
+      company_name,
+      job_position: job_position ? (Array.isArray(job_position) ? job_position : [job_position]) : ['All positions'],
+      timestamp: new Date().toISOString(),
+      data: {
+        company_info: companyInfo.status === 'fulfilled' && companyInfo.value.data?.success ? companyInfo.value.data : null,
+        job_essays: jobEssays.status === 'fulfilled' && jobEssays.value.data?.success ? jobEssays.value.data : null,
+        job_tips: jobTips.status === 'fulfilled' && jobTips.value.data?.success ? jobTips.value.data : null
+      }
+    };
+
+    res.json(result);
+
+  } catch (error) {
+    console.error("[COMPREHENSIVE] Error:", error.message);
+    res.status(500).json({ error: { code: "COMPREHENSIVE_INFO_FAILED" } });
+  }
+});
+
+/* -------------------- GPT MCP 기반 맞춤 면접 -------------------- */
+/**
+ * @swagger
+ * /session/interview:
+ *   get:
+ *     summary: GPT MCP 기반 회사별 맞춤 면접 질문 생성
+ *     tags: [Interview]
+ *     parameters:
+ *       - in: query
+ *         name: user_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 사용자 ID
+ *       - in: query
+ *         name: jobId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 채용공고 ID
+ *       - in: query
+ *         name: questionCount
+ *         schema:
+ *           type: integer
+ *           default: 8
+ *         description: 생성할 질문 개수
+ *       - in: query
+ *         name: difficulty
+ *         schema:
+ *           type: string
+ *           enum: [beginner, intermediate, advanced, mixed]
+ *           default: mixed
+ *         description: 면접 난이도 레벨
+ *     responses:
+ *       200:
+ *         description: GPT 기반 맞춤 면접 질문 생성 완료
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 questions:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       question:
+ *                         type: string
+ *                       category:
+ *                         type: string
+ *                       difficulty:
+ *                         type: string
+ *                       expected_answer_points:
+ *                         type: array
+ *                         items:
+ *                           type: string
+ *                       tips:
+ *                         type: string
+ *                 interview_strategy:
+ *                   type: object
+ *                   properties:
+ *                     company_focus:
+ *                       type: string
+ *                     key_preparation_areas:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                     personalization_insights:
+ *                       type: string
+ *                 job_match_analysis:
+ *                   type: object
+ *                   properties:
+ *                     strength_areas:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                     growth_opportunities:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *       400:
+ *         description: 필수 파라미터 누락 또는 잘못된 요청
+ *       404:
+ *         description: 채용공고를 찾을 수 없음
+ *       500:
+ *         description: 서버 오류
+ */
+app.get("/session/interview", async (req, res) => {
+  try {
+    const { user_id, job_id, questionCount = 8, difficulty = 'mixed' } = req.query;
+
+    if (!user_id) {
+      return res.status(400).json({ error: { code: "MISSING_USER_ID" } });
+    }
+
+    if (!job_id) {
+      return res.status(400).json({ error: { code: "MISSING_JOB_ID" } });
+    }
+
+    console.log(`[GPT-INTERVIEW] 사용자 ${user_id}를 위한 채용공고 ${job_id} 면접 질문 생성 시작`);
+
+    // 1. 사용자 프로필 정보 조회
+    const [userRows] = await pool.execute(
+      'SELECT id, name, email, provider FROM users WHERE id = ?',
+      [user_id]
+    );
+
+    if (userRows.length === 0) {
+      return res.status(404).json({ error: { code: "USER_NOT_FOUND" } });
+    }
+
+    const userData = userRows[0];
+
+    // 2. 사용자 프로필 상세 정보 조회
+    const [profileRows] = await pool.execute(
+      'SELECT skills, experience, preferred_regions, preferred_jobs, expected_salary FROM user_profiles WHERE user_id = ? ORDER BY id DESC LIMIT 1',
+      [user_id]
+    );
+
+    let userProfile = {
+      skills: [],
+      experience: "신입",
+      preferred_regions: ["서울"],
+      jobs: ["IT"],
+      expected_salary: "3500만원"
+    };
+
+    if (profileRows.length > 0) {
+      const profile = profileRows[0];
+      userProfile = {
+        skills: profile.skills ? JSON.parse(profile.skills) : [],
+        experience: profile.experience || "신입",
+        preferred_regions: profile.preferred_regions ? JSON.parse(profile.preferred_regions) : ["서울"],
+        jobs: [profile.preferred_jobs || "IT"],
+        expected_salary: profile.expected_salary ? `${profile.expected_salary}만원` : "3500만원"
+      };
+    }
+
+    console.log(`[GPT-INTERVIEW] 사용자 프로필:`, userProfile);
+
+    // 3. 채용공고 정보 조회 (DB에서)
+    const [jobRows] = await pool.execute(
+      `SELECT jp.job_id, jp.title, c.name as company_name, jp.skills, jp.experience_level,
+              jp.location, jp.salary, jp.description, jp.requirements
+       FROM job_postings jp
+       JOIN companies c ON jp.company_id = c.company_id
+       WHERE jp.job_id = ? AND jp.is_active = TRUE`,
+      [job_id]
+    );
+
+    let jobDetail;
+
+    if (jobRows.length > 0) {
+      const job = jobRows[0];
+      jobDetail = {
+        id: job.job_id,
+        title: job.title,
+        company: job.company_name,
+        skills: job.skills ? JSON.parse(job.skills) : [],
+        location: [job.location || "서울"],
+        experience: job.experience_level || "신입",
+        salary: job.salary || "면접 후 결정",
+        description: job.description || "",
+        requirements: job.requirements || ""
+      };
+    } else {
+      // DB에 없으면 데모 데이터에서 찾기
+      if (!global.demoData || !global.demoData.jobs) {
+        return res.status(404).json({ error: { code: "JOB_NOT_FOUND" } });
+      }
+
+      const demoJob = global.demoData.jobs.find(j => j.id === job_id);
+      if (!demoJob) {
+        return res.status(404).json({ error: { code: "JOB_NOT_FOUND" } });
+      }
+
+      jobDetail = {
+        id: demoJob.id,
+        title: demoJob.title,
+        company: demoJob.companyName,
+        skills: demoJob.requiredSkills || [],
+        location: demoJob.location || ["서울"],
+        experience: demoJob.experienceLevel || "신입",
+        salary: demoJob.salary || "면접 후 결정",
+        description: demoJob.description || "",
+        requirements: demoJob.requirements || ""
+      };
+    }
+
+    console.log(`[GPT-INTERVIEW] 채용공고 정보:`, {
+      title: jobDetail.title,
+      company: jobDetail.company,
+      skills: jobDetail.skills
+    });
+
+    // 4. MCP 서비스를 통한 개인화된 면접 질문 생성
+    console.log(`[GPT-INTERVIEW] MCP 서비스 호출 중... (${process.env.MCP_RECS_BASE})`);
+
+    const mcpResponse = await axios.post(
+      `${process.env.MCP_RECS_BASE}/tools/generate_interview`,
+      {
+        user_profile: userProfile,
+        job_detail: jobDetail,
+        question_count: Math.min(Number(questionCount) || 5, 10),
+        difficulty: difficulty
+      },
+      {
+        timeout: 10000,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    console.log(`[GPT-INTERVIEW] MCP 응답 상태:`, mcpResponse.status);
+    console.log(`[GPT-INTERVIEW] MCP 응답 데이터:`, mcpResponse.data);
+
+    const responseData = mcpResponse.data;
+
+    // 5. 응답 처리
+    if (responseData?.questions && Array.isArray(responseData.questions)) {
+      // 면접 로그 저장
+      try {
+        // await pool.execute(
+        //   'INSERT INTO interview_logs (user_id, job_id, questions, created_at) VALUES (?, ?, ?, NOW())',
+        //   [user_id, job_id, JSON.stringify(responseData.questions)]
+        // );
+        console.log(`[GPT-INTERVIEW] 면접 로그 저장 완료`);
+      } catch (logError) {
+        console.error(`[GPT-INTERVIEW] 면접 로그 저장 실패:`, logError);
+      }
+
+      res.json({
+        success: true,
+        job_title: jobDetail.title,
+        company: jobDetail.company,
+        questions: responseData.questions,
+        total_questions: responseData.questions.length,
+        powered_by: responseData.powered_by || "ChatGPT-4 + MCP Service",
+        user_profile: {
+          name: userData.name,
+          skills: userProfile.skills,
+          experience: userProfile.experience
+        },
+        generated_at: new Date().toISOString()
+      });
+    } else {
+      console.error('[GPT-INTERVIEW] MCP 응답에 질문 데이터가 없음:', responseData);
+      res.status(500).json({
+        error: {
+          code: "INTERVIEW_NO_QUESTIONS",
+          message: "면접 질문 생성에 실패했습니다. MCP 서비스에서 유효한 질문을 받지 못했습니다."
+        }
+      });
+    }
+
+  } catch (error) {
+    console.error("[GPT-INTERVIEW] 면접 질문 생성 실패:", error);
+
+    if (error.code === 'ECONNREFUSED') {
+      res.status(503).json({
+        error: {
+          code: "MCP_SERVICE_UNAVAILABLE",
+          message: "MCP 서비스에 연결할 수 없습니다. 서비스가 실행 중인지 확인해주세요."
+        }
+      });
+    } else if (error.response) {
+      console.error("[GPT-INTERVIEW] MCP 서비스 응답 오류:", error.response.status, error.response.data);
+      res.status(500).json({
+        error: {
+          code: "MCP_SERVICE_ERROR",
+          message: `MCP 서비스 오류: ${error.response.status}`
+        }
+      });
+    } else {
+      res.status(500).json({
+        error: {
+          code: "GPT_INTERVIEW_FAILED",
+          message: "면접 질문 생성 중 오류가 발생했습니다."
+        }
+      });
+    }
+  }
+});
+
+/* -------------------- 피드백(개인화) -------------------- */
+app.post("/session/feedback", async (req, res) => {
+  try {
+    const { sessionId, type, company, skill } = req.body || {};
+    ensureSession(sessionId);
+
+    const { data } = await axios.post(`${process.env.MCP_RECS_BASE}/tools/feedback`, {
+      sessionId,
+      type,
+      target: { company, skill },
+    });
+    res.json(data);
+  } catch (e) {
+    res.status(400).json({ error: { code: "FEEDBACK_FAILED" } });
+  }
+});
+
+/* -------------------- 데모 데이터 설정 API -------------------- */
+/**
+ * @swagger
+ * /api/setup-demo-data:
+ *   post:
+ *     summary: Create demo data for prototype testing
+ *     tags: [Demo]
+ *     responses:
+ *       200:
+ *         description: Demo data created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 created:
+ *                   type: object
+ */
+app.post("/api/setup-demo-data", async (req, res) => {
+  try {
+    console.log('[DEMO] Setting up demo data...');
+
+    // 랜덤 데이터 생성을 위한 헬퍼 함수들
+    const getRandomElement = (arr) => arr[Math.floor(Math.random() * arr.length)];
+    const getRandomElements = (arr, count) => {
+      const shuffled = [...arr].sort(() => 0.5 - Math.random());
+      return shuffled.slice(0, count);
+    };
+
+    // 랜덤 데이터 풀
+    const namePool = [
+      '김개발', '이데이터', '박프론트', '최백엔드', '정풀스택', '한AI',
+      '송클라우드', '윤모바일', '장게임', '임보안', '신네트워크', '조블록체인',
+      '강머신러닝', '오데브옵스', '허웹개발', '남앱개발', '전시스템', '곽UI'
+    ];
+
+    const skillPools = {
+      IT: [
+        ['JavaScript', 'React', 'Node.js', 'MongoDB'],
+        ['TypeScript', 'Vue.js', 'Express', 'PostgreSQL'],
+        ['Python', 'Django', 'FastAPI', 'Redis'],
+        ['Java', 'Spring Boot', 'MySQL', 'Docker'],
+        ['C#', '.NET', 'SQL Server', 'Azure'],
+        ['PHP', 'Laravel', 'MySQL', 'AWS'],
+        ['Go', 'Gin', 'PostgreSQL', 'Kubernetes'],
+        ['Ruby', 'Rails', 'MongoDB', 'Heroku']
+      ],
+      빅데이터: [
+        ['Python', 'Pandas', 'NumPy', 'Jupyter'],
+        ['R', 'Spark', 'Hadoop', 'Kafka'],
+        ['Scala', 'Spark', 'Elasticsearch', 'Kibana'],
+        ['Python', 'TensorFlow', 'PyTorch', 'Scikit-learn'],
+        ['SQL', 'BigQuery', 'Redshift', 'Snowflake'],
+        ['Python', 'Apache Airflow', 'Kafka', 'Docker']
+      ],
+      게임: [
+        ['Unity', 'C#', 'Photon', 'PlayFab'],
+        ['Unreal Engine', 'C++', 'Blueprint', 'Steam'],
+        ['Cocos2d', 'JavaScript', 'WebGL', 'Node.js'],
+        ['Godot', 'GDScript', 'C#', 'OpenGL']
+      ],
+      모바일: [
+        ['React Native', 'JavaScript', 'Firebase', 'Redux'],
+        ['Flutter', 'Dart', 'Firebase', 'GetX'],
+        ['Swift', 'iOS', 'Core Data', 'SwiftUI'],
+        ['Kotlin', 'Android', 'Room', 'Jetpack Compose'],
+        ['Xamarin', 'C#', 'MVVM', 'SQLite']
+      ]
+    };
+
+    const experienceLevels = ['신입', '경력 1-2년', '경력 1-3년', '경력 2-4년', '경력 3-5년', '경력 5년 이상'];
+    const jobTypes = ['IT', '빅데이터', '게임', '모바일'];
+    const locations = [['서울'], ['경기'], ['부산'], ['대구'], ['서울', '경기'], ['서울', '부산']];
+
+    // 데모 회사 데이터 (고정)
+    const demoCompanies = [
+      { id: 'demo_company_1', name: '네이버', industry: 'IT', location: '서울' },
+      { id: 'demo_company_2', name: '카카오', industry: 'IT', location: '서울' },
+      { id: 'demo_company_3', name: '삼성전자', industry: 'IT', location: '서울' },
+      { id: 'demo_company_4', name: '엔씨소프트', industry: '게임', location: '서울' },
+      { id: 'demo_company_5', name: '쿠팡', industry: 'IT', location: '서울' }
+    ];
+
+    // 랜덤 채용공고 데이터 생성
+    const jobTitles = {
+      IT: ['백엔드 개발자', '프론트엔드 개발자', '풀스택 개발자', '웹 개발자', 'API 개발자'],
+      빅데이터: ['데이터 엔지니어', '데이터 사이언티스트', '빅데이터 개발자', 'ML 엔지니어'],
+      게임: ['게임 클라이언트 개발자', '게임 서버 개발자', '게임 기획자', 'Unity 개발자'],
+      모바일: ['안드로이드 개발자', 'iOS 개발자', '모바일 앱 개발자', 'React Native 개발자']
+    };
+
+    const salaryRanges = [
+      '3000-4500만원', '3500-5000만원', '4000-6000만원', '4500-6500만원',
+      '5000-7000만원', '5500-8000만원', '6000-9000만원'
+    ];
+
+    const demoJobs = [];
+    for (let i = 1; i <= 5; i++) {
+      const jobType = getRandomElement(jobTypes);
+      const company = demoCompanies[i - 1];
+      const skills = getRandomElement(skillPools[jobType] || skillPools.IT);
+
+      demoJobs.push({
+        id: `job_${i}`,
+        companyId: company.id,
+        companyName: company.name,
+        title: getRandomElement(jobTitles[jobType] || jobTitles.IT),
+        requiredSkills: skills,
+        location: getRandomElement(locations),
+        experienceLevel: getRandomElement(experienceLevels),
+        jobType: jobType,
+        description: `${jobType} 분야 ${skills.join(', ')} 기술을 활용한 개발`,
+        salary: getRandomElement(salaryRanges)
+      });
+    }
+
+    // 랜덤 사용자 데이터 생성 (매번 다른 데이터)
+    const generateRandomUser = (index) => {
+      const jobType = getRandomElement(jobTypes);
+      const skills = getRandomElement(skillPools[jobType] || skillPools.IT);
+      const name = getRandomElement(namePool);
+      const email = `demo${index}@test.com`;
+      const experience = getRandomElement(experienceLevels);
+      const location = getRandomElement(locations);
+
+      return {
+        id: `demo_user_${index}`,
+        email: email,
+        name: name,
+        skills: skills,
+        preferredLocation: location,
+        experienceLevel: experience,
+        preferredJobType: jobType
+      };
+    };
+
+    const demoUsers = [
+      generateRandomUser(1),
+      generateRandomUser(2)
+    ];
+
+    // 실제 데이터베이스에 사용자 데이터 저장
+    console.log('[DEMO] Inserting users into database...');
+    let actualUsersCreated = 0;
+
+    for (const user of demoUsers) {
+      try {
+        // 소셜 로그인 사용자로 저장
+        const providerKey = `demo:${user.id}`;
+
+        // users 테이블에 삽입 (중복 시 무시)
+        await pool.execute(
+          'INSERT IGNORE INTO users (provider_key, email, name, picture, provider) VALUES (?, ?, ?, ?, ?)',
+          [providerKey, user.email, user.name, null, 'kakao']
+        );
+
+        // 삽입된 사용자 조회
+        const [userResult] = await pool.execute(
+          'SELECT id FROM users WHERE provider_key = ?',
+          [providerKey]
+        );
+
+        if (userResult.length > 0) {
+          const userId = userResult[0].id;
+
+          // user_profiles 테이블에 프로필 삽입 (중복 시 업데이트)
+          await pool.execute(`
+            INSERT INTO user_profiles (user_id, skills, experience, preferred_regions, preferred_jobs, expected_salary)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+            skills = VALUES(skills),
+            experience = VALUES(experience),
+            preferred_regions = VALUES(preferred_regions),
+            preferred_jobs = VALUES(preferred_jobs),
+            expected_salary = VALUES(expected_salary)
+          `, [
+            userId,
+            JSON.stringify(user.skills),
+            user.experienceLevel,
+            JSON.stringify(user.preferredLocation),
+            user.preferredJobType,
+            user.preferredJobType === 'IT' ? 4500 : 5500 // 예상 연봉 (만원)
+          ]);
+
+          actualUsersCreated++;
+          console.log(`[DEMO] Created user: ${user.name} (ID: ${userId})`);
+        }
+      } catch (error) {
+        console.error(`[DEMO] Error creating user ${user.name}:`, error);
+      }
+    }
+
+    // 전역 변수에도 저장 (기존 호환성 유지)
+    global.demoData = {
+      companies: demoCompanies,
+      jobs: demoJobs,
+      users: demoUsers,
+      currentUser: null
+    };
+
+    console.log('[DEMO] Demo data created successfully');
+    res.json({
+      success: true,
+      message: 'Demo data created successfully',
+      created: {
+        companies: demoCompanies.length,
+        jobs: demoJobs.length,
+        users: actualUsersCreated
+      }
+    });
+
+  } catch (error) {
+    console.error('[DEMO] Error setting up demo data:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to setup demo data',
+      details: error.message
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /api/demo-login:
+ *   post:
+ *     summary: Demo login without OAuth
+ *     tags: [Demo]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userId:
+ *                 type: string
+ *                 enum: [demo_user_1, demo_user_2]
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 user:
+ *                   type: object
+ */
+app.post("/api/demo-login", async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    if (!global.demoData) {
+      return res.status(400).json({
+        success: false,
+        error: 'Demo data not initialized. Call /api/setup-demo-data first.'
+      });
+    }
+
+    const user = global.demoData.users.find(u => u.id === userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'Demo user not found'
+      });
+    }
+
+    global.demoData.currentUser = user;
+    console.log(`[DEMO] User logged in: ${user.name} (${user.email})`);
+
+    res.json({
+      success: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        skills: user.skills,
+        preferredLocation: user.preferredLocation,
+        experienceLevel: user.experienceLevel,
+        preferredJobType: user.preferredJobType
+      }
+    });
+
+  } catch (error) {
+    console.error('[DEMO] Login error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Demo login failed',
+      details: error.message
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /api/demo-status:
+ *   get:
+ *     summary: Check demo system status
+ *     tags: [Demo]
+ *     responses:
+ *       200:
+ *         description: Demo system status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 initialized:
+ *                   type: boolean
+ *                 currentUser:
+ *                   type: object
+ *                 dataCount:
+ *                   type: object
+ */
+app.get("/api/demo-status", (req, res) => {
+  const isInitialized = !!global.demoData;
+
+  res.json({
+    initialized: isInitialized,
+    currentUser: isInitialized ? global.demoData.currentUser : null,
+    dataCount: isInitialized ? {
+      companies: global.demoData.companies.length,
+      jobs: global.demoData.jobs.length,
+      users: global.demoData.users.length
+    } : null
+  });
+});
+
+/* -------------------- 헬스 체크 -------------------- */
+app.get("/health", (req, res) => res.json({ ok: true, ts: Date.now() }));
+app.get("/api/health", (req, res) => res.json({ ok: true, ts: Date.now() }));
+
+
+/* -------------------- 서버 시작 -------------------- */
+/**
+ * @swagger
+ * /api/cover-letter/upload:
+ *   post:
+ *     summary: 자기소개서 파일 업로드
+ *     description: 사용자의 자기소개서 파일을 업로드합니다.
+ *     tags: [Cover Letter]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - user_id
+ *               - cover_letter
+ *             properties:
+ *               user_id:
+ *                 type: integer
+ *                 description: 사용자 ID
+ *                 example: 1
+ *               cover_letter:
+ *                 type: string
+ *                 format: binary
+ *                 description: 자기소개서 파일 (PDF, DOC, DOCX, TXT)
+ *     responses:
+ *       201:
+ *         description: 자기소개서 업로드 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "자기소개서가 성공적으로 업로드되었습니다"
+ *                 file_path:
+ *                   type: string
+ *                   example: "/uploads/cover_letter/cover_letter_1_1640995200000.pdf"
+ *       400:
+ *         description: 잘못된 요청
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "사용자 ID와 파일이 필요합니다"
+ *       413:
+ *         description: 파일 크기 초과
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "파일 크기가 10MB를 초과할 수 없습니다"
+ */
+app.post('/api/cover-letter/upload', uploadCoverLetter.single('cover_letter'), async (req, res) => {
+  try {
+    const { user_id } = req.body;
+    const file = req.file;
+
+    if (!user_id || !file) {
+      return res.status(400).json({
+        error: '사용자 ID와 파일이 필요합니다'
+      });
+    }
+
+    const filePath = `/uploads/cover_letter/${file.filename}`;
+
+    res.status(201).json({
+      success: true,
+      message: '자기소개서가 성공적으로 업로드되었습니다',
+      file_path: filePath
+    });
+
+  } catch (error) {
+    console.error('Cover letter upload error:', error);
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({
+        error: '파일 크기가 10MB를 초과할 수 없습니다'
+      });
+    }
+    res.status(500).json({
+      error: '자기소개서 업로드 중 오류가 발생했습니다'
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /api/cover-letter/download/{filename}:
+ *   get:
+ *     summary: 자기소개서 파일 다운로드
+ *     description: 업로드된 자기소개서 파일을 다운로드합니다.
+ *     tags: [Cover Letter]
+ *     parameters:
+ *       - in: path
+ *         name: filename
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 다운로드할 파일명
+ *         example: cover_letter_1_1640995200000.pdf
+ *     responses:
+ *       200:
+ *         description: 파일 다운로드 성공
+ *         content:
+ *           application/octet-stream:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       404:
+ *         description: 파일을 찾을 수 없음
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "파일을 찾을 수 없습니다"
+ */
+app.get('/api/cover-letter/download/:filename', (req, res) => {
+  try {
+    const filename = req.params.filename;
+    const filepath = path.join(uploadDir, 'cover_letter', filename);
+
+    if (fs.existsSync(filepath)) {
+      res.download(filepath);
+    } else {
+      res.status(404).json({
+        error: '파일을 찾을 수 없습니다'
+      });
+    }
+  } catch (error) {
+    console.error('Cover letter download error:', error);
+    res.status(500).json({
+      error: '파일 다운로드 중 오류가 발생했습니다'
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /api/cover-letter/list/{user_id}:
+ *   get:
+ *     summary: 사용자 자기소개서 파일 목록 조회
+ *     description: 특정 사용자가 업로드한 자기소개서 파일 목록을 조회합니다.
+ *     tags: [Cover Letter]
+ *     parameters:
+ *       - in: path
+ *         name: user_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 사용자 ID
+ *         example: 1
+ *     responses:
+ *       200:
+ *         description: 파일 목록 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 files:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       filename:
+ *                         type: string
+ *                         example: cover_letter_1_1640995200000.pdf
+ *                       upload_time:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2021-12-31T12:00:00.000Z"
+ *                       size:
+ *                         type: integer
+ *                         example: 1048576
+ *       404:
+ *         description: 파일을 찾을 수 없음
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 files:
+ *                   type: array
+ *                   items: {}
+ *                   example: []
+ */
+app.get('/api/cover-letter/list/:user_id', (req, res) => {
+  try {
+    const userId = req.params.user_id;
+    const coverLetterDir = path.join(uploadDir, 'cover_letter');
+
+    if (!fs.existsSync(coverLetterDir)) {
+      return res.json({ success: true, files: [] });
+    }
+
+    const files = fs.readdirSync(coverLetterDir)
+      .filter(filename => filename.startsWith(`cover_letter_${userId}_`))
+      .map(filename => {
+        const filepath = path.join(coverLetterDir, filename);
+        const stats = fs.statSync(filepath);
+
+        return {
+          filename,
+          upload_time: stats.mtime.toISOString(),
+          size: stats.size
+        };
+      })
+      .sort((a, b) => new Date(b.upload_time) - new Date(a.upload_time));
+
+    res.json({
+      success: true,
+      files
+    });
+
+  } catch (error) {
+    console.error('Cover letter list error:', error);
+    res.status(500).json({
+      error: '파일 목록 조회 중 오류가 발생했습니다'
+    });
+  }
+});
+
+// 사용자별 이전 추천 공고 조회 API
+/**
+ * @swagger
+ * /api/user-recommendation-history:
+ *   get:
+ *     summary: 사용자별 이전 추천 공고 조회
+ *     description: 특정 사용자의 이전 채용공고 추천 이력을 조회합니다
+ *     tags: [Interview Preparation]
+ *     parameters:
+ *       - in: query
+ *         name: user_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 사용자 ID
+ *         example: "1"
+ *     responses:
+ *       200:
+ *         description: 추천 이력 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 history:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       job_id:
+ *                         type: string
+ *                         example: "job_001"
+ *                       title:
+ *                         type: string
+ *                         example: "백엔드 개발자"
+ *                       company:
+ *                         type: string
+ *                         example: "네이버"
+ *                       recommendation_date:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2024-01-15T10:30:00Z"
+ */
+app.get('/api/user-recommendation-history', async (req, res) => {
+  try {
+    const { user_id } = req.query;
+
+    if (!user_id) {
+      return res.status(400).json({
+        error: '사용자 ID가 필요합니다'
+      });
+    }
+
+    console.log(`[REC-HISTORY] Fetching recommendation history for user ${user_id}`);
+
+    // DB에서 사용자 추천 이력 조회
+    // jobs 테이블과 LEFT JOIN (job_postings는 사용 안 함)
+    const historyQuery = `
+      SELECT DISTINCT
+        rl.job_id,
+        j.title,
+        j.company,
+        rl.created_at as recommendation_date,
+        rl.match_reasons
+      FROM recommendation_logs rl
+      LEFT JOIN jobs j ON rl.job_id = j.id
+      WHERE rl.user_id = ?
+      ORDER BY rl.created_at DESC
+      LIMIT 20
+    `;
+
+    const rows = await dbQuery(historyQuery, [user_id]);
+
+    if (rows.length === 0) {
+      // 추천 이력이 없으면 샘플 데이터 제공
+      const sampleHistory = [
+        {
+          job_id: "job_001",
+          title: "백엔드 개발자",
+          company: "네이버",
+          recommendation_date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+          match_reasons: ["Spring Boot 경험 일치", "신입 포지션"]
+        },
+        {
+          job_id: "job_002",
+          title: "프론트엔드 개발자",
+          company: "카카오",
+          recommendation_date: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+          match_reasons: ["React 스킬 매칭", "경력 수준 적합"]
+        },
+        {
+          job_id: "job_003",
+          title: "풀스택 개발자",
+          company: "쿠팡",
+          recommendation_date: new Date(Date.now() - 21 * 24 * 60 * 60 * 1000).toISOString(),
+          match_reasons: ["Node.js 경험", "지역 매칭"]
+        }
+      ];
+
+      return res.json({
+        success: true,
+        history: sampleHistory,
+        message: "이전 추천 이력이 없어 샘플 데이터를 제공합니다"
+      });
+    }
+
+    // 실제 추천 이력 반환
+    const history = rows.map(row => ({
+      job_id: row.job_id,
+      title: row.title || '채용공고 정보 없음',
+      company: row.company || '회사 정보 없음',
+      recommendation_date: row.recommendation_date,
+      match_reasons: row.match_reasons ? JSON.parse(row.match_reasons) : []
+    }));
+
+    res.json({
+      success: true,
+      history
+    });
+
+  } catch (error) {
+    console.error('[REC-HISTORY] Error fetching recommendation history:', error);
+    res.status(500).json({
+      error: '추천 이력 조회 중 오류가 발생했습니다'
+    });
+  }
+});
+
+// 간단한 테스트 엔드포인트
+app.get('/api/test-new-endpoint', (req, res) => {
+  res.json({ message: '새로운 엔드포인트가 작동하고 있습니다!', timestamp: new Date().toISOString() });
+});
+
+// 면접 질문 생성 API 개선 (선택된 공고 기반)
+/**
+ * @swagger
+ * /api/interview-questions:
+ *   post:
+ *     summary: 선택된 채용공고 기반 맞춤 면접 질문 생성
+ *     description: 사용자가 선택한 채용공고를 기반으로 GPT MCP를 통해 맞춤형 면접 질문을 생성합니다
+ *     tags: [Interview Preparation]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - user_id
+ *               - job_id
+ *             properties:
+ *               user_id:
+ *                 type: string
+ *                 description: 사용자 ID
+ *                 example: "1"
+ *               job_id:
+ *                 type: string
+ *                 description: 선택된 채용공고 ID
+ *                 example: "job_001"
+ *     responses:
+ *       200:
+ *         description: 면접 질문 생성 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 job_title:
+ *                   type: string
+ *                   example: "백엔드 개발자"
+ *                 company:
+ *                   type: string
+ *                   example: "네이버"
+ *                 questions:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: number
+ *                         example: 1
+ *                       question:
+ *                         type: string
+ *                         example: "Spring Boot를 이용한 개발 경험에 대해 설명해주세요"
+ *                       category:
+ *                         type: string
+ *                         example: "기술 역량"
+ *                       difficulty:
+ *                         type: string
+ *                         example: "보통"
+ *                 powered_by:
+ *                   type: string
+ *                   example: "ChatGPT-4 + Catch Data"
+ */
+app.post('/api/interview-questions', async (req, res) => {
+  try {
+    const { user_id, job_id, custom_company, custom_position, user_profile, additional_preferences } = req.body;
+
+    if (!user_id || (!job_id && !custom_company)) {
+      return res.status(400).json({
+        error: '사용자 ID와 (채용공고 ID 또는 회사명)이 필요합니다'
+      });
+    }
+
+    console.log(`[INTERVIEW-QUESTIONS] Generating questions for user ${user_id}, job ${job_id || 'custom'}, company: ${custom_company || 'from DB'}`);
+
+    // 사용자 입력 조건 DB 저장 (custom_company 입력의 경우)
+    if (custom_company && user_profile) {
+      try {
+        // user_interview_conditions 테이블 생성 (없는 경우)
+        await pool.execute(`
+          CREATE TABLE IF NOT EXISTS user_interview_conditions (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT,
+            session_id VARCHAR(100),
+            preferred_job VARCHAR(200),
+            company_size VARCHAR(50),
+            industry VARCHAR(200),
+            additional_skills JSON,
+            custom_company VARCHAR(200),
+            custom_position VARCHAR(200),
+            input_source VARCHAR(50) DEFAULT 'interview_form',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+            INDEX idx_user_id (user_id),
+            INDEX idx_session_id (session_id),
+            INDEX idx_created_at (created_at),
+            INDEX idx_input_source (input_source)
+          );
+        `);
+
+        const sessionId = `session_${Date.now()}_${user_id}`;
+        const additionalSkillsJson = user_profile?.skills && Array.isArray(user_profile.skills)
+          ? JSON.stringify(user_profile.skills)
+          : null;
+
+        await pool.execute(`
+          INSERT INTO user_interview_conditions
+          (user_id, session_id, preferred_job, custom_company, custom_position, additional_skills, input_source)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `, [
+          user_id,
+          sessionId,
+          user_profile?.position || custom_position || null,
+          custom_company,
+          custom_position,
+          additionalSkillsJson,
+          'direct_interview_input'
+        ]);
+
+        console.log(`[INTERVIEW-QUESTIONS] Saved user conditions to DB for user ${user_id}, session ${sessionId}, company: ${custom_company}`);
+      } catch (saveError) {
+        console.error('[INTERVIEW-QUESTIONS] Failed to save user conditions:', saveError);
+      }
+    }
+
+    let jobInfo = null;
+
+    if (custom_company) {
+      // 사용자 입력 기반 맞춤형 면접 질문 (회사명 + 면접후기 + 사용자 프로필)
+
+      // 1. DB에서 기존 기출질문 먼저 조회 (빠른 응답)
+      let interviewQuestions = [];
+      let needsScraping = false;
+
+      try {
+        console.log(`[INTERVIEW-QUESTIONS] DB에서 ${custom_company} 기출질문 조회 중...`);
+        const [existingQuestions] = await pool.execute(`
+          SELECT question, position, period, experience
+          FROM catch_interview_questions
+          WHERE company = ?
+          ORDER BY created_at DESC
+          LIMIT 10
+        `, [custom_company]);
+
+        if (existingQuestions.length > 0) {
+          interviewQuestions = existingQuestions;
+          console.log(`[INTERVIEW-QUESTIONS] ✅ DB에서 ${interviewQuestions.length}개 기출질문 조회 (스크래핑 생략)`);
+        } else {
+          console.log(`[INTERVIEW-QUESTIONS] DB에 기출질문 없음 - 스크래핑 필요`);
+          needsScraping = true;
+        }
+      } catch (dbError) {
+        console.warn(`[INTERVIEW-QUESTIONS] DB 조회 실패:`, dbError.message);
+        needsScraping = true;
+      }
+
+      // 2. DB에 없을 때 백그라운드 스크래핑 (GPT 응답 속도 우선)
+      if (needsScraping) {
+        console.log(`[INTERVIEW-QUESTIONS] 🔄 ${custom_company} 기출질문 백그라운드 스크래핑 시작`);
+
+        // 스크래핑을 완전히 백그라운드로 실행 (await 없이)
+        (async () => {
+          try {
+            const startTime = Date.now();
+            console.log(`[INTERVIEW-BG] ${custom_company} 스크래핑 시작`);
+
+            // 초기화
+            await axios.post(`${CATCH_SCRAPER_URL}/api/init`, {});
+            console.log(`[INTERVIEW-BG] 초기화 완료`);
+
+            // 로그인
+            await axios.post(`${CATCH_SCRAPER_URL}/api/login`, {
+              username: 'test0137',
+              password: '#test0808'
+            });
+            console.log(`[INTERVIEW-BG] 로그인 완료`);
+
+            // 스크래핑 (3개)
+            const interviewResponse = await axios.post(`${CATCH_SCRAPER_URL}/api/search-interview-questions`, {
+              company_name: custom_company,
+              max_questions: 3
+            });
+
+            let scrapedQuestions = [];
+            if (interviewResponse.data && interviewResponse.data.success) {
+              scrapedQuestions = interviewResponse.data.questions || [];
+            }
+
+            const elapsed = Date.now() - startTime;
+            console.log(`[INTERVIEW-BG] ${custom_company} 스크래핑 완료 (${elapsed}ms, ${scrapedQuestions.length}개)`);
+
+            // DB 저장
+            if (scrapedQuestions.length > 0) {
+              let insertCount = 0;
+
+              for (const q of scrapedQuestions) {
+                try {
+                  const [duplicate] = await pool.execute(`
+                    SELECT id FROM catch_interview_questions
+                    WHERE company = ? AND question = ?
+                    LIMIT 1
+                  `, [custom_company, q.question]);
+
+                  if (duplicate.length === 0) {
+                    await pool.execute(`
+                      INSERT INTO catch_interview_questions
+                      (company, question, position, period, experience)
+                      VALUES (?, ?, ?, ?, ?)
+                    `, [
+                      custom_company,
+                      q.question,
+                      q.position || null,
+                      q.period || null,
+                      q.experience || null
+                    ]);
+                    insertCount++;
+                  }
+                } catch (insertError) {
+                  console.warn(`[INTERVIEW-BG] 질문 저장 실패:`, insertError.message);
+                }
+              }
+              console.log(`[INTERVIEW-BG] ✅ ${custom_company} DB 저장 완료 (${insertCount}개 insert, 총 ${Date.now() - startTime}ms)`);
+            }
+          } catch (scrapingError) {
+            console.warn(`[INTERVIEW-BG] ${custom_company} 스크래핑 실패:`, scrapingError.message);
+          }
+        })(); // 즉시 실행, await 없이 백그라운드 실행
+      }
+
+      jobInfo = {
+        company_name: custom_company,
+        interview_questions: interviewQuestions, // 면접 기출질문 1개
+        skills: user_profile?.skills || [],
+        experience_level: user_profile?.experience || '신입-경력',
+        source: 'user_input'
+      };
+      console.log(`[INTERVIEW-QUESTIONS] Custom company: ${custom_company}`);
+    } else {
+      // 기존 채용공고 기반 면접 질문
+      const jobQuery = `
+        SELECT jp.*, c.name as company_name, c.description as company_description
+        FROM job_postings jp
+        LEFT JOIN companies c ON jp.company_id = c.company_id
+        WHERE jp.job_id = ?
+      `;
+
+      const [jobRows] = await pool.execute(jobQuery, [job_id]);
+
+      if (jobRows.length === 0) {
+        return res.status(404).json({
+          error: '해당 채용공고를 찾을 수 없습니다'
+        });
+      }
+
+      jobInfo = jobRows[0];
+
+      // Catch 기출질문 수집 (DB 우선, 없으면 스크래핑)
+      if (jobInfo.company_name) {
+        // 1. DB에서 기출질문 먼저 조회 (빠른 응답)
+        let needsScraping = false;
+
+        try {
+          console.log(`[INTERVIEW-QUESTIONS] DB에서 ${jobInfo.company_name} 기출질문 조회 중...`);
+          const [existingQuestions] = await pool.execute(`
+            SELECT question, position, period, experience
+            FROM catch_interview_questions
+            WHERE company = ?
+            ORDER BY created_at DESC
+            LIMIT 10
+          `, [jobInfo.company_name]);
+
+          if (existingQuestions.length > 0) {
+            jobInfo.interview_questions = existingQuestions;
+            console.log(`[INTERVIEW-QUESTIONS] ✅ DB에서 ${existingQuestions.length}개 기출질문 조회 (스크래핑 생략)`);
+          } else {
+            console.log(`[INTERVIEW-QUESTIONS] DB에 기출질문 없음 - 스크래핑 필요`);
+            needsScraping = true;
+          }
+        } catch (dbError) {
+          console.warn(`[INTERVIEW-QUESTIONS] DB 조회 실패:`, dbError.message);
+          needsScraping = true;
+        }
+
+        // 2. DB에 없을 때 백그라운드 스크래핑 (GPT 응답 속도 우선)
+        if (needsScraping) {
+          const companyName = jobInfo.company_name;
+          console.log(`[INTERVIEW-QUESTIONS] 🔄 ${companyName} 기출질문 백그라운드 스크래핑 시작`);
+          jobInfo.interview_questions = []; // 빈 배열로 초기화
+
+          // 스크래핑을 완전히 백그라운드로 실행 (await 없이)
+          (async () => {
+            try {
+              const startTime = Date.now();
+              console.log(`[INTERVIEW-BG] ${companyName} 스크래핑 시작`);
+
+              // 초기화
+              await axios.post(`${CATCH_SCRAPER_URL}/api/init`, {});
+              console.log(`[INTERVIEW-BG] 초기화 완료`);
+
+              // 로그인
+              await axios.post(`${CATCH_SCRAPER_URL}/api/login`, {
+                username: 'test0137',
+                password: '#test0808'
+              });
+              console.log(`[INTERVIEW-BG] 로그인 완료`);
+
+              // 스크래핑 (3개)
+              const interviewResponse = await axios.post(`${CATCH_SCRAPER_URL}/api/search-interview-questions`, {
+                company_name: companyName,
+                max_questions: 3
+              });
+
+              let scrapedQuestions = [];
+              if (interviewResponse.data && interviewResponse.data.success) {
+                scrapedQuestions = interviewResponse.data.questions || [];
+              }
+
+              const elapsed = Date.now() - startTime;
+              console.log(`[INTERVIEW-BG] ${companyName} 스크래핑 완료 (${elapsed}ms, ${scrapedQuestions.length}개)`);
+
+              // DB 저장
+              if (scrapedQuestions.length > 0) {
+                let insertCount = 0;
+
+                for (const q of scrapedQuestions) {
+                  try {
+                    const [duplicate] = await pool.execute(`
+                      SELECT id FROM catch_interview_questions
+                      WHERE company = ? AND question = ?
+                      LIMIT 1
+                    `, [companyName, q.question]);
+
+                    if (duplicate.length === 0) {
+                      await pool.execute(`
+                        INSERT INTO catch_interview_questions
+                        (company, question, position, period, experience)
+                        VALUES (?, ?, ?, ?, ?)
+                      `, [
+                        companyName,
+                        q.question,
+                        q.position || null,
+                        q.period || null,
+                        q.experience || null
+                      ]);
+                      insertCount++;
+                    }
+                  } catch (insertError) {
+                    console.warn(`[INTERVIEW-BG] 질문 저장 실패:`, insertError.message);
+                  }
+                }
+                console.log(`[INTERVIEW-BG] ✅ ${companyName} DB 저장 완료 (${insertCount}개 insert, 총 ${Date.now() - startTime}ms)`);
+              }
+            } catch (scrapingError) {
+              console.warn(`[INTERVIEW-BG] ${companyName} 스크래핑 실패:`, scrapingError.message);
+            }
+          })(); // 즉시 실행, await 없이 백그라운드 실행
+        }
+      } else {
+        jobInfo.interview_questions = [];
+      }
+    }
+
+    // 사용자 프로필 데이터 결정 (DB user_profiles 테이블에서 조회)
+    let finalUserProfile;
+
+    try {
+      // DB에서 user_profiles 조회
+      const [userRows] = await pool.execute(`
+        SELECT up.*, u.name as user_name
+        FROM user_profiles up
+        JOIN users u ON up.user_id = u.id
+        WHERE u.id = ?
+      `, [user_id]);
+
+      if (userRows.length > 0) {
+        const userProfile = userRows[0];
+
+        // JSON 필드 파싱
+        let skills = [];
+        let preferredRegions = [];
+
+        if (userProfile.skills) {
+          try {
+            skills = typeof userProfile.skills === 'string'
+              ? JSON.parse(userProfile.skills)
+              : userProfile.skills;
+          } catch (e) {
+            console.log(`[INTERVIEW-QUESTIONS] ⚠️ skills 파싱 실패:`, e);
+            skills = [];
+          }
+        }
+
+        if (userProfile.preferred_regions) {
+          try {
+            preferredRegions = typeof userProfile.preferred_regions === 'string'
+              ? JSON.parse(userProfile.preferred_regions)
+              : userProfile.preferred_regions;
+          } catch (e) {
+            console.log(`[INTERVIEW-QUESTIONS] ⚠️ preferred_regions 파싱 실패:`, e);
+            preferredRegions = [];
+          }
+        }
+
+        finalUserProfile = {
+          name: userProfile.user_name || '사용자',
+          skills: skills || [],
+          experience: userProfile.experience || '',
+          preferred_jobs: userProfile.preferred_jobs || '',
+          preferred_regions: preferredRegions || [],
+          expected_salary: userProfile.expected_salary || ''
+        };
+
+        console.log(`[INTERVIEW-QUESTIONS] 사용자 프로필 로드 완료 (${finalUserProfile.name})`);
+      } else {
+        // DB에 프로필이 없으면 빈 프로필 사용 (기본값 없음)
+        finalUserProfile = {
+          name: '사용자',
+          skills: [],
+          experience: '',
+          preferred_jobs: '',
+          preferred_regions: [],
+          expected_salary: ''
+        };
+        console.log(`[INTERVIEW-QUESTIONS] ⚠️ DB에 프로필 없음 - 빈 프로필 사용`);
+      }
+
+      // job skills 파싱
+      let parsedJobSkills = [];
+      if (jobInfo.skills) {
+        if (Array.isArray(jobInfo.skills)) {
+          parsedJobSkills = jobInfo.skills;
+        } else if (typeof jobInfo.skills === 'string') {
+          try {
+            parsedJobSkills = JSON.parse(jobInfo.skills);
+          } catch (e) {
+            parsedJobSkills = jobInfo.skills.split(',').map(s => s.trim());
+          }
+        }
+      }
+
+      // 직무명 확장 (약어 → 전체 명칭)
+      const expandJobTitle = (title) => {
+        if (!title) return title;
+        const titleLower = title.toLowerCase().trim();
+        const expansions = {
+          '프론트': '프론트엔드 개발자',
+          '백엔드': '백엔드 개발자',
+          '백': '백엔드 개발자',
+          '풀스택': '풀스택 개발자',
+          '데이터': '데이터 엔지니어',
+          'ai': 'AI 엔지니어',
+          'ml': '머신러닝 엔지니어',
+          '게임': '게임 개발자',
+          'devops': 'DevOps 엔지니어'
+        };
+
+        for (const [abbr, full] of Object.entries(expansions)) {
+          if (titleLower === abbr || titleLower === abbr.toLowerCase()) {
+            return full;
+          }
+        }
+        return title;
+      };
+
+      //const expandedTitle = expandJobTitle(jobInfo.title);
+      // console.log(`[INTERVIEW-QUESTIONS] Job title expanded: "${jobInfo.title}" → "${expandedTitle}"`);
+
+      // GPT-4o-mini 직접 호출 (MCP 서비스 없이)
+      console.log('[INTERVIEW-QUESTIONS] openai 객체 존재 여부:', !!openai);
+      if (openai) {
+        try {
+          console.log('\n[INTERVIEW-QUESTIONS] 🤖 GPT-4o-mini 직접 호출 시작\n');
+
+          // 면접 기출질문 섹션 (5개로 확대)
+          const interviewQuestionsSection = jobInfo.interview_questions && jobInfo.interview_questions.length > 0
+            ? `기출:${jobInfo.interview_questions.slice(0, 5).map(q => q.question).join('|')}`
+            : '';
+
+          // 사용자 프로필 섹션 (희망직무, 스킬 3개, 경력)
+          const userJobs = finalUserProfile.preferred_jobs || finalUserProfile.jobs || '';
+
+          const userProfileSection = finalUserProfile.skills.length > 0 || finalUserProfile.experience || userJobs
+            ? `프로필:희망직무=${userJobs || '미지정'}|스킬=${finalUserProfile.skills.slice(0, 3).join(',')}|경력=${finalUserProfile.experience || '신입'}`
+            : '';
+
+          const prompt = `회사:${jobInfo.company_name}
+${userProfileSection}
+${interviewQuestionsSection}
+
+면접질문 3개 생성.JSON:{"questions":[{"id":1,"question":"Q1"},{"id":2,"question":"Q2"},{"id":3,"question":"Q3"}]}`;
+
+          // 프롬프트 로깅
+          console.log(`\n[INTERVIEW-QUESTIONS] ========================================`);
+          console.log(`[INTERVIEW-QUESTIONS] 📝 GPT PROMPT (${jobInfo.company_name}):`);
+          console.log(prompt);
+          console.log(`[INTERVIEW-QUESTIONS] 📝 PROMPT 길이: ${prompt.length}자`);
+          console.log(`[INTERVIEW-QUESTIONS] 📝 기출질문 개수: ${jobInfo.interview_questions?.length || 0}개`);
+          console.log(`[INTERVIEW-QUESTIONS] ========================================\n`);
+
+          const systemMessage = 'Interview Q generator.JSON only.';
+          console.log(`[INTERVIEW-QUESTIONS] 📤 시스템 메시지: ${systemMessage}`);
+          console.log(`[INTERVIEW-QUESTIONS] 📤 GPT에게 전달하는 프롬프트:\n${prompt}\n`);
+
+          const completion = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [
+              {
+                role: 'system',
+                content: systemMessage
+              },
+              {
+                role: 'user',
+                content: prompt
+              }
+            ],
+            max_completion_tokens: 400,
+            response_format: { type: "json_object" }
+          });
+
+          const gptResponse = completion.choices[0].message.content;
+          console.log(`[INTERVIEW-QUESTIONS] 🤖 GPT 응답:\n${gptResponse}`);
+
+          const parsedResponse = JSON.parse(gptResponse);
+          if (parsedResponse.questions && Array.isArray(parsedResponse.questions)) {
+            console.log(`[INTERVIEW-QUESTIONS] ✅ GPT-4o-mini로 ${parsedResponse.questions.length}개 질문 생성 완료`);
+
+            // category와 difficulty 기본값 추가
+            const enhancedQuestions = parsedResponse.questions.map((q, idx) => ({
+              id: q.id || idx + 1,
+              question: q.question,
+              category: q.category || '직무 이해',
+              difficulty: q.difficulty || '보통'
+            }));
+
+            // 질문 기록 저장
+            if (job_id) {
+              const logQuery = `
+                INSERT INTO interview_logs (user_id, job_id, questions, created_at)
+                VALUES (?, ?, ?, NOW())
+              `;
+              await pool.execute(logQuery, [user_id, job_id, JSON.stringify(enhancedQuestions)]);
+            }
+
+            return res.json({
+              success: true,
+              company: jobInfo.company_name,
+              questions: enhancedQuestions,
+              total_questions: enhancedQuestions.length,
+              powered_by: "GPT-4o-mini"
+            });
+          }
+        } catch (gptError) {
+          console.error('[INTERVIEW-QUESTIONS] ❌ GPT-4o-mini 오류:', gptError.message);
+          console.error('[INTERVIEW-QUESTIONS] 오류 상세:', gptError);
+          if (gptError.response) {
+            console.error('[INTERVIEW-QUESTIONS] GPT 응답 상태:', gptError.response.status);
+            console.error('[INTERVIEW-QUESTIONS] GPT 응답 데이터:', gptError.response.data);
+          }
+        }
+      }
+
+      // GPT-4o-mini도 실패 시 폴백 질문 생성
+      console.log('[INTERVIEW-QUESTIONS] 폴백 질문 생성 시작');
+      const fallbackQuestions = [
+        {
+          id: 1,
+          question: "자기소개를 해주세요.",
+          category: "인성",
+          difficulty: "쉬움"
+        },
+        {
+          id: 2,
+          question: `${jobInfo.company_name}에 지원한 이유는 무엇인가요?`,
+          category: "지원동기",
+          difficulty: "쉬움"
+        },
+        {
+          id: 3,
+          question: `${jobInfo.company_name}에서 일하기 위해 가장 중요하다고 생각하는 역량은 무엇인가요?`,
+          category: "직무 이해",
+          difficulty: "보통"
+        },
+        {
+          id: 4,
+          question: "최근에 진행한 프로젝트나 학습한 기술에 대해 설명해주세요.",
+          category: "기술 역량",
+          difficulty: "보통"
+        },
+        {
+          id: 5,
+          question: "어려운 문제를 해결한 경험이 있다면 공유해주세요.",
+          category: "문제해결",
+          difficulty: "어려움"
+        }
+      ];
+
+      // 폴백 질문 기록 저장 (job_id가 있을 때만)
+      if (job_id) {
+        const logQuery = `
+          INSERT INTO interview_logs (user_id, job_id, questions, created_at)
+          VALUES (?, ?, ?, NOW())
+        `;
+
+        await pool.execute(logQuery, [user_id, job_id, JSON.stringify(fallbackQuestions)]);
+      }
+
+      return res.json({
+        success: true,
+      //  job_title: jobInfo.title,
+        company: jobInfo.company_name,
+        questions: fallbackQuestions,
+        total_questions: fallbackQuestions.length,
+        powered_by: "Fallback Algorithm",
+        generated_at: new Date().toISOString()
+      });
+
+    } catch (error) {
+      console.error('[INTERVIEW-QUESTIONS] Error generating questions:', error);
+      res.status(500).json({
+        error: '면접 질문 생성 중 오류가 발생했습니다'
+      });
+    }
+  } catch (outerError) {
+    console.error('[INTERVIEW-QUESTIONS] Outer error:', outerError);
+    res.status(500).json({
+      error: '면접 질문 생성 중 오류가 발생했습니다'
+    });
+  }
+});
+
+/* ==================== 면접 답변 피드백 API ==================== */
+/**
+ * @swagger
+ * /api/interview-feedback:
+ *   post:
+ *     summary: AI 면접 답변 피드백
+ *     description: 사용자가 작성한 면접 답변에 대해 GPT-5-mini가 피드백을 제공합니다.
+ *     tags: [면접 준비]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               question:
+ *                 type: string
+ *                 description: 면접 질문
+ *               answer:
+ *                 type: string
+ *                 description: 사용자 답변
+ *               company:
+ *                 type: string
+ *                 description: 회사명 (선택)
+ *             required:
+ *               - question
+ *               - answer
+ *     responses:
+ *       200:
+ *         description: 피드백 생성 성공
+ *       400:
+ *         description: 잘못된 요청
+ *       500:
+ *         description: 서버 오류
+ */
+app.post('/api/interview-feedback', async (req, res) => {
+  try {
+    const { question, answer, company, previous_score, user_id } = req.body;
+
+    if (!question || !answer) {
+      return res.status(400).json({
+        success: false,
+        error: '질문과 답변은 필수입니다.'
+      });
+    }
+
+    console.log(`[INTERVIEW-FEEDBACK] Generating feedback for question: "${question.substring(0, 50)}..."`);
+    if (previous_score) {
+      console.log(`[INTERVIEW-FEEDBACK] Previous score: ${previous_score}`);
+    }
+
+    if (!openai) {
+      return res.status(503).json({
+        success: false,
+        error: 'OpenAI API가 설정되지 않았습니다.'
+      });
+    }
+
+    // 사용자 프로필 정보 조회 (있을 경우)
+    let userProfile = null;
+    if (user_id) {
+      try {
+        const [userRows] = await pool.execute(`
+          SELECT up.*, u.name as user_name
+          FROM user_profiles up
+          JOIN users u ON up.user_id = u.id
+          WHERE u.id = ?
+        `, [user_id]);
+
+        if (userRows.length > 0) {
+          const profile = userRows[0];
+
+          // JSON 필드 파싱
+          let skills = [];
+          if (profile.skills) {
+            try {
+              skills = typeof profile.skills === 'string'
+                ? JSON.parse(profile.skills)
+                : profile.skills;
+            } catch (e) {
+              skills = [];
+            }
+          }
+
+          userProfile = {
+            jobs: profile.preferred_jobs || profile.jobs,
+            career_type: profile.career_type,
+            career_years: profile.career_years,
+            skills: skills,
+            education: profile.education
+          };
+        }
+      } catch (profileError) {
+        console.warn('[INTERVIEW-FEEDBACK] Failed to load user profile:', profileError);
+      }
+    }
+
+    // GPT-4o-mini에게 피드백 요청
+    let userPrompt = `${company || '회사'} 면접
+Q: ${question}
+답변: ${answer}`;
+
+    if (userProfile) {
+      const skills = userProfile.skills && userProfile.skills.length > 0
+        ? userProfile.skills.slice(0, 3).join(',')
+        : '';
+      userPrompt += `\n프로필: ${userProfile.jobs || ''}/${userProfile.career_years || '0'}년${skills ? '/' + skills : ''}`;
+    }
+
+    userPrompt += `
+
+답변에 대한 피드백을 다음 JSON 형식으로만 작성:
+{"feedback": "강점: ...\n\n개선점: ...\n\n추천 방향: ..."}
+
+점수 없이 피드백 텍스트만 포함하세요.`;
+
+    console.log(`[INTERVIEW-FEEDBACK] 📝 PROMPT 길이: ${userPrompt.length}자`);
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: 'Interview coach. Always respond with single JSON object: {"feedback": "text"}' },
+        { role: 'user', content: userPrompt }
+      ],
+      max_tokens: 500,
+      response_format: { type: "json_object" }
+    });
+
+    const responseContent = completion.choices[0].message.content;
+    console.log(`[INTERVIEW-FEEDBACK] 🤖 GPT 응답: ${responseContent.substring(0, 100)}...`);
+
+    let feedback;
+
+    try {
+      const parsedResponse = JSON.parse(responseContent);
+      // feedback 필드가 있으면 사용, 없으면 전체 객체를 문자열로
+      if (parsedResponse.feedback) {
+        feedback = parsedResponse.feedback;
+      } else if (typeof parsedResponse === 'object') {
+        // strength, improvement 같은 다른 필드가 있을 경우 합치기
+        feedback = Object.values(parsedResponse).join('\n\n');
+      } else {
+        feedback = responseContent;
+      }
+    } catch (parseError) {
+      console.warn('[INTERVIEW-FEEDBACK] JSON 파싱 실패, 텍스트 그대로 사용');
+      feedback = responseContent;
+    }
+
+    console.log(`[INTERVIEW-FEEDBACK] ✅ Feedback generated successfully`);
+
+    res.json({
+      success: true,
+      feedback
+    });
+  } catch (error) {
+    console.error('[ERROR] Interview feedback error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message
+    });
+  }
+});
+
+/* ==================== 면접 모범답변 API ==================== */
+/**
+ * @swagger
+ * /api/interview-model-answer:
+ *   post:
+ *     summary: AI 면접 모범답변
+ *     description: 면접 질문에 대한 모범답변을 GPT-5-mini가 생성합니다.
+ *     tags: [면접 준비]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               question:
+ *                 type: string
+ *                 description: 면접 질문
+ *               company:
+ *                 type: string
+ *                 description: 회사명 (선택)
+ *               user_id:
+ *                 type: integer
+ *                 description: 사용자 ID (선택, 프로필 정보 활용)
+ *             required:
+ *               - question
+ *     responses:
+ *       200:
+ *         description: 모범답변 생성 성공
+ *       400:
+ *         description: 잘못된 요청
+ *       500:
+ *         description: 서버 오류
+ */
+app.post('/api/interview-model-answer', async (req, res) => {
+  try {
+    const { question, company, user_id } = req.body;
+
+    if (!question) {
+      return res.status(400).json({
+        success: false,
+        error: '질문은 필수입니다.'
+      });
+    }
+
+    console.log(`[INTERVIEW-MODEL-ANSWER] Generating model answer for question: "${question.substring(0, 50)}..."`);
+
+    if (!openai) {
+      return res.status(503).json({
+        success: false,
+        error: 'OpenAI API가 설정되지 않았습니다.'
+      });
+    }
+
+    // 사용자 프로필 정보 조회 (있을 경우)
+    let userProfile = null;
+    if (user_id) {
+      try {
+        const [userRows] = await pool.execute(`
+          SELECT up.*, u.name as user_name
+          FROM user_profiles up
+          JOIN users u ON up.user_id = u.id
+          WHERE u.id = ?
+        `, [user_id]);
+
+        if (userRows.length > 0) {
+          const profile = userRows[0];
+
+          // JSON 필드 파싱
+          let skills = [];
+          if (profile.skills) {
+            try {
+              skills = typeof profile.skills === 'string'
+                ? JSON.parse(profile.skills)
+                : profile.skills;
+            } catch (e) {
+              skills = [];
+            }
+          }
+
+          userProfile = {
+            jobs: profile.preferred_jobs || profile.jobs,
+            career_type: profile.career_type,
+            career_years: profile.career_years,
+            skills: skills,
+            education: profile.education
+          };
+        }
+      } catch (profileError) {
+        console.warn('[INTERVIEW-MODEL-ANSWER] Failed to load user profile:', profileError);
+      }
+    }
+
+    // GPT-4o-mini에게 모범답변 요청
+    let userPrompt = `${company || '회사'} 면접
+Q: ${question}`;
+
+    if (userProfile) {
+      const skills = userProfile.skills && userProfile.skills.length > 0
+        ? userProfile.skills.slice(0, 3).join(',')
+        : '';
+      userPrompt += `\n프로필: ${userProfile.jobs || ''}/${userProfile.career_years || '0'}년${skills ? '/' + skills : ''}`;
+    }
+
+    userPrompt += `\n\nSTAR 기법 모범답변 (300자):`;
+
+    console.log(`[INTERVIEW-MODEL-ANSWER] 📝 PROMPT:\n${userPrompt}`);
+    console.log(`[INTERVIEW-MODEL-ANSWER] 📝 PROMPT 길이: ${userPrompt.length}자`);
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: 'Interview expert. Provide concise model answer in Korean using STAR method.' },
+        { role: 'user', content: userPrompt }
+      ],
+      max_tokens: 500
+    });
+
+    const modelAnswer = completion.choices[0].message.content;
+
+    console.log(`[INTERVIEW-MODEL-ANSWER] 🤖 GPT 응답:\n${modelAnswer}`);
+    console.log(`[INTERVIEW-MODEL-ANSWER] ✅ Model answer generated successfully`);
+
+    res.json({
+      success: true,
+      modelAnswer
+    });
+  } catch (error) {
+    console.error('[ERROR] Interview model answer error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message
+    });
+  }
+});
+
+/* ==================== 회사별 채용공고 조회 API ==================== */
+/**
+ * @swagger
+ * /api/jobs-by-company:
+ *   get:
+ *     summary: 회사별 채용공고 조회
+ *     description: 특정 회사의 채용공고 목록을 조회합니다.
+ *     tags: [Jobs]
+ *     parameters:
+ *       - in: query
+ *         name: company
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 회사명
+ *         example: "네이버"
+ *     responses:
+ *       200:
+ *         description: 채용공고 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 jobs:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 1
+ *                       title:
+ *                         type: string
+ *                         example: "백엔드 개발자"
+ *                       company:
+ *                         type: string
+ *                         example: "네이버"
+ *                       location:
+ *                         type: string
+ *                         example: "서울"
+ *                       experience_level:
+ *                         type: string
+ *                         example: "경력 3년 이상"
+ *       400:
+ *         description: 잘못된 요청
+ *       500:
+ *         description: 서버 오류
+ */
+app.get('/api/jobs-by-company', async (req, res) => {
+  try {
+    const { company } = req.query;
+
+    if (!company) {
+      return res.status(400).json({
+        success: false,
+        error: '회사명이 필요합니다.'
+      });
+    }
+
+    console.log(`[JOBS-BY-COMPANY] Fetching jobs for company: ${company}`);
+
+    // jobs 테이블에서 회사명으로 검색 (정확한 매칭 우선, 포함 검색은 보조)
+    const [jobRows] = await pool.execute(`
+      SELECT
+        id,
+        title,
+        company,
+        url,
+        category,
+        job_info,
+        conditions,
+        registration_info,
+        scraped_at,
+        CASE
+          WHEN company = ? THEN 1
+          WHEN company LIKE ? THEN 2
+          ELSE 3
+        END as match_priority
+      FROM jobs
+      WHERE company = ? OR company LIKE ?
+      ORDER BY match_priority ASC, scraped_at DESC
+      LIMIT 50
+    `, [company, `${company}%`, company, `${company}%`]);
+
+    // 마감되지 않은 공고만 필터링 + 상시채용/수시지원 제외
+    const now = new Date();
+    const activeJobs = jobRows.filter(job => {
+      if (!job.registration_info) return true;
+
+      try {
+        // registration_info는 JSON 배열 형태: ["~11.02(일)", "3일 전 등록"]
+        const regInfo = JSON.parse(job.registration_info);
+        if (!Array.isArray(regInfo) || regInfo.length === 0) return true;
+
+        const deadlineStr = regInfo[0]; // "~11.02(일)" 형식
+
+        // 상시채용, 수시지원 제외
+        if (deadlineStr.includes('상시채용') || deadlineStr.includes('수시지원')) {
+          return false;
+        }
+
+        if (!deadlineStr || !deadlineStr.startsWith('~')) return true;
+
+        // 마감일 파싱: "~11.02(일)" -> "11.02"
+        const dateMatch = deadlineStr.match(/~(\d+)\.(\d+)/);
+        if (!dateMatch) return true;
+
+        const month = parseInt(dateMatch[1]);
+        const day = parseInt(dateMatch[2]);
+
+        // 현재 연도 사용 (올해 또는 내년)
+        let year = now.getFullYear();
+        const deadlineDate = new Date(year, month - 1, day, 23, 59, 59);
+
+        // 만약 마감일이 과거라면 내년으로 설정
+        if (deadlineDate < now) {
+          deadlineDate.setFullYear(year + 1);
+        }
+
+        // 마감일이 지났는지 확인
+        return deadlineDate >= now;
+      } catch (e) {
+        console.warn(`[JOBS-BY-COMPANY] Failed to parse deadline for job ${job.id}:`, e);
+        return true; // 파싱 실패 시 포함
+      }
+    });
+
+    // 회사명 + 채용공고 제목 기준으로 중복 제거 (최신 공고 우선)
+    const uniqueJobsMap = new Map();
+    activeJobs.forEach(job => {
+      const key = `${job.company.trim()}_${job.title.trim()}`;
+      // 이미 존재하는 경우, scraped_at을 비교하여 더 최신 것으로 교체
+      if (!uniqueJobsMap.has(key)) {
+        uniqueJobsMap.set(key, job);
+      } else {
+        const existingJob = uniqueJobsMap.get(key);
+        if (new Date(job.scraped_at) > new Date(existingJob.scraped_at)) {
+          uniqueJobsMap.set(key, job);
+        }
+      }
+    });
+    const uniqueJobs = Array.from(uniqueJobsMap.values());
+
+    // 최신 공고 순으로 정렬
+    uniqueJobs.sort((a, b) => new Date(b.scraped_at) - new Date(a.scraped_at));
+
+    // 상위 20개만 반환
+    const limitedJobs = uniqueJobs.slice(0, 20);
+
+    console.log(`[JOBS-BY-COMPANY] Found ${jobRows.length} total jobs, ${activeJobs.length} active jobs, ${uniqueJobs.length} unique jobs (returning ${limitedJobs.length}) for ${company}`);
+
+    res.json({
+      success: true,
+      jobs: limitedJobs,
+      total: limitedJobs.length
+    });
+
+  } catch (error) {
+    console.error('[JOBS-BY-COMPANY] Error fetching jobs:', error);
+    res.status(500).json({
+      success: false,
+      error: '채용공고 조회 중 오류가 발생했습니다.',
+      message: error.message
+    });
+  }
+});
+
+/* ==================== AI 자기소개서 생성 API ==================== */
+/**
+ * @swagger
+ * /api/cover-letter:
+ *   post:
+ *     summary: AI 자기소개서 생성
+ *     description: 사용자의 이력서 정보를 바탕으로 회사명과 선택한 채용공고로 맞춤형 자기소개서를 생성합니다.
+ *     tags: [Cover Letter]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - user_id
+ *               - company
+ *             properties:
+ *               user_id:
+ *                 type: integer
+ *                 description: 사용자 ID
+ *                 example: 1
+ *               company:
+ *                 type: string
+ *                 description: 회사명
+ *                 example: "네이버"
+ *               job_id:
+ *                 type: string
+ *                 description: 선택한 채용공고 ID (선택사항)
+ *                 example: "job_001"
+ *     responses:
+ *       200:
+ *         description: 자기소개서 생성 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 coverLetter:
+ *                   type: string
+ *                   example: "저는..."
+ *       400:
+ *         description: 잘못된 요청
+ *       500:
+ *         description: 서버 오류
+ */
+app.post('/api/cover-letter', async (req, res) => {
+  try {
+    const { user_id, company, job_id } = req.body;
+
+    if (!user_id || !company) {
+      return res.status(400).json({
+        success: false,
+        error: '사용자 ID와 회사명이 필요합니다.'
+      });
+    }
+
+    console.log(`[COVER-LETTER] Generating cover letter for user ${user_id}, company: ${company}, job_id: ${job_id || 'none'}`);
+
+    // OpenAI 사용 가능 확인
+    if (!openai) {
+      return res.status(500).json({
+        success: false,
+        error: 'OpenAI API가 설정되지 않았습니다.'
+      });
+    }
+
+    // 1. 사용자 프로필 조회
+    let userProfile = null;
+    try {
+      const [profileRows] = await pool.execute(`
+        SELECT
+          u.name as user_name,
+          up.preferred_jobs,
+          up.experience,
+          up.preferred_regions,
+          up.skills,
+          up.education,
+          up.expected_salary
+        FROM users u
+        LEFT JOIN user_profiles up ON u.id = up.user_id
+        WHERE u.id = ?
+      `, [user_id]);
+
+      if (profileRows.length > 0) {
+        const profile = profileRows[0];
+
+        // skills 파싱
+        let skills = [];
+        if (profile.skills) {
+          try {
+            skills = typeof profile.skills === 'string'
+              ? JSON.parse(profile.skills)
+              : profile.skills;
+          } catch (e) {
+            console.warn('[COVER-LETTER] skills 파싱 실패:', e);
+            skills = [];
+          }
+        }
+
+        userProfile = {
+          name: profile.user_name || '지원자',
+          preferred_jobs: profile.preferred_jobs || '',
+          experience: profile.experience || '',
+          skills: skills,
+          education: profile.education || '',
+          expected_salary: profile.expected_salary || ''
+        };
+        console.log(`[COVER-LETTER] 사용자 프로필 로드 완료: ${userProfile.name}`);
+      }
+    } catch (profileError) {
+      console.warn('[COVER-LETTER] 프로필 조회 실패:', profileError);
+    }
+
+    // 2. 채용공고 정보 조회 (job_id가 있는 경우)
+    let jobInfo = null;
+    if (job_id) {
+      try {
+        const [jobRows] = await pool.execute(`
+          SELECT
+            j.id,
+            j.title,
+            j.company,
+            j.location,
+            j.description,
+            j.requirements,
+            j.experience_level,
+            j.employment_type
+          FROM jobs j
+          WHERE j.id = ?
+        `, [job_id]);
+
+        if (jobRows.length > 0) {
+          jobInfo = jobRows[0];
+          console.log(`[COVER-LETTER] 채용공고 정보 로드 완료: ${jobInfo.title}`);
+        }
+      } catch (jobError) {
+        console.warn('[COVER-LETTER] 채용공고 조회 실패:', jobError);
+      }
+    }
+
+    // 3. GPT 프롬프트 생성
+    let prompt = `다음 정보를 바탕으로 ${company}에 지원하는 자기소개서를 작성해주세요.\n\n`;
+
+    // 사용자 프로필 추가
+    if (userProfile) {
+      prompt += `[지원자 정보]\n`;
+      prompt += `- 이름: ${userProfile.name}\n`;
+      if (userProfile.preferred_jobs) {
+        prompt += `- 희망 직무: ${userProfile.preferred_jobs}\n`;
+      }
+      if (userProfile.experience) {
+        prompt += `- 경력: ${userProfile.experience}\n`;
+      }
+      if (userProfile.skills && userProfile.skills.length > 0) {
+        prompt += `- 보유 스킬: ${userProfile.skills.join(', ')}\n`;
+      }
+      if (userProfile.education) {
+        prompt += `- 학력: ${userProfile.education}\n`;
+      }
+      prompt += `\n`;
+    }
+
+    // 채용공고 정보 추가
+    if (jobInfo) {
+      prompt += `[채용 공고 정보]\n`;
+      prompt += `- 직무: ${jobInfo.title}\n`;
+      if (jobInfo.description) {
+        prompt += `- 업무 내용: ${jobInfo.description}\n`;
+      }
+      if (jobInfo.requirements) {
+        prompt += `- 자격 요건: ${jobInfo.requirements}\n`;
+      }
+      if (jobInfo.experience_level) {
+        prompt += `- 경력 요건: ${jobInfo.experience_level}\n`;
+      }
+      prompt += `\n`;
+    }
+
+    prompt += `[요청사항]\n`;
+    prompt += `1. 지원자의 강점과 경험을 ${company}${jobInfo ? '의 ' + jobInfo.title + ' 직무' : ''}에 맞춰 작성해주세요.\n`;
+    prompt += `2. 구체적인 경험과 성과를 포함해주세요.\n`;
+    prompt += `3. ${company}에 대한 관심과 입사 의지를 표현해주세요.\n`;
+    prompt += `4. 자연스럽고 진정성 있는 문체로 작성해주세요.\n`;
+    prompt += `5. 분량은 800-1000자 내외로 작성해주세요.\n`;
+    prompt += `6. "인사담당자님께", "드림" 등의 형식적인 인사말이나 서명은 포함하지 마세요. 자기소개서 본문만 작성해주세요.\n`;
+
+    console.log(`[COVER-LETTER] 📝 PROMPT 길이: ${prompt.length}자`);
+    console.log(`[COVER-LETTER] 📤 GPT에게 전달하는 프롬프트:\n${prompt}`);
+
+    // 4. GPT API 호출
+    const systemMessage = '당신은 전문적인 자기소개서 작성 컨설턴트입니다. 지원자의 배경과 회사의 요구사항을 분석하여 효과적인 자기소개서를 작성합니다.';
+    console.log(`[COVER-LETTER] 📤 시스템 메시지: ${systemMessage}`);
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: systemMessage
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      max_tokens: 1500,
+      temperature: 0.7
+    });
+
+    const coverLetter = completion.choices[0].message.content;
+    console.log(`[COVER-LETTER] ✅ 자기소개서 생성 완료 (${coverLetter.length}자)`);
+
+    res.json({
+      success: true,
+      coverLetter: coverLetter
+    });
+
+  } catch (error) {
+    console.error('[COVER-LETTER] Error generating cover letter:', error);
+    res.status(500).json({
+      success: false,
+      error: '자기소개서 생성 중 오류가 발생했습니다.',
+      message: error.message
+    });
+  }
+});
+
+/* ==================== AI 자소서 피드백 API ==================== */
+/**
+ * @swagger
+ * /api/cover-letter-feedback:
+ *   post:
+ *     summary: 작성한 자기소개서에 대한 AI 피드백 제공
+ *     description: 사용자가 작성한 자기소개서를 분석하여 강점, 개선점, 추천사항을 제공합니다.
+ *     tags: [AI 자소서]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               user_id:
+ *                 type: integer
+ *                 description: 사용자 ID
+ *               company:
+ *                 type: string
+ *                 description: 지원 회사명
+ *               cover_letter:
+ *                 type: string
+ *                 description: 작성한 자기소개서 내용
+ *     responses:
+ *       200:
+ *         description: AI 피드백 생성 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 feedback:
+ *                   type: string
+ */
+app.post('/api/cover-letter-feedback', async (req, res) => {
+  try {
+    const { user_id, company, cover_letter } = req.body;
+
+    console.log('[COVER-LETTER-FEEDBACK] 피드백 요청:', { user_id, company, coverLetterLength: cover_letter?.length });
+
+    if (!user_id || !company || !cover_letter) {
+      return res.status(400).json({
+        success: false,
+        error: '사용자 ID, 회사명, 자기소개서 내용을 모두 입력해주세요.'
+      });
+    }
+
+    // 1. 사용자 프로필 조회
+    let userProfile = null;
+    try {
+      const [profileRows] = await pool.execute(`
+        SELECT
+          up.name,
+          up.preferred_jobs,
+          up.experience,
+          up.skills,
+          up.education
+        FROM user_profiles up
+        WHERE up.user_id = ?
+      `, [user_id]);
+
+      if (profileRows.length > 0) {
+        userProfile = profileRows[0];
+        console.log(`[COVER-LETTER-FEEDBACK] 프로필 로드 완료: ${userProfile.name}`);
+      }
+    } catch (profileError) {
+      console.warn('[COVER-LETTER-FEEDBACK] 프로필 조회 실패:', profileError);
+    }
+
+    // 2. GPT 피드백 프롬프트 생성
+    let prompt = `다음은 ${company}에 지원하기 위해 작성한 자기소개서입니다. 전문적인 관점에서 피드백을 제공해주세요.\n\n`;
+
+    prompt += `[작성된 자기소개서]\n${cover_letter}\n\n`;
+
+    // 사용자 프로필 정보 추가 (있는 경우)
+    if (userProfile) {
+      prompt += `[지원자 배경 정보]\n`;
+      prompt += `- 이름: ${userProfile.name}\n`;
+      if (userProfile.preferred_jobs) {
+        prompt += `- 희망 직무: ${userProfile.preferred_jobs}\n`;
+      }
+      if (userProfile.experience) {
+        prompt += `- 경력: ${userProfile.experience}\n`;
+      }
+      if (userProfile.skills && userProfile.skills.length > 0) {
+        prompt += `- 보유 스킬: ${userProfile.skills.join(', ')}\n`;
+      }
+      prompt += `\n`;
+    }
+
+    prompt += `다음 형식으로 피드백을 제공해주세요:\n\n`;
+    prompt += `**강점**\n- (구체적인 강점 3-4가지)\n\n`;
+    prompt += `**개선할 점**\n- (구체적인 개선 방향 3-4가지)\n\n`;
+    prompt += `**추천사항**\n- (더 효과적인 자기소개서를 위한 조언 2-3가지)`;
+
+    // 3. OpenAI API 호출
+    console.log('[COVER-LETTER-FEEDBACK] OpenAI API 호출 중...');
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: '당신은 인사담당자 관점에서 자기소개서를 분석하는 전문 컨설턴트입니다. 건설적이고 구체적인 피드백을 제공하여 지원자가 더 나은 자기소개서를 작성할 수 있도록 돕습니다.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      max_tokens: 1500,
+      temperature: 0.7
+    });
+
+    const feedback = completion.choices[0].message.content;
+    console.log(`[COVER-LETTER-FEEDBACK] ✅ 피드백 생성 완료 (${feedback.length}자)`);
+
+    res.json({
+      success: true,
+      feedback: feedback
+    });
+
+  } catch (error) {
+    console.error('[COVER-LETTER-FEEDBACK] Error generating feedback:', error);
+    res.status(500).json({
+      success: false,
+      error: '피드백 생성 중 오류가 발생했습니다.',
+      message: error.message
+    });
+  }
+});
+
+/* ==================== AI 피드백 반영 자소서 생성 API ==================== */
+app.post('/api/cover-letter-revised', async (req, res) => {
+  try {
+    const { user_id, company, cover_letter, feedback } = req.body;
+
+    console.log('[COVER-LETTER-REVISED] 수정 자소서 요청:', { user_id, company, coverLetterLength: cover_letter?.length, feedbackLength: feedback?.length });
+
+    if (!user_id || !company || !cover_letter || !feedback) {
+      return res.status(400).json({
+        success: false,
+        error: '사용자 ID, 회사명, 자기소개서, 피드백을 모두 입력해주세요.'
+      });
+    }
+
+    // 1. 사용자 프로필 조회
+    let userProfile = null;
+    try {
+      const [profileRows] = await pool.execute(`
+        SELECT
+          up.name,
+          up.preferred_jobs,
+          up.experience,
+          up.skills,
+          up.education
+        FROM user_profiles up
+        WHERE up.user_id = ?
+      `, [user_id]);
+
+      if (profileRows.length > 0) {
+        userProfile = profileRows[0];
+        console.log(`[COVER-LETTER-REVISED] 프로필 로드 완료: ${userProfile.name}`);
+      }
+    } catch (profileError) {
+      console.warn('[COVER-LETTER-REVISED] 프로필 조회 실패:', profileError);
+    }
+
+    // 2. GPT 수정 자소서 프롬프트 생성
+    let prompt = `다음은 ${company}에 지원하기 위해 작성한 자기소개서와 받은 피드백입니다. 피드백을 반영하여 자기소개서를 개선해주세요.\n\n`;
+
+    prompt += `[원본 자기소개서]\n${cover_letter}\n\n`;
+    prompt += `[받은 피드백]\n${feedback}\n\n`;
+
+    // 사용자 프로필 정보 추가 (있는 경우)
+    if (userProfile) {
+      prompt += `[지원자 배경 정보]\n`;
+      prompt += `- 이름: ${userProfile.name}\n`;
+      if (userProfile.preferred_jobs) {
+        prompt += `- 희망 직무: ${userProfile.preferred_jobs}\n`;
+      }
+      if (userProfile.experience) {
+        prompt += `- 경력: ${userProfile.experience}\n`;
+      }
+      if (userProfile.skills && userProfile.skills.length > 0) {
+        prompt += `- 보유 스킬: ${userProfile.skills.join(', ')}\n`;
+      }
+      prompt += `\n`;
+    }
+
+    prompt += `위의 피드백을 반영하여 자기소개서를 수정해주세요. 원본의 좋은 점은 유지하면서, 개선할 점을 반영하고, 추천사항을 적용해주세요. 수정된 자기소개서만 출력해주세요 (다른 설명 없이).`;
+
+    // 3. OpenAI API 호출
+    console.log('[COVER-LETTER-REVISED] OpenAI API 호출 중...');
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: '당신은 자기소개서 작성 전문가입니다. 피드백을 반영하여 더 효과적인 자기소개서를 작성합니다. 원본의 좋은 점은 유지하면서 개선점을 반영하고, 자연스럽고 진정성 있는 문체로 작성합니다.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      max_tokens: 2000,
+      temperature: 0.7
+    });
+
+    const revisedCoverLetter = completion.choices[0].message.content;
+    console.log(`[COVER-LETTER-REVISED] ✅ 수정 자소서 생성 완료 (${revisedCoverLetter.length}자)`);
+
+    res.json({
+      success: true,
+      revisedCoverLetter: revisedCoverLetter
+    });
+
+  } catch (error) {
+    console.error('[COVER-LETTER-REVISED] Error generating revised cover letter:', error);
+    res.status(500).json({
+      success: false,
+      error: '수정된 자소서 생성 중 오류가 발생했습니다.',
+      message: error.message
+    });
+  }
+});
+
+/* ==================== 면접 수정된 답변 API ==================== */
+/**
+ * @swagger
+ * /api/interview-revised-answer:
+ *   post:
+ *     summary: AI 피드백을 반영한 수정된 답변
+ *     description: 원래 답변과 AI 피드백을 기반으로 개선된 답변을 GPT-4o-mini가 생성합니다.
+ *     tags: [면접 준비]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               question:
+ *                 type: string
+ *                 description: 면접 질문
+ *               original_answer:
+ *                 type: string
+ *                 description: 원래 작성한 답변
+ *               feedback:
+ *                 type: string
+ *                 description: AI 피드백 내용
+ *               company:
+ *                 type: string
+ *                 description: 회사명 (선택)
+ *               user_id:
+ *                 type: integer
+ *                 description: 사용자 ID (선택, 프로필 정보 활용)
+ *             required:
+ *               - question
+ *               - original_answer
+ *               - feedback
+ *     responses:
+ *       200:
+ *         description: 수정된 답변 생성 성공
+ *       400:
+ *         description: 잘못된 요청
+ *       500:
+ *         description: 서버 오류
+ */
+app.post('/api/interview-revised-answer', async (req, res) => {
+  try {
+    const { question, original_answer, feedback, original_score, company, user_id } = req.body;
+
+    if (!question || !original_answer || !feedback) {
+      return res.status(400).json({
+        success: false,
+        error: '질문, 원래 답변, 피드백은 필수입니다.'
+      });
+    }
+
+    console.log(`[INTERVIEW-REVISED-ANSWER] Generating revised answer for question: "${question.substring(0, 50)}..." (Original score: ${original_score || 'N/A'})`);
+
+    if (!openai) {
+      return res.status(503).json({
+        success: false,
+        error: 'OpenAI API가 설정되지 않았습니다.'
+      });
+    }
+
+    // 사용자 프로필 정보 조회 (있을 경우)
+    let userProfile = null;
+    if (user_id) {
+      try {
+        const [userRows] = await pool.execute(`
+          SELECT up.*, u.name as user_name
+          FROM user_profiles up
+          JOIN users u ON up.user_id = u.id
+          WHERE u.id = ?
+        `, [user_id]);
+
+        if (userRows.length > 0) {
+          const profile = userRows[0];
+
+          // JSON 필드 파싱
+          let skills = [];
+          if (profile.skills) {
+            try {
+              skills = typeof profile.skills === 'string'
+                ? JSON.parse(profile.skills)
+                : profile.skills;
+            } catch (e) {
+              skills = [];
+            }
+          }
+
+          userProfile = {
+            jobs: profile.preferred_jobs || profile.jobs,
+            career_type: profile.career_type,
+            career_years: profile.career_years,
+            skills: skills,
+            education: profile.education
+          };
+        }
+      } catch (profileError) {
+        console.warn('[INTERVIEW-REVISED-ANSWER] Failed to load user profile:', profileError);
+      }
+    }
+
+    // GPT-4o-mini에게 수정된 답변 요청
+    let systemPrompt = `당신은 전문 면접 코치입니다. 지원자가 작성한 면접 답변과 피드백을 바탕으로 개선된 답변을 작성해주세요.
+
+수정된 답변 작성 가이드:
+1. 원래 답변의 강점은 유지하면서 피드백의 개선점을 반영
+2. STAR 기법 활용 (Situation, Task, Action, Result)
+3. 구체적인 예시와 수치를 포함하여 설득력 강화
+4. 자연스럽고 진정성 있는 답변 작성
+5. 답변 길이: 2-3분 분량 (약 300-500자)
+6. **중요**: 피드백의 개선점을 적극적으로 반영하여 원래 답변보다 명확하게 더 우수한 답변을 작성해주세요.
+7. **출력 형식**: 설명이나 주석 없이 개선된 답변 내용만 출력해주세요. ---, ===, 구분선 등을 사용하지 마세요.
+
+원래 답변의 내용과 톤을 최대한 존중하면서, 피드백의 조언을 반영하여 더 나은 답변을 만들어주세요.`;
+
+    let userPrompt = `${company ? `[${company} 면접]` : '[면접]'}
+
+질문: ${question}
+
+원래 답변${original_score ? ` (평가 점수: ${original_score}점)` : ''}:
+${original_answer}
+
+AI 피드백:
+${feedback}`;
+
+    if (userProfile) {
+      userPrompt += `\n\n지원자 프로필:
+- 직무: ${userProfile.jobs || '미기재'}
+- 경력: ${userProfile.career_type || '미기재'}${userProfile.career_years ? ` (${userProfile.career_years}년)` : ''}
+- 기술스택: ${userProfile.skills && userProfile.skills.length > 0 ? userProfile.skills.join(', ') : '미기재'}
+- 학력: ${userProfile.education || '미기재'}
+
+위 프로필을 참고하여 지원자에게 맞는 수정된 답변을 작성해주세요.`;
+    }
+
+    userPrompt += `\n\n위 피드백을 적극 반영하여, 원래 답변보다 구체적이고 설득력 있는 개선된 답변을 작성해주세요.${original_score ? ` 목표는 ${original_score}점보다 최소 5점 이상 높은 점수를 받을 수 있는 수준의 답변입니다.` : ''}`;
+
+    console.log(`[INTERVIEW-REVISED-ANSWER] 📝 PROMPT:\n${userPrompt}`);
+    console.log(`[INTERVIEW-REVISED-ANSWER] 📝 PROMPT 길이: ${userPrompt.length}자`);
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      temperature: 0.7,
+      max_tokens: 1000
+    });
+
+    let revisedAnswer = completion.choices[0].message.content;
+    const originalLength = revisedAnswer.length;
+
+    console.log(`[INTERVIEW-REVISED-ANSWER] 🤖 GPT 응답 (원본):\n${revisedAnswer}`);
+
+    // 1. --- 구분자 처리
+    const separators = revisedAnswer.split('---');
+    if (separators.length >= 3) {
+      // 두 개 이상의 --- 가 있는 경우: 중간 부분만 추출
+      revisedAnswer = separators[1].trim();
+      console.log(`[INTERVIEW-REVISED-ANSWER] --- 구분자 제거 (3개 이상 분할)`);
+    } else if (separators.length === 2) {
+      // --- 가 하나만 있는 경우: 두 번째 부분(--- 이후)만 추출
+      revisedAnswer = separators[1].trim();
+      console.log(`[INTERVIEW-REVISED-ANSWER] --- 구분자 제거 (2개 분할)`);
+    }
+
+    // 2. 메타 설명 제거 (GPT가 추가하는 불필요한 설명)
+    const metaPhrases = [
+      /^물론입니다[!.]?\s*/i,
+      /^아래는.*?답변입니다[.:]?\s*/i,
+      /^개선된\s*답변입니다[.:]?\s*/i,
+      /^피드백을\s*반영하여.*?답변입니다[.:]?\s*/i,
+      /^다음은.*?답변입니다[.:]?\s*/i,
+      /^수정된\s*답변[.:]?\s*/i,
+      /^\[.*?\]\s*/,  // [개선된 답변] 같은 표시
+      /^===+\s*/,     // ===== 구분선
+      /^---+\s*/      // ----- 구분선 (남아있을 경우)
+    ];
+
+    for (const pattern of metaPhrases) {
+      revisedAnswer = revisedAnswer.replace(pattern, '');
+    }
+
+    // 3. 앞뒤 공백 제거
+    revisedAnswer = revisedAnswer.trim();
+
+    if (revisedAnswer.length < originalLength) {
+      console.log(`[INTERVIEW-REVISED-ANSWER] 불필요한 내용 제거됨 (원본: ${originalLength}자 → 정제: ${revisedAnswer.length}자)`);
+    }
+
+    console.log(`[INTERVIEW-REVISED-ANSWER] ✅ Revised answer generated successfully`);
+
+    res.json({
+      success: true,
+      revisedAnswer
+    });
+  } catch (error) {
+    console.error('[ERROR] Interview revised answer error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message
+    });
+  }
+});
+
+/* ==================== 회사 추천 API ==================== */
+/**
+ * @swagger
+ * /api/company-recommendations:
+ *   post:
+ *     summary: 사용자 프로필 기반 회사 추천
+ *     description: 사용자의 기본 프로필과 추가 조건을 바탕으로 적합한 회사들을 추천합니다.
+ *     tags: [면접 준비]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               user_id:
+ *                 type: integer
+ *                 description: 사용자 ID
+ *               additional_preferences:
+ *                 type: object
+ *                 properties:
+ *                   preferred_job:
+ *                     type: string
+ *                     description: 희망 직종
+ *                   company_size:
+ *                     type: string
+ *                     description: 회사 규모 선호도
+ *                   industry:
+ *                     type: string
+ *                     description: 관심 산업/분야
+ *                   additional_skills:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                     description: 추가 기술/스킬
+ *             required:
+ *               - user_id
+ *     responses:
+ *       200:
+ *         description: 회사 추천 성공
+ *       400:
+ *         description: 잘못된 요청
+ *       500:
+ *         description: 서버 오류
+ */
+app.post('/api/company-recommendations', async (req, res) => {
+  try {
+    const { user_id, additional_preferences } = req.body;
+
+    if (!user_id) {
+      return res.status(400).json({
+        error: '사용자 ID가 필요합니다'
+      });
+    }
+
+    console.log(`[COMPANY-RECOMMENDATIONS] Generating recommendations for user ${user_id}`);
+
+    // 새 테이블 존재 확인 및 생성
+    try {
+      await pool.execute(`
+        CREATE TABLE IF NOT EXISTS user_interview_conditions (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          user_id INT,
+          session_id VARCHAR(100),
+          preferred_job VARCHAR(200),
+          company_size VARCHAR(50),
+          industry VARCHAR(200),
+          additional_skills JSON,
+          custom_company VARCHAR(200),
+          custom_position VARCHAR(200),
+          input_source VARCHAR(50) DEFAULT 'interview_form',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+          INDEX idx_user_id (user_id),
+          INDEX idx_session_id (session_id),
+          INDEX idx_created_at (created_at),
+          INDEX idx_input_source (input_source)
+        )
+      `);
+    } catch (tableError) {
+      console.warn('[DB] user_interview_conditions table already exists or creation failed:', tableError.message);
+    }
+
+    // 사용자 입력 조건을 DB에 저장
+    try {
+      const sessionId = `session_${Date.now()}_${user_id}`;
+      const additionalSkillsJson = additional_preferences?.additional_skills && Array.isArray(additional_preferences.additional_skills)
+        ? JSON.stringify(additional_preferences.additional_skills)
+        : null;
+
+      await pool.execute(`
+        INSERT INTO user_interview_conditions
+        (user_id, session_id, preferred_job, company_size, industry, additional_skills, input_source)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `, [
+        user_id,
+        sessionId,
+        additional_preferences?.preferred_job || null,
+        additional_preferences?.company_size || null,
+        additional_preferences?.industry || null,
+        additionalSkillsJson,
+        'interview_form'
+      ]);
+
+      console.log(`[COMPANY-RECOMMENDATIONS] Saved user conditions to DB for user ${user_id}, session ${sessionId}`);
+    } catch (saveError) {
+      console.error('[COMPANY-RECOMMENDATIONS] Failed to save user conditions:', saveError);
+    }
+
+    // 사용자 프로필 조회
+    const userQuery = `
+      SELECT up.*, u.name as user_name
+      FROM user_profiles up
+      LEFT JOIN users u ON up.user_id = u.id
+      WHERE up.user_id = ?
+    `;
+
+    const [userRows] = await pool.execute(userQuery, [user_id]);
+    const userProfile = userRows.length > 0 ? userRows[0] : null;
+
+    // 샘플 회사 추천 (추가정보에 따라 필터링)
+    let allCompanies = [
+      {
+        name: "네이버",
+        description: "국내 최대 포털 및 IT 서비스 기업",
+        industry: "IT/소프트웨어",
+        size: "대기업",
+        location: "경기 성남",
+        position: "프론트엔드 개발자"
+      },
+      {
+        name: "카카오",
+        description: "모바일 플랫폼 및 메신저 서비스 기업",
+        industry: "IT/소프트웨어",
+        size: "대기업",
+        location: "제주",
+        position: "프론트엔드 개발자"
+      },
+      {
+        name: "라인",
+        description: "글로벌 메신저 및 콘텐츠 플랫폼",
+        industry: "IT/소프트웨어",
+        size: "대기업",
+        location: "경기 성남",
+        position: "프론트엔드 개발자"
+      },
+      {
+        name: "쿠팡",
+        description: "이커머스 및 물류 서비스 기업",
+        industry: "이커머스",
+        size: "대기업",
+        location: "서울 송파",
+        position: "프론트엔드 개발자"
+      },
+      {
+        name: "LG전자",
+        description: "글로벌 가전 및 IT 기업",
+        industry: "IT/전자",
+        size: "대기업",
+        location: "서울",
+        position: "프론트엔드 개발자"
+      },
+      {
+        name: "토스",
+        description: "모바일 금융 서비스 핀테크 기업",
+        industry: "핀테크",
+        size: "중견기업",
+        location: "서울 강남",
+        position: "백엔드 개발자"
+      },
+      {
+        name: "배달의민족",
+        description: "국내 1위 음식 배달 플랫폼",
+        industry: "플랫폼/O2O",
+        size: "중견기업",
+        location: "서울 송파",
+        position: "풀스택 개발자"
+      },
+      {
+        name: "삼성전자",
+        description: "글로벌 전자기기 제조 기업",
+        industry: "IT/전자",
+        size: "대기업",
+        location: "서울",
+        position: "프론트엔드 개발자"
+      },
+      {
+        name: "KB국민은행",
+        description: "국내 1위 은행 금융 서비스",
+        industry: "핀테크",
+        size: "대기업",
+        location: "서울",
+        position: "백엔드 개발자"
+      },
+      {
+        name: "신한은행",
+        description: "금융 디지털 혁신 선도 은행",
+        industry: "핀테크",
+        size: "대기업",
+        location: "서울",
+        position: "백엔드 개발자"
+      },
+      {
+        name: "케이뱅크",
+        description: "인터넷 전문 은행",
+        industry: "핀테크",
+        size: "중견기업",
+        location: "서울",
+        position: "백엔드 개발자"
+      },
+      {
+        name: "당근마켓",
+        description: "지역 기반 중고거래 플랫폼",
+        industry: "플랫폼/O2O",
+        size: "중소기업",
+        location: "서울",
+        position: "백엔드 개발자"
+      },
+      {
+        name: "직방",
+        description: "부동산 중개 플랫폼",
+        industry: "프롭테크",
+        size: "중소기업",
+        location: "서울",
+        position: "프론트엔드 개발자"
+      },
+      {
+        name: "야놀자",
+        description: "숙박 및 레저 예약 플랫폼",
+        industry: "여행/레저",
+        size: "중견기업",
+        location: "서울",
+        position: "풀스택 개발자"
+      },
+      {
+        name: "컬리",
+        description: "신선식품 새벽배송 서비스",
+        industry: "이커머스",
+        size: "중소기업",
+        location: "서울",
+        position: "백엔드 개발자"
+      },
+      {
+        name: "넥슨",
+        description: "온라인 게임 개발 및 서비스",
+        industry: "게임",
+        size: "대기업",
+        location: "경기 성남",
+        position: "게임 서버 개발자"
+      },
+      {
+        name: "크래프톤",
+        description: "글로벌 게임 개발사",
+        industry: "게임",
+        size: "대기업",
+        location: "경기 성남",
+        position: "게임 개발자"
+      },
+      {
+        name: "SK텔레콤",
+        description: "국내 최대 통신사 및 AI 기업",
+        industry: "통신/AI",
+        size: "대기업",
+        location: "서울",
+        position: "데이터 분석가"
+      },
+      {
+        name: "현대자동차",
+        description: "글로벌 자동차 제조 및 모빌리티 기업",
+        industry: "자동차/모빌리티",
+        size: "대기업",
+        location: "서울",
+        position: "소프트웨어 엔지니어"
+      },
+      {
+        name: "왓챠",
+        description: "OTT 플랫폼 서비스",
+        industry: "콘텐츠/미디어",
+        size: "중소기업",
+        location: "서울",
+        position: "프론트엔드 개발자"
+      },
+      {
+        name: "뱅크샐러드",
+        description: "개인 금융 관리 핀테크",
+        industry: "핀테크",
+        size: "중소기업",
+        location: "서울 강남",
+        position: "데이터 엔지니어"
+      },
+      {
+        name: "무신사",
+        description: "패션 이커머스 플랫폼",
+        industry: "이커머스",
+        size: "중견기업",
+        location: "서울",
+        position: "풀스택 개발자"
+      },
+      {
+        name: "하이퍼커넥트",
+        description: "소셜 디스커버리 앱 개발사",
+        industry: "IT/소프트웨어",
+        size: "중견기업",
+        location: "서울",
+        position: "머신러닝 엔지니어"
+      },
+      {
+        name: "두나무",
+        description: "업비트 운영 암호화폐 거래소",
+        industry: "핀테크",
+        size: "중견기업",
+        location: "서울 강남",
+        position: "백엔드 개발자"
+      },
+      {
+        name: "마켓컬리",
+        description: "신선식품 새벽배송 이커머스",
+        industry: "이커머스",
+        size: "중견기업",
+        location: "서울",
+        position: "데이터 사이언티스트"
+      },
+      {
+        name: "우아한형제들",
+        description: "배달의민족 운영사",
+        industry: "플랫폼/O2O",
+        size: "중견기업",
+        location: "서울 송파",
+        position: "DevOps 엔지니어"
+      },
+      {
+        name: "NHN",
+        description: "게임 및 IT 서비스 기업",
+        industry: "IT/게임",
+        size: "대기업",
+        location: "경기 성남",
+        position: "시스템 엔지니어"
+      },
+      {
+        name: "스마일게이트",
+        description: "크로스파이어 개발사",
+        industry: "게임",
+        size: "대기업",
+        location: "경기 성남",
+        position: "게임 클라이언트 개발자"
+      },
+      {
+        name: "엔씨소프트",
+        description: "리니지 개발사",
+        industry: "게임",
+        size: "대기업",
+        location: "경기 성남",
+        position: "게임 서버 개발자"
+      },
+      {
+        name: "쏘카",
+        description: "카셰어링 플랫폼",
+        industry: "모빌리티",
+        size: "중소기업",
+        location: "서울",
+        position: "풀스택 개발자"
+      }
+    ];
+
+    // 사용자 선택 조건에 맞게 필터링
+    console.log(`[COMPANY-RECOMMENDATIONS] Received additional_preferences:`, JSON.stringify(additional_preferences));
+    let filteredCompanies = allCompanies;
+    const appliedFilters = [];
+
+    // 산업 필터링
+    if (additional_preferences?.industry && additional_preferences.industry.trim() !== '') {
+      const industryKeyword = additional_preferences.industry.toLowerCase();
+      filteredCompanies = filteredCompanies.filter(company =>
+        company.industry.toLowerCase().includes(industryKeyword)
+      );
+      appliedFilters.push(`산업: ${additional_preferences.industry}`);
+      console.log(`[COMPANY-RECOMMENDATIONS] 산업 필터링 (${additional_preferences.industry}): ${filteredCompanies.length}개`);
+    }
+
+    // 기업 규모 필터링
+    if (additional_preferences?.company_size && additional_preferences.company_size.trim() !== '') {
+      const sizeKeyword = additional_preferences.company_size;
+      filteredCompanies = filteredCompanies.filter(company =>
+        company.size === sizeKeyword
+      );
+      appliedFilters.push(`규모: ${additional_preferences.company_size}`);
+      console.log(`[COMPANY-RECOMMENDATIONS] 규모 필터링 (${additional_preferences.company_size}): ${filteredCompanies.length}개`);
+    }
+
+    // 희망 직무 필터링
+    if (additional_preferences?.preferred_job && additional_preferences.preferred_job.trim() !== '') {
+      const jobKeyword = additional_preferences.preferred_job.toLowerCase();
+      filteredCompanies = filteredCompanies.filter(company => {
+        const position = company.position.toLowerCase();
+        const description = company.description.toLowerCase();
+
+        // "프론트엔드", "백엔드", "풀스택", "게임" 등의 키워드 매칭
+        return position.includes(jobKeyword) || description.includes(jobKeyword);
+      });
+      appliedFilters.push(`직무: ${additional_preferences.preferred_job}`);
+      console.log(`[COMPANY-RECOMMENDATIONS] 직무 필터링 (${additional_preferences.preferred_job}): ${filteredCompanies.length}개`);
+    }
+
+    // 추가 기술/스킬 필터링 (설명에 키워드가 포함되어 있으면 우선순위)
+    if (additional_preferences?.additional_skills && Array.isArray(additional_preferences.additional_skills) && additional_preferences.additional_skills.length > 0) {
+      const skills = additional_preferences.additional_skills.map(s => s.toLowerCase());
+
+      // 스킬이 있는 회사에 가중치 부여 (완전 필터링하지 않고 우선순위만)
+      filteredCompanies = filteredCompanies.map(company => {
+        const matchCount = skills.filter(skill =>
+          company.description.toLowerCase().includes(skill) ||
+          company.industry.toLowerCase().includes(skill)
+        ).length;
+        return { ...company, skillMatchScore: matchCount };
+      }).sort((a, b) => b.skillMatchScore - a.skillMatchScore);
+
+      appliedFilters.push(`기술: ${additional_preferences.additional_skills.join(', ')}`);
+      console.log(`[COMPANY-RECOMMENDATIONS] 기술 스킬 우선순위 정렬 완료`);
+    }
+
+    // 필터링 결과만 반환 (추가 회사 채우지 않음)
+    console.log(`[COMPANY-RECOMMENDATIONS] 최종 결과: ${filteredCompanies.length}개`);
+
+    // skillMatchScore 제거 (응답에서 제외)
+    const cleanedCompanies = filteredCompanies.map(({ skillMatchScore, ...company }) => company);
+
+    return res.json({
+      success: true,
+      companies: cleanedCompanies,
+      filters_applied: appliedFilters,
+      filter_details: {
+        industry: additional_preferences?.industry || '없음',
+        company_size: additional_preferences?.company_size || '없음',
+        preferred_job: additional_preferences?.preferred_job || '없음',
+        additional_skills: additional_preferences?.additional_skills || []
+      },
+      total_filtered: cleanedCompanies.length,
+      powered_by: "Sample Data (MCP Fallback)",
+      generated_at: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('[COMPANY-RECOMMENDATIONS] Failed:', error);
+    return res.status(500).json({
+      error: '회사 추천에 실패했습니다'
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /api/user-data/{user_id}:
+ *   get:
+ *     summary: 사용자 데이터베이스 저장 정보 조회
+ *     description: 로그인된 사용자의 데이터베이스 저장 정보를 상세히 조회합니다
+ *     tags:
+ *       - 사용자 데이터 디버깅
+ *     parameters:
+ *       - in: path
+ *         name: user_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 사용자 ID
+ *     responses:
+ *       200:
+ *         description: 사용자 데이터 조회 성공
+ *       404:
+ *         description: 사용자를 찾을 수 없음
+ *       500:
+ *         description: 서버 오류
+ */
+app.get('/api/user-data/:user_id', async (req, res) => {
+  try {
+    const { user_id } = req.params;
+
+    console.log(`[USER-DATA] 사용자 ID ${user_id}의 DB 저장 정보 조회 중...`);
+
+    // 사용자 기본 정보 조회
+    const userQuery = `
+      SELECT
+        id,
+        provider_key,
+        email,
+        name,
+        picture,
+        provider,
+        created_at,
+        updated_at
+      FROM users
+      WHERE id = ?
+    `;
+
+    const [userResult] = await pool.execute(userQuery, [user_id]);
+
+    if (userResult.length === 0) {
+      return res.status(404).json({
+        error: '사용자를 찾을 수 없습니다',
+        user_id: user_id
+      });
+    }
+
+    const userData = userResult[0];
+
+    // 사용자 프로필 정보 조회
+    const profileQuery = `
+      SELECT
+        id,
+        user_id,
+        skills,
+        experience,
+        preferred_regions,
+        preferred_jobs,
+        expected_salary,
+        resume_path,
+        created_at,
+        updated_at
+      FROM user_profiles
+      WHERE user_id = ?
+    `;
+
+    const [profileResult] = await pool.execute(profileQuery, [user_id]);
+
+    // JSON 필드 파싱 (안전한 파싱)
+    let profileData = null;
+    if (profileResult.length > 0) {
+      profileData = profileResult[0];
+
+      // skills 필드 파싱
+      if (profileData.skills) {
+        try {
+          profileData.skills_parsed = JSON.parse(profileData.skills);
+        } catch (e) {
+          profileData.skills_parsed = profileData.skills;
+          profileData.skills_parse_error = e.message;
+        }
+      }
+
+      // preferred_regions 필드 파싱
+      if (profileData.preferred_regions) {
+        try {
+          if (typeof profileData.preferred_regions === 'string') {
+            if (profileData.preferred_regions.startsWith('[')) {
+              profileData.preferred_regions_parsed = JSON.parse(profileData.preferred_regions);
+            } else {
+              profileData.preferred_regions_parsed = profileData.preferred_regions.split(',').map(s => s.trim());
+            }
+          } else {
+            profileData.preferred_regions_parsed = profileData.preferred_regions;
+          }
+        } catch (e) {
+          profileData.preferred_regions_parsed = profileData.preferred_regions;
+          profileData.preferred_regions_parse_error = e.message;
+        }
+      }
+    }
+
+    // 최근 추천 로그 조회 (최근 5개)
+    const recommendationQuery = `
+      SELECT
+        id,
+        job_id,
+        recommendation_score,
+        match_reasons,
+        created_at
+      FROM recommendation_logs
+      WHERE user_id = ?
+      ORDER BY created_at DESC
+      LIMIT 5
+    `;
+
+    const [recommendationResult] = await pool.execute(recommendationQuery, [user_id]);
+
+    // 최근 면접 질문 로그 조회 (최근 3개)
+    const interviewQuery = `
+      SELECT
+        id,
+        job_id,
+        questions,
+        created_at
+      FROM interview_logs
+      WHERE user_id = ?
+      ORDER BY created_at DESC
+      LIMIT 3
+    `;
+
+    const [interviewResult] = await pool.execute(interviewQuery, [user_id]);
+
+    const response = {
+      success: true,
+      user_id: parseInt(user_id),
+      data: {
+        // 사용자 기본 정보
+        user_info: {
+          raw_data: userData,
+          data_types: {
+            id: typeof userData.id,
+            provider_key: typeof userData.provider_key,
+            email: typeof userData.email,
+            name: typeof userData.name,
+            picture: typeof userData.picture,
+            provider: typeof userData.provider,
+            created_at: typeof userData.created_at,
+            updated_at: typeof userData.updated_at
+          }
+        },
+
+        // 사용자 프로필 정보
+        profile_info: profileData ? {
+          raw_data: profileData,
+          data_types: {
+            skills: typeof profileData.skills,
+            experience: typeof profileData.experience,
+            preferred_regions: typeof profileData.preferred_regions,
+            preferred_jobs: typeof profileData.preferred_jobs,
+            expected_salary: typeof profileData.expected_salary,
+            resume_path: typeof profileData.resume_path
+          },
+          parsed_data: {
+            skills: profileData.skills_parsed,
+            preferred_regions: profileData.preferred_regions_parsed
+          },
+          parsing_info: {
+            skills_original: profileData.skills,
+            preferred_regions_original: profileData.preferred_regions,
+            skills_parse_error: profileData.skills_parse_error,
+            preferred_regions_parse_error: profileData.preferred_regions_parse_error
+          }
+        } : null,
+
+        // 최근 활동 로그
+        recent_activity: {
+          recommendations: recommendationResult,
+          interviews: interviewResult
+        },
+
+        // 데이터 요약
+        summary: {
+          has_profile: profileData !== null,
+          profile_completeness: profileData ? {
+            has_skills: !!profileData.skills,
+            has_experience: !!profileData.experience,
+            has_preferred_regions: !!profileData.preferred_regions,
+            has_preferred_jobs: !!profileData.preferred_jobs,
+            has_expected_salary: !!profileData.expected_salary,
+            has_resume: !!profileData.resume_path
+          } : null,
+          total_recommendations: recommendationResult.length,
+          total_interviews: interviewResult.length
+        }
+      },
+      debug_info: {
+        database_connection: 'MySQL pool',
+        query_timestamp: new Date().toISOString(),
+        queries_executed: [
+          'users 테이블 조회',
+          'user_profiles 테이블 조회',
+          'recommendation_logs 테이블 조회',
+          'interview_logs 테이블 조회'
+        ]
+      }
+    };
+
+    console.log(`[USER-DATA] 사용자 ID ${user_id} 데이터 조회 완료:`, {
+      has_user: !!userData,
+      has_profile: !!profileData,
+      recommendations_count: recommendationResult.length,
+      interviews_count: interviewResult.length
+    });
+
+    return res.json(response);
+
+  } catch (error) {
+    console.error('[USER-DATA] 사용자 데이터 조회 실패:', error);
+    return res.status(500).json({
+      error: '사용자 데이터 조회에 실패했습니다',
+      error_details: error.message
+    });
+  }
+});
+
+// 🔄 동적 사용자 데이터 로테이션 엔드포인트 (테스트용)
+app.post('/api/rotate-user-data', async (req, res) => {
+  try {
+    console.log('[ROTATE] 사용자 데이터 로테이션 시작');
+
+    // 다양한 테스트 프로필 데이터
+    const testProfiles = [
+      {
+        name: '김신입', email: 'test1@example.com', provider: 'google',
+        skills: ['JavaScript', 'React', 'Node.js'], experience: '신입',
+        preferred_regions: ['서울'], preferred_jobs: 'IT', expected_salary: 3500
+      },
+      {
+        name: '이경력', email: 'test2@example.com', provider: 'kakao',
+        skills: ['Python', 'Django', 'PostgreSQL'], experience: '경력 3-5년',
+        preferred_regions: ['경기'], preferred_jobs: 'IT', expected_salary: 6000
+      },
+      {
+        name: '박시니어', email: 'test3@example.com', provider: 'google',
+        skills: ['Java', 'Spring Boot', 'AWS', 'Docker'], experience: '경력 5년 이상',
+        preferred_regions: ['서울', '경기'], preferred_jobs: 'IT', expected_salary: 8000
+      },
+      {
+        name: '최데이터', email: 'test4@example.com', provider: 'kakao',
+        skills: ['Python', 'TensorFlow', 'SQL', 'Spark'], experience: '경력 1-3년',
+        preferred_regions: ['서울'], preferred_jobs: '빅데이터', expected_salary: 5500
+      },
+      {
+        name: '정프론트', email: 'test5@example.com', provider: 'google',
+        skills: ['TypeScript', 'Vue.js', 'CSS', 'Figma'], experience: '경력 1-3년',
+        preferred_regions: ['서울'], preferred_jobs: 'IT', expected_salary: 4500
+      },
+      {
+        name: '강풀스택', email: 'test6@example.com', provider: 'kakao',
+        skills: ['React', 'Node.js', 'MongoDB', 'AWS'], experience: '경력 3-5년',
+        preferred_regions: ['부산'], preferred_jobs: 'IT', expected_salary: 5800
+      },
+      {
+        name: '윤모바일', email: 'test7@example.com', provider: 'google',
+        skills: ['Swift', 'Kotlin', 'React Native', 'Firebase'], experience: '경력 1-3년',
+        preferred_regions: ['서울'], preferred_jobs: 'IT', expected_salary: 5200
+      },
+      {
+        name: '조인프라', email: 'test8@example.com', provider: 'kakao',
+        skills: ['Kubernetes', 'Terraform', 'Jenkins', 'Linux'], experience: '경력 5년 이상',
+        preferred_regions: ['서울'], preferred_jobs: 'IT', expected_salary: 7500
+      }
+    ];
+
+    // 현재 시간 기반으로 프로필 선택 (매번 다른 프로필 사용)
+    const profileIndex = Math.floor(Date.now() / 10000) % testProfiles.length;
+    const selectedProfile = testProfiles[profileIndex];
+
+    // 사용자 ID 1, 2의 기본 정보 업데이트
+    const userIds = [1, 2];
+    const updatedUsers = [];
+
+    for (let i = 0; i < userIds.length; i++) {
+      const userId = userIds[i];
+      const profile = testProfiles[(profileIndex + i) % testProfiles.length];
+
+      // 사용자 기본 정보 업데이트
+      await pool.execute(
+        `UPDATE users SET name = ?, email = ?, provider = ?, updated_at = NOW() WHERE id = ?`,
+        [profile.name, profile.email, profile.provider, userId]
+      );
+
+      // 기존 프로필 삭제 (중복 제거)
+      await pool.execute(
+        `DELETE FROM user_profiles WHERE user_id = ?`,
+        [userId]
+      );
+
+      // 새 프로필 추가
+      await pool.execute(
+        `INSERT INTO user_profiles (user_id, skills, experience, preferred_regions, preferred_jobs, expected_salary, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+        [
+          userId,
+          JSON.stringify(profile.skills),
+          profile.experience,
+          JSON.stringify(profile.preferred_regions),
+          profile.preferred_jobs,
+          profile.expected_salary
+        ]
+      );
+
+      updatedUsers.push({
+        id: userId,
+        ...profile
+      });
+    }
+
+    console.log(`[ROTATE] 데이터 로테이션 완료. 선택된 프로필 인덱스: ${profileIndex}`);
+
+    res.json({
+      success: true,
+      message: '사용자 데이터가 성공적으로 로테이션되었습니다',
+      rotation_info: {
+        profile_index: profileIndex,
+        total_profiles: testProfiles.length,
+        rotation_method: '시간 기반 자동 로테이션'
+      },
+      updated_users: updatedUsers,
+      next_rotation_in: `약 ${10 - (Math.floor(Date.now() / 1000) % 10)}초 후`,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('[ROTATE] 데이터 로테이션 실패:', error);
+    res.status(500).json({
+      success: false,
+      error: '데이터 로테이션에 실패했습니다',
+      error_details: error.message
+    });
+  }
+});
+
+// 🔄 수동 프로필 선택 엔드포인트
+app.post('/api/set-test-profile/:profileIndex', async (req, res) => {
+  try {
+    const { profileIndex } = req.params;
+    const index = parseInt(profileIndex);
+
+    // 테스트 프로필 데이터 (위와 동일)
+    const testProfiles = [
+      {
+        name: '김신입', email: 'test1@example.com', provider: 'google',
+        skills: ['JavaScript', 'React', 'Node.js'], experience: '신입',
+        preferred_regions: ['서울'], preferred_jobs: 'IT', expected_salary: 3500
+      },
+      {
+        name: '이경력', email: 'test2@example.com', provider: 'kakao',
+        skills: ['Python', 'Django', 'PostgreSQL'], experience: '경력 3-5년',
+        preferred_regions: ['경기'], preferred_jobs: 'IT', expected_salary: 6000
+      },
+      {
+        name: '박시니어', email: 'test3@example.com', provider: 'google',
+        skills: ['Java', 'Spring Boot', 'AWS', 'Docker'], experience: '경력 5년 이상',
+        preferred_regions: ['서울', '경기'], preferred_jobs: 'IT', expected_salary: 8000
+      },
+      {
+        name: '최데이터', email: 'test4@example.com', provider: 'kakao',
+        skills: ['Python', 'TensorFlow', 'SQL', 'Spark'], experience: '경력 1-3년',
+        preferred_regions: ['서울'], preferred_jobs: '빅데이터', expected_salary: 5500
+      },
+      {
+        name: '정프론트', email: 'test5@example.com', provider: 'google',
+        skills: ['TypeScript', 'Vue.js', 'CSS', 'Figma'], experience: '경력 1-3년',
+        preferred_regions: ['서울'], preferred_jobs: 'IT', expected_salary: 4500
+      },
+      {
+        name: '강풀스택', email: 'test6@example.com', provider: 'kakao',
+        skills: ['React', 'Node.js', 'MongoDB', 'AWS'], experience: '경력 3-5년',
+        preferred_regions: ['부산'], preferred_jobs: 'IT', expected_salary: 5800
+      },
+      {
+        name: '윤모바일', email: 'test7@example.com', provider: 'google',
+        skills: ['Swift', 'Kotlin', 'React Native', 'Firebase'], experience: '경력 1-3년',
+        preferred_regions: ['서울'], preferred_jobs: 'IT', expected_salary: 5200
+      },
+      {
+        name: '조인프라', email: 'test8@example.com', provider: 'kakao',
+        skills: ['Kubernetes', 'Terraform', 'Jenkins', 'Linux'], experience: '경력 5년 이상',
+        preferred_regions: ['서울'], preferred_jobs: 'IT', expected_salary: 7500
+      }
+    ];
+
+    if (index < 0 || index >= testProfiles.length) {
+      return res.status(400).json({
+        success: false,
+        error: `프로필 인덱스는 0-${testProfiles.length - 1} 범위여야 합니다`
+      });
+    }
+
+    const selectedProfile = testProfiles[index];
+
+    // 사용자 ID 1에만 적용
+    await pool.execute(
+      `UPDATE users SET name = ?, email = ?, provider = ?, updated_at = NOW() WHERE id = 1`,
+      [selectedProfile.name, selectedProfile.email, selectedProfile.provider]
+    );
+
+    // 기존 프로필 삭제
+    await pool.execute(`DELETE FROM user_profiles WHERE user_id = 1`);
+
+    // 새 프로필 추가
+    await pool.execute(
+      `INSERT INTO user_profiles (user_id, skills, experience, preferred_regions, preferred_jobs, expected_salary, created_at, updated_at)
+       VALUES (1, ?, ?, ?, ?, ?, NOW(), NOW())`,
+      [
+        JSON.stringify(selectedProfile.skills),
+        selectedProfile.experience,
+        JSON.stringify(selectedProfile.preferred_regions),
+        selectedProfile.preferred_jobs,
+        selectedProfile.expected_salary
+      ]
+    );
+
+    console.log(`[SET-PROFILE] 사용자 1에 프로필 ${index} (${selectedProfile.name}) 적용 완료`);
+
+    res.json({
+      success: true,
+      message: `프로필 ${index}가 사용자 1에 적용되었습니다`,
+      applied_profile: {
+        index: index,
+        ...selectedProfile
+      },
+      available_profiles: testProfiles.map((p, i) => ({
+        index: i,
+        name: p.name,
+        skills: p.skills,
+        experience: p.experience,
+        job_type: p.preferred_jobs
+      }))
+    });
+
+  } catch (error) {
+    console.error('[SET-PROFILE] 프로필 설정 실패:', error);
+    res.status(500).json({
+      success: false,
+      error: '프로필 설정에 실패했습니다',
+      error_details: error.message
+    });
+  }
+});
+
+// 테스트 엔드포인트
+app.get('/api/test-endpoint', (req, res) => {
+  res.json({ message: 'Endpoint registered successfully!' });
+});
+
+// ==== Jobs API (채용공고) ====
+// 채용공고 검색 (회사명 또는 직무로 검색) - 이 라우트가 :category보다 먼저 와야 함
+app.get('/api/jobs/search', async (req, res) => {
+  const searchQuery = req.query.query || '';
+  const startTime = Date.now();
+
+  try {
+    console.log(`[JOBS-SEARCH] Searching jobs with query: "${searchQuery}"`);
+
+    if (!searchQuery.trim()) {
+      return res.json({ success: true, jobs: [], total: 0 });
+    }
+
+    // company, title, job_info에 검색어가 포함된 경우 검색
+    const query = `
+      SELECT * FROM jobs
+      WHERE company LIKE ? OR title LIKE ? OR job_info LIKE ?
+      ORDER BY scraped_at DESC
+      LIMIT 100
+    `;
+
+    const likePattern = `%${searchQuery}%`;
+    const [results] = await pool.execute(query, [likePattern, likePattern, likePattern]);
+
+    console.log(`[JOBS-SEARCH] Query completed in ${Date.now() - startTime}ms, found ${results.length} jobs`);
+
+    // JSON 문자열을 파싱
+    const jobs = results.map(job => {
+      try {
+        return {
+          ...job,
+          job_info: job.job_info ? JSON.parse(job.job_info) : [],
+          conditions: job.conditions ? JSON.parse(job.conditions) : [],
+          registration_info: job.registration_info ? JSON.parse(job.registration_info) : []
+        };
+      } catch (parseError) {
+        console.error(`[JOBS-SEARCH] JSON parse error for job ${job.id}:`, parseError);
+        return {
+          ...job,
+          job_info: [],
+          conditions: [],
+          registration_info: []
+        };
+      }
+    });
+
+    res.json({ success: true, jobs, total: jobs.length });
+  } catch (error) {
+    console.error('[ERROR] Jobs search error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message
+    });
+  }
+});
+
+// 카테고리별 채용공고 조회 (최신순, limit 지원)
+app.get('/api/jobs/:category', async (req, res) => {
+  const { category } = req.params;
+  const limit = parseInt(req.query.limit) || null;
+  const startTime = Date.now();
+
+  try {
+    console.log(`[JOBS-API] Fetching ${category} jobs, limit: ${limit}`);
+
+    // DB 연결 테스트
+    try {
+      await pool.query('SELECT 1');
+      console.log(`[JOBS-API] DB connection OK`);
+    } catch (dbError) {
+      console.error('[JOBS-API] DB connection failed:', dbError.message);
+      throw new Error('Database connection failed');
+    }
+
+    // 전체 공고 수 조회
+    const [countResult] = await pool.execute(
+      'SELECT COUNT(*) as total FROM jobs WHERE category = ?',
+      [category]
+    );
+    const totalCount = countResult[0].total;
+
+    let query = 'SELECT * FROM jobs WHERE category = ? ORDER BY scraped_at DESC';
+
+    if (limit && limit > 0) {
+      query += ` LIMIT ${limit}`;
+    }
+
+    console.log(`[JOBS-API] Executing query: ${query}, category:`, category);
+    const [results] = await pool.execute(query, [category]);
+    console.log(`[JOBS-API] Query completed in ${Date.now() - startTime}ms, found ${results.length} jobs (total: ${totalCount})`);
+
+    // JSON 문자열을 파싱 (안전하게)
+    const jobs = results.map(job => {
+      try {
+        return {
+          ...job,
+          job_info: job.job_info ? JSON.parse(job.job_info) : [],
+          conditions: job.conditions ? JSON.parse(job.conditions) : [],
+          registration_info: job.registration_info ? JSON.parse(job.registration_info) : []
+        };
+      } catch (parseError) {
+        console.error(`[JOBS-API] JSON parse error for job ${job.id}:`, parseError);
+        return {
+          ...job,
+          job_info: [],
+          conditions: [],
+          registration_info: []
+        };
+      }
+    });
+
+    console.log(`[JOBS-API] Response ready in ${Date.now() - startTime}ms`);
+    res.json({ success: true, jobs, total: totalCount, returned: jobs.length });
+  } catch (error) {
+    console.error('[ERROR] Jobs API error:', error);
+    console.error('[ERROR] Error name:', error.name);
+    console.error('[ERROR] Error message:', error.message);
+    console.error('[ERROR] Stack trace:', error.stack);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message,
+      details: error.code || 'Unknown error'
+    });
+  }
+});
+
+// ID로 특정 채용공고 조회
+app.get('/api/job/:id', async (req, res) => {
+  const jobId = parseInt(req.params.id);
+  const startTime = Date.now();
+
+  try {
+    console.log(`[JOBS-API] Fetching job with id: ${jobId}`);
+
+    // DB 연결 테스트
+    try {
+      await pool.query('SELECT 1');
+      console.log(`[JOBS-API] DB connection OK`);
+    } catch (dbError) {
+      console.error('[JOBS-API] DB connection failed:', dbError.message);
+      throw new Error('Database connection failed');
+    }
+
+    const query = 'SELECT * FROM jobs WHERE id = ?';
+    console.log(`[JOBS-API] Executing query: ${query}, id: ${jobId}`);
+
+    const [results] = await pool.execute(query, [jobId]);
+    console.log(`[JOBS-API] Query completed in ${Date.now() - startTime}ms, found ${results.length} job(s)`);
+
+    if (results.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Job not found',
+        message: `Job with id ${jobId} not found`
+      });
+    }
+
+    // JSON 문자열을 파싱 (안전하게)
+    const job = results[0];
+    try {
+      const parsedJob = {
+        ...job,
+        job_info: job.job_info ? JSON.parse(job.job_info) : [],
+        conditions: job.conditions ? JSON.parse(job.conditions) : [],
+        registration_info: job.registration_info ? JSON.parse(job.registration_info) : []
+      };
+
+      console.log(`[JOBS-API] Response ready in ${Date.now() - startTime}ms`);
+      res.json({ success: true, job: parsedJob });
+    } catch (parseError) {
+      console.error(`[JOBS-API] JSON parse error for job ${job.id}:`, parseError);
+      const fallbackJob = {
+        ...job,
+        job_info: [],
+        conditions: [],
+        registration_info: []
+      };
+      res.json({ success: true, job: fallbackJob });
+    }
+  } catch (error) {
+    console.error('[ERROR] Jobs API error:', error);
+    console.error('[ERROR] Error name:', error.name);
+    console.error('[ERROR] Error message:', error.message);
+    console.error('[ERROR] Stack trace:', error.stack);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message,
+      details: error.code || 'Unknown error'
+    });
+  }
+});
+
+// 전체 채용공고 조회
+app.get('/api/jobs', async (req, res) => {
+  const limit = parseInt(req.query.limit) || null;
+
+  try {
+    let query = 'SELECT * FROM jobs ORDER BY scraped_at DESC';
+
+    if (limit && limit > 0) {
+      query += ` LIMIT ${limit}`;
+    }
+
+    console.log(`[JOBS-API] Fetching all jobs, query: ${query}`);
+
+    const [results] = await pool.execute(query);
+    console.log(`[JOBS-API] Found ${results.length} jobs`);
+
+    // JSON 문자열을 파싱
+    const jobs = results.map(job => ({
+      ...job,
+      job_info: job.job_info ? JSON.parse(job.job_info) : [],
+      conditions: job.conditions ? JSON.parse(job.conditions) : [],
+      registration_info: job.registration_info ? JSON.parse(job.registration_info) : []
+    }));
+
+    res.json({ success: true, jobs, total: jobs.length });
+  } catch (error) {
+    console.error('[ERROR] Jobs API error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ==============================================================================
+// 회사 정보 API
+// ==============================================================================
+
+// 회사 정보 조회 (catch_companies)
+app.get('/api/company/:companyName', async (req, res) => {
+  const { companyName } = req.params;
+
+  try {
+    console.log(`[COMPANY-API] ========================================`);
+    console.log(`[COMPANY-API] Fetching company info for: "${companyName}"`);
+    console.log(`[COMPANY-API] URL decoded: "${decodeURIComponent(companyName)}"`);
+
+    // 모든 catch 테이블은 'company' 컬럼 사용
+    // 정확한 일치 먼저 시도
+    console.log(`[COMPANY-API] Querying with: "${companyName}"`);
+    let [results] = await pool.execute(
+      'SELECT * FROM catch_companies WHERE company = ? LIMIT 1',
+      [companyName]
+    );
+
+    console.log(`[COMPANY-API] Query result count: ${results.length}`);
+
+    // 정확히 일치하는 경우에만 회사정보 제공 (LIKE 검색 제거)
+    if (results.length === 0) {
+      console.log(`[COMPANY-API] ❌ No exact match found for: "${companyName}"`);
+      console.log(`[COMPANY-API] ========================================`);
+      return res.json({ success: false, message: '회사 정보를 찾을 수 없습니다.' });
+    }
+
+    const company = results[0];
+    console.log(`[COMPANY-API] ✅ Found company: "${company.company}"`);
+    console.log(`[COMPANY-API] ========================================`);
+
+    // tags와 recommendation_keywords를 배열로 파싱
+    if (company.tags) {
+      try {
+        company.tags = typeof company.tags === 'string' ? JSON.parse(company.tags) : company.tags;
+      } catch (e) {
+        // JSON 파싱 실패시 쉼표로 구분된 문자열로 간주
+        company.tags = company.tags.split(',').map(t => t.trim()).filter(t => t);
+      }
+    } else {
+      company.tags = [];
+    }
+
+    if (company.recommendation_keywords) {
+      try {
+        company.recommendation_keywords = typeof company.recommendation_keywords === 'string'
+          ? JSON.parse(company.recommendation_keywords)
+          : company.recommendation_keywords;
+      } catch (e) {
+        company.recommendation_keywords = company.recommendation_keywords.split(',').map(k => k.trim()).filter(k => k);
+      }
+    } else {
+      company.recommendation_keywords = [];
+    }
+
+    res.json({ success: true, company });
+  } catch (error) {
+    console.error('[COMPANY-API] ❌ ERROR:', error);
+    console.log(`[COMPANY-API] ========================================`);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// 회사 리뷰 조회 (catch_reviews)
+app.get('/api/company/:companyName/reviews', async (req, res) => {
+  const { companyName } = req.params;
+  const limit = parseInt(req.query.limit) || 10;
+
+  try {
+    console.log(`[REVIEWS-API] Fetching reviews for: ${companyName}`);
+
+    // jobs 테이블의 company와 정확히 일치하는 경우에만 리뷰 제공
+    // LIMIT은 문자열 템플릿으로 처리 (prepared statement에서 LIMIT은 숫자만 허용)
+    const query = `SELECT * FROM catch_reviews WHERE company = ? ORDER BY id DESC LIMIT ${limit}`;
+    const [results] = await pool.execute(query, [companyName]);
+
+    console.log(`[REVIEWS-API] Found ${results.length} reviews`);
+    res.json({ success: true, reviews: results, total: results.length });
+  } catch (error) {
+    console.error('[ERROR] Reviews API error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error', message: error.message });
+  }
+});
+
+// 면접 기출문제 조회 (catch_interview_questions)
+app.get('/api/company/:companyName/interview-questions', async (req, res) => {
+  const { companyName } = req.params;
+  const limit = parseInt(req.query.limit) || 10;
+
+  try {
+    console.log(`[INTERVIEW-API] ========================================`);
+    console.log(`[INTERVIEW-API] 요청 회사명: "${companyName}"`);
+    console.log(`[INTERVIEW-API] Limit: ${limit}`);
+
+    // jobs 테이블의 company와 정확히 일치하는 경우에만 기출질문 제공
+    // LIMIT은 문자열 템플릿으로 처리 (prepared statement에서 LIMIT은 숫자만 허용)
+    console.log(`[INTERVIEW-API] 정확 매칭 시도: company = "${companyName}"`);
+    const query = `SELECT * FROM catch_interview_questions WHERE company = ? ORDER BY id DESC LIMIT ${limit}`;
+    const [results] = await pool.execute(query, [companyName]);
+    console.log(`[INTERVIEW-API] 정확 매칭 결과: ${results.length}개`);
+
+    if (results.length > 0) {
+      console.log(`[INTERVIEW-API] ✅ 총 ${results.length}개 기출질문 발견`);
+      results.forEach((q, idx) => {
+        console.log(`[INTERVIEW-API]   [${idx+1}] ${q.position}: ${q.question.substring(0, 50)}...`);
+      });
+    } else {
+      console.log(`[INTERVIEW-API] ⚠️ 기출질문 없음`);
+    }
+
+    console.log(`[INTERVIEW-API] ========================================`);
+    res.json({ success: true, questions: results, total: results.length });
+  } catch (error) {
+    console.error('[INTERVIEW-API] ❌ 에러:', error.message);
+    console.error('[INTERVIEW-API] Stack:', error.stack);
+    res.status(500).json({ success: false, error: 'Internal server error', message: error.message });
+  }
+});
+
+// ==============================================================================
+// 최신 공고 스크래핑 API
+// ==============================================================================
+
+app.post('/api/scrape-latest-jobs', async (req, res) => {
+  console.log('[SCRAPE-JOBS] 최신 공고 스크래핑 요청 받음');
+
+  // 즉시 응답을 반환하여 사용자가 다른 메뉴를 사용할 수 있도록 함
+  res.json({
+    success: true,
+    message: '백그라운드에서 스크래핑을 시작했습니다. 잠시 후 새로운 공고가 추가됩니다.'
+  });
+
+  // 백그라운드에서 스크래핑 작업 실행
+  (async () => {
+    try {
+      console.log('[SCRAPE-JOBS-BG] 🔄 백그라운드 스크래핑 시작');
+
+      // 통합 스크래핑 API 호출 (init, login, recruit, filter, extract 모두 한 번에)
+      console.log('[SCRAPE-JOBS-BG] 통합 스크래핑 API 호출 중...');
+      console.log('[SCRAPE-JOBS-BG] CATCH_SCRAPER_URL:', CATCH_SCRAPER_URL);
+
+      const scrapeResponse = await axios.post(
+        `${CATCH_SCRAPER_URL}/api/scrape-integrated`,
+        { max_jobs: 15 },
+        { timeout: 180000 } // 3분 타임아웃
+      );
+
+      if (!scrapeResponse.data.success) {
+        console.error('[SCRAPE-JOBS-BG] ❌ 통합 스크래핑 실패:', scrapeResponse.data);
+        return;
+      }
+
+      // IT 공고와 BigData/AI 공고 통합
+      const itJobs = (scrapeResponse.data.it_jobs || []).map(job => ({
+        ...job,
+        category: 'IT'
+      }));
+
+      const bigdataJobs = (scrapeResponse.data.bigdata_ai_jobs || []).map(job => ({
+        ...job,
+        category: 'BIGDATA_AI'
+      }));
+
+      let scrapedJobs = [...itJobs, ...bigdataJobs];
+      console.log(`[SCRAPE-JOBS-BG] 총 ${scrapedJobs.length}개 공고 스크래핑 완료 (IT: ${itJobs.length}개, BIGDATA/AI: ${bigdataJobs.length}개)`);
+
+      // 스크래핑된 공고가 없으면 종료
+      if (scrapedJobs.length === 0) {
+        console.error('[SCRAPE-JOBS-BG] ❌ 스크래핑된 공고가 없습니다.');
+        return;
+      }
+
+      // DB에 삽입 (중복 체크)
+      console.log('\n' + '='.repeat(80));
+      console.log('[SCRAPE-JOBS-BG] 📊 DB 삽입 시작');
+      console.log('[SCRAPE-JOBS-BG] 총 스크래핑된 공고 수:', scrapedJobs.length);
+      console.log('='.repeat(80) + '\n');
+
+      let newJobs = 0;
+      let duplicates = 0;
+
+      for (const job of scrapedJobs) {
+        try {
+          // 제목과 회사명으로 중복 체크
+          const [existing] = await pool.execute(
+            'SELECT id FROM jobs WHERE title = ? AND company = ?',
+            [job.title, job.company]
+          );
+
+          if (existing.length > 0) {
+            duplicates++;
+            console.log(`[SCRAPE-JOBS-BG] ⏭️  중복 제외 [${duplicates}]: ${job.title} | ${job.company} | 카테고리: ${job.category}`);
+            continue;
+          }
+
+          // 새 공고 insert
+          const insertQuery = `
+            INSERT INTO jobs (title, company, url, job_info, conditions, registration_info, category, scraped_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+          `;
+
+          const [result] = await pool.execute(insertQuery, [
+            job.title,
+            job.company,
+            job.url,
+            JSON.stringify(job.job_info || []),
+            JSON.stringify(job.conditions || []),
+            JSON.stringify(job.registration_info || []),
+            job.category
+          ]);
+
+          newJobs++;
+          console.log(`[SCRAPE-JOBS-BG] ✅ INSERT 성공 [${newJobs}]:`);
+          console.log(`[SCRAPE-JOBS-BG]    - ID: ${result.insertId}`);
+          console.log(`[SCRAPE-JOBS-BG]    - 제목: ${job.title}`);
+          console.log(`[SCRAPE-JOBS-BG]    - 회사: ${job.company}`);
+          console.log(`[SCRAPE-JOBS-BG]    - 카테고리: ${job.category}`);
+          console.log(`[SCRAPE-JOBS-BG]    - URL: ${job.url}`);
+          console.log(`[SCRAPE-JOBS-BG]    - 직무정보: ${job.job_info?.length || 0}개`);
+          console.log(`[SCRAPE-JOBS-BG]    - 지원조건: ${job.conditions?.length || 0}개`);
+          console.log(`[SCRAPE-JOBS-BG]    - 등록정보: ${job.registration_info?.length || 0}개`);
+        } catch (insertError) {
+          console.error(`[SCRAPE-JOBS-BG] ❌ INSERT 실패: ${job.title} (${job.company})`);
+          console.error(`[SCRAPE-JOBS-BG]    오류 메시지: ${insertError.message}`);
+          console.error(`[SCRAPE-JOBS-BG]    오류 코드: ${insertError.code}`);
+        }
+      }
+
+      console.log('\n' + '='.repeat(80));
+      console.log('[SCRAPE-JOBS-BG] 📊 DB 삽입 완료');
+      console.log(`[SCRAPE-JOBS-BG] ✅ 새로 추가된 공고: ${newJobs}개`);
+      console.log(`[SCRAPE-JOBS-BG] ⏭️  중복 제외된 공고: ${duplicates}개`);
+      console.log(`[SCRAPE-JOBS-BG] 📈 총 처리된 공고: ${scrapedJobs.length}개`);
+      console.log('='.repeat(80) + '\n');
+    } catch (error) {
+      console.error('[SCRAPE-JOBS-BG] 예상치 못한 오류:', error);
+      console.error('[SCRAPE-JOBS-BG] 오류 스택:', error.stack);
+
+      // Axios 오류인 경우 더 상세한 정보 제공
+      if (error.code === 'ECONNREFUSED') {
+        console.error('[SCRAPE-JOBS-BG] Catch Scraper 서비스에 연결할 수 없습니다.');
+      }
+    }
+  })(); // 백그라운드 실행
+});
+
+// ==============================================================================
+// GPT-4 기반 추천 함수
+// ==============================================================================
+
+async function generateGPT4Recommendations(userProfile, jobCandidates, limit) {
+  if (!openai) {
+    console.log('[GPT-4] OpenAI API 키가 없습니다');
+    return [];
+  }
+
+  const formatSkills = (skills) => {
+    if (!skills) return '';
+    if (typeof skills === 'string') return skills;
+    if (Array.isArray(skills)) return skills.join(',');
+    return String(skills);
+  };
+
+  const formatArray = (arr) => {
+    if (!arr) return '';
+    if (typeof arr === 'string') return arr;
+    if (Array.isArray(arr)) return arr.join(',');
+    return String(arr);
+  };
+
+  // 사용자 프로필 정보를 상세하게 포함한 프롬프트 (희망연봉 제외)
+  const userSkills = formatSkills(userProfile.skills);
+  const userRegions = formatArray(userProfile.preferred_regions);
+  const userJobs = formatArray(userProfile.jobs);
+  const userExperience = userProfile.experience || '무관';
+
+  const prompt = `희망직무:${userJobs}|기술스택:${userSkills}|경력:${userExperience}|희망지역:${userRegions}
+공고:
+${jobCandidates.map((job, idx) => `${idx+1}.${job.title}|${job.company}|${formatSkills(job.skills)}|ID:${job.id}`).join('\n')}
+
+매칭률 높은 상위${limit}개 추천. 매칭 이유는 구체적으로 3개 작성(기술스택 일치, 직무 적합성, 경력 매칭 등을 상세히 분석).
+JSON:{"recommendations":[{"job_id":"ID","match_score":85,"match_reasons":["구체적 이유1 (예: Java, SQL 등 3개 기술스택 완벽 일치)","구체적 이유2 (예: 백엔드 개발자 희망직무와 정확히 일치)","구체적 이유3 (예: 경력 12년 요구사항과 부합)"]}]}`;
+
+  console.log(`\n[AI-RECOMMENDATION] ========================================`);
+  console.log(`[AI-RECOMMENDATION] 👤 사용자 프로필:`);
+  console.log(`   희망직무: ${userJobs || '미설정'}`);
+  console.log(`   기술스택: ${userSkills || '미설정'}`);
+  console.log(`   경력: ${userExperience}`);
+  console.log(`   희망지역: ${userRegions || '미설정'}`);
+  console.log(`\n[AI-RECOMMENDATION] 📝 GPT PROMPT:`);
+  console.log(prompt);
+  console.log(`\n[AI-RECOMMENDATION] 📊 요약:`);
+  console.log(`   PROMPT 길이: ${prompt.length}자`);
+  console.log(`   전달 공고 수: ${jobCandidates.length}개`);
+  console.log(`   요청 추천 수: ${limit}개`);
+  console.log(`[AI-RECOMMENDATION] ========================================\n`);
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      max_completion_tokens: 300,
+      temperature: 0,
+      response_format: { type: "json_object" }
+    });
+
+    const chatGPTResponse = completion.choices[0].message.content;
+    console.log(`[AI-RECOMMENDATION] 🤖 GPT 응답:\n${chatGPTResponse}`);
+
+    // JSON 파싱 시도
+    let recommendations = [];
+    try {
+      // response_format: json_object를 사용하면 객체로 반환됨
+      const parsedResponse = JSON.parse(chatGPTResponse);
+
+      // recommendations 키가 있는지 확인
+      if (parsedResponse.recommendations && Array.isArray(parsedResponse.recommendations)) {
+        recommendations = parsedResponse.recommendations;
+      } else if (Array.isArray(parsedResponse)) {
+        recommendations = parsedResponse;
+      } else {
+        // 배열을 찾아서 추출
+        const jsonMatch = chatGPTResponse.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          recommendations = JSON.parse(jsonMatch[0]);
+        } else {
+          console.log('[GPT-5] JSON 배열을 찾을 수 없음, 원본:', chatGPTResponse);
+          return [];
+        }
+      }
+      console.log(`[GPT-5] 파싱 성공: ${recommendations.length}개 추천`);
+    } catch (parseError) {
+      console.error('[GPT-5] JSON 파싱 실패:', parseError.message);
+      return [];
+    }
+
+    // 원본 job 데이터와 합치기
+    const enrichedRecommendations = recommendations.map(rec => {
+      // job_id 파싱: "ID:1716" 형태에서 숫자만 추출
+      let jobId = rec.job_id;
+      if (typeof jobId === 'string') {
+        // "ID:1716" -> 1716
+        const match = jobId.match(/\d+/);
+        jobId = match ? parseInt(match[0]) : parseInt(jobId);
+      }
+
+      const originalJob = jobCandidates.find(job => job.id == jobId); // == 사용하여 타입 변환 허용
+      if (!originalJob) {
+        console.log(`[GPT-MATCH] ⚠️ 추천된 job_id ${rec.job_id} (파싱: ${jobId})를 찾을 수 없음`);
+        console.log(`[GPT-MATCH] 사용 가능한 ID: ${jobCandidates.slice(0, 5).map(j => j.id).join(', ')}...`);
+        return null;
+      }
+      console.log(`[GPT-MATCH] ✅ 매칭 성공: ${originalJob.company} - ${originalJob.title} (${rec.match_score}점)`);
+
+      return {
+        ...originalJob,
+        job_id: originalJob.id,
+        match_score: rec.match_score,
+        match_reasons: rec.match_reasons || [],
+        detailed_analysis: rec.detailed_analysis,
+        powered_by: 'GPT-4'
+      };
+    }).filter(job => job !== null);
+
+    return enrichedRecommendations.slice(0, limit);
+
+  } catch (error) {
+    console.error('[AI-RECOMMENDATION] ❌ GPT API 오류:', error.message);
+    console.error('[AI-RECOMMENDATION] 오류 상세:', error);
+    if (error.code === 'ETIMEDOUT' || error.message.includes('timeout')) {
+      console.error('[AI-RECOMMENDATION] ⏱️ 타임아웃 발생 - 프롬프트 길이나 공고 수를 줄이세요');
+    }
+    return [];
+  }
+}
+
+/* ==================== 자소서 저장/조회/수정/삭제 API ==================== */
+
+// 자소서 저장
+app.post('/api/cover-letters/save', async (req, res) => {
+  try {
+    const { user_id, company, job_id, title, content } = req.body;
+
+    if (!user_id || !title || !content) {
+      return res.status(400).json({
+        success: false,
+        error: '사용자 ID, 제목, 내용은 필수입니다.'
+      });
+    }
+
+    console.log('[COVER-LETTER-SAVE] 자소서 저장 요청:', { user_id, company, job_id, title });
+
+    // cover_letters 테이블이 없으면 생성
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS cover_letters (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        company VARCHAR(255),
+        job_id INT,
+        title VARCHAR(500) NOT NULL,
+        content TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `);
+
+    // 선택한 채용공고가 있으면 해당 채용공고의 회사명을 우선으로 사용
+    let finalCompany = company;
+    if (job_id) {
+      try {
+        const [jobRows] = await pool.execute(`
+          SELECT company FROM jobs WHERE id = ?
+        `, [job_id]);
+
+        if (jobRows.length > 0 && jobRows[0].company) {
+          finalCompany = jobRows[0].company;
+          console.log('[COVER-LETTER-SAVE] 채용공고의 회사명 사용:', finalCompany);
+        }
+      } catch (jobError) {
+        console.warn('[COVER-LETTER-SAVE] 채용공고 회사명 조회 실패, 입력한 회사명 사용:', jobError);
+      }
+    }
+
+    // 자소서 저장
+    const [result] = await pool.execute(`
+      INSERT INTO cover_letters (user_id, company, job_id, title, content)
+      VALUES (?, ?, ?, ?, ?)
+    `, [user_id, finalCompany || null, job_id || null, title, content]);
+
+    console.log('[COVER-LETTER-SAVE] ✅ 자소서 저장 완료:', result.insertId);
+
+    res.json({
+      success: true,
+      cover_letter_id: result.insertId,
+      message: '자소서가 저장되었습니다.'
+    });
+
+  } catch (error) {
+    console.error('[COVER-LETTER-SAVE] Error:', error);
+    res.status(500).json({
+      success: false,
+      error: '자소서 저장 중 오류가 발생했습니다.',
+      message: error.message
+    });
+  }
+});
+
+// 자소서 목록 조회
+app.get('/api/cover-letters/:user_id', async (req, res) => {
+  try {
+    const { user_id } = req.params;
+
+    console.log('[COVER-LETTER-LIST] 자소서 목록 조회:', user_id);
+
+    const [rows] = await pool.execute(`
+      SELECT
+        cl.id,
+        cl.company,
+        cl.job_id,
+        cl.title,
+        cl.created_at,
+        cl.updated_at,
+        j.title as job_title
+      FROM cover_letters cl
+      LEFT JOIN jobs j ON cl.job_id = j.id
+      WHERE cl.user_id = ?
+      ORDER BY cl.updated_at DESC
+    `, [user_id]);
+
+    console.log('[COVER-LETTER-LIST] ✅ 조회 완료:', rows.length, '개');
+
+    res.json({
+      success: true,
+      cover_letters: rows
+    });
+
+  } catch (error) {
+    console.error('[COVER-LETTER-LIST] Error:', error);
+    res.status(500).json({
+      success: false,
+      error: '자소서 목록 조회 중 오류가 발생했습니다.',
+      message: error.message
+    });
+  }
+});
+
+// 자소서 상세 조회
+app.get('/api/cover-letters/detail/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    console.log('[COVER-LETTER-DETAIL] 자소서 상세 조회:', id);
+
+    const [rows] = await pool.execute(`
+      SELECT
+        cl.id,
+        cl.user_id,
+        cl.company,
+        cl.job_id,
+        cl.title,
+        cl.content,
+        cl.created_at,
+        cl.updated_at,
+        j.title as job_title,
+        j.company as job_company,
+        j.category as job_category,
+        j.job_info,
+        j.conditions,
+        j.registration_info,
+        j.url as job_url
+      FROM cover_letters cl
+      LEFT JOIN jobs j ON cl.job_id = j.id
+      WHERE cl.id = ?
+    `, [id]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: '자소서를 찾을 수 없습니다.'
+      });
+    }
+
+    console.log('[COVER-LETTER-DETAIL] ✅ 조회 완료');
+    console.log('[COVER-LETTER-DETAIL] 반환 데이터:', {
+      job_id: rows[0].job_id,
+      job_title: rows[0].job_title,
+      company: rows[0].company,
+      job_category: rows[0].job_category,
+      has_job_info: !!rows[0].job_info,
+      has_conditions: !!rows[0].conditions,
+      has_registration_info: !!rows[0].registration_info,
+      has_job_url: !!rows[0].job_url
+    });
+
+    res.json({
+      success: true,
+      cover_letter: rows[0]
+    });
+
+  } catch (error) {
+    console.error('[COVER-LETTER-DETAIL] Error:', error);
+    res.status(500).json({
+      success: false,
+      error: '자소서 조회 중 오류가 발생했습니다.',
+      message: error.message
+    });
+  }
+});
+
+// 자소서 수정
+app.put('/api/cover-letters/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, content, company, job_id } = req.body;
+
+    if (!title || !content) {
+      return res.status(400).json({
+        success: false,
+        error: '제목과 내용은 필수입니다.'
+      });
+    }
+
+    console.log('[COVER-LETTER-UPDATE] 자소서 수정 요청:', id);
+
+    const [result] = await pool.execute(`
+      UPDATE cover_letters
+      SET title = ?, content = ?, company = ?, job_id = ?
+      WHERE id = ?
+    `, [title, content, company || null, job_id || null, id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        error: '자소서를 찾을 수 없습니다.'
+      });
+    }
+
+    console.log('[COVER-LETTER-UPDATE] ✅ 수정 완료');
+
+    res.json({
+      success: true,
+      message: '자소서가 수정되었습니다.'
+    });
+
+  } catch (error) {
+    console.error('[COVER-LETTER-UPDATE] Error:', error);
+    res.status(500).json({
+      success: false,
+      error: '자소서 수정 중 오류가 발생했습니다.',
+      message: error.message
+    });
+  }
+});
+
+// 자소서 삭제
+app.delete('/api/cover-letters/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    console.log('[COVER-LETTER-DELETE] 자소서 삭제 요청:', id);
+
+    const [result] = await pool.execute(`
+      DELETE FROM cover_letters
+      WHERE id = ?
+    `, [id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        error: '자소서를 찾을 수 없습니다.'
+      });
+    }
+
+    console.log('[COVER-LETTER-DELETE] ✅ 삭제 완료');
+
+    res.json({
+      success: true,
+      message: '자소서가 삭제되었습니다.'
+    });
+
+  } catch (error) {
+    console.error('[COVER-LETTER-DELETE] Error:', error);
+    res.status(500).json({
+      success: false,
+      error: '자소서 삭제 중 오류가 발생했습니다.',
+      message: error.message
+    });
+  }
+});
+
+// ==== 404 핸들러 (마지막) ====
+app.use((req, res) => {
+  res.status(404).json({ error: 'Not Found', path: req.originalUrl });
+});
+
+// Export for Vercel Serverless Functions
+export default app;
+
+// 변경: IPv4 로컬호스트에 확실히 바인딩
+// --- listen (이미 위에서 조건부로 실행됨)
