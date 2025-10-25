@@ -1508,7 +1508,13 @@ export default function AICoverLetterPage() {
                     }}>
                         {/* 저장하기 버튼 */}
                         <button
-                            onClick={saveCoverLetter}
+                            onClick={() => {
+                                if (!userCoverLetter.trim()) {
+                                    alert('저장할 자소서 내용이 없습니다.');
+                                    return;
+                                }
+                                setShowSaveModal(true);
+                            }}
                             style={{
                                 flex: 1,
                                 background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
