@@ -1496,12 +1496,44 @@ export default function AICoverLetterPage() {
                         />
                     </div>
 
-                    {/* 불러오기 버튼 */}
-                    <div style={{ marginBottom: '18px' }}>
+                    {/* 버튼 그룹 - 1줄에 3개 */}
+                    <div style={{
+                        display: 'flex',
+                        gap: '12px',
+                        marginBottom: '18px'
+                    }}>
+                        {/* 저장하기 버튼 */}
+                        <button
+                            onClick={saveCoverLetter}
+                            style={{
+                                flex: 1,
+                                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                color: 'white',
+                                border: 'none',
+                                padding: '13px 20px',
+                                borderRadius: '10px',
+                                fontSize: '1rem',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 6px 16px rgba(16, 185, 129, 0.4)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
+                            }}>
+                            💾 저장하기
+                        </button>
+
+                        {/* 불러오기 버튼 */}
                         <button
                             onClick={() => setShowLoadModal(true)}
                             style={{
-                                width: '100%',
+                                flex: 1,
                                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                                 color: 'white',
                                 border: 'none',
@@ -1521,42 +1553,43 @@ export default function AICoverLetterPage() {
                                 e.currentTarget.style.transform = 'translateY(0)';
                                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
                             }}>
-                            📂 저장된 자소서 불러오기
+                            📂 불러오기
+                        </button>
+
+                        {/* AI 피드백 받기 버튼 */}
+                        <button
+                            onClick={getFeedback}
+                            disabled={isFeedbackLoading}
+                            style={{
+                                flex: 1,
+                                background: isFeedbackLoading
+                                    ? '#cbd5e0'
+                                    : 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                                color: 'white',
+                                border: 'none',
+                                padding: '13px 20px',
+                                borderRadius: '10px',
+                                fontSize: '1rem',
+                                fontWeight: '600',
+                                cursor: isFeedbackLoading ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.2s',
+                                boxShadow: isFeedbackLoading ? 'none' : '0 4px 12px rgba(240, 147, 251, 0.3)'
+                            }}
+                            onMouseEnter={(e) => {
+                                if (!isFeedbackLoading) {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(240, 147, 251, 0.4)';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (!isFeedbackLoading) {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(240, 147, 251, 0.3)';
+                                }
+                            }}>
+                            {isFeedbackLoading ? 'AI 피드백 생성 중...' : '🤖 AI 피드백'}
                         </button>
                     </div>
-
-                    <button
-                        onClick={getFeedback}
-                        disabled={isFeedbackLoading}
-                        style={{
-                            width: '100%',
-                            background: isFeedbackLoading
-                                ? '#cbd5e0'
-                                : 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-                            color: 'white',
-                            border: 'none',
-                            padding: '13px 20px',
-                            borderRadius: '10px',
-                            fontSize: '1rem',
-                            fontWeight: '600',
-                            cursor: isFeedbackLoading ? 'not-allowed' : 'pointer',
-                            transition: 'all 0.2s',
-                            boxShadow: isFeedbackLoading ? 'none' : '0 4px 12px rgba(240, 147, 251, 0.3)'
-                        }}
-                        onMouseEnter={(e) => {
-                            if (!isFeedbackLoading) {
-                                e.currentTarget.style.transform = 'translateY(-2px)';
-                                e.currentTarget.style.boxShadow = '0 6px 16px rgba(240, 147, 251, 0.4)';
-                            }
-                        }}
-                        onMouseLeave={(e) => {
-                            if (!isFeedbackLoading) {
-                                e.currentTarget.style.transform = 'translateY(0)';
-                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(240, 147, 251, 0.3)';
-                            }
-                        }}>
-                        {isFeedbackLoading ? 'AI 피드백 생성 중...' : 'AI 피드백 받기'}
-                    </button>
 
                     {/* 피드백 결과 */}
                     {feedback && (
@@ -1625,8 +1658,8 @@ export default function AICoverLetterPage() {
                 </div>
             </div>
 
-            {/* 이력서 자기소개서 섹션 */}
-            {resumeCoverLetters.length > 0 && (
+            {/* 이력서 자기소개서 섹션 - 숨김 처리 */}
+            {false && resumeCoverLetters.length > 0 && (
                 <div style={{
                     maxWidth: '1200px',
                     margin: '40px auto 0',
