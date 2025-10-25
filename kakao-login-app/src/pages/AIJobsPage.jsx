@@ -50,20 +50,22 @@ export default function AIJobsPage() {
         return new Date() > deadlineDate;
     };
 
-    const fetchJobs = async () => {
+    const fetchJobs = async (retryCount = 0) => {
         try {
             setLoading(true);
             setError(null);
 
+            console.log(`[AI-JOBS] Fetching jobs (attempt ${retryCount + 1})...`);
 
             const response = await axios.get(
                 `${API_BASE_URL}/api/jobs/BIGDATA_AI`,
                 {
                     withCredentials: true,
-                    timeout: 10000  // 10초 타임아웃
+                    timeout: 15000  // 15초 타임아웃으로 증가
                 }
             );
 
+            console.log('[AI-JOBS] Response received:', response.data);
 
             if (response.data.success) {
                 // 만료되지 않은 공고만 필터링하고 최신순 정렬
@@ -71,12 +73,26 @@ export default function AIJobsPage() {
                     .filter(job => !isExpired(job))
                     .sort((a, b) => new Date(b.scraped_at) - new Date(a.scraped_at));
 
+                console.log(`[AI-JOBS] Active jobs count: ${activeJobs.length}`);
                 setJobs(activeJobs);
                 setDisplayedJobs(activeJobs.slice(0, ITEMS_PER_PAGE));
                 setOffset(ITEMS_PER_PAGE);
             }
         } catch (error) {
             console.error('[AI-JOBS] Failed to fetch AI jobs:', error);
+            console.error('[AI-JOBS] Error details:', {
+                message: error.message,
+                response: error.response?.data,
+                status: error.response?.status
+            });
+
+            // 재시도 로직 (최대 2번)
+            if (retryCount < 2 && (error.code === 'ECONNABORTED' || error.response?.status >= 500)) {
+                console.log(`[AI-JOBS] Retrying... (${retryCount + 1}/2)`);
+                setTimeout(() => fetchJobs(retryCount + 1), 2000);
+                return;
+            }
+
             setError(error.message || 'AI 채용공고를 불러오는데 실패했습니다');
         } finally {
             setLoading(false);
