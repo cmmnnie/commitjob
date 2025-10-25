@@ -27,6 +27,7 @@ function App() {
                 <Route path="/auth/kakao/callback" element={<CallbackPage />} />
                 <Route path="/ai-recommendation" element={<AIRecommendationPage />} />
                 <Route path="/ai-interview" element={<AIInterviewPage />} />
+                <Route path="/interview" element={<AIInterviewPage />} />
                 <Route path="/ai-cover-letter" element={<AICoverLetterPage />} />
                 <Route path="/jobs" element={<JobsPage />} />
                 <Route path="/jobs/ai" element={<AIJobsPage />} />
