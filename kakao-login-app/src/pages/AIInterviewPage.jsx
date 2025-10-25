@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { CONFIG } from '../config';
 
 export default function AIInterviewPage() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [currentUser, setCurrentUser] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [questions, setQuestions] = useState([]);
@@ -18,9 +19,15 @@ export default function AIInterviewPage() {
     const [isModelAnswerLoading, setIsModelAnswerLoading] = useState(false);
     const [revisedAnswer, setRevisedAnswer] = useState(null);
     const [isRevisedAnswerLoading, setIsRevisedAnswerLoading] = useState(false);
+    const [autoGenerate, setAutoGenerate] = useState(false);
 
     useEffect(() => {
         checkLogin();
+        // location state에서 회사명 받아오기
+        if (location.state?.companyName) {
+            setCompanyName(location.state.companyName);
+            setAutoGenerate(true);
+        }
     }, []);
 
     const checkLogin = async () => {
@@ -86,6 +93,14 @@ export default function AIInterviewPage() {
             setIsLoading(false);
         }
     };
+
+    // 사용자 정보 로드 완료 후 자동 질문 생성
+    useEffect(() => {
+        if (autoGenerate && currentUser && companyName && !isLoading) {
+            setAutoGenerate(false); // 한 번만 실행
+            generateQuestions();
+        }
+    }, [autoGenerate, currentUser, companyName, isLoading]);
 
     const generateQuestions = async () => {
         if (!companyName.trim()) {
