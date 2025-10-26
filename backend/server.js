@@ -50,10 +50,10 @@ let openai = null;
 if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your_openai_api_key_here') {
   openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
-    timeout: 10000, // 10초 타임아웃 (빠른 응답)
-    maxRetries: 1, // 재시도 1회
+    timeout: 120000, // 120초 타임아웃 (AI 피드백 등 긴 응답 지원)
+    maxRetries: 2, // 재시도 2회
   });
-  console.log('✅ OpenAI API 연결됨 (timeout: 10초)');
+  console.log('✅ OpenAI API 연결됨 (timeout: 120초)');
 } else {
   console.log('⚠️ OpenAI API 키가 설정되지 않았습니다. 기본 매칭 알고리즘을 사용합니다.');
 }
