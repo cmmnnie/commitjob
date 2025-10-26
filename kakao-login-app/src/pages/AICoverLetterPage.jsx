@@ -298,7 +298,8 @@ export default function AICoverLetterPage() {
                 body: JSON.stringify({
                     user_id: currentUser?.id,
                     company: companyName.trim() || '',
-                    cover_letter: userCoverLetter.trim()
+                    cover_letter: userCoverLetter.trim(),
+                    job_id: selectedJobId || null
                 })
             });
 
