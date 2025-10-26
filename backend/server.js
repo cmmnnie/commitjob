@@ -5514,9 +5514,9 @@ app.post('/api/cover-letter', async (req, res) => {
  */
 app.post('/api/cover-letter-feedback', async (req, res) => {
   try {
-    const { user_id, company, cover_letter } = req.body;
+    const { user_id, company, cover_letter, job_id } = req.body;
 
-    console.log('[COVER-LETTER-FEEDBACK] 피드백 요청:', { user_id, company, coverLetterLength: cover_letter?.length });
+    console.log('[COVER-LETTER-FEEDBACK] 피드백 요청:', { user_id, company, job_id, coverLetterLength: cover_letter?.length });
 
     if (!user_id || !cover_letter) {
       return res.status(400).json({
@@ -5548,12 +5548,41 @@ app.post('/api/cover-letter-feedback', async (req, res) => {
       console.warn('[COVER-LETTER-FEEDBACK] 프로필 조회 실패:', profileError);
     }
 
-    // 2. GPT 피드백 프롬프트 생성
+    // 2. 채용공고 정보 조회 (job_id가 있는 경우)
+    let jobInfo = null;
+    if (job_id) {
+      try {
+        const [jobRows] = await pool.execute(`
+          SELECT
+            j.id,
+            j.title,
+            j.company
+          FROM jobs j
+          WHERE j.id = ?
+        `, [job_id]);
+
+        if (jobRows.length > 0) {
+          jobInfo = jobRows[0];
+          console.log(`[COVER-LETTER-FEEDBACK] 채용공고 정보 로드 완료: ${jobInfo.title}`);
+        }
+      } catch (jobError) {
+        console.warn('[COVER-LETTER-FEEDBACK] 채용공고 조회 실패:', jobError);
+      }
+    }
+
+    // 3. GPT 피드백 프롬프트 생성
     let prompt = company
       ? `다음은 ${company}에 지원하기 위해 작성한 자기소개서입니다. 전문적인 관점에서 피드백을 제공해주세요.\n\n`
       : `다음은 작성한 자기소개서입니다. 전문적인 관점에서 피드백을 제공해주세요.\n\n`;
 
     prompt += `[작성된 자기소개서]\n${cover_letter}\n\n`;
+
+    // 채용공고 정보 추가 (있는 경우)
+    if (jobInfo) {
+      prompt += `[채용공고 정보]\n`;
+      prompt += `- 회사: ${jobInfo.company}\n`;
+      prompt += `- 직무: ${jobInfo.title}\n\n`;
+    }
 
     // 사용자 프로필 정보 추가 (있는 경우)
     if (userProfile) {
@@ -5571,12 +5600,21 @@ app.post('/api/cover-letter-feedback', async (req, res) => {
       prompt += `\n`;
     }
 
+    // 직무 연관성 검증 요청 추가
+    if (userProfile?.preferred_jobs && jobInfo?.title) {
+      prompt += `⚠️ 중요: 지원자의 희망 직무(${userProfile.preferred_jobs})와 채용공고의 직무(${jobInfo.title})의 연관성을 반드시 검증해주세요.\n`;
+      prompt += `만약 직무 연관성이 낮거나 전혀 다른 분야라면, 피드백의 맨 앞에 "**⚠️ 직무 연관성 경고**" 섹션을 추가하여 명확히 지적해주세요.\n\n`;
+    }
+
     prompt += `다음 형식으로 피드백을 제공해주세요:\n\n`;
+    if (userProfile?.preferred_jobs && jobInfo?.title) {
+      prompt += `**⚠️ 직무 연관성 경고** (필요시에만)\n- (희망 직무와 채용 직무의 불일치 지적)\n\n`;
+    }
     prompt += `**강점**\n- (구체적인 강점 3-4가지)\n\n`;
     prompt += `**개선할 점**\n- (구체적인 개선 방향 3-4가지)\n\n`;
     prompt += `**추천사항**\n- (더 효과적인 자기소개서를 위한 조언 2-3가지)`;
 
-    // 3. OpenAI API 호출
+    // 4. OpenAI API 호출
     console.log('[COVER-LETTER-FEEDBACK] OpenAI API 호출 중...');
     console.log('[COVER-LETTER-FEEDBACK] 프롬프트:\n', prompt);
     const completion = await openai.chat.completions.create({
@@ -5584,14 +5622,14 @@ app.post('/api/cover-letter-feedback', async (req, res) => {
       messages: [
         {
           role: 'system',
-          content: '당신은 인사담당자 관점에서 자기소개서를 분석하는 전문 컨설턴트입니다. 건설적이고 구체적인 피드백을 제공하여 지원자가 더 나은 자기소개서를 작성할 수 있도록 돕습니다.'
+          content: '당신은 인사담당자 관점에서 자기소개서를 분석하는 전문 컨설턴트입니다. 건설적이고 구체적인 피드백을 제공하여 지원자가 더 나은 자기소개서를 작성할 수 있도록 돕습니다. 특히 지원자의 희망 직무와 채용공고 직무의 연관성을 중요하게 검토합니다.'
         },
         {
           role: 'user',
           content: prompt
         }
       ],
-      max_tokens: 1000,
+      max_tokens: 1200,
       temperature: 0.3
     });
 
