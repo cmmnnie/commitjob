@@ -267,12 +267,12 @@ export default function AIRecommendationPage() {
                     )}
                 </div>
 
-                {/* 2x2 버튼 그룹 */}
+                {/* 3x1 버튼 그룹 */}
                 <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(2, 1fr)',
+                    gridTemplateColumns: 'repeat(3, 1fr)',
                     gap: '6px',
-                    width: '180px',
+                    width: '270px',
                     flexShrink: 0
                 }}
                 onClick={(e) => e.stopPropagation()}>
@@ -363,35 +363,6 @@ export default function AIRecommendationPage() {
                         }}
                     >
                         ✍️ AI자소서
-                    </button>
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            // 코딩Test 기능 추후 개발
-                        }}
-                        style={{
-                            background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-                            color: 'white',
-                            border: 'none',
-                            padding: '8px 10px',
-                            borderRadius: '6px',
-                            fontSize: '0.75rem',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                            whiteSpace: 'nowrap'
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = 'translateY(-2px)';
-                            e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-                        }}
-                    >
-                        💻 코딩Test
                     </button>
                 </div>
             </div>
