@@ -258,7 +258,7 @@ export default function ITJobsPage() {
                                 e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
                             }}
                         >
-                            📋 상세공고
+                            상세공고
                         </button>
                         <button
                             onClick={(e) => {
@@ -286,7 +286,7 @@ export default function ITJobsPage() {
                                 e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
                             }}
                         >
-                            🎤 AI면접
+                            AI면접
                         </button>
                         <button
                             onClick={(e) => {
@@ -314,7 +314,7 @@ export default function ITJobsPage() {
                                 e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
                             }}
                         >
-                            ✍️ AI자소서
+                            AI자소서
                         </button>
                     </div>
                 </div>
