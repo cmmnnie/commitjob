@@ -5360,11 +5360,11 @@ app.post('/api/cover-letter', async (req, res) => {
             j.id,
             j.title,
             j.company,
-            j.location,
-            j.description,
-            j.requirements,
-            j.experience_level,
-            j.employment_type
+            j.url,
+            j.category,
+            j.job_info,
+            j.conditions,
+            j.registration_info
           FROM jobs j
           WHERE j.id = ?
         `, [job_id]);
