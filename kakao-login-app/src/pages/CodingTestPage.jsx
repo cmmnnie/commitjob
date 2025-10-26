@@ -18,8 +18,7 @@ export default function CodingTestPage() {
             height: 'calc(100vh - 60px)', // 하단바 높이 제외
             position: 'relative',
             background: '#f5f5f5',
-            overflow: 'auto', // 컨테이너에 스크롤 추가
-            overflowY: 'scroll' // 세로 스크롤바 항상 표시
+            overflow: 'auto' // 컨테이너에 스크롤 추가
         }}>
             {/* 로딩 인디케이터 */}
             {!iframeLoaded && (
@@ -48,13 +47,13 @@ export default function CodingTestPage() {
                 </div>
             )}
 
-            {/* iframe - 높이를 충분히 크게 설정하여 스크롤 확보 */}
+            {/* iframe */}
             <iframe
-                src="https://www.commitjob.site/coding-test"
+                src="https://commitjob.vercel.app/"
                 style={{
                     width: '100%',
-                    height: '200vh', // 화면 높이의 2배로 설정하여 스크롤 확보
-                    minHeight: '1500px', // 최소 높이 1500px
+                    height: '100%',
+                    minHeight: '100%',
                     border: 'none',
                     display: 'block',
                     overflowY: 'scroll' // 세로 스크롤바 강제 표시
