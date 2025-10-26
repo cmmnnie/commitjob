@@ -47,9 +47,9 @@ export default function CodingTestPage() {
                 </div>
             )}
 
-            {/* iframe */}
+            {/* iframe - 임베딩 모드로 로드 */}
             <iframe
-                src="https://commitjob.vercel.app/"
+                src="https://commitjob.vercel.app/?embedded=true"
                 style={{
                     width: '100%',
                     height: '100%',
