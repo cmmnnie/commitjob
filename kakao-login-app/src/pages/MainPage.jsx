@@ -434,6 +434,150 @@ export default function MainPage() {
         const logoUrl = getCompanyLogoUrl(job);
         const [logoError, setLogoError] = useState(false);
 
+        // 버튼 클릭 핸들러
+        const handleJobDetailClick = (e) => {
+            e.stopPropagation();
+            navigate(`/jobs/detail/${job.id}`, { state: { job } });
+        };
+
+        const handleAIInterviewClick = async (e) => {
+            e.stopPropagation();
+
+            const token = localStorage.getItem('app_session');
+            if (!token) {
+                alert('로그인이 필요합니다.');
+                navigate('/?view=login');
+                return;
+            }
+
+            // 이력서 확인
+            try {
+                const userResponse = await fetch(`${CONFIG.BACKEND_URL}${CONFIG.API.USER_INFO}`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!userResponse.ok) {
+                    alert('로그인이 필요합니다.');
+                    navigate('/?view=login');
+                    return;
+                }
+
+                const userData = await userResponse.json();
+                const user = userData.user;
+
+                if (!user) {
+                    alert('로그인이 필요합니다.');
+                    navigate('/?view=login');
+                    return;
+                }
+
+                const profileResponse = await fetch(`${CONFIG.BACKEND_URL}/api/profile?user_id=${user.id}`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!profileResponse.ok || !profileResponse) {
+                    alert('이력서 작성이 필요합니다.');
+                    navigate('/resume');
+                    return;
+                }
+
+                const profileData = await profileResponse.json();
+
+                if (!profileData.profile ||
+                    (!profileData.profile.preferred_jobs &&
+                     !profileData.profile.experience &&
+                     (!profileData.profile.skills || profileData.profile.skills.length === 0))) {
+                    alert('이력서 작성이 필요합니다.');
+                    navigate('/resume');
+                    return;
+                }
+
+                navigate('/ai-interview');
+            } catch (error) {
+                console.error('확인 오류:', error);
+                navigate('/ai-interview');
+            }
+        };
+
+        const handleAICoverLetterClick = async (e) => {
+            e.stopPropagation();
+
+            const token = localStorage.getItem('app_session');
+            if (!token) {
+                alert('로그인이 필요합니다.');
+                navigate('/?view=login');
+                return;
+            }
+
+            // 이력서 확인
+            try {
+                const userResponse = await fetch(`${CONFIG.BACKEND_URL}${CONFIG.API.USER_INFO}`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!userResponse.ok) {
+                    alert('로그인이 필요합니다.');
+                    navigate('/?view=login');
+                    return;
+                }
+
+                const userData = await userResponse.json();
+                const user = userData.user;
+
+                if (!user) {
+                    alert('로그인이 필요합니다.');
+                    navigate('/?view=login');
+                    return;
+                }
+
+                const profileResponse = await fetch(`${CONFIG.BACKEND_URL}/api/profile?user_id=${user.id}`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!profileResponse.ok || !profileResponse) {
+                    alert('이력서 작성이 필요합니다.');
+                    navigate('/resume');
+                    return;
+                }
+
+                const profileData = await profileResponse.json();
+
+                if (!profileData.profile ||
+                    (!profileData.profile.preferred_jobs &&
+                     !profileData.profile.experience &&
+                     (!profileData.profile.skills || profileData.profile.skills.length === 0))) {
+                    alert('이력서 작성이 필요합니다.');
+                    navigate('/resume');
+                    return;
+                }
+
+                navigate('/ai-cover-letter');
+            } catch (error) {
+                console.error('확인 오류:', error);
+                navigate('/ai-cover-letter');
+            }
+        };
+
         return (
             <div style={{
                 background: 'white',
@@ -441,7 +585,6 @@ export default function MainPage() {
                 border: '1px solid #e0e0e0',
                 overflow: 'hidden',
                 transition: 'all 0.3s',
-                cursor: 'pointer',
                 display: 'flex',
                 flexDirection: 'column'
             }}
@@ -452,8 +595,7 @@ export default function MainPage() {
             onMouseLeave={(e) => {
                 e.currentTarget.style.boxShadow = 'none';
                 e.currentTarget.style.transform = 'translateY(0)';
-            }}
-            onClick={() => navigate(`/jobs/detail/${job.id}`, { state: { job } })}>
+            }}>
                 {/* 이미지 영역 */}
                 <div style={{
                     width: '100%',
@@ -505,7 +647,7 @@ export default function MainPage() {
                 </div>
 
                 {/* 제목 및 회사명 */}
-                <div style={{ padding: '20px' }}>
+                <div style={{ padding: '16px' }}>
                     <h3 style={{
                         fontSize: '1rem',
                         fontWeight: '600',
@@ -525,11 +667,99 @@ export default function MainPage() {
                         fontWeight: '500',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '6px'
+                        gap: '6px',
+                        marginBottom: '12px'
                     }}>
                         <span style={{ fontSize: '1rem' }}>🏢</span>
                         {job.company}
                     </p>
+
+                    {/* 버튼 영역 */}
+                    <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '8px'
+                    }}>
+                        <button
+                            onClick={handleJobDetailClick}
+                            style={{
+                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                color: 'white',
+                                border: 'none',
+                                padding: '10px 16px',
+                                borderRadius: '8px',
+                                fontSize: '0.9rem',
+                                fontWeight: '700',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(102, 126, 234, 0.3)';
+                            }}>
+                            💼 채용공고
+                        </button>
+                        <div style={{
+                            display: 'flex',
+                            gap: '8px'
+                        }}>
+                            <button
+                                onClick={handleAIInterviewClick}
+                                style={{
+                                    flex: 1,
+                                    background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '10px 12px',
+                                    borderRadius: '8px',
+                                    fontSize: '0.85rem',
+                                    fontWeight: '700',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    boxShadow: '0 2px 8px rgba(245, 87, 108, 0.3)'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(245, 87, 108, 0.4)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(245, 87, 108, 0.3)';
+                                }}>
+                                🎤 AI면접
+                            </button>
+                            <button
+                                onClick={handleAICoverLetterClick}
+                                style={{
+                                    flex: 1,
+                                    background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '10px 12px',
+                                    borderRadius: '8px',
+                                    fontSize: '0.85rem',
+                                    fontWeight: '700',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    boxShadow: '0 2px 8px rgba(79, 172, 254, 0.3)'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(79, 172, 254, 0.4)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(79, 172, 254, 0.3)';
+                                }}>
+                                📝 AI자소서
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         );
