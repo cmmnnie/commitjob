@@ -5111,23 +5111,27 @@ app.get('/api/jobs-by-company', async (req, res) => {
     // jobs 테이블에서 회사명으로 검색 (정확한 매칭 우선, 포함 검색은 보조)
     const [jobRows] = await pool.execute(`
       SELECT
-        id,
-        title,
-        company,
-        url,
-        category,
-        job_info,
-        conditions,
-        registration_info,
-        scraped_at,
+        j.id,
+        j.title,
+        j.company,
+        j.url,
+        j.category,
+        j.job_info,
+        j.conditions,
+        j.registration_info,
+        j.scraped_at,
+        c.location,
+        c.company_url,
+        c.company_logo_url,
         CASE
-          WHEN company = ? THEN 1
-          WHEN company LIKE ? THEN 2
+          WHEN j.company = ? THEN 1
+          WHEN j.company LIKE ? THEN 2
           ELSE 3
         END as match_priority
-      FROM jobs
-      WHERE company = ? OR company LIKE ?
-      ORDER BY match_priority ASC, scraped_at DESC
+      FROM jobs j
+      LEFT JOIN catch_companies c ON TRIM(j.company) = TRIM(c.company)
+      WHERE j.company = ? OR j.company LIKE ?
+      ORDER BY match_priority ASC, j.scraped_at DESC
       LIMIT 50
     `, [company, `${company}%`, company, `${company}%`]);
 
@@ -7012,7 +7016,7 @@ app.get('/api/jobs/search', async (req, res) => {
 
     // company, title, job_info에 검색어가 포함된 경우 검색
     const query = `
-      SELECT j.*, c.company_url, c.company_logo_url
+      SELECT j.*, c.company_url, c.company_logo_url, c.location
       FROM jobs j
       LEFT JOIN catch_companies c ON TRIM(j.company) = TRIM(c.company)
       WHERE j.company LIKE ? OR j.title LIKE ? OR j.job_info LIKE ?
@@ -7082,7 +7086,7 @@ app.get('/api/jobs/:category', async (req, res) => {
     const totalCount = countResult[0].total;
 
     let query = `
-      SELECT j.*, c.company_url, c.company_logo_url
+      SELECT j.*, c.company_url, c.company_logo_url, c.location
       FROM jobs j
       LEFT JOIN catch_companies c ON TRIM(j.company) = TRIM(c.company)
       WHERE j.category = ?
@@ -7206,7 +7210,7 @@ app.get('/api/jobs', async (req, res) => {
 
   try {
     let query = `
-      SELECT j.*, c.company_url, c.company_logo_url
+      SELECT j.*, c.company_url, c.company_logo_url, c.location
       FROM jobs j
       LEFT JOIN catch_companies c ON TRIM(j.company) = TRIM(c.company)
       ORDER BY j.scraped_at DESC

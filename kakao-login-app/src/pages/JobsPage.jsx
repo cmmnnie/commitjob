@@ -256,6 +256,20 @@ export default function JobsPage() {
                         <span style={{ fontSize: '1rem' }}>🏢</span>
                         {job.company}
                     </p>
+                    {job.location && (
+                        <p style={{
+                            fontSize: '0.85rem',
+                            color: '#888',
+                            fontWeight: '400',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            marginTop: '8px'
+                        }}>
+                            <span style={{ fontSize: '0.9rem' }}>📍</span>
+                            {job.location.split(' ').slice(0, 2).join(' ')}
+                        </p>
+                    )}
                 </div>
 
                 {/* 4개 버튼 (2x2 그리드) */}

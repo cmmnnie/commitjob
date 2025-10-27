@@ -219,6 +219,21 @@ export default function AIRecommendationPage() {
                         <span style={{ fontSize: '1.1rem' }}>🏢</span>
                         {job.company}
                     </p>
+                    {job.location && (
+                        <p style={{
+                            fontSize: '0.85rem',
+                            color: '#888',
+                            fontWeight: '400',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            marginTop: '8px',
+                            marginBottom: '8px'
+                        }}>
+                            <span style={{ fontSize: '0.9rem' }}>📍</span>
+                            {job.location.split(' ').slice(0, 2).join(' ')}
+                        </p>
+                    )}
 
                     <div style={{
                         display: 'flex',
