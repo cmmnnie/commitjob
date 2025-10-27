@@ -1697,12 +1697,12 @@ app.post('/api/profile', uploadProfile.single('resume'), async (req, res) => {
       const insertSQL = 'INSERT INTO user_profiles (user_id, preferred_jobs, experience, preferred_regions, skills, expected_salary, resume_path, education, certificates, languages, awards, experiences, cover_letters, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())';
       const insertParams = [
         user_id,
-        jobs,
-        careers,
+        jobs || null,
+        careers || null,
         JSON.stringify(regionsArray),
         skills ? JSON.stringify(skills.split(',').map(s => s.trim())) : null,
-        expected_salary,
-        resumePath,
+        expected_salary || null,
+        resumePath || null,
         education ? (typeof education === 'string' ? education : JSON.stringify(education)) : null,
         certificates ? (typeof certificates === 'string' ? certificates : JSON.stringify(certificates)) : null,
         languages ? (typeof languages === 'string' ? languages : JSON.stringify(languages)) : null,
