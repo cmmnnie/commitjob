@@ -219,7 +219,7 @@ export default function AIRecommendationPage() {
                         <span style={{ fontSize: '1.1rem' }}>🏢</span>
                         {job.company}
                     </p>
-                    {job.location && (
+                    {job.location && typeof job.location === 'string' && job.location.trim() !== '' && (
                         <p style={{
                             fontSize: '0.85rem',
                             color: '#888',
@@ -231,7 +231,7 @@ export default function AIRecommendationPage() {
                             marginBottom: '8px'
                         }}>
                             <span style={{ fontSize: '0.9rem' }}>📍</span>
-                            {typeof job.location === 'string' ? job.location.split(' ').slice(0, 2).join(' ') : job.location}
+                            {job.location.split(' ').slice(0, 2).join(' ')}
                         </p>
                     )}
 
