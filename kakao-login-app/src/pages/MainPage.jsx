@@ -776,7 +776,7 @@ export default function MainPage() {
                                 navigate('/coding-test');
                             }}
                             style={{
-                                background: 'linear-gradient(135deg, #ffa726 0%, #fb8c00 100%)',
+                                background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
                                 color: 'white',
                                 border: 'none',
                                 padding: '10px 12px',
@@ -785,15 +785,15 @@ export default function MainPage() {
                                 fontWeight: '700',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s',
-                                boxShadow: '0 2px 8px rgba(255, 167, 38, 0.3)'
+                                boxShadow: '0 2px 8px rgba(67, 233, 123, 0.3)'
                             }}
                             onMouseEnter={(e) => {
                                 e.currentTarget.style.transform = 'translateY(-2px)';
-                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 167, 38, 0.4)';
+                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(67, 233, 123, 0.4)';
                             }}
                             onMouseLeave={(e) => {
                                 e.currentTarget.style.transform = 'translateY(0)';
-                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(255, 167, 38, 0.3)';
+                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(67, 233, 123, 0.3)';
                             }}>
                             💻 코딩Test
                         </button>
