@@ -224,10 +224,10 @@ export default function ITJobsPage() {
                         {job.company}
                     </p>
 
-                    {/* 버튼 그룹 */}
+                    {/* 버튼 그룹 - 2x2 그리드 */}
                     <div style={{
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(3, 1fr)',
+                        gridTemplateColumns: 'repeat(2, 1fr)',
                         gap: '8px',
                         marginTop: '12px'
                     }}
@@ -258,7 +258,7 @@ export default function ITJobsPage() {
                                 e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
                             }}
                         >
-                            상세공고
+                            💼 채용공고
                         </button>
                         <button
                             onClick={(e) => {
@@ -286,7 +286,7 @@ export default function ITJobsPage() {
                                 e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
                             }}
                         >
-                            AI면접
+                            🎤 AI면접
                         </button>
                         <button
                             onClick={(e) => {
@@ -314,7 +314,35 @@ export default function ITJobsPage() {
                                 e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
                             }}
                         >
-                            AI자소서
+                            📝 AI자소서
+                        </button>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                navigate('/coding-test');
+                            }}
+                            style={{
+                                background: 'linear-gradient(135deg, #ffa726 0%, #fb8c00 100%)',
+                                color: 'white',
+                                border: 'none',
+                                padding: '8px 12px',
+                                borderRadius: '8px',
+                                fontSize: '0.85rem',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                            }}
+                        >
+                            💻 코딩Test
                         </button>
                     </div>
                 </div>
