@@ -146,7 +146,12 @@ export default function JobsPage() {
 
         const handleCodingTest = (e) => {
             e.stopPropagation();
-            navigate('/coding-test');
+            // LG가 포함된 회사명이면 LG 코딩테스트 페이지로 이동
+            if (job.company && job.company.includes('LG')) {
+                navigate('/lg-coding-test');
+            } else {
+                navigate('/coding-test');
+            }
         };
 
         return (
