@@ -319,9 +319,11 @@ export default function ITJobsPage() {
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
-                                // LG가 포함된 회사명이면 LG 코딩테스트 페이지로 이동
+                                // 회사별 코딩테스트 페이지 분기
                                 if (job.company && job.company.includes('LG')) {
                                     navigate('/lg-coding-test');
+                                } else if (job.company && job.company.includes('현대')) {
+                                    navigate('/hyundai-coding-test');
                                 } else {
                                     navigate('/coding-test');
                                 }
