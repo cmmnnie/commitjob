@@ -502,10 +502,18 @@ export default function MainPage() {
                     return;
                 }
 
-                navigate('/ai-interview');
+                navigate('/ai-interview', {
+                    state: {
+                        companyName: job.company
+                    }
+                });
             } catch (error) {
                 console.error('확인 오류:', error);
-                navigate('/ai-interview');
+                navigate('/ai-interview', {
+                    state: {
+                        companyName: job.company
+                    }
+                });
             }
         };
 
@@ -571,10 +579,20 @@ export default function MainPage() {
                     return;
                 }
 
-                navigate('/ai-cover-letter');
+                navigate('/ai-cover-letter', {
+                    state: {
+                        companyName: job.company,
+                        jobId: job.id
+                    }
+                });
             } catch (error) {
                 console.error('확인 오류:', error);
-                navigate('/ai-cover-letter');
+                navigate('/ai-cover-letter', {
+                    state: {
+                        companyName: job.company,
+                        jobId: job.id
+                    }
+                });
             }
         };
 
