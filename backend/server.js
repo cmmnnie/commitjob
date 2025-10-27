@@ -2126,14 +2126,16 @@ app.get("/api/main-recommendations", async (req, res) => {
 
       try {
         const query = `
-          SELECT id, company, title, category, url, job_info, conditions, company_search_key, registration_info,
+          SELECT j.id, j.company, j.title, j.category, j.url, j.job_info, j.conditions, j.company_search_key, j.registration_info,
+                 cc.location,
                  ${skillMatchScore} as skill_match_score
-          FROM jobs
-          WHERE category IN ('BIGDATA_AI', 'IT')
+          FROM jobs j
+          LEFT JOIN catch_companies cc ON j.company = cc.company
+          WHERE j.category IN ('BIGDATA_AI', 'IT')
           ORDER BY
             skill_match_score DESC,
             ${categoryOrder},
-            scraped_at DESC
+            j.scraped_at DESC
           LIMIT 20
         `;
 
@@ -2189,7 +2191,7 @@ app.get("/api/main-recommendations", async (req, res) => {
               company_search_key: job.company_search_key || '',
               registration_info: registrationInfo,
               // AI 추천용 추가 필드
-              location: [], // jobs 테이블에는 location 정보가 없음
+              location: job.location || '', // catch_companies 테이블에서 가져온 location
               experience: experience,
               skills: jobInfo, // job_info를 skills로도 제공
               salary: "회사내규에 따름",
@@ -2281,6 +2283,26 @@ app.get("/api/main-recommendations", async (req, res) => {
             matchReasons.push(`${matchedSkills.slice(0, 3).join(', ')} 등 ${matchedSkills.length}개 기술스택 매칭`);
           } else {
             matchReasons.push('유사 직무 및 업계 경험 활용 가능');
+          }
+
+          // 지역 매칭
+          const jobLocation = job.location || '';
+          const userRegions = Array.isArray(userProfile?.preferred_regions) ? userProfile.preferred_regions : [];
+          if (jobLocation && userRegions.length > 0) {
+            const locationMatch = userRegions.some(region =>
+              jobLocation.includes(region) || region.includes(jobLocation.split(' ')[0])
+            );
+            if (locationMatch) {
+              matchScore += 15;
+              const matchedRegion = userRegions.find(region =>
+                jobLocation.includes(region) || region.includes(jobLocation.split(' ')[0])
+              );
+              matchReasons.push(`희망지역(${matchedRegion})과 일치`);
+            } else {
+              matchReasons.push(`근무지: ${jobLocation.split(' ').slice(0, 2).join(' ')}`);
+            }
+          } else if (jobLocation) {
+            matchReasons.push(`근무지: ${jobLocation.split(' ').slice(0, 2).join(' ')}`);
           }
 
           // 경력 매칭
@@ -7697,10 +7719,11 @@ async function generateGPT4Recommendations(userProfile, jobCandidates, limit) {
 
   const prompt = `희망직무:${userJobs}|기술스택:${userSkills}|경력:${userExperience}|희망지역:${userRegions}
 공고:
-${jobCandidates.map((job, idx) => `${idx+1}.${job.title}|${job.company}|${formatSkills(job.skills)}|ID:${job.id}`).join('\n')}
+${jobCandidates.map((job, idx) => `${idx+1}.${job.title}|${job.company}|${formatSkills(job.skills)}|지역:${job.location || '미정'}|ID:${job.id}`).join('\n')}
 
-매칭률 높은 상위${limit}개 추천. 매칭 이유는 구체적으로 3개 작성(기술스택 일치, 직무 적합성, 경력 매칭 등을 상세히 분석).
-JSON:{"recommendations":[{"job_id":"ID","match_score":85,"match_reasons":["구체적 이유1 (예: Java, SQL 등 3개 기술스택 완벽 일치)","구체적 이유2 (예: 백엔드 개발자 희망직무와 정확히 일치)","구체적 이유3 (예: 경력 12년 요구사항과 부합)"]}]}`;
+매칭률 높은 상위${limit}개 추천. 매칭 이유는 구체적으로 3개 작성(기술스택 일치, 직무 적합성, 경력 매칭, 지역 매칭 등을 상세히 분석).
+희망지역과 공고 지역이 일치하면 매칭률에 가산점(+10~15점) 부여.
+JSON:{"recommendations":[{"job_id":"ID","match_score":85,"match_reasons":["구체적 이유1 (예: Java, SQL 등 3개 기술스택 완벽 일치)","구체적 이유2 (예: 백엔드 개발자 희망직무와 정확히 일치)","구체적 이유3 (예: 희망지역 서울과 근무지 일치)"]}]}`;
 
   console.log(`\n[AI-RECOMMENDATION] ========================================`);
   console.log(`[AI-RECOMMENDATION] 👤 사용자 프로필:`);
