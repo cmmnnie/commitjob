@@ -2256,14 +2256,19 @@ app.get("/api/main-recommendations", async (req, res) => {
           console.log(`[MAIN-RECS] ✅ GPT-4o-mini로 ${rerankedJobs.length}개 공고 추천 완료`);
         } catch (gptError) {
           console.error('[MAIN-RECS] ❌ GPT-4o-mini 추천 실패:', gptError.message);
+          console.error('[MAIN-RECS] 오류 스택:', gptError.stack);
         }
+      } else {
+        console.error('[MAIN-RECS] ❌ OpenAI API 키가 설정되지 않았습니다');
       }
 
       // GPT 추천이 없으면 에러 반환 (Fallback 알고리즘 사용 안 함)
       if (rerankedJobs.length === 0) {
-        console.log('[MAIN-RECS] ⚠️ GPT 추천 결과 없음');
+        console.error('[MAIN-RECS] ⚠️ GPT 추천 결과 없음');
+        console.error('[MAIN-RECS] OpenAI 설정:', openai ? '정상' : '미설정');
+        console.error('[MAIN-RECS] 후보 공고 수:', allJobs.length);
         return res.status(500).json({
-          error: 'GPT 추천 실패',
+          error: 'GPT 추천 실패 - 추천 결과가 없습니다. 관리자에게 문의하세요.',
           빅데이터_AI: [],
           IT: []
         });
@@ -7651,20 +7656,22 @@ async function generateGPT4Recommendations(userProfile, jobCandidates, limit) {
 공고:
 ${jobCandidates.map((job, idx) => `${idx+1}.${job.title}|${job.company}|${formatSkills(job.skills)}|지역:${job.location || '미정'}|경력:${job.experience || '무관'}|ID:${job.id}`).join('\n')}
 
-매칭률 높은 상위${limit}개 추천. 매칭 이유는 구체적이고 정직하게 3개 작성.
+반드시 상위${limit}개 추천. 매칭 이유는 구체적이고 정직하게 3개 작성.
 
-중요 원칙:
-1. 직무 연관성을 최우선으로 평가 - 희망직무와 공고 직무가 명확히 다른 경우(예: 백엔드/프론트엔드 개발자 vs 정보보안 전문가) 매칭률을 대폭 낮춤(50점 이하)
-2. 기술스택이 실제로 일치하는 경우만 매칭 이유에 포함
-3. 연관성이 낮은 공고는 정직하게 "직무 연관성 낮음" 등으로 명시
-4. 희망지역 일치 시 +10~15점, 경력 연수 일치 시 +10~15점 부여
+평가 기준:
+1. 직무 연관성 우선 평가
+   - 희망직무와 공고 직무가 유사하면 높은 점수(70-90점)
+   - 직무가 다르지만 기술스택이 일부 겹치면 중간 점수(50-69점)
+   - 직무와 기술스택 모두 다르면 낮은 점수(40-49점)
+2. 기술스택 실제 일치 여부 확인
+3. 희망지역 일치 시 +10점, 경력 연수 적합 시 +10점
 
-매칭 이유 작성 시:
-- 실제로 일치하는 항목만 긍정적으로 서술
-- 일치하지 않거나 연관성이 낮으면 솔직하게 표현
-- "직무 적합성 높음" 같은 막연한 표현 금지, 구체적인 이유 필수
+매칭 이유 작성:
+- 실제 일치하는 기술스택을 구체적으로 나열
+- 직무가 다른 경우 솔직하게 언급 (예: "백엔드 개발 경험을 보안 분야에 활용 가능")
+- "직무 적합성 높음" 같은 막연한 표현 금지
 
-JSON:{"recommendations":[{"job_id":"ID","match_score":85,"match_reasons":["이유1 (예: Node.js, MySQL 등 주요 백엔드 기술스택 일치)","이유2 (예: 경력 3년으로 요구사항 3-5년에 부합)","이유3 (예: 희망지역 서울과 근무지 일치)"]}]}`;
+JSON:{"recommendations":[{"job_id":"ID","match_score":75,"match_reasons":["이유1 (구체적 기술스택/직무 일치 내용)","이유2 (경력/지역 매칭 내용)","이유3 (기타 강점)"]}]}`;
 
   console.log(`\n[AI-RECOMMENDATION] ========================================`);
   console.log(`[AI-RECOMMENDATION] 👤 사용자 프로필:`);
