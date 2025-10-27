@@ -267,7 +267,7 @@ export default function JobsPage() {
                             marginTop: '8px'
                         }}>
                             <span style={{ fontSize: '0.9rem' }}>📍</span>
-                            {job.location.split(' ').slice(0, 2).join(' ')}
+                            {typeof job.location === 'string' ? job.location.split(' ').slice(0, 2).join(' ') : job.location}
                         </p>
                     )}
                 </div>
