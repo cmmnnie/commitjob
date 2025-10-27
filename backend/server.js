@@ -2109,25 +2109,54 @@ app.get("/api/main-recommendations", async (req, res) => {
         ['JavaScript', 'React', 'Vue', 'Node.js', 'Java', 'Spring', 'Django', 'Flask'].includes(s)
       );
 
-      // 직무 키워드 추출 (백엔드, 프론트엔드, 풀스택, 데이터 등)
+      // 직무 분류 및 키워드 추출
       const jobKeywords = [];
+      let userJobType = 'general'; // general, developer, dba, security, data, ai
+
       if (userJobs.length > 0) {
         userJobs.forEach(job => {
           const jobLower = job.toLowerCase();
+
+          // 개발자 직무
           if (jobLower.includes('백엔드') || jobLower.includes('backend') || jobLower.includes('server')) {
             jobKeywords.push('백엔드', 'Backend', 'Server', 'API');
+            userJobType = 'developer';
           }
           if (jobLower.includes('프론트') || jobLower.includes('frontend') || jobLower.includes('front')) {
             jobKeywords.push('프론트엔드', 'Frontend', 'Front', 'UI');
+            userJobType = 'developer';
           }
           if (jobLower.includes('풀스택') || jobLower.includes('fullstack') || jobLower.includes('full')) {
             jobKeywords.push('풀스택', 'Fullstack', 'Full Stack');
+            userJobType = 'developer';
           }
+          if (jobLower.includes('개발자') || jobLower.includes('developer')) {
+            jobKeywords.push('개발자', 'Developer');
+            if (userJobType === 'general') userJobType = 'developer';
+          }
+
+          // DBA 직무
+          if (jobLower.includes('dba') || jobLower.includes('데이터베이스')) {
+            jobKeywords.push('DBA', '데이터베이스', 'Database');
+            userJobType = 'dba';
+          }
+
+          // 보안 직무
+          if (jobLower.includes('보안') || jobLower.includes('security') || jobLower.includes('정보보호')) {
+            jobKeywords.push('보안', 'Security', '정보보호', '정보보안');
+            userJobType = 'security';
+          }
+
+          // 데이터 분석/엔지니어
           if (jobLower.includes('데이터') || jobLower.includes('data')) {
-            jobKeywords.push('데이터', 'Data', '분석');
+            jobKeywords.push('데이터', 'Data', '분석', 'Analyst', 'Engineer');
+            if (userJobType === 'general') userJobType = 'data';
           }
+
+          // AI/ML
           if (jobLower.includes('ai') || jobLower.includes('인공지능') || jobLower.includes('머신러닝')) {
             jobKeywords.push('AI', '인공지능', '머신러닝', 'Machine Learning');
+            if (userJobType === 'general') userJobType = 'ai';
           }
         });
       }
@@ -2170,25 +2199,40 @@ app.get("/api/main-recommendations", async (req, res) => {
       }
 
       try {
-        // 직무 필터 조건 생성 (직무 키워드가 있으면 해당 키워드 포함 OR 개발자 공고만)
+        // 직무 타입별 필터 조건 생성
         let jobTitleFilter = '';
         if (jobKeywords.length > 0) {
           const titleFilterConditions = jobKeywords.map(keyword =>
             `j.title LIKE '%${keyword.replace(/'/g, "''")}%'`
           ).join(' OR ');
-          // 백엔드/프론트엔드 개발자라면 "개발자" 키워드도 포함 (단, 정보보안/네트워크/데이터베이스 등은 제외)
-          jobTitleFilter = `AND (
-            (${titleFilterConditions})
-            OR (
-              j.title LIKE '%개발자%'
-              AND j.title NOT LIKE '%정보보안%'
-              AND j.title NOT LIKE '%보안%'
-              AND j.title NOT LIKE '%네트워크%'
-              AND j.title NOT LIKE '%인프라%'
-              AND j.title NOT LIKE '%DBA%'
-              AND j.title NOT LIKE '%데이터베이스 관리%'
-            )
-          )`;
+
+          if (userJobType === 'developer') {
+            // 개발자: 직무 키워드 매칭 OR 일반 개발자 (단, 보안/네트워크/DBA 제외)
+            jobTitleFilter = `AND (
+              (${titleFilterConditions})
+              OR (
+                j.title LIKE '%개발자%'
+                AND j.title NOT LIKE '%정보보안%'
+                AND j.title NOT LIKE '%보안%'
+                AND j.title NOT LIKE '%네트워크%'
+                AND j.title NOT LIKE '%인프라%'
+                AND j.title NOT LIKE '%DBA%'
+                AND j.title NOT LIKE '%데이터베이스 관리%'
+              )
+            )`;
+          } else if (userJobType === 'dba') {
+            // DBA: DBA 키워드 매칭만
+            jobTitleFilter = `AND (${titleFilterConditions})`;
+          } else if (userJobType === 'security') {
+            // 보안: 보안 키워드 매칭만
+            jobTitleFilter = `AND (${titleFilterConditions})`;
+          } else if (userJobType === 'data' || userJobType === 'ai') {
+            // 데이터/AI: 직무 키워드 매칭
+            jobTitleFilter = `AND (${titleFilterConditions})`;
+          } else {
+            // 일반: 키워드 매칭만
+            jobTitleFilter = `AND (${titleFilterConditions})`;
+          }
         }
 
         const query = `
@@ -2207,13 +2251,41 @@ app.get("/api/main-recommendations", async (req, res) => {
         `;
 
         console.log('[MAIN-RECS] 사용자 희망직무:', userJobs.join(', ') || '미설정');
+        console.log('[MAIN-RECS] 직무 타입:', userJobType);
         console.log('[MAIN-RECS] 직무 키워드:', jobKeywords.join(', ') || '없음');
         console.log('[MAIN-RECS] 사용자 스킬:', userSkills.join(', ') || '미설정');
         console.log('[MAIN-RECS] 희망지역:', userRegions.join(', ') || '미설정');
-        console.log('[MAIN-RECS] 직무 필터 적용:', jobKeywords.length > 0 ? '활성화 (정보보안/네트워크/인프라 등 제외)' : '없음');
         console.log('[MAIN-RECS] 프로필 기반 매칭 - 직무명 우선, 스킬/지역 고려');
 
-        const [dbJobs] = await pool.execute(query);
+        let [dbJobs] = await pool.execute(query);
+
+        // 필터링된 공고가 부족한 경우 유사 공고 추가
+        if (dbJobs.length < 10 && jobKeywords.length > 0) {
+          console.log(`[MAIN-RECS] ⚠️ 필터링된 공고 ${dbJobs.length}개 부족 - 유사 공고 추가 조회`);
+
+          const fallbackQuery = `
+            SELECT j.id, j.company, j.title, j.category, j.url, j.job_info, j.conditions, j.company_search_key, j.registration_info,
+                   cc.location,
+                   ${skillMatchScore} + ${locationMatchScore} as total_match_score
+            FROM jobs j
+            LEFT JOIN catch_companies cc ON j.company = cc.company
+            WHERE j.category IN ('BIGDATA_AI', 'IT')
+            ORDER BY
+              total_match_score DESC,
+              ${categoryOrder},
+              j.scraped_at DESC
+            LIMIT ${20 - dbJobs.length}
+          `;
+
+          const [fallbackJobs] = await pool.execute(fallbackQuery);
+
+          // 중복 제거하여 추가
+          const existingIds = new Set(dbJobs.map(j => j.id));
+          const additionalJobs = fallbackJobs.filter(j => !existingIds.has(j.id));
+          dbJobs = [...dbJobs, ...additionalJobs];
+
+          console.log(`[MAIN-RECS] ✅ 유사 공고 ${additionalJobs.length}개 추가 (총 ${dbJobs.length}개)`);
+        }
 
         if (dbJobs.length > 0) {
           allJobs = dbJobs.map(job => {
