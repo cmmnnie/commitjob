@@ -2361,16 +2361,29 @@ app.get("/api/main-recommendations", async (req, res) => {
               // 경력 연수 비교
               const userAvg = (userExpParsed.minYears + userExpParsed.maxYears) / 2;
 
+              // 경력 요구사항 문자열 생성 (100년은 "이상"으로 표시)
+              const getExpRequirementStr = (parsed) => {
+                if (parsed.maxYears >= 100) {
+                  return `${parsed.minYears}년 이상`;
+                } else if (parsed.minYears === parsed.maxYears) {
+                  return `${parsed.minYears}년`;
+                } else {
+                  return `${parsed.minYears}-${parsed.maxYears}년`;
+                }
+              };
+
+              const jobExpStr = getExpRequirementStr(jobExpParsed);
+
               if (userAvg >= jobExpParsed.minYears && userAvg <= jobExpParsed.maxYears) {
                 expMatchScore = 15;
-                expReason = `경력 ${jobExpParsed.minYears}-${jobExpParsed.maxYears}년 요구사항 완벽 충족`;
+                expReason = `경력 ${jobExpStr} 요구사항 완벽 충족`;
               } else if (userAvg >= jobExpParsed.minYears - 1 && userAvg <= jobExpParsed.maxYears + 1) {
                 expMatchScore = 12;
-                expReason = `경력 ${jobExpParsed.minYears}-${jobExpParsed.maxYears}년 요구에 거의 부합`;
+                expReason = `경력 ${jobExpStr} 요구에 거의 부합`;
               } else if (userAvg < jobExpParsed.minYears) {
                 const diff = jobExpParsed.minYears - userAvg;
                 expMatchScore = Math.max(5, 12 - diff * 2);
-                expReason = `경력 ${jobExpParsed.minYears}년 이상 요구 (현재 경력으로 도전 가능)`;
+                expReason = `경력 ${jobExpStr} 요구 (현재 경력으로 도전 가능)`;
               } else {
                 expMatchScore = 10;
                 expReason = `풍부한 경력으로 요구사항 초과 충족`;
