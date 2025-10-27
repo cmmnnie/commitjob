@@ -185,6 +185,28 @@ class InterviewQuestionsScraper:
         print(f"📊 Jobs 테이블에서 {len(companies)}개 미등록 회사 발견 (최신 채용공고 순)\n")
         return companies
 
+    def generate_search_terms(self, company_name):
+        """단계적 검색어 생성 (예: '뱅크샐러드 코리아' → ['뱅크샐러드 코리아', '뱅크샐러드'])"""
+        terms = [company_name.strip()]
+
+        # 공백으로 구분된 경우, 마지막 단어를 제거한 버전 추가
+        parts = company_name.strip().split()
+        if len(parts) > 1:
+            # 마지막 단어 제거
+            terms.append(' '.join(parts[:-1]))
+
+        # '코리아', 'Korea', '인터내셔널' 등의 접미사 제거
+        import re
+        suffixes = ['코리아', 'korea', '인터내셔널', 'international', '홀딩스', 'holdings']
+        for suffix in suffixes:
+            pattern = re.compile(r'\s*' + suffix + r'\s*$', re.IGNORECASE)
+            if pattern.search(company_name):
+                shortened = pattern.sub('', company_name).strip()
+                if shortened and shortened not in terms:
+                    terms.append(shortened)
+
+        return terms
+
     def search_company(self, company_name):
         """Catch.co.kr에서 회사 검색"""
         try:
@@ -419,11 +441,24 @@ class InterviewQuestionsScraper:
         print("-" * 60)
 
         try:
-            # 회사 검색
-            company_url = self.search_company(company_name)
+            # 단계적 검색어 생성
+            search_terms = self.generate_search_terms(company_name)
+            print(f"  🔍 검색어 목록: {', '.join(search_terms)}")
+
+            company_url = None
+            # 각 검색어로 순차 시도
+            for i, search_term in enumerate(search_terms):
+                if i > 0:
+                    print(f"  🔄 재시도 ({i}/{len(search_terms) - 1}): '{search_term}'")
+
+                company_url = self.search_company(search_term)
+
+                if company_url:
+                    print(f"  ✅ 검색 성공: '{search_term}'")
+                    break
 
             if not company_url:
-                print(f"  ⚠️ Catch.co.kr에서 찾을 수 없음")
+                print(f"  ⚠️ Catch.co.kr에서 찾을 수 없음 (시도한 검색어: {', '.join(search_terms)})")
                 self.stats['not_found'] += 1
                 self.stats['processed'] += 1
                 return
