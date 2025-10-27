@@ -243,11 +243,6 @@ export default function AIRecommendationPage() {
                         fontSize: '0.95rem',
                         color: '#666'
                     }}>
-                        {job.location && (
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                📍 {Array.isArray(job.location) ? job.location.join(', ') : job.location}
-                            </span>
-                        )}
                         {job.experience && (
                             <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                 💼 {job.experience}
