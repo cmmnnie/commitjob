@@ -6933,9 +6933,11 @@ app.get('/api/jobs/search', async (req, res) => {
 
     // company, title, job_info에 검색어가 포함된 경우 검색
     const query = `
-      SELECT * FROM jobs
-      WHERE company LIKE ? OR title LIKE ? OR job_info LIKE ?
-      ORDER BY scraped_at DESC
+      SELECT j.*, c.company_url, c.company_logo_url
+      FROM jobs j
+      LEFT JOIN catch_companies c ON TRIM(j.company) = TRIM(c.company)
+      WHERE j.company LIKE ? OR j.title LIKE ? OR j.job_info LIKE ?
+      ORDER BY j.scraped_at DESC
       LIMIT 100
     `;
 
