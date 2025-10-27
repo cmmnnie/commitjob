@@ -7154,7 +7154,17 @@ app.get('/api/job/:id', async (req, res) => {
       throw new Error('Database connection failed');
     }
 
-    const query = 'SELECT * FROM jobs WHERE id = ?';
+    const query = `
+      SELECT j.*,
+             c.industry, c.company_type, c.location, c.employee_count, c.revenue,
+             c.ceo, c.establishment_date, c.company_form, c.credit_rating,
+             c.tags, c.recommendation_keywords,
+             c.starting_salary, c.average_salary, c.industry_average_salary,
+             c.company_url, c.company_logo_url
+      FROM jobs j
+      LEFT JOIN catch_companies c ON TRIM(j.company) = TRIM(c.company)
+      WHERE j.id = ?
+    `;
     console.log(`[JOBS-API] Executing query: ${query}, id: ${jobId}`);
 
     const [results] = await pool.execute(query, [jobId]);

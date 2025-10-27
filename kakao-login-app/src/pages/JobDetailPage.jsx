@@ -7,7 +7,7 @@ export default function JobDetailPage() {
     const navigate = useNavigate();
     const location = useLocation();
     const { id } = useParams();
-    const job = location.state?.job;
+    const [job, setJob] = useState(location.state?.job);
 
     const [companyInfo, setCompanyInfo] = useState(null);
     const [reviews, setReviews] = useState([]);
@@ -16,10 +16,35 @@ export default function JobDetailPage() {
     const [activeTab, setActiveTab] = useState('job'); // 'job', 'company', 'interview'
 
     useEffect(() => {
-        if (job?.company) {
+        // job이 state로 전달되지 않았으면 API로 가져오기
+        if (!job && id) {
+            fetchJobDetail();
+        } else if (job) {
+            // job 데이터에 이미 회사 정보가 포함되어 있으면 사용
+            if (job.industry || job.company_type || job.location) {
+                setCompanyInfo(job);
+            }
             fetchCompanyData(job.company);
         }
-    }, [job]);
+    }, [job, id]);
+
+    const fetchJobDetail = async () => {
+        try {
+            setLoading(true);
+            const response = await fetch(`${API_BASE_URL}/api/job/${id}`);
+            const data = await response.json();
+            if (data.success && data.job) {
+                setJob(data.job);
+                // job 데이터에 회사 정보가 포함되어 있으므로 setCompanyInfo 설정
+                if (data.job.industry || data.job.company_type || data.job.location) {
+                    setCompanyInfo(data.job);
+                }
+                fetchCompanyData(data.job.company);
+            }
+        } catch (error) {
+            console.error('[JobDetail] Error fetching job:', error);
+        }
+    };
 
     const fetchCompanyData = async (companyName) => {
         try {
