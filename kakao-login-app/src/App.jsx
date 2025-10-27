@@ -15,6 +15,7 @@ import MenuPage from './pages/MenuPage';
 import CodingTestPage from './pages/CodingTestPage';
 import LGCodingTestPage from './pages/LGCodingTestPage';
 import HyundaiCodingTestPage from './pages/HyundaiCodingTestPage';
+import SamsungCodingTestPage from './pages/SamsungCodingTestPage';
 import CookieTestPage from './pages/CookieTestPage';
 import SimpleTestPage from './pages/SimpleTestPage';
 import TestConnectionPage from './pages/TestConnectionPage';
@@ -39,6 +40,7 @@ function App() {
                 <Route path="/coding-test" element={<CodingTestPage />} />
                 <Route path="/lg-coding-test" element={<LGCodingTestPage />} />
                 <Route path="/hyundai-coding-test" element={<HyundaiCodingTestPage />} />
+                <Route path="/samsung-coding-test" element={<SamsungCodingTestPage />} />
                 <Route path="/menu" element={<MenuPage />} />
                 <Route path="/cookie-test" element={<CookieTestPage />} />
                 <Route path="/simple-test" element={<SimpleTestPage />} />

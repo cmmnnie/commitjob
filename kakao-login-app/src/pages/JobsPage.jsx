@@ -151,6 +151,8 @@ export default function JobsPage() {
                 navigate('/lg-coding-test');
             } else if (job.company && job.company.includes('현대')) {
                 navigate('/hyundai-coding-test');
+            } else if (job.company && job.company.includes('삼성')) {
+                navigate('/samsung-coding-test');
             } else {
                 navigate('/coding-test');
             }
