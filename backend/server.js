@@ -2305,10 +2305,82 @@ app.get("/api/main-recommendations", async (req, res) => {
             matchReasons.push(`근무지: ${jobLocation.split(' ').slice(0, 2).join(' ')}`);
           }
 
-          // 경력 매칭
+          // 경력 매칭 (신입/경력 연수 분석)
           if (job.experience && userProfile?.experience) {
-            matchReasons.push(`${userProfile.experience} 경력 요구사항 적합`);
-            matchScore += 5;
+            const jobExp = job.experience;
+            const userExp = userProfile.experience;
+
+            // 경력 연수 추출 함수
+            const parseExperience = (expStr) => {
+              if (!expStr) return { isNewbie: false, minYears: 0, maxYears: 100 };
+
+              const str = expStr.toLowerCase();
+              const isNewbie = str.includes('신입') || str.includes('경력무관') || str === '무관';
+
+              // 숫자 추출 (예: "3-5년", "3년 이상", "5년")
+              const numbers = str.match(/(\d+)/g);
+              if (!numbers || numbers.length === 0) {
+                return { isNewbie, minYears: isNewbie ? 0 : 1, maxYears: 100 };
+              }
+
+              if (numbers.length === 1) {
+                const num = parseInt(numbers[0]);
+                // "3년 이상" 또는 단순 "3년"
+                if (str.includes('이상') || str.includes('~') || str.includes('-')) {
+                  return { isNewbie: false, minYears: num, maxYears: 100 };
+                } else {
+                  return { isNewbie: false, minYears: num, maxYears: num };
+                }
+              } else {
+                // "3-5년" 형태
+                return { isNewbie: false, minYears: parseInt(numbers[0]), maxYears: parseInt(numbers[1]) };
+              }
+            };
+
+            const jobExpParsed = parseExperience(jobExp);
+            const userExpParsed = parseExperience(userExp);
+
+            // 매칭 점수 계산
+            let expMatchScore = 0;
+            let expReason = '';
+
+            // 신입 매칭
+            if (jobExpParsed.isNewbie && userExpParsed.isNewbie) {
+              expMatchScore = 15;
+              expReason = '신입 채용 공고로 경력 요구사항 완벽 일치';
+            } else if (jobExpParsed.isNewbie && !userExpParsed.isNewbie) {
+              expMatchScore = 10;
+              expReason = '신입 채용이지만 경력자도 지원 가능';
+            } else if (userExpParsed.isNewbie && !jobExpParsed.isNewbie && jobExpParsed.minYears <= 2) {
+              expMatchScore = 8;
+              expReason = '신입도 도전 가능한 포지션';
+            } else if (userExpParsed.isNewbie && jobExpParsed.minYears > 2) {
+              expMatchScore = 3;
+              expReason = `경력 ${jobExpParsed.minYears}년 이상 요구 (도전 가능)`;
+            } else {
+              // 경력 연수 비교
+              const userAvg = (userExpParsed.minYears + userExpParsed.maxYears) / 2;
+
+              if (userAvg >= jobExpParsed.minYears && userAvg <= jobExpParsed.maxYears) {
+                expMatchScore = 15;
+                expReason = `경력 ${jobExpParsed.minYears}-${jobExpParsed.maxYears}년 요구사항 완벽 충족`;
+              } else if (userAvg >= jobExpParsed.minYears - 1 && userAvg <= jobExpParsed.maxYears + 1) {
+                expMatchScore = 12;
+                expReason = `경력 ${jobExpParsed.minYears}-${jobExpParsed.maxYears}년 요구에 거의 부합`;
+              } else if (userAvg < jobExpParsed.minYears) {
+                const diff = jobExpParsed.minYears - userAvg;
+                expMatchScore = Math.max(5, 12 - diff * 2);
+                expReason = `경력 ${jobExpParsed.minYears}년 이상 요구 (현재 경력으로 도전 가능)`;
+              } else {
+                expMatchScore = 10;
+                expReason = `풍부한 경력으로 요구사항 초과 충족`;
+              }
+            }
+
+            matchScore += expMatchScore;
+            matchReasons.push(expReason);
+          } else if (job.experience) {
+            matchReasons.push(`경력 요구사항: ${job.experience}`);
           } else {
             matchReasons.push('다양한 경력 환영');
           }
@@ -7719,11 +7791,12 @@ async function generateGPT4Recommendations(userProfile, jobCandidates, limit) {
 
   const prompt = `희망직무:${userJobs}|기술스택:${userSkills}|경력:${userExperience}|희망지역:${userRegions}
 공고:
-${jobCandidates.map((job, idx) => `${idx+1}.${job.title}|${job.company}|${formatSkills(job.skills)}|지역:${job.location || '미정'}|ID:${job.id}`).join('\n')}
+${jobCandidates.map((job, idx) => `${idx+1}.${job.title}|${job.company}|${formatSkills(job.skills)}|지역:${job.location || '미정'}|경력:${job.experience || '무관'}|ID:${job.id}`).join('\n')}
 
-매칭률 높은 상위${limit}개 추천. 매칭 이유는 구체적으로 3개 작성(기술스택 일치, 직무 적합성, 경력 매칭, 지역 매칭 등을 상세히 분석).
-희망지역과 공고 지역이 일치하면 매칭률에 가산점(+10~15점) 부여.
-JSON:{"recommendations":[{"job_id":"ID","match_score":85,"match_reasons":["구체적 이유1 (예: Java, SQL 등 3개 기술스택 완벽 일치)","구체적 이유2 (예: 백엔드 개발자 희망직무와 정확히 일치)","구체적 이유3 (예: 희망지역 서울과 근무지 일치)"]}]}`;
+매칭률 높은 상위${limit}개 추천. 매칭 이유는 구체적으로 3개 작성(기술스택 일치, 직무 적합성, 경력 연수 매칭, 지역 매칭 등을 상세히 분석).
+- 희망지역과 공고 지역이 일치하면 매칭률에 가산점(+10~15점) 부여
+- 경력 연수가 요구사항과 일치하면 매칭률에 가산점(+10~15점) 부여 (신입은 신입끼리, 경력 연수는 범위 내 일치 시)
+JSON:{"recommendations":[{"job_id":"ID","match_score":85,"match_reasons":["구체적 이유1 (예: Java, SQL 등 3개 기술스택 완벽 일치)","구체적 이유2 (예: 경력 3년으로 요구사항 3-5년에 부합)","구체적 이유3 (예: 희망지역 서울과 근무지 일치)"]}]}`;
 
   console.log(`\n[AI-RECOMMENDATION] ========================================`);
   console.log(`[AI-RECOMMENDATION] 👤 사용자 프로필:`);
