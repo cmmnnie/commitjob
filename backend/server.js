@@ -5470,11 +5470,11 @@ app.post('/api/cover-letter', async (req, res) => {
       jobContext += `\n`;
     }
 
-    // 5. GPT API를 사용하여 7개 문항 자소서를 한 번에 생성
+    // 5. GPT API를 사용하여 7개 문항 자소서를 한 번에 생성 (최적화)
     const prompt = `${profileContext}${jobContext}[요청사항]
 위 지원자의 이력서 정보를 바탕으로 ${company}${jobInfo ? '의 ' + jobInfo.title + ' 직무' : ''} 지원을 위한 자기소개서를 다음 7개 문항에 대해 작성해주세요.
 
-각 문항별로 300-400자 내외로 작성하되, 지원자의 실제 경력, 학력, 자격증, 어학, 수상 경력, 기존 자소서 내용을 최대한 반영하여 구체적이고 진정성 있게 작성해주세요.
+각 문항별로 200-250자 내외로 간결하게 작성하되, 지원자의 실제 경력, 학력, 자격증, 어학, 수상 경력을 반영하여 구체적으로 작성해주세요.
 
 **중요:** 응답은 반드시 다음과 같은 JSON 형식으로만 작성하고, 다른 텍스트는 포함하지 마세요:
 {
@@ -5487,14 +5487,17 @@ app.post('/api/cover-letter', async (req, res) => {
   "성격의 장단점": "내용"
 }
 
-- "인사담당자님께", "드림" 등의 형식적인 인사말이나 서명은 포함하지 마세요.
-- 각 문항의 내용만 작성해주세요.
-- 반드시 위 JSON 형식으로만 응답하세요.`;
+작성 가이드:
+- 각 문항은 200-250자 내외로 간결하게
+- "인사담당자님께", "드림" 등의 인사말 제외
+- 지원자의 실제 경험 위주로 작성
+- 반드시 위 JSON 형식으로만 응답`;
 
     console.log(`[COVER-LETTER] 📝 PROMPT 길이: ${prompt.length}자`);
+    const startTime = Date.now();
 
-    // GPT API 호출
-    const systemMessage = '당신은 전문적인 자기소개서 작성 컨설턴트입니다. 지원자의 배경과 회사의 요구사항을 분석하여 효과적인 자기소개서를 JSON 형식으로 작성합니다.';
+    // GPT API 호출 (최적화: temperature 낮춤, max_tokens 조정)
+    const systemMessage = '당신은 간결하고 효과적인 자기소개서를 작성하는 전문가입니다. JSON 형식으로 7개 문항의 자소서를 빠르게 작성합니다.';
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -5508,20 +5511,23 @@ app.post('/api/cover-letter', async (req, res) => {
           content: prompt
         }
       ],
-      max_tokens: 3000,
-      temperature: 0.7,
+      max_tokens: 2000,
+      temperature: 0.5,
       response_format: { type: "json_object" }
     });
 
+    const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(2);
     const responseContent = completion.choices[0].message.content;
-    console.log(`[COVER-LETTER] ✅ 자기소개서 7개 문항 생성 완료`);
+    console.log(`[COVER-LETTER] ✅ 자기소개서 7개 문항 생성 완료 (${elapsedTime}초)`);
 
     // JSON 파싱
     let coverLetters = {};
     try {
       coverLetters = JSON.parse(responseContent);
+      console.log('[COVER-LETTER] JSON 파싱 성공:', Object.keys(coverLetters));
     } catch (parseError) {
       console.error('[COVER-LETTER] JSON 파싱 실패:', parseError);
+      console.error('[COVER-LETTER] 응답 내용:', responseContent);
       throw new Error('자기소개서 생성 결과를 파싱할 수 없습니다.');
     }
 
@@ -5530,6 +5536,8 @@ app.post('/api/cover-letter', async (req, res) => {
       question: question,
       content: coverLetters[question] || ''
     }));
+
+    console.log(`[COVER-LETTER] 최종 응답 준비 완료 (총 ${elapsedTime}초)`);
 
     res.json({
       success: true,
