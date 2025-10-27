@@ -792,7 +792,12 @@ export default function MainPage() {
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
-                                navigate('/coding-test');
+                                // LG가 포함된 회사명이면 LG 코딩테스트 페이지로 이동
+                                if (job.company && job.company.includes('LG')) {
+                                    navigate('/lg-coding-test');
+                                } else {
+                                    navigate('/coding-test');
+                                }
                             }}
                             style={{
                                 background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
