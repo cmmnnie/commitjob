@@ -692,10 +692,10 @@ export default function MainPage() {
                         {job.company}
                     </p>
 
-                    {/* 버튼 영역 */}
+                    {/* 버튼 영역 - 2x2 그리드 */}
                     <div style={{
-                        display: 'flex',
-                        flexDirection: 'column',
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(2, 1fr)',
                         gap: '8px'
                     }}>
                         <button
@@ -704,9 +704,9 @@ export default function MainPage() {
                                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                                 color: 'white',
                                 border: 'none',
-                                padding: '10px 16px',
+                                padding: '10px 12px',
                                 borderRadius: '8px',
-                                fontSize: '0.9rem',
+                                fontSize: '0.85rem',
                                 fontWeight: '700',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s',
@@ -722,61 +722,81 @@ export default function MainPage() {
                             }}>
                             💼 채용공고
                         </button>
-                        <div style={{
-                            display: 'flex',
-                            gap: '8px'
-                        }}>
-                            <button
-                                onClick={handleAIInterviewClick}
-                                style={{
-                                    flex: 1,
-                                    background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-                                    color: 'white',
-                                    border: 'none',
-                                    padding: '10px 12px',
-                                    borderRadius: '8px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: '700',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    boxShadow: '0 2px 8px rgba(245, 87, 108, 0.3)'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.transform = 'translateY(-2px)';
-                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(245, 87, 108, 0.4)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.transform = 'translateY(0)';
-                                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(245, 87, 108, 0.3)';
-                                }}>
-                                🎤 AI면접
-                            </button>
-                            <button
-                                onClick={handleAICoverLetterClick}
-                                style={{
-                                    flex: 1,
-                                    background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-                                    color: 'white',
-                                    border: 'none',
-                                    padding: '10px 12px',
-                                    borderRadius: '8px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: '700',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    boxShadow: '0 2px 8px rgba(79, 172, 254, 0.3)'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.transform = 'translateY(-2px)';
-                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(79, 172, 254, 0.4)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.transform = 'translateY(0)';
-                                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(79, 172, 254, 0.3)';
-                                }}>
-                                📝 AI자소서
-                            </button>
-                        </div>
+                        <button
+                            onClick={handleAIInterviewClick}
+                            style={{
+                                background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                                color: 'white',
+                                border: 'none',
+                                padding: '10px 12px',
+                                borderRadius: '8px',
+                                fontSize: '0.85rem',
+                                fontWeight: '700',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                boxShadow: '0 2px 8px rgba(245, 87, 108, 0.3)'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(245, 87, 108, 0.4)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(245, 87, 108, 0.3)';
+                            }}>
+                            🎤 AI면접
+                        </button>
+                        <button
+                            onClick={handleAICoverLetterClick}
+                            style={{
+                                background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                                color: 'white',
+                                border: 'none',
+                                padding: '10px 12px',
+                                borderRadius: '8px',
+                                fontSize: '0.85rem',
+                                fontWeight: '700',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                boxShadow: '0 2px 8px rgba(79, 172, 254, 0.3)'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(79, 172, 254, 0.4)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(79, 172, 254, 0.3)';
+                            }}>
+                            📝 AI자소서
+                        </button>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                navigate('/coding-test');
+                            }}
+                            style={{
+                                background: 'linear-gradient(135deg, #ffa726 0%, #fb8c00 100%)',
+                                color: 'white',
+                                border: 'none',
+                                padding: '10px 12px',
+                                borderRadius: '8px',
+                                fontSize: '0.85rem',
+                                fontWeight: '700',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                boxShadow: '0 2px 8px rgba(255, 167, 38, 0.3)'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 167, 38, 0.4)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(255, 167, 38, 0.3)';
+                            }}>
+                            💻 코딩Test
+                        </button>
                     </div>
                 </div>
             </div>
