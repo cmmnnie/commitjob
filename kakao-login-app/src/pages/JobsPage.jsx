@@ -125,6 +125,30 @@ export default function JobsPage() {
         const logoUrl = getCompanyLogoUrl(job);
         const [logoError, setLogoError] = useState(false);
 
+        const handleViewJobDetail = (e) => {
+            e.stopPropagation();
+            handleJobClick(job);
+        };
+
+        const handleAIInterview = (e) => {
+            e.stopPropagation();
+            navigate('/ai-interview', {
+                state: { companyName: job.company }
+            });
+        };
+
+        const handleAICoverLetter = (e) => {
+            e.stopPropagation();
+            navigate('/ai-cover-letter', {
+                state: { companyName: job.company, jobId: job.id }
+            });
+        };
+
+        const handleCodingTest = (e) => {
+            e.stopPropagation();
+            navigate('/coding-test');
+        };
+
         return (
             <div style={{
                 background: 'white',
@@ -132,7 +156,6 @@ export default function JobsPage() {
                 border: '1px solid #e0e0e0',
                 overflow: 'hidden',
                 transition: 'all 0.3s',
-                cursor: 'pointer',
                 display: 'flex',
                 flexDirection: 'column'
             }}
@@ -143,8 +166,7 @@ export default function JobsPage() {
             onMouseLeave={(e) => {
                 e.currentTarget.style.boxShadow = 'none';
                 e.currentTarget.style.transform = 'translateY(0)';
-            }}
-            onClick={() => handleJobClick(job)}>
+            }}>
                 {/* 이미지 영역 (세로 축소) */}
                 <div style={{
                     width: '100%',
@@ -153,8 +175,10 @@ export default function JobsPage() {
                     background: logoUrl && !logoError ? 'white' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
-                }}>
+                    justifyContent: 'center',
+                    cursor: 'pointer'
+                }}
+                onClick={handleViewJobDetail}>
                     {logoUrl && !logoError ? (
                         <img
                             src={logoUrl}
@@ -196,7 +220,7 @@ export default function JobsPage() {
                 </div>
 
                 {/* 제목 및 회사명 */}
-                <div style={{ padding: '12px 16px' }}>
+                <div style={{ padding: '12px 16px', cursor: 'pointer' }} onClick={handleViewJobDetail}>
                     <h3 style={{
                         fontSize: '1rem',
                         fontWeight: '600',
@@ -221,6 +245,114 @@ export default function JobsPage() {
                         <span style={{ fontSize: '1rem' }}>🏢</span>
                         {job.company}
                     </p>
+                </div>
+
+                {/* 4개 버튼 (2x2 그리드) */}
+                <div style={{
+                    padding: '0 16px 16px 16px',
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '8px'
+                }}>
+                    <button
+                        onClick={handleViewJobDetail}
+                        style={{
+                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                            color: 'white',
+                            border: 'none',
+                            padding: '8px 12px',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            boxShadow: '0 2px 4px rgba(102, 126, 234, 0.3)'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                            e.currentTarget.style.boxShadow = '0 4px 8px rgba(102, 126, 234, 0.4)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = '0 2px 4px rgba(102, 126, 234, 0.3)';
+                        }}>
+                        채용공고
+                    </button>
+
+                    <button
+                        onClick={handleAIInterview}
+                        style={{
+                            background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                            color: 'white',
+                            border: 'none',
+                            padding: '8px 12px',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            boxShadow: '0 2px 4px rgba(240, 147, 251, 0.3)'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                            e.currentTarget.style.boxShadow = '0 4px 8px rgba(240, 147, 251, 0.4)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = '0 2px 4px rgba(240, 147, 251, 0.3)';
+                        }}>
+                        AI면접
+                    </button>
+
+                    <button
+                        onClick={handleAICoverLetter}
+                        style={{
+                            background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                            color: 'white',
+                            border: 'none',
+                            padding: '8px 12px',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            boxShadow: '0 2px 4px rgba(79, 172, 254, 0.3)'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                            e.currentTarget.style.boxShadow = '0 4px 8px rgba(79, 172, 254, 0.4)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = '0 2px 4px rgba(79, 172, 254, 0.3)';
+                        }}>
+                        AI자소서
+                    </button>
+
+                    <button
+                        onClick={handleCodingTest}
+                        style={{
+                            background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+                            color: 'white',
+                            border: 'none',
+                            padding: '8px 12px',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            boxShadow: '0 2px 4px rgba(67, 233, 123, 0.3)'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                            e.currentTarget.style.boxShadow = '0 4px 8px rgba(67, 233, 123, 0.4)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = '0 2px 4px rgba(67, 233, 123, 0.3)';
+                        }}>
+                        코딩Test
+                    </button>
                 </div>
             </div>
         );
