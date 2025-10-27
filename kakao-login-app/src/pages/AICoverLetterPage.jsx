@@ -234,6 +234,8 @@ export default function AICoverLetterPage() {
                 }
             }
 
+            console.log('[AI자소서 생성] 시작 - 회사:', finalCompany, ', job_id:', selectedJobId);
+
             const response = await fetch(`${CONFIG.BACKEND_URL}/api/cover-letter`, {
                 method: 'POST',
                 credentials: 'include',
@@ -253,14 +255,49 @@ export default function AICoverLetterPage() {
             }
 
             const data = await response.json();
-            if (data.success && data.coverLetter) {
+            console.log('[AI자소서 생성] 응답:', data);
+
+            if (data.success && data.coverLetters && Array.isArray(data.coverLetters)) {
+                // 7개 문항의 자소서를 받았으므로 이력서 자소서 탭에 저장
+                console.log('[AI자소서 생성] 7개 문항 자소서 생성 완료');
+
+                // 이력서 프로필 업데이트 (cover_letters 필드에 저장)
+                const updateResponse = await fetch(`${CONFIG.BACKEND_URL}/api/profile`, {
+                    method: 'PUT',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        user_id: currentUser?.id,
+                        cover_letters: data.coverLetters
+                    })
+                });
+
+                if (!updateResponse.ok) {
+                    throw new Error('자기소개서를 이력서에 저장하는데 실패했습니다.');
+                }
+
+                const updateData = await updateResponse.json();
+                console.log('[AI자소서 저장] 이력서에 저장 완료:', updateData);
+
+                // 성공 메시지 표시
+                alert('자기소개서 7개 문항이 생성되어 이력서 자소서 탭에 저장되었습니다!\n\n이력서 페이지에서 확인하세요.');
+
+                // 이력서 페이지로 이동할지 물어보기
+                if (confirm('이력서 페이지로 이동하시겠습니까?')) {
+                    navigate('/resume');
+                }
+            } else if (data.success && data.coverLetter) {
+                // 하위 호환성: 기존 단일 자소서 응답
                 setCoverLetter(data.coverLetter);
             } else {
                 alert('자기소개서를 생성할 수 없습니다.');
             }
         } catch (err) {
             console.error('[자기소개서 생성] 오류:', err);
-            alert('자기소개서 생성에 실패했습니다. 다시 시도해주세요.');
+            alert('자기소개서 생성에 실패했습니다. 다시 시도해주세요.\n\n오류: ' + err.message);
         } finally {
             setIsCoverLetterLoading(false);
         }

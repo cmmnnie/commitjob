@@ -5279,7 +5279,7 @@ app.post('/api/cover-letter', async (req, res) => {
       });
     }
 
-    console.log(`[COVER-LETTER] Generating cover letter for user ${user_id}, company: ${company}, job_id: ${job_id || 'none'}`);
+    console.log(`[COVER-LETTER] Generating 7 cover letters for user ${user_id}, company: ${company}, job_id: ${job_id || 'none'}`);
 
     // OpenAI 사용 가능 확인
     if (!openai) {
@@ -5289,7 +5289,7 @@ app.post('/api/cover-letter', async (req, res) => {
       });
     }
 
-    // 1. 사용자 프로필 조회
+    // 1. 사용자 프로필 조회 (모든 정보 포함)
     let userProfile = null;
     try {
       const [profileRows] = await pool.execute(`
@@ -5301,7 +5301,11 @@ app.post('/api/cover-letter', async (req, res) => {
           up.skills,
           up.education,
           up.expected_salary,
-          up.cover_letters
+          up.cover_letters,
+          up.experiences,
+          up.certificates,
+          up.languages,
+          up.awards
         FROM users u
         LEFT JOIN user_profiles up ON u.id = up.user_id
         WHERE u.id = ?
@@ -5310,40 +5314,29 @@ app.post('/api/cover-letter', async (req, res) => {
       if (profileRows.length > 0) {
         const profile = profileRows[0];
 
-        // skills 파싱
-        let skills = [];
-        if (profile.skills) {
+        // JSON 필드 파싱 함수
+        const safeParseJSON = (data, defaultValue = []) => {
+          if (!data) return defaultValue;
           try {
-            skills = typeof profile.skills === 'string'
-              ? JSON.parse(profile.skills)
-              : profile.skills;
+            return typeof data === 'string' ? JSON.parse(data) : data;
           } catch (e) {
-            console.warn('[COVER-LETTER] skills 파싱 실패:', e);
-            skills = [];
+            console.warn('[COVER-LETTER] JSON 파싱 실패:', e);
+            return defaultValue;
           }
-        }
-
-        // cover_letters 파싱
-        let coverLetters = [];
-        if (profile.cover_letters) {
-          try {
-            coverLetters = typeof profile.cover_letters === 'string'
-              ? JSON.parse(profile.cover_letters)
-              : profile.cover_letters;
-          } catch (e) {
-            console.warn('[COVER-LETTER] cover_letters 파싱 실패:', e);
-            coverLetters = [];
-          }
-        }
+        };
 
         userProfile = {
           name: profile.user_name || '지원자',
           preferred_jobs: profile.preferred_jobs || '',
           experience: profile.experience || '',
-          skills: skills,
+          skills: safeParseJSON(profile.skills, []),
           education: profile.education || '',
           expected_salary: profile.expected_salary || '',
-          cover_letters: coverLetters
+          cover_letters: safeParseJSON(profile.cover_letters, []),
+          experiences: safeParseJSON(profile.experiences, []),
+          certificates: safeParseJSON(profile.certificates, []),
+          languages: safeParseJSON(profile.languages, []),
+          awards: safeParseJSON(profile.awards, [])
         };
         console.log(`[COVER-LETTER] 사용자 프로필 로드 완료: ${userProfile.name}`);
       }
@@ -5378,68 +5371,130 @@ app.post('/api/cover-letter', async (req, res) => {
       }
     }
 
-    // 3. GPT 프롬프트 생성
-    let prompt = `다음 정보를 바탕으로 ${company}에 지원하는 자기소개서를 작성해주세요.\n\n`;
+    // 3. 7개 자소서 문항 정의
+    const coverLetterQuestions = [
+      '자기소개',
+      '지원동기',
+      '입사후 포부',
+      '팀워크 경험',
+      '직무 경험',
+      '인간관계 갈등 해결 사례',
+      '성격의 장단점'
+    ];
 
-    // 사용자 프로필 추가
+    // 4. 사용자 프로필 정보 정리 (공통)
+    let profileContext = '';
     if (userProfile) {
-      prompt += `[지원자 정보]\n`;
-      prompt += `- 이름: ${userProfile.name}\n`;
+      profileContext += `[지원자 정보]\n`;
+      profileContext += `- 이름: ${userProfile.name}\n`;
       if (userProfile.preferred_jobs) {
-        prompt += `- 희망 직무: ${userProfile.preferred_jobs}\n`;
+        profileContext += `- 희망 직무: ${userProfile.preferred_jobs}\n`;
       }
       if (userProfile.experience) {
-        prompt += `- 경력: ${userProfile.experience}\n`;
+        profileContext += `- 경력 요약: ${userProfile.experience}\n`;
       }
       if (userProfile.skills && userProfile.skills.length > 0) {
-        prompt += `- 보유 스킬: ${userProfile.skills.join(', ')}\n`;
+        profileContext += `- 보유 스킬: ${userProfile.skills.join(', ')}\n`;
       }
       if (userProfile.education) {
-        prompt += `- 학력: ${userProfile.education}\n`;
+        profileContext += `- 학력: ${userProfile.education}\n`;
       }
 
-      // 이력서 자기소개서 내용 추가 (구체적인 경험 제공)
-      if (userProfile.cover_letters && userProfile.cover_letters.length > 0) {
-        prompt += `\n[지원자가 작성한 자기소개서 참고]\n`;
-        userProfile.cover_letters.forEach((item, index) => {
-          if (item.content && item.content.trim()) {
-            prompt += `${index + 1}. ${item.question}: ${item.content.substring(0, 300)}${item.content.length > 300 ? '...' : ''}\n`;
+      // 경력 상세 정보
+      if (userProfile.experiences && userProfile.experiences.length > 0) {
+        profileContext += `\n[경력 상세]\n`;
+        userProfile.experiences.forEach((exp, index) => {
+          profileContext += `${index + 1}. ${exp.company || '회사'} - ${exp.position || '직책'} (${exp.start_date || ''} ~ ${exp.end_date || '현재'})\n`;
+          if (exp.description) {
+            profileContext += `   업무: ${exp.description.substring(0, 200)}\n`;
           }
         });
       }
-      prompt += `\n`;
+
+      // 학력 상세 정보
+      if (userProfile.education) {
+        profileContext += `\n[학력 정보]\n${userProfile.education}\n`;
+      }
+
+      // 자격증 정보
+      if (userProfile.certificates && userProfile.certificates.length > 0) {
+        profileContext += `\n[자격증]\n`;
+        userProfile.certificates.forEach((cert, index) => {
+          profileContext += `${index + 1}. ${cert.name || cert} (${cert.acquisition_date || ''})\n`;
+        });
+      }
+
+      // 어학 능력
+      if (userProfile.languages && userProfile.languages.length > 0) {
+        profileContext += `\n[어학 능력]\n`;
+        userProfile.languages.forEach((lang, index) => {
+          profileContext += `${index + 1}. ${lang.name || lang} - ${lang.level || ''} ${lang.score ? '(' + lang.score + '점)' : ''}\n`;
+        });
+      }
+
+      // 수상 경력
+      if (userProfile.awards && userProfile.awards.length > 0) {
+        profileContext += `\n[수상 경력]\n`;
+        userProfile.awards.forEach((award, index) => {
+          profileContext += `${index + 1}. ${award.name || award} (${award.date || ''})\n`;
+          if (award.organization) {
+            profileContext += `   수여 기관: ${award.organization}\n`;
+          }
+        });
+      }
+
+      // 이력서 자기소개서 내용 (각 문항별 참고)
+      if (userProfile.cover_letters && userProfile.cover_letters.length > 0) {
+        profileContext += `\n[지원자가 작성한 자기소개서 참고]\n`;
+        userProfile.cover_letters.forEach((item, index) => {
+          if (item.content && item.content.trim()) {
+            profileContext += `${index + 1}. ${item.question}: ${item.content.substring(0, 300)}${item.content.length > 300 ? '...' : ''}\n`;
+          }
+        });
+      }
+      profileContext += `\n`;
     }
 
-    // 채용공고 정보 추가
+    // 채용공고 정보
+    let jobContext = '';
     if (jobInfo) {
-      prompt += `[채용 공고 정보]\n`;
-      prompt += `- 직무: ${jobInfo.title}\n`;
-      if (jobInfo.description) {
-        prompt += `- 업무 내용: ${jobInfo.description}\n`;
+      jobContext += `[채용 공고 정보]\n`;
+      jobContext += `- 회사: ${company}\n`;
+      jobContext += `- 직무: ${jobInfo.title}\n`;
+      if (jobInfo.job_info) {
+        jobContext += `- 업무 내용: ${jobInfo.job_info.substring(0, 500)}\n`;
       }
-      if (jobInfo.requirements) {
-        prompt += `- 자격 요건: ${jobInfo.requirements}\n`;
+      if (jobInfo.conditions) {
+        jobContext += `- 자격 요건: ${jobInfo.conditions.substring(0, 300)}\n`;
       }
-      if (jobInfo.experience_level) {
-        prompt += `- 경력 요건: ${jobInfo.experience_level}\n`;
-      }
-      prompt += `\n`;
+      jobContext += `\n`;
     }
 
-    prompt += `[요청사항]\n`;
-    prompt += `1. 지원자의 강점과 경험을 ${company}${jobInfo ? '의 ' + jobInfo.title + ' 직무' : ''}에 맞춰 작성해주세요.\n`;
-    prompt += `2. 구체적인 경험과 성과를 포함해주세요.\n`;
-    prompt += `3. ${company}에 대한 관심과 입사 의지를 표현해주세요.\n`;
-    prompt += `4. 자연스럽고 진정성 있는 문체로 작성해주세요.\n`;
-    prompt += `5. 분량은 800-1000자 내외로 작성해주세요.\n`;
-    prompt += `6. "인사담당자님께", "드림" 등의 형식적인 인사말이나 서명은 포함하지 마세요. 자기소개서 본문만 작성해주세요.\n`;
+    // 5. GPT API를 사용하여 7개 문항 자소서를 한 번에 생성
+    const prompt = `${profileContext}${jobContext}[요청사항]
+위 지원자의 이력서 정보를 바탕으로 ${company}${jobInfo ? '의 ' + jobInfo.title + ' 직무' : ''} 지원을 위한 자기소개서를 다음 7개 문항에 대해 작성해주세요.
+
+각 문항별로 300-400자 내외로 작성하되, 지원자의 실제 경력, 학력, 자격증, 어학, 수상 경력, 기존 자소서 내용을 최대한 반영하여 구체적이고 진정성 있게 작성해주세요.
+
+**중요:** 응답은 반드시 다음과 같은 JSON 형식으로만 작성하고, 다른 텍스트는 포함하지 마세요:
+{
+  "자기소개": "내용",
+  "지원동기": "내용",
+  "입사후 포부": "내용",
+  "팀워크 경험": "내용",
+  "직무 경험": "내용",
+  "인간관계 갈등 해결 사례": "내용",
+  "성격의 장단점": "내용"
+}
+
+- "인사담당자님께", "드림" 등의 형식적인 인사말이나 서명은 포함하지 마세요.
+- 각 문항의 내용만 작성해주세요.
+- 반드시 위 JSON 형식으로만 응답하세요.`;
 
     console.log(`[COVER-LETTER] 📝 PROMPT 길이: ${prompt.length}자`);
-    console.log(`[COVER-LETTER] 📤 GPT에게 전달하는 프롬프트:\n${prompt}`);
 
-    // 4. GPT API 호출
-    const systemMessage = '당신은 전문적인 자기소개서 작성 컨설턴트입니다. 지원자의 배경과 회사의 요구사항을 분석하여 효과적인 자기소개서를 작성합니다.';
-    console.log(`[COVER-LETTER] 📤 시스템 메시지: ${systemMessage}`);
+    // GPT API 호출
+    const systemMessage = '당신은 전문적인 자기소개서 작성 컨설턴트입니다. 지원자의 배경과 회사의 요구사항을 분석하여 효과적인 자기소개서를 JSON 형식으로 작성합니다.';
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -5453,16 +5508,32 @@ app.post('/api/cover-letter', async (req, res) => {
           content: prompt
         }
       ],
-      max_tokens: 1200,
-      temperature: 0.4
+      max_tokens: 3000,
+      temperature: 0.7,
+      response_format: { type: "json_object" }
     });
 
-    const coverLetter = completion.choices[0].message.content;
-    console.log(`[COVER-LETTER] ✅ 자기소개서 생성 완료 (${coverLetter.length}자)`);
+    const responseContent = completion.choices[0].message.content;
+    console.log(`[COVER-LETTER] ✅ 자기소개서 7개 문항 생성 완료`);
+
+    // JSON 파싱
+    let coverLetters = {};
+    try {
+      coverLetters = JSON.parse(responseContent);
+    } catch (parseError) {
+      console.error('[COVER-LETTER] JSON 파싱 실패:', parseError);
+      throw new Error('자기소개서 생성 결과를 파싱할 수 없습니다.');
+    }
+
+    // 7개 문항 배열로 변환
+    const coverLetterArray = coverLetterQuestions.map(question => ({
+      question: question,
+      content: coverLetters[question] || ''
+    }));
 
     res.json({
       success: true,
-      coverLetter: coverLetter
+      coverLetters: coverLetterArray
     });
 
   } catch (error) {
