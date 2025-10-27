@@ -117,19 +117,34 @@ export default function MainPage() {
         }
     };
 
+    // 만료된 공고 필터링 함수 (AIJobsPage/ITJobsPage와 동일)
+    const isExpired = (job) => {
+        if (!job.registration_info || job.registration_info.length === 0) return false;
+
+        const dateStr = job.registration_info[0];
+        const match = dateStr.match(/~(\d+)\.(\d+)/);
+        if (!match) return false;
+
+        const [, month, day] = match;
+        const currentYear = new Date().getFullYear();
+        const deadlineDate = new Date(currentYear, parseInt(month) - 1, parseInt(day), 23, 59, 59);
+
+        return new Date() > deadlineDate;
+    };
+
     const fetchJobs = async () => {
         try {
             console.log('[MAIN] Fetching latest jobs');
 
-            // BIGDATA_AI 및 IT 카테고리 병렬 조회
+            // BIGDATA_AI 및 IT 카테고리 병렬 조회 (전체 데이터 가져오기)
             const [bigdataResponse, itResponse] = await Promise.all([
-                axios.get(`${API_BASE_URL}/api/jobs/BIGDATA_AI?limit=6`, {
+                axios.get(`${API_BASE_URL}/api/jobs/BIGDATA_AI`, {
                     timeout: 10000
                 }).catch(err => {
                     console.error('[MAIN] BIGDATA_AI fetch error:', err);
                     return null;
                 }),
-                axios.get(`${API_BASE_URL}/api/jobs/IT?limit=6`, {
+                axios.get(`${API_BASE_URL}/api/jobs/IT`, {
                     timeout: 10000
                 }).catch(err => {
                     console.error('[MAIN] IT fetch error:', err);
@@ -138,13 +153,17 @@ export default function MainPage() {
             ]);
 
             if (bigdataResponse?.data?.success) {
-                setBigdataJobs(bigdataResponse.data.jobs.slice(0, 6));
-                setBigdataTotal(bigdataResponse.data.total || 0);
+                // 만료되지 않은 공고만 필터링
+                const activeJobs = bigdataResponse.data.jobs.filter(job => !isExpired(job));
+                setBigdataJobs(activeJobs.slice(0, 6));
+                setBigdataTotal(activeJobs.length);
             }
 
             if (itResponse?.data?.success) {
-                setItJobs(itResponse.data.jobs.slice(0, 6));
-                setItTotal(itResponse.data.total || 0);
+                // 만료되지 않은 공고만 필터링
+                const activeJobs = itResponse.data.jobs.filter(job => !isExpired(job));
+                setItJobs(activeJobs.slice(0, 6));
+                setItTotal(activeJobs.length);
             }
         } catch (error) {
             console.error('[MAIN] Failed to fetch jobs:', error);
