@@ -7696,7 +7696,7 @@ JSON:{"recommendations":[{"job_id":"ID","match_score":75,"match_reasons":["Ïù¥Ïú
           content: prompt
         }
       ],
-      max_completion_tokens: 300,
+      max_completion_tokens: 1000,
       temperature: 0,
       response_format: { type: "json_object" }
     });
