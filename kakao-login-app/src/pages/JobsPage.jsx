@@ -153,6 +153,8 @@ export default function JobsPage() {
                 navigate('/hyundai-coding-test');
             } else if (job.company && job.company.includes('삼성')) {
                 navigate('/samsung-coding-test');
+            } else if (job.company && job.company.includes('카카오')) {
+                navigate('/kakao-coding-test');
             } else {
                 navigate('/coding-test');
             }
