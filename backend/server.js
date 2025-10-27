@@ -2096,14 +2096,41 @@ app.get("/api/main-recommendations", async (req, res) => {
       // jobs 테이블에서 공고 가져오기 (스크래퍼 사용 안 함)
       console.log('[MAIN-RECS] DB에서 회원 프로필과 유사한 채용공고 조회 중...');
 
-      // 사용자 스킬 기반 검색 쿼리 생성
+      // 사용자 프로필 분석
       const userSkills = userProfile?.skills || [];
+      const userJobs = userProfile?.jobs || [];
+      const userRegions = userProfile?.preferred_regions || [];
+      const userExperience = userProfile?.experience || '';
+
       const userHasAISkills = userSkills.some(s =>
         ['Python', 'TensorFlow', 'PyTorch', 'Keras', 'Machine Learning', 'AI', 'Deep Learning'].includes(s)
       );
       const userHasITSkills = userSkills.some(s =>
         ['JavaScript', 'React', 'Vue', 'Node.js', 'Java', 'Spring', 'Django', 'Flask'].includes(s)
       );
+
+      // 직무 키워드 추출 (백엔드, 프론트엔드, 풀스택, 데이터 등)
+      const jobKeywords = [];
+      if (userJobs.length > 0) {
+        userJobs.forEach(job => {
+          const jobLower = job.toLowerCase();
+          if (jobLower.includes('백엔드') || jobLower.includes('backend') || jobLower.includes('server')) {
+            jobKeywords.push('백엔드', 'Backend', 'Server', 'API');
+          }
+          if (jobLower.includes('프론트') || jobLower.includes('frontend') || jobLower.includes('front')) {
+            jobKeywords.push('프론트엔드', 'Frontend', 'Front', 'UI');
+          }
+          if (jobLower.includes('풀스택') || jobLower.includes('fullstack') || jobLower.includes('full')) {
+            jobKeywords.push('풀스택', 'Fullstack', 'Full Stack');
+          }
+          if (jobLower.includes('데이터') || jobLower.includes('data')) {
+            jobKeywords.push('데이터', 'Data', '분석');
+          }
+          if (jobLower.includes('ai') || jobLower.includes('인공지능') || jobLower.includes('머신러닝')) {
+            jobKeywords.push('AI', '인공지능', '머신러닝', 'Machine Learning');
+          }
+        });
+      }
 
       // 사용자 스킬에 맞는 카테고리 우선순위 설정
       let categoryOrder = '';
@@ -2115,34 +2142,76 @@ app.get("/api/main-recommendations", async (req, res) => {
         categoryOrder = "category IN ('BIGDATA_AI', 'IT') DESC";
       }
 
-      // 스킬 매칭 점수 계산을 위한 CASE WHEN 생성
+      // 직무명 매칭 점수 계산
+      let jobTitleMatchScore = '0';
+      if (jobKeywords.length > 0) {
+        const titleConditions = jobKeywords.map(keyword =>
+          `WHEN j.title LIKE '%${keyword.replace(/'/g, "''")}%' THEN 3`
+        ).join(' ');
+        jobTitleMatchScore = `(CASE ${titleConditions} ELSE 0 END)`;
+      }
+
+      // 스킬 매칭 점수 계산
       let skillMatchScore = '0';
       if (userSkills.length > 0) {
         const skillConditions = userSkills.map(skill =>
-          `WHEN job_info LIKE '%${skill.replace(/'/g, "''")}%' THEN 1`
+          `WHEN j.job_info LIKE '%${skill.replace(/'/g, "''")}%' THEN 1`
         ).join(' ');
         skillMatchScore = `(CASE ${skillConditions} ELSE 0 END)`;
       }
 
+      // 지역 매칭 점수 계산
+      let locationMatchScore = '0';
+      if (userRegions.length > 0) {
+        const locationConditions = userRegions.map(region =>
+          `WHEN cc.location LIKE '%${region.replace(/'/g, "''")}%' THEN 2`
+        ).join(' ');
+        locationMatchScore = `(CASE ${locationConditions} ELSE 0 END)`;
+      }
+
       try {
+        // 직무 필터 조건 생성 (직무 키워드가 있으면 해당 키워드 포함 OR 개발자 공고만)
+        let jobTitleFilter = '';
+        if (jobKeywords.length > 0) {
+          const titleFilterConditions = jobKeywords.map(keyword =>
+            `j.title LIKE '%${keyword.replace(/'/g, "''")}%'`
+          ).join(' OR ');
+          // 백엔드/프론트엔드 개발자라면 "개발자" 키워드도 포함 (단, 정보보안/네트워크/데이터베이스 등은 제외)
+          jobTitleFilter = `AND (
+            (${titleFilterConditions})
+            OR (
+              j.title LIKE '%개발자%'
+              AND j.title NOT LIKE '%정보보안%'
+              AND j.title NOT LIKE '%보안%'
+              AND j.title NOT LIKE '%네트워크%'
+              AND j.title NOT LIKE '%인프라%'
+              AND j.title NOT LIKE '%DBA%'
+              AND j.title NOT LIKE '%데이터베이스 관리%'
+            )
+          )`;
+        }
+
         const query = `
           SELECT j.id, j.company, j.title, j.category, j.url, j.job_info, j.conditions, j.company_search_key, j.registration_info,
                  cc.location,
-                 ${skillMatchScore} as skill_match_score
+                 ${jobTitleMatchScore} + ${skillMatchScore} + ${locationMatchScore} as total_match_score
           FROM jobs j
           LEFT JOIN catch_companies cc ON j.company = cc.company
           WHERE j.category IN ('BIGDATA_AI', 'IT')
+          ${jobTitleFilter}
           ORDER BY
-            skill_match_score DESC,
+            total_match_score DESC,
             ${categoryOrder},
             j.scraped_at DESC
           LIMIT 20
         `;
 
-        console.log('[MAIN-RECS] 사용자 스킬:', userSkills.join(', '));
-        console.log('[MAIN-RECS] AI 관련 스킬 보유:', userHasAISkills);
-        console.log('[MAIN-RECS] IT 관련 스킬 보유:', userHasITSkills);
-        console.log('[MAIN-RECS] 상시채용 포함 최대 20개 공고 조회 (빠른 처리)');
+        console.log('[MAIN-RECS] 사용자 희망직무:', userJobs.join(', ') || '미설정');
+        console.log('[MAIN-RECS] 직무 키워드:', jobKeywords.join(', ') || '없음');
+        console.log('[MAIN-RECS] 사용자 스킬:', userSkills.join(', ') || '미설정');
+        console.log('[MAIN-RECS] 희망지역:', userRegions.join(', ') || '미설정');
+        console.log('[MAIN-RECS] 직무 필터 적용:', jobKeywords.length > 0 ? '활성화 (정보보안/네트워크/인프라 등 제외)' : '없음');
+        console.log('[MAIN-RECS] 프로필 기반 매칭 - 직무명 우선, 스킬/지역 고려');
 
         const [dbJobs] = await pool.execute(query);
 
