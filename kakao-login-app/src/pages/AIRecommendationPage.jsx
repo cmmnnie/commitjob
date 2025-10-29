@@ -236,42 +236,6 @@ export default function AIRecommendationPage() {
                 }}
                 onClick={() => navigate(`/jobs/detail/${job.id}`, { state: { job } })}
             >
-                {/* 북마크 버튼 */}
-                <button
-                    onClick={handleToggleBookmark}
-                    disabled={bookmarkLoading}
-                    style={{
-                        position: 'absolute',
-                        top: '16px',
-                        right: '16px',
-                        background: bookmarked ? '#ffd700' : 'rgba(255, 255, 255, 0.9)',
-                        border: '2px solid #e0e0e0',
-                        borderRadius: '50%',
-                        width: '40px',
-                        height: '40px',
-                        cursor: bookmarkLoading ? 'not-allowed' : 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '1.3rem',
-                        transition: 'all 0.2s',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                        zIndex: 10,
-                        opacity: bookmarkLoading ? 0.6 : 1
-                    }}
-                    onMouseEnter={(e) => {
-                        if (!bookmarkLoading) {
-                            e.currentTarget.style.transform = 'scale(1.1)';
-                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.25)';
-                        }
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'scale(1)';
-                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
-                    }}>
-                    {bookmarked ? '⭐' : '☆'}
-                </button>
-
             <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -382,142 +346,185 @@ export default function AIRecommendationPage() {
                     )}
                 </div>
 
-                {/* 4x1 버튼 그룹 */}
+                {/* 버튼 그룹 */}
                 <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(4, 1fr)',
+                    display: 'flex',
+                    flexDirection: 'column',
                     gap: '6px',
                     width: '360px',
                     flexShrink: 0
                 }}
                 onClick={(e) => e.stopPropagation()}>
+                    {/* 첫 번째 줄: 4개 버튼 */}
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(4, 1fr)',
+                        gap: '6px'
+                    }}>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/jobs/detail/${job.id}`, { state: { job } });
+                            }}
+                            style={{
+                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                color: 'white',
+                                border: 'none',
+                                padding: '8px 10px',
+                                borderRadius: '6px',
+                                fontSize: '0.75rem',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                whiteSpace: 'nowrap'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                            }}
+                        >
+                            📋 채용공고
+                        </button>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                navigate('/interview', { state: { companyName: job.company } });
+                            }}
+                            style={{
+                                background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                                color: 'white',
+                                border: 'none',
+                                padding: '8px 10px',
+                                borderRadius: '6px',
+                                fontSize: '0.75rem',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                whiteSpace: 'nowrap'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                            }}
+                        >
+                            🎤 AI면접
+                        </button>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                console.log('[AI자소서] 버튼 클릭됨:', { company: job.company, jobId: job.job_id });
+                                navigate('/ai-cover-letter', { state: { companyName: job.company, jobId: job.job_id } });
+                            }}
+                            style={{
+                                background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                                color: 'white',
+                                border: 'none',
+                                padding: '8px 10px',
+                                borderRadius: '6px',
+                                fontSize: '0.75rem',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                whiteSpace: 'nowrap'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                            }}
+                        >
+                            ✍️ AI자소서
+                        </button>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                // 회사별 코딩테스트 페이지 분기
+                                if (job.company && job.company.includes('LG')) {
+                                    navigate('/lg-coding-test');
+                                } else if (job.company && job.company.includes('현대')) {
+                                    navigate('/hyundai-coding-test');
+                                } else if (job.company && job.company.includes('삼성')) {
+                                    navigate('/samsung-coding-test');
+                                } else if (job.company && job.company.includes('카카오')) {
+                                    navigate('/kakao-coding-test');
+                                } else {
+                                    navigate('/coding-test');
+                                }
+                            }}
+                            style={{
+                                background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+                                color: 'white',
+                                border: 'none',
+                                padding: '8px 10px',
+                                borderRadius: '6px',
+                                fontSize: '0.75rem',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                boxShadow: '0 2px 4px rgba(67, 233, 123, 0.3)',
+                                whiteSpace: 'nowrap'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 4px 8px rgba(67, 233, 123, 0.4)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 2px 4px rgba(67, 233, 123, 0.3)';
+                            }}
+                        >
+                            💻 코딩Test
+                        </button>
+                    </div>
+
+                    {/* 두 번째 줄: 북마크 버튼 */}
                     <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/jobs/detail/${job.id}`, { state: { job } });
-                        }}
+                        onClick={handleToggleBookmark}
+                        disabled={bookmarkLoading}
                         style={{
-                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                            color: 'white',
-                            border: 'none',
+                            background: bookmarked ? '#ffd700' : 'rgba(255, 255, 255, 0.9)',
+                            border: '2px solid #e0e0e0',
+                            borderRadius: '8px',
                             padding: '8px 10px',
-                            borderRadius: '6px',
+                            cursor: bookmarkLoading ? 'not-allowed' : 'pointer',
                             fontSize: '0.75rem',
                             fontWeight: '600',
-                            cursor: 'pointer',
                             transition: 'all 0.2s',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                            whiteSpace: 'nowrap'
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                            opacity: bookmarkLoading ? 0.6 : 1,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '4px'
                         }}
                         onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = 'translateY(-2px)';
-                            e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-                        }}
-                    >
-                        📋 채용공고
-                    </button>
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            navigate('/interview', { state: { companyName: job.company } });
-                        }}
-                        style={{
-                            background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-                            color: 'white',
-                            border: 'none',
-                            padding: '8px 10px',
-                            borderRadius: '6px',
-                            fontSize: '0.75rem',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                            whiteSpace: 'nowrap'
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = 'translateY(-2px)';
-                            e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-                        }}
-                    >
-                        🎤 AI면접
-                    </button>
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            console.log('[AI자소서] 버튼 클릭됨:', { company: job.company, jobId: job.job_id });
-                            navigate('/ai-cover-letter', { state: { companyName: job.company, jobId: job.job_id } });
-                        }}
-                        style={{
-                            background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-                            color: 'white',
-                            border: 'none',
-                            padding: '8px 10px',
-                            borderRadius: '6px',
-                            fontSize: '0.75rem',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                            whiteSpace: 'nowrap'
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = 'translateY(-2px)';
-                            e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-                        }}
-                    >
-                        ✍️ AI자소서
-                    </button>
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            // 회사별 코딩테스트 페이지 분기
-                            if (job.company && job.company.includes('LG')) {
-                                navigate('/lg-coding-test');
-                            } else if (job.company && job.company.includes('현대')) {
-                                navigate('/hyundai-coding-test');
-                            } else if (job.company && job.company.includes('삼성')) {
-                                navigate('/samsung-coding-test');
-                            } else if (job.company && job.company.includes('카카오')) {
-                                navigate('/kakao-coding-test');
-                            } else {
-                                navigate('/coding-test');
+                            if (!bookmarkLoading) {
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.25)';
                             }
                         }}
-                        style={{
-                            background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-                            color: 'white',
-                            border: 'none',
-                            padding: '8px 10px',
-                            borderRadius: '6px',
-                            fontSize: '0.75rem',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            boxShadow: '0 2px 4px rgba(67, 233, 123, 0.3)',
-                            whiteSpace: 'nowrap'
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = 'translateY(-2px)';
-                            e.currentTarget.style.boxShadow = '0 4px 8px rgba(67, 233, 123, 0.4)';
-                        }}
                         onMouseLeave={(e) => {
                             e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.boxShadow = '0 2px 4px rgba(67, 233, 123, 0.3)';
-                        }}
-                    >
-                        💻 코딩Test
+                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+                        }}>
+                        <span style={{ fontSize: '1.2rem' }}>{bookmarked ? '⭐' : '☆'}</span>
+                        <span style={{ color: bookmarked ? '#fff' : '#333' }}>
+                            {bookmarked ? '북마크 됨' : '북마크'}
+                        </span>
                     </button>
                 </div>
             </div>
