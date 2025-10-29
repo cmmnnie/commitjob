@@ -8176,6 +8176,95 @@ app.delete('/api/cover-letters/:id', async (req, res) => {
   }
 });
 
+// ==== 인증 미들웨어 ====
+const authenticateUser = async (req, res, next) => {
+  try {
+    // Authorization 헤더에서 Bearer 토큰 확인
+    const authHeader = req.headers.authorization;
+    let token = null;
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
+    }
+
+    // 쿠키에서도 확인
+    if (!token) {
+      token = req.cookies?.app_session;
+    }
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        error: '인증이 필요합니다.'
+      });
+    }
+
+    const { payload } = await jose.jwtVerify(
+      token,
+      new TextEncoder().encode(process.env.JWT_SECRET)
+    );
+
+    const user = await findUserById(payload.uid);
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        error: '사용자를 찾을 수 없습니다.'
+      });
+    }
+
+    req.user = { ...user, provider: payload.provider };
+    next();
+  } catch (error) {
+    console.error('[AUTH] 인증 실패:', error);
+    return res.status(401).json({
+      success: false,
+      error: '유효하지 않은 인증 토큰입니다.'
+    });
+  }
+};
+
+// 옵셔널 인증 미들웨어 (로그인하지 않아도 접근 가능)
+const optionalAuthenticateUser = async (req, res, next) => {
+  try {
+    // Authorization 헤더에서 Bearer 토큰 확인
+    const authHeader = req.headers.authorization;
+    let token = null;
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
+    }
+
+    // 쿠키에서도 확인
+    if (!token) {
+      token = req.cookies?.app_session;
+    }
+
+    // 토큰이 없으면 그냥 다음으로
+    if (!token) {
+      req.user = null;
+      return next();
+    }
+
+    const { payload } = await jose.jwtVerify(
+      token,
+      new TextEncoder().encode(process.env.JWT_SECRET)
+    );
+
+    const user = await findUserById(payload.uid);
+    if (user) {
+      req.user = { ...user, provider: payload.provider };
+    } else {
+      req.user = null;
+    }
+    next();
+  } catch (error) {
+    // 인증 실패해도 계속 진행
+    console.log('[AUTH] 옵셔널 인증 실패 (계속 진행):', error.message);
+    req.user = null;
+    next();
+  }
+};
+
 // ==== 북마크 관련 API ====
 
 // 북마크 테이블 생성 (서버 시작 시 자동 생성)
@@ -8202,19 +8291,12 @@ app.delete('/api/cover-letters/:id', async (req, res) => {
 })();
 
 // 북마크 추가
-app.post('/api/bookmarks', async (req, res) => {
+app.post('/api/bookmarks', authenticateUser, async (req, res) => {
   console.log('[BOOKMARK-ADD] 북마크 추가 요청');
 
   try {
     const { jobId, note } = req.body;
     const user = req.user;
-
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        error: '로그인이 필요합니다.'
-      });
-    }
 
     if (!jobId) {
       return res.status(400).json({
@@ -8256,19 +8338,12 @@ app.post('/api/bookmarks', async (req, res) => {
 });
 
 // 북마크 삭제
-app.delete('/api/bookmarks/:jobId', async (req, res) => {
+app.delete('/api/bookmarks/:jobId', authenticateUser, async (req, res) => {
   console.log('[BOOKMARK-DELETE] 북마크 삭제 요청');
 
   try {
     const { jobId } = req.params;
     const user = req.user;
-
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        error: '로그인이 필요합니다.'
-      });
-    }
 
     const [result] = await pool.execute(`
       DELETE FROM job_bookmarks
@@ -8300,18 +8375,11 @@ app.delete('/api/bookmarks/:jobId', async (req, res) => {
 });
 
 // 사용자의 모든 북마크 조회
-app.get('/api/bookmarks', async (req, res) => {
+app.get('/api/bookmarks', authenticateUser, async (req, res) => {
   console.log('[BOOKMARK-LIST] 북마크 목록 조회 요청');
 
   try {
     const user = req.user;
-
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        error: '로그인이 필요합니다.'
-      });
-    }
 
     const [bookmarks] = await pool.execute(`
       SELECT
@@ -8368,7 +8436,7 @@ app.get('/api/bookmarks', async (req, res) => {
 });
 
 // 특정 공고의 북마크 상태 확인
-app.get('/api/bookmarks/check/:jobId', async (req, res) => {
+app.get('/api/bookmarks/check/:jobId', optionalAuthenticateUser, async (req, res) => {
   try {
     const { jobId } = req.params;
     const user = req.user;
