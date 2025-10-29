@@ -1159,7 +1159,7 @@ export default function ResumePage() {
 
                         {/* AI자소서 */}
                         <div style={{
-                            background: 'linear-gradient(135deg, #ff9a56 0%, #ff6a00 100%)',
+                            background: 'linear-gradient(135deg, #ffb366 0%, #ff9944 100%)',
                             padding: '15px',
                             borderRadius: '12px',
                             color: 'white',
