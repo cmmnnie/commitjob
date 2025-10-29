@@ -1082,7 +1082,7 @@ export default function ResumePage() {
                             textAlign: 'center'
                         }}>
                             <div style={{
-                                fontSize: '1rem',
+                                fontSize: '1.1rem',
                                 marginBottom: '6px',
                                 opacity: 0.9,
                                 fontWeight: '700'
@@ -1103,7 +1103,7 @@ export default function ResumePage() {
                             textAlign: 'center'
                         }}>
                             <div style={{
-                                fontSize: '1rem',
+                                fontSize: '1.1rem',
                                 marginBottom: '6px',
                                 opacity: 0.9,
                                 fontWeight: '700'
@@ -1124,7 +1124,7 @@ export default function ResumePage() {
                             textAlign: 'center'
                         }}>
                             <div style={{
-                                fontSize: '1rem',
+                                fontSize: '1.1rem',
                                 marginBottom: '6px',
                                 opacity: 0.9,
                                 fontWeight: '700'
@@ -1145,7 +1145,7 @@ export default function ResumePage() {
                             textAlign: 'center'
                         }}>
                             <div style={{
-                                fontSize: '1rem',
+                                fontSize: '1.1rem',
                                 marginBottom: '6px',
                                 opacity: 0.9,
                                 fontWeight: '700'
@@ -1159,14 +1159,14 @@ export default function ResumePage() {
 
                         {/* AI자소서 */}
                         <div style={{
-                            background: 'linear-gradient(135deg, #fff9c4 0%, #ffe082 100%)',
+                            background: 'linear-gradient(135deg, #ff9a56 0%, #ff6a00 100%)',
                             padding: '15px',
                             borderRadius: '12px',
-                            color: '#333',
+                            color: 'white',
                             textAlign: 'center'
                         }}>
                             <div style={{
-                                fontSize: '1rem',
+                                fontSize: '1.1rem',
                                 marginBottom: '6px',
                                 opacity: 0.9,
                                 fontWeight: '700'
@@ -1174,7 +1174,7 @@ export default function ResumePage() {
                             <div style={{
                                 fontSize: '1.8rem',
                                 fontWeight: '800',
-                                textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                                textShadow: '0 2px 4px rgba(0,0,0,0.2)'
                             }}>{activityStats.aiCoverLetters}</div>
                         </div>
                     </div>
