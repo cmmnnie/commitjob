@@ -157,8 +157,10 @@ export default function AIRecommendationPage() {
         useEffect(() => {
             const checkBookmarkStatus = async () => {
                 try {
+                    const token = localStorage.getItem('app_session');
                     const response = await axios.get(`${API_BASE_URL}/api/bookmarks/check/${job.id}`, {
-                        withCredentials: true
+                        withCredentials: true,
+                        headers: token ? { Authorization: `Bearer ${token}` } : {}
                     });
                     if (response.data.success) {
                         setBookmarked(response.data.bookmarked);
@@ -178,10 +180,13 @@ export default function AIRecommendationPage() {
 
             try {
                 setBookmarkLoading(true);
+                const token = localStorage.getItem('app_session');
+                const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
                 if (bookmarked) {
                     const response = await axios.delete(`${API_BASE_URL}/api/bookmarks/${job.id}`, {
-                        withCredentials: true
+                        withCredentials: true,
+                        headers
                     });
                     if (response.data.success) {
                         setBookmarked(false);
@@ -190,7 +195,8 @@ export default function AIRecommendationPage() {
                     const response = await axios.post(`${API_BASE_URL}/api/bookmarks`, {
                         jobId: job.id
                     }, {
-                        withCredentials: true
+                        withCredentials: true,
+                        headers
                     });
                     if (response.data.success) {
                         setBookmarked(true);
