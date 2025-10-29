@@ -1138,7 +1138,7 @@ export default function ResumePage() {
 
                         {/* AI면접 */}
                         <div style={{
-                            background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+                            background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
                             padding: '15px',
                             borderRadius: '12px',
                             color: 'white',
@@ -1159,7 +1159,7 @@ export default function ResumePage() {
 
                         {/* AI자소서 */}
                         <div style={{
-                            background: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',
+                            background: 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)',
                             padding: '15px',
                             borderRadius: '12px',
                             color: 'white',
