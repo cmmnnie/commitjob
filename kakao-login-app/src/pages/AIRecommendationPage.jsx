@@ -494,7 +494,7 @@ export default function AIRecommendationPage() {
                     {/* 두 번째 줄: 북마크 버튼 */}
                     <div style={{
                         display: 'flex',
-                        justifyContent: 'center',
+                        justifyContent: 'flex-end',
                         alignItems: 'center'
                     }}>
                         <button
