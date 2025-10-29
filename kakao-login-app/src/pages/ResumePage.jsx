@@ -1063,7 +1063,7 @@ export default function ResumePage() {
                             fontWeight: '700',
                             fontFamily: "'Quicksand', sans-serif",
                             whiteSpace: 'nowrap'
-                        }}>{maskName(currentUser.name)}님의 이력서</h1>
+                        }}>{maskName(currentUser.name)}님</h1>
                     </div>
 
                     {/* 오른쪽: 활동 통계 카드 */}
@@ -1082,10 +1082,10 @@ export default function ResumePage() {
                             textAlign: 'center'
                         }}>
                             <div style={{
-                                fontSize: '0.85rem',
+                                fontSize: '1rem',
                                 marginBottom: '6px',
                                 opacity: 0.9,
-                                fontWeight: '600'
+                                fontWeight: '700'
                             }}>관심공고</div>
                             <div style={{
                                 fontSize: '1.8rem',
@@ -1103,10 +1103,10 @@ export default function ResumePage() {
                             textAlign: 'center'
                         }}>
                             <div style={{
-                                fontSize: '0.85rem',
+                                fontSize: '1rem',
                                 marginBottom: '6px',
                                 opacity: 0.9,
-                                fontWeight: '600'
+                                fontWeight: '700'
                             }}>관심회사</div>
                             <div style={{
                                 fontSize: '1.8rem',
@@ -1124,10 +1124,10 @@ export default function ResumePage() {
                             textAlign: 'center'
                         }}>
                             <div style={{
-                                fontSize: '0.85rem',
+                                fontSize: '1rem',
                                 marginBottom: '6px',
                                 opacity: 0.9,
-                                fontWeight: '600'
+                                fontWeight: '700'
                             }}>AI채용</div>
                             <div style={{
                                 fontSize: '1.8rem',
@@ -1145,10 +1145,10 @@ export default function ResumePage() {
                             textAlign: 'center'
                         }}>
                             <div style={{
-                                fontSize: '0.85rem',
+                                fontSize: '1rem',
                                 marginBottom: '6px',
                                 opacity: 0.9,
-                                fontWeight: '600'
+                                fontWeight: '700'
                             }}>AI면접</div>
                             <div style={{
                                 fontSize: '1.8rem',
@@ -1159,22 +1159,22 @@ export default function ResumePage() {
 
                         {/* AI자소서 */}
                         <div style={{
-                            background: 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)',
+                            background: 'linear-gradient(135deg, #fff9c4 0%, #ffe082 100%)',
                             padding: '15px',
                             borderRadius: '12px',
-                            color: 'white',
+                            color: '#333',
                             textAlign: 'center'
                         }}>
                             <div style={{
-                                fontSize: '0.85rem',
+                                fontSize: '1rem',
                                 marginBottom: '6px',
                                 opacity: 0.9,
-                                fontWeight: '600'
+                                fontWeight: '700'
                             }}>AI자소서</div>
                             <div style={{
                                 fontSize: '1.8rem',
                                 fontWeight: '800',
-                                textShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                textShadow: '0 1px 2px rgba(0,0,0,0.1)'
                             }}>{activityStats.aiCoverLetters}</div>
                         </div>
                     </div>
