@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CONFIG } from '../config';
+import axios from 'axios';
+
+const API_BASE_URL = CONFIG.BACKEND_URL;
 
 export default function AIRecommendationPage() {
     const navigate = useNavigate();
@@ -146,27 +149,123 @@ export default function AIRecommendationPage() {
         await checkLoginAndFetchRecommendations();
     };
 
-    const JobCard = ({ job }) => (
-        <div
-            style={{
-                background: 'white',
-                borderRadius: '16px',
-                border: '1px solid #e0e0e0',
-                padding: '20px',
-                marginBottom: '15px',
-                transition: 'all 0.3s',
-                cursor: 'pointer'
-            }}
-            onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.12)';
-                e.currentTarget.style.transform = 'translateY(-4px)';
-            }}
-            onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = 'none';
-                e.currentTarget.style.transform = 'translateY(0)';
-            }}
-            onClick={() => navigate(`/jobs/detail/${job.id}`, { state: { job } })}
-        >
+    const JobCard = ({ job }) => {
+        const [bookmarked, setBookmarked] = useState(false);
+        const [bookmarkLoading, setBookmarkLoading] = useState(false);
+
+        // 북마크 상태 확인
+        useEffect(() => {
+            const checkBookmarkStatus = async () => {
+                try {
+                    const response = await axios.get(`${API_BASE_URL}/api/bookmarks/check/${job.id}`, {
+                        withCredentials: true
+                    });
+                    if (response.data.success) {
+                        setBookmarked(response.data.bookmarked);
+                    }
+                } catch (error) {
+                    console.error('북마크 상태 확인 실패:', error);
+                }
+            };
+            checkBookmarkStatus();
+        }, [job.id]);
+
+        // 북마크 토글
+        const handleToggleBookmark = async (e) => {
+            e.stopPropagation();
+
+            if (bookmarkLoading) return;
+
+            try {
+                setBookmarkLoading(true);
+
+                if (bookmarked) {
+                    const response = await axios.delete(`${API_BASE_URL}/api/bookmarks/${job.id}`, {
+                        withCredentials: true
+                    });
+                    if (response.data.success) {
+                        setBookmarked(false);
+                    }
+                } else {
+                    const response = await axios.post(`${API_BASE_URL}/api/bookmarks`, {
+                        jobId: job.id
+                    }, {
+                        withCredentials: true
+                    });
+                    if (response.data.success) {
+                        setBookmarked(true);
+                    }
+                }
+            } catch (error) {
+                console.error('북마크 토글 실패:', error);
+                if (error.response?.status === 401) {
+                    alert('로그인이 필요합니다.');
+                } else {
+                    alert('북마크 처리 중 오류가 발생했습니다.');
+                }
+            } finally {
+                setBookmarkLoading(false);
+            }
+        };
+
+        return (
+            <div
+                style={{
+                    background: 'white',
+                    borderRadius: '16px',
+                    border: '1px solid #e0e0e0',
+                    padding: '20px',
+                    marginBottom: '15px',
+                    transition: 'all 0.3s',
+                    cursor: 'pointer',
+                    position: 'relative'
+                }}
+                onMouseEnter={(e) => {
+                    e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.12)';
+                    e.currentTarget.style.transform = 'translateY(-4px)';
+                }}
+                onMouseLeave={(e) => {
+                    e.currentTarget.style.boxShadow = 'none';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                }}
+                onClick={() => navigate(`/jobs/detail/${job.id}`, { state: { job } })}
+            >
+                {/* 북마크 버튼 */}
+                <button
+                    onClick={handleToggleBookmark}
+                    disabled={bookmarkLoading}
+                    style={{
+                        position: 'absolute',
+                        top: '16px',
+                        right: '16px',
+                        background: bookmarked ? '#ffd700' : 'rgba(255, 255, 255, 0.9)',
+                        border: '2px solid #e0e0e0',
+                        borderRadius: '50%',
+                        width: '40px',
+                        height: '40px',
+                        cursor: bookmarkLoading ? 'not-allowed' : 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '1.3rem',
+                        transition: 'all 0.2s',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                        zIndex: 10,
+                        opacity: bookmarkLoading ? 0.6 : 1
+                    }}
+                    onMouseEnter={(e) => {
+                        if (!bookmarkLoading) {
+                            e.currentTarget.style.transform = 'scale(1.1)';
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.25)';
+                        }
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'scale(1)';
+                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+                    }}>
+                    {bookmarked ? '⭐' : '☆'}
+                </button>
+
             <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -494,8 +593,9 @@ export default function AIRecommendationPage() {
                         </div>
                     </div>
                 )}
-        </div>
-    );
+            </div>
+        );
+    };
 
     if (isLoading) {
         return (
