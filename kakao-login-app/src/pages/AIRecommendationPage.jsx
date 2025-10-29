@@ -492,40 +492,42 @@ export default function AIRecommendationPage() {
                     </div>
 
                     {/* 두 번째 줄: 북마크 버튼 */}
-                    <button
-                        onClick={handleToggleBookmark}
-                        disabled={bookmarkLoading}
-                        style={{
-                            background: bookmarked ? '#ffd700' : 'rgba(255, 255, 255, 0.9)',
-                            border: '2px solid #e0e0e0',
-                            borderRadius: '8px',
-                            padding: '8px 10px',
-                            cursor: bookmarkLoading ? 'not-allowed' : 'pointer',
-                            fontSize: '0.75rem',
-                            fontWeight: '600',
-                            transition: 'all 0.2s',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                            opacity: bookmarkLoading ? 0.6 : 1,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '4px'
-                        }}
-                        onMouseEnter={(e) => {
-                            if (!bookmarkLoading) {
-                                e.currentTarget.style.transform = 'translateY(-2px)';
-                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.25)';
-                            }
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
-                        }}>
-                        <span style={{ fontSize: '1.2rem' }}>{bookmarked ? '⭐' : '☆'}</span>
-                        <span style={{ color: bookmarked ? '#fff' : '#333' }}>
-                            {bookmarked ? '북마크 됨' : '북마크'}
-                        </span>
-                    </button>
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center'
+                    }}>
+                        <button
+                            onClick={handleToggleBookmark}
+                            disabled={bookmarkLoading}
+                            style={{
+                                background: bookmarked ? '#ffd700' : 'rgba(255, 255, 255, 0.9)',
+                                border: '2px solid #e0e0e0',
+                                borderRadius: '50%',
+                                width: '50px',
+                                height: '50px',
+                                cursor: bookmarkLoading ? 'not-allowed' : 'pointer',
+                                fontSize: '1.5rem',
+                                transition: 'all 0.2s',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                                opacity: bookmarkLoading ? 0.6 : 1,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}
+                            onMouseEnter={(e) => {
+                                if (!bookmarkLoading) {
+                                    e.currentTarget.style.transform = 'scale(1.1)';
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.25)';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'scale(1)';
+                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+                            }}>
+                            {bookmarked ? '⭐' : '☆'}
+                        </button>
+                    </div>
                 </div>
             </div>
 
