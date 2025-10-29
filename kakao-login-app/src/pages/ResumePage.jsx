@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { CONFIG } from '../config';
+import axios from 'axios';
 
 export default function ResumePage() {
     const [currentUser, setCurrentUser] = useState(null);
@@ -7,6 +8,13 @@ export default function ResumePage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [activeTab, setActiveTab] = useState('basic'); // 'basic', 'experience', 'education', 'coverLetter'
+    const [activityStats, setActivityStats] = useState({
+        bookmarks: 0,
+        favoriteCompanies: 0,
+        aiRecommendations: 0,
+        aiInterviews: 0,
+        aiCoverLetters: 0
+    });
     const [formData, setFormData] = useState({
         jobs: '',
         careerType: '',  // '신입' 또는 '경력'
@@ -661,12 +669,39 @@ export default function ResumePage() {
                 if (data.user) {
                     setCurrentUser(data.user);
                     await loadUserProfile(data.user.id);
+                    await loadActivityStats(data.user.id);
                 }
             }
         } catch (error) {
             console.error('[RESUME] 로그인 상태 확인 오류:', error);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const loadActivityStats = async (userId) => {
+        try {
+            const token = localStorage.getItem('app_session');
+            const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+            // 북마크 개수 가져오기
+            const bookmarksRes = await axios.get(`${CONFIG.BACKEND_URL}/api/bookmarks`, {
+                withCredentials: true,
+                headers
+            });
+
+            // 자소서 개수는 coverLetterList에서 가져옴 (이미 로드됨)
+            // AI 추천, AI 면접, 관심회사는 나중에 API 추가 가능
+
+            setActivityStats({
+                bookmarks: bookmarksRes.data.total || 0,
+                favoriteCompanies: 0, // TODO: API 추가 시
+                aiRecommendations: 0, // TODO: API 추가 시
+                aiInterviews: 0, // TODO: API 추가 시
+                aiCoverLetters: 0 // coverLetterList.length로 업데이트 예정
+            });
+        } catch (error) {
+            console.error('[RESUME] 활동 통계 로드 오류:', error);
         }
     };
 
@@ -748,7 +783,13 @@ export default function ResumePage() {
                             const coverLetterData = typeof data.profile.cover_letters === 'string'
                                 ? JSON.parse(data.profile.cover_letters)
                                 : data.profile.cover_letters;
-                            setCoverLetterList(Array.isArray(coverLetterData) ? coverLetterData : []);
+                            const letters = Array.isArray(coverLetterData) ? coverLetterData : [];
+                            setCoverLetterList(letters);
+                            // 자소서 개수 업데이트
+                            setActivityStats(prev => ({
+                                ...prev,
+                                aiCoverLetters: letters.length
+                            }));
                         }
                     } catch (parseError) {
                         console.error('[RESUME] 학력/자격/어학/수상/경력/자기소개서 데이터 파싱 오류:', parseError);
@@ -987,35 +1028,156 @@ export default function ResumePage() {
                 maxWidth: '800px',
                 margin: '0 auto'
             }}>
-                {/* 헤더 - 사용자 정보 */}
+                {/* 헤더 - 사용자 정보 및 활동 통계 */}
                 <div style={{
-                    textAlign: 'center',
+                    display: 'flex',
+                    gap: '30px',
                     marginBottom: '20px',
-                    paddingBottom: '15px',
+                    paddingBottom: '20px',
                     borderBottom: '2px solid #f0f0f0'
                 }}>
-                    {currentUser.picture && (
-                        <div style={{ marginBottom: '10px' }}>
+                    {/* 왼쪽: 프로필 사진 + 이름 */}
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '15px',
+                        flex: '0 0 auto'
+                    }}>
+                        {currentUser.picture && (
                             <img
                                 src={currentUser.picture}
                                 alt={currentUser.name}
                                 style={{
-                                    width: '70px',
-                                    height: '70px',
+                                    width: '80px',
+                                    height: '80px',
                                     borderRadius: '50%',
                                     border: '3px solid #667eea',
                                     objectFit: 'cover'
                                 }}
                             />
+                        )}
+                        <h1 style={{
+                            fontSize: '1.5rem',
+                            color: '#333',
+                            margin: 0,
+                            fontWeight: '700',
+                            fontFamily: "'Quicksand', sans-serif",
+                            whiteSpace: 'nowrap'
+                        }}>{maskName(currentUser.name)}님의 이력서</h1>
+                    </div>
+
+                    {/* 오른쪽: 활동 통계 카드 */}
+                    <div style={{
+                        flex: 1,
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(5, 1fr)',
+                        gap: '12px'
+                    }}>
+                        {/* 관심공고 */}
+                        <div style={{
+                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                            padding: '15px',
+                            borderRadius: '12px',
+                            color: 'white',
+                            textAlign: 'center'
+                        }}>
+                            <div style={{
+                                fontSize: '0.85rem',
+                                marginBottom: '6px',
+                                opacity: 0.9,
+                                fontWeight: '600'
+                            }}>관심공고</div>
+                            <div style={{
+                                fontSize: '1.8rem',
+                                fontWeight: '800',
+                                textShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                            }}>{activityStats.bookmarks}</div>
                         </div>
-                    )}
-                    <h1 style={{
-                        fontSize: '1.4rem',
-                        color: '#333',
-                        marginBottom: '5px',
-                        fontWeight: '700',
-                        fontFamily: "'Quicksand', sans-serif"
-                    }}>{maskName(currentUser.name)}님의 이력서</h1>
+
+                        {/* 관심회사 */}
+                        <div style={{
+                            background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                            padding: '15px',
+                            borderRadius: '12px',
+                            color: 'white',
+                            textAlign: 'center'
+                        }}>
+                            <div style={{
+                                fontSize: '0.85rem',
+                                marginBottom: '6px',
+                                opacity: 0.9,
+                                fontWeight: '600'
+                            }}>관심회사</div>
+                            <div style={{
+                                fontSize: '1.8rem',
+                                fontWeight: '800',
+                                textShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                            }}>{activityStats.favoriteCompanies}</div>
+                        </div>
+
+                        {/* AI채용 */}
+                        <div style={{
+                            background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                            padding: '15px',
+                            borderRadius: '12px',
+                            color: 'white',
+                            textAlign: 'center'
+                        }}>
+                            <div style={{
+                                fontSize: '0.85rem',
+                                marginBottom: '6px',
+                                opacity: 0.9,
+                                fontWeight: '600'
+                            }}>AI채용</div>
+                            <div style={{
+                                fontSize: '1.8rem',
+                                fontWeight: '800',
+                                textShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                            }}>{activityStats.aiRecommendations}</div>
+                        </div>
+
+                        {/* AI면접 */}
+                        <div style={{
+                            background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+                            padding: '15px',
+                            borderRadius: '12px',
+                            color: 'white',
+                            textAlign: 'center'
+                        }}>
+                            <div style={{
+                                fontSize: '0.85rem',
+                                marginBottom: '6px',
+                                opacity: 0.9,
+                                fontWeight: '600'
+                            }}>AI면접</div>
+                            <div style={{
+                                fontSize: '1.8rem',
+                                fontWeight: '800',
+                                textShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                            }}>{activityStats.aiInterviews}</div>
+                        </div>
+
+                        {/* AI자소서 */}
+                        <div style={{
+                            background: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',
+                            padding: '15px',
+                            borderRadius: '12px',
+                            color: 'white',
+                            textAlign: 'center'
+                        }}>
+                            <div style={{
+                                fontSize: '0.85rem',
+                                marginBottom: '6px',
+                                opacity: 0.9,
+                                fontWeight: '600'
+                            }}>AI자소서</div>
+                            <div style={{
+                                fontSize: '1.8rem',
+                                fontWeight: '800',
+                                textShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                            }}>{activityStats.aiCoverLetters}</div>
+                        </div>
+                    </div>
                 </div>
 
                 {/* 탭 네비게이션 */}
