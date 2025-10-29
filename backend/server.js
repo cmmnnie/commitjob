@@ -7565,8 +7565,8 @@ app.post('/api/scrape-latest-jobs', async (req, res) => {
 
       const scrapeResponse = await axios.post(
         `${CATCH_SCRAPER_URL}/api/scrape-integrated`,
-        { max_jobs: 15 },
-        { timeout: 180000 } // 3분 타임아웃
+        { max_jobs: 100 },
+        { timeout: 300000 } // 5분 타임아웃
       );
 
       if (!scrapeResponse.data.success) {

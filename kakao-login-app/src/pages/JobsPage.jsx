@@ -84,7 +84,7 @@ export default function JobsPage() {
     const handleScrapJobs = async () => {
         if (scraping) return;
 
-        const confirmScrape = window.confirm('Catch.co.kr에서 최신 공고를 스크래핑하시겠습니까?\n약 30개의 IT/AI 공고를 가져옵니다.');
+        const confirmScrape = window.confirm('Catch.co.kr에서 최신 공고를 스크래핑하시겠습니까?\nBIGDATA/AI와 IT 분야에서 각각 100건씩 가져옵니다.');
         if (!confirmScrape) return;
 
         try {
