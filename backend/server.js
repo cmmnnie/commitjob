@@ -8176,6 +8176,230 @@ app.delete('/api/cover-letters/:id', async (req, res) => {
   }
 });
 
+// ==== 북마크 관련 API ====
+
+// 북마크 테이블 생성 (서버 시작 시 자동 생성)
+(async () => {
+  try {
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS job_bookmarks (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        job_id INT NOT NULL,
+        note TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        UNIQUE KEY unique_user_job (user_id, job_id),
+        INDEX idx_user_id (user_id),
+        INDEX idx_job_id (job_id),
+        INDEX idx_created_at (created_at)
+      )
+    `);
+    console.log('[DB] ✅ job_bookmarks 테이블 확인/생성 완료');
+  } catch (error) {
+    console.error('[DB] ❌ job_bookmarks 테이블 생성 실패:', error.message);
+  }
+})();
+
+// 북마크 추가
+app.post('/api/bookmarks', async (req, res) => {
+  console.log('[BOOKMARK-ADD] 북마크 추가 요청');
+
+  try {
+    const { jobId, note } = req.body;
+    const user = req.user;
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        error: '로그인이 필요합니다.'
+      });
+    }
+
+    if (!jobId) {
+      return res.status(400).json({
+        success: false,
+        error: 'jobId가 필요합니다.'
+      });
+    }
+
+    // 북마크 추가 (중복 시 무시)
+    const [result] = await pool.execute(`
+      INSERT IGNORE INTO job_bookmarks (user_id, job_id, note)
+      VALUES (?, ?, ?)
+    `, [user.id, jobId, note || null]);
+
+    if (result.affectedRows === 0) {
+      return res.json({
+        success: true,
+        message: '이미 북마크된 공고입니다.',
+        alreadyBookmarked: true
+      });
+    }
+
+    console.log(`[BOOKMARK-ADD] ✅ 북마크 추가 완료 - user_id: ${user.id}, job_id: ${jobId}`);
+
+    res.json({
+      success: true,
+      message: '북마크가 추가되었습니다.',
+      bookmarkId: result.insertId
+    });
+
+  } catch (error) {
+    console.error('[BOOKMARK-ADD] Error:', error);
+    res.status(500).json({
+      success: false,
+      error: '북마크 추가 중 오류가 발생했습니다.',
+      message: error.message
+    });
+  }
+});
+
+// 북마크 삭제
+app.delete('/api/bookmarks/:jobId', async (req, res) => {
+  console.log('[BOOKMARK-DELETE] 북마크 삭제 요청');
+
+  try {
+    const { jobId } = req.params;
+    const user = req.user;
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        error: '로그인이 필요합니다.'
+      });
+    }
+
+    const [result] = await pool.execute(`
+      DELETE FROM job_bookmarks
+      WHERE user_id = ? AND job_id = ?
+    `, [user.id, jobId]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        error: '북마크를 찾을 수 없습니다.'
+      });
+    }
+
+    console.log(`[BOOKMARK-DELETE] ✅ 북마크 삭제 완료 - user_id: ${user.id}, job_id: ${jobId}`);
+
+    res.json({
+      success: true,
+      message: '북마크가 삭제되었습니다.'
+    });
+
+  } catch (error) {
+    console.error('[BOOKMARK-DELETE] Error:', error);
+    res.status(500).json({
+      success: false,
+      error: '북마크 삭제 중 오류가 발생했습니다.',
+      message: error.message
+    });
+  }
+});
+
+// 사용자의 모든 북마크 조회
+app.get('/api/bookmarks', async (req, res) => {
+  console.log('[BOOKMARK-LIST] 북마크 목록 조회 요청');
+
+  try {
+    const user = req.user;
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        error: '로그인이 필요합니다.'
+      });
+    }
+
+    const [bookmarks] = await pool.execute(`
+      SELECT
+        b.id as bookmark_id,
+        b.job_id,
+        b.note,
+        b.created_at as bookmarked_at,
+        j.*,
+        c.company_url,
+        c.company_logo_url,
+        c.location
+      FROM job_bookmarks b
+      INNER JOIN jobs j ON b.job_id = j.id
+      LEFT JOIN catch_companies c ON TRIM(j.company) = TRIM(c.company)
+      WHERE b.user_id = ?
+      ORDER BY b.created_at DESC
+    `, [user.id]);
+
+    // JSON 필드 파싱
+    const parsedBookmarks = bookmarks.map(bookmark => {
+      try {
+        return {
+          ...bookmark,
+          job_info: bookmark.job_info ? JSON.parse(bookmark.job_info) : [],
+          conditions: bookmark.conditions ? JSON.parse(bookmark.conditions) : [],
+          registration_info: bookmark.registration_info ? JSON.parse(bookmark.registration_info) : []
+        };
+      } catch (parseError) {
+        return {
+          ...bookmark,
+          job_info: [],
+          conditions: [],
+          registration_info: []
+        };
+      }
+    });
+
+    console.log(`[BOOKMARK-LIST] ✅ 북마크 ${parsedBookmarks.length}개 조회 완료`);
+
+    res.json({
+      success: true,
+      bookmarks: parsedBookmarks,
+      total: parsedBookmarks.length
+    });
+
+  } catch (error) {
+    console.error('[BOOKMARK-LIST] Error:', error);
+    res.status(500).json({
+      success: false,
+      error: '북마크 목록 조회 중 오류가 발생했습니다.',
+      message: error.message
+    });
+  }
+});
+
+// 특정 공고의 북마크 상태 확인
+app.get('/api/bookmarks/check/:jobId', async (req, res) => {
+  try {
+    const { jobId } = req.params;
+    const user = req.user;
+
+    if (!user) {
+      return res.json({
+        success: true,
+        bookmarked: false
+      });
+    }
+
+    const [result] = await pool.execute(`
+      SELECT id FROM job_bookmarks
+      WHERE user_id = ? AND job_id = ?
+    `, [user.id, jobId]);
+
+    res.json({
+      success: true,
+      bookmarked: result.length > 0
+    });
+
+  } catch (error) {
+    console.error('[BOOKMARK-CHECK] Error:', error);
+    res.status(500).json({
+      success: false,
+      error: '북마크 상태 확인 중 오류가 발생했습니다.',
+      message: error.message
+    });
+  }
+});
+
 // ==== 404 핸들러 (마지막) ====
 app.use((req, res) => {
   res.status(404).json({ error: 'Not Found', path: req.originalUrl });

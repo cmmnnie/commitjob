@@ -147,6 +147,20 @@ CREATE TABLE IF NOT EXISTS user_interview_conditions (
     INDEX idx_input_source (input_source)
 );
 
+-- 관심공고 북마크 테이블
+CREATE TABLE IF NOT EXISTS job_bookmarks (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    job_id INT NOT NULL, -- jobs 테이블의 id 참조
+    note TEXT, -- 사용자 메모 (선택사항)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_user_job (user_id, job_id), -- 중복 북마크 방지
+    INDEX idx_user_id (user_id),
+    INDEX idx_job_id (job_id),
+    INDEX idx_created_at (created_at)
+);
+
 -- 샘플 데이터 삽입
 INSERT IGNORE INTO companies (company_id, name, description, location, size, industry) VALUES
 ('company_001', '네이버', '국내 대표 IT 기업', '경기 성남시', '1000명 이상', 'IT/인터넷'),
@@ -171,6 +185,7 @@ OPTIMIZE TABLE user_sessions;
 OPTIMIZE TABLE recommendation_logs;
 OPTIMIZE TABLE interview_logs;
 OPTIMIZE TABLE user_interview_conditions;
+OPTIMIZE TABLE job_bookmarks;
 
 -- 정리용 이벤트 스케줄러 (만료된 세션 정리)
 -- SET GLOBAL event_scheduler = ON;
