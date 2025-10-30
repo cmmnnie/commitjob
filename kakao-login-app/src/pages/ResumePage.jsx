@@ -155,8 +155,16 @@ export default function ResumePage() {
             if (response.ok) {
                 const data = await response.json();
                 if (data.success) {
-                    setSavedAiJobs(data.jobs || []);
-                    console.log('[AI채용] 저장된 추천공고:', data.jobs?.length || 0, '건');
+                    const jobs = data.jobs || [];
+                    setSavedAiJobs(jobs);
+
+                    // activityStats의 aiRecommendations 업데이트
+                    setActivityStats(prev => ({
+                        ...prev,
+                        aiRecommendations: jobs.length
+                    }));
+
+                    console.log('[AI채용] 저장된 추천공고:', jobs.length, '건');
                 }
             }
         } catch (error) {
@@ -755,13 +763,32 @@ export default function ResumePage() {
                 console.error('[RESUME] AI 자소서 로드 오류:', err);
             }
 
-            // 자소서 개수는 coverLetterList에서 가져옴 (이미 로드됨)
-            // AI 추천, AI 면접, 관심회사는 나중에 API 추가 가능
+            // AI 추천공고 개수 가져오기
+            let aiRecommendationsCount = 0;
+            try {
+                const aiJobsRes = await fetch(`${CONFIG.BACKEND_URL}/api/saved-recommended-jobs`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (aiJobsRes.ok) {
+                    const aiJobsData = await aiJobsRes.json();
+                    if (aiJobsData.success && aiJobsData.jobs) {
+                        aiRecommendationsCount = aiJobsData.jobs.length;
+                    }
+                }
+            } catch (err) {
+                console.error('[RESUME] AI 추천공고 개수 로드 오류:', err);
+            }
 
             setActivityStats({
                 bookmarks: bookmarksRes.data.total || 0,
                 favoriteCompanies: 0, // TODO: API 추가 시
-                aiRecommendations: 0, // TODO: API 추가 시
+                aiRecommendations: aiRecommendationsCount,
                 aiInterviews: 0, // TODO: API 추가 시
                 aiCoverLetters: aiCoverLetterCount
             });
@@ -1257,38 +1284,50 @@ export default function ResumePage() {
 
                         {/* AI채용 */}
                         <div
-                            onClick={async () => {
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                console.log('[AI채용 버튼] 클릭됨');
+                                console.log('[AI채용 버튼] 현재 activeTab:', activeTab);
+                                console.log('[AI채용 버튼] 현재 showAiJobs:', showAiJobs);
+
                                 setActiveTab('basic');
                                 setShowAiJobs(true);
-                                await fetchSavedAiJobs();
+                                fetchSavedAiJobs();
+
+                                console.log('[AI채용 버튼] activeTab을 basic으로, showAiJobs를 true로 설정');
                             }}
                             style={{
-                            background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-                            padding: '15px',
-                            borderRadius: '12px',
-                            color: 'white',
-                            textAlign: 'center',
-                            cursor: 'pointer',
-                            transition: 'all 0.3s ease'
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = 'translateY(-2px)';
-                            e.currentTarget.style.boxShadow = '0 6px 20px rgba(79, 172, 254, 0.4)';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.boxShadow = 'none';
-                        }}>
+                                background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                                padding: '15px',
+                                borderRadius: '12px',
+                                color: 'white',
+                                textAlign: 'center',
+                                cursor: 'pointer',
+                                transition: 'all 0.3s ease',
+                                userSelect: 'none'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 6px 20px rgba(79, 172, 254, 0.4)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = 'none';
+                            }}
+                        >
                             <div style={{
                                 fontSize: '1.1rem',
                                 marginBottom: '6px',
                                 opacity: 0.9,
-                                fontWeight: '700'
+                                fontWeight: '700',
+                                pointerEvents: 'none'
                             }}>AI채용</div>
                             <div style={{
                                 fontSize: '1.8rem',
                                 fontWeight: '800',
-                                textShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                textShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                                pointerEvents: 'none'
                             }}>{activityStats.aiRecommendations}</div>
                         </div>
 
