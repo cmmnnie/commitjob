@@ -766,6 +766,41 @@ export default function ResumePage() {
         }
     };
 
+    // AI 자소서 삭제
+    const deleteAiCoverLetter = async (id) => {
+        if (!confirm('정말 이 자소서를 삭제하시겠습니까?')) {
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem('app_session');
+            const response = await fetch(`${CONFIG.BACKEND_URL}/api/cover-letters/${id}`, {
+                method: 'DELETE',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                alert('자소서가 삭제되었습니다.');
+                // 목록 새로고침
+                loadActivityStats(currentUser.id);
+                // 선택된 자소서가 삭제된 경우 닫기
+                if (selectedAiCoverLetter && selectedAiCoverLetter.id === id) {
+                    setSelectedAiCoverLetter(null);
+                }
+            } else {
+                alert('삭제에 실패했습니다.');
+            }
+        } catch (error) {
+            console.error('[RESUME] AI 자소서 삭제 오류:', error);
+            alert('자소서를 삭제하는 중 오류가 발생했습니다.');
+        }
+    };
+
     const loadUserProfile = async (userId) => {
         try {
             const response = await fetch(`${CONFIG.BACKEND_URL}/api/profile?user_id=${userId}`, {
@@ -1804,198 +1839,287 @@ export default function ResumePage() {
                                                 onMouseLeave={(e) => {
                                                     e.currentTarget.style.boxShadow = 'none';
                                                 }}>
+                                                {/* 제목과 버튼 */}
                                                 <div style={{
                                                     display: 'flex',
                                                     justifyContent: 'space-between',
-                                                    alignItems: 'flex-start',
-                                                    marginBottom: '15px'
+                                                    alignItems: 'center',
+                                                    marginBottom: '12px'
                                                 }}>
                                                     <h4 style={{
                                                         fontSize: '1.1rem',
                                                         fontWeight: '700',
                                                         color: '#ff8833',
                                                         margin: 0,
-                                                        flex: 1
+                                                        flex: 1,
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '8px'
                                                     }}>
+                                                        <span>🤖</span>
                                                         {coverLetter.title || '제목 없음'}
                                                     </h4>
-                                                    <span style={{
-                                                        fontSize: '1.5rem'
-                                                    }}>🤖</span>
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        gap: '8px'
+                                                    }}>
+                                                        <button
+                                                            onClick={() => loadAiCoverLetter(coverLetter.id)}
+                                                            style={{
+                                                                background: 'linear-gradient(135deg, #ffb366 0%, #ff9944 100%)',
+                                                                color: 'white',
+                                                                border: 'none',
+                                                                padding: '8px 16px',
+                                                                borderRadius: '6px',
+                                                                fontSize: '0.85rem',
+                                                                fontWeight: '600',
+                                                                cursor: 'pointer',
+                                                                transition: 'all 0.2s',
+                                                                boxShadow: '0 2px 6px rgba(255, 179, 102, 0.3)',
+                                                                whiteSpace: 'nowrap'
+                                                            }}
+                                                            onMouseEnter={(e) => {
+                                                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                                                e.currentTarget.style.boxShadow = '0 4px 10px rgba(255, 179, 102, 0.4)';
+                                                            }}
+                                                            onMouseLeave={(e) => {
+                                                                e.currentTarget.style.transform = 'translateY(0)';
+                                                                e.currentTarget.style.boxShadow = '0 2px 6px rgba(255, 179, 102, 0.3)';
+                                                            }}>
+                                                            📄 불러오기
+                                                        </button>
+                                                        <button
+                                                            onClick={() => deleteAiCoverLetter(coverLetter.id)}
+                                                            style={{
+                                                                background: '#ff4444',
+                                                                color: 'white',
+                                                                border: 'none',
+                                                                padding: '8px 16px',
+                                                                borderRadius: '6px',
+                                                                fontSize: '0.85rem',
+                                                                fontWeight: '600',
+                                                                cursor: 'pointer',
+                                                                transition: 'all 0.2s',
+                                                                boxShadow: '0 2px 6px rgba(255, 68, 68, 0.3)',
+                                                                whiteSpace: 'nowrap'
+                                                            }}
+                                                            onMouseEnter={(e) => {
+                                                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                                                e.currentTarget.style.boxShadow = '0 4px 10px rgba(255, 68, 68, 0.4)';
+                                                            }}
+                                                            onMouseLeave={(e) => {
+                                                                e.currentTarget.style.transform = 'translateY(0)';
+                                                                e.currentTarget.style.boxShadow = '0 2px 6px rgba(255, 68, 68, 0.3)';
+                                                            }}>
+                                                            🗑️ 삭제
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                                <div style={{
-                                                    fontSize: '0.9rem',
-                                                    color: '#666',
-                                                    lineHeight: '1.6',
-                                                    whiteSpace: 'pre-wrap',
-                                                    wordBreak: 'break-word',
-                                                    background: 'white',
-                                                    padding: '15px',
-                                                    borderRadius: '8px',
-                                                    border: '1px solid #ffe8d4',
-                                                    maxHeight: '150px',
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis',
-                                                    display: '-webkit-box',
-                                                    WebkitLineClamp: 6,
-                                                    WebkitBoxOrient: 'vertical'
-                                                }}>
-                                                    {coverLetter.content || '내용 없음'}
-                                                </div>
+
+                                                {/* 회사명과 채용공고 제목 */}
                                                 <div style={{
                                                     display: 'flex',
-                                                    justifyContent: 'space-between',
-                                                    alignItems: 'center',
-                                                    marginTop: '15px'
+                                                    flexDirection: 'column',
+                                                    gap: '6px',
+                                                    marginBottom: '12px',
+                                                    paddingBottom: '12px',
+                                                    borderBottom: '1px solid #ffe8d4'
                                                 }}>
-                                                    {coverLetter.created_at && (
+                                                    {coverLetter.company && (
                                                         <div style={{
-                                                            fontSize: '0.8rem',
-                                                            color: '#999'
+                                                            fontSize: '0.9rem',
+                                                            color: '#666',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '6px'
                                                         }}>
-                                                            작성일: {new Date(coverLetter.created_at).toLocaleDateString('ko-KR')}
+                                                            <span style={{ fontWeight: '600' }}>🏢</span>
+                                                            <span>{coverLetter.company}</span>
                                                         </div>
                                                     )}
-                                                    <button
-                                                        onClick={() => loadAiCoverLetter(coverLetter.id)}
-                                                        style={{
-                                                            background: 'linear-gradient(135deg, #ffb366 0%, #ff9944 100%)',
-                                                            color: 'white',
-                                                            border: 'none',
-                                                            padding: '10px 20px',
-                                                            borderRadius: '8px',
+                                                    {coverLetter.job_title && (
+                                                        <div style={{
                                                             fontSize: '0.9rem',
-                                                            fontWeight: '600',
-                                                            cursor: 'pointer',
-                                                            transition: 'all 0.2s',
-                                                            boxShadow: '0 2px 8px rgba(255, 179, 102, 0.3)',
-                                                            marginLeft: 'auto'
-                                                        }}
-                                                        onMouseEnter={(e) => {
-                                                            e.currentTarget.style.transform = 'translateY(-2px)';
-                                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 179, 102, 0.4)';
-                                                        }}
-                                                        onMouseLeave={(e) => {
-                                                            e.currentTarget.style.transform = 'translateY(0)';
-                                                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(255, 179, 102, 0.3)';
+                                                            color: '#666',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '6px'
                                                         }}>
-                                                        📄 불러오기
-                                                    </button>
+                                                            <span style={{ fontWeight: '600' }}>💼</span>
+                                                            <span>{coverLetter.job_title}</span>
+                                                        </div>
+                                                    )}
                                                 </div>
+
+                                                {/* 저장일시 */}
+                                                {coverLetter.created_at && (
+                                                    <div style={{
+                                                        fontSize: '0.8rem',
+                                                        color: '#999',
+                                                        textAlign: 'right'
+                                                    }}>
+                                                        저장일시: {new Date(coverLetter.created_at).toLocaleString('ko-KR', {
+                                                            year: 'numeric',
+                                                            month: '2-digit',
+                                                            day: '2-digit',
+                                                            hour: '2-digit',
+                                                            minute: '2-digit',
+                                                            hour12: false
+                                                        })}
+                                                    </div>
+                                                )}
                                             </div>
                                         ))}
                                     </div>
                                 )}
 
-                                {/* 선택된 AI 자소서 상세 보기 */}
+                                {/* AI 자소서 모달 */}
                                 {selectedAiCoverLetter && (
-                                    <div style={{
-                                        background: 'white',
-                                        borderRadius: '12px',
-                                        padding: '30px',
-                                        marginTop: '30px',
-                                        boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                                        border: '3px solid #ffb366'
-                                    }}>
-                                        <div style={{
+                                    <div
+                                        style={{
+                                            position: 'fixed',
+                                            top: 0,
+                                            left: 0,
+                                            right: 0,
+                                            bottom: 0,
+                                            background: 'rgba(0, 0, 0, 0.6)',
                                             display: 'flex',
-                                            justifyContent: 'space-between',
+                                            justifyContent: 'center',
                                             alignItems: 'center',
-                                            marginBottom: '25px',
-                                            paddingBottom: '15px',
-                                            borderBottom: '2px solid #ffb366'
-                                        }}>
-                                            <h3 style={{
-                                                fontSize: '1.3rem',
-                                                fontWeight: '700',
-                                                color: '#ff8833',
-                                                margin: 0,
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '8px'
-                                            }}>
-                                                <span>🤖</span>
-                                                {selectedAiCoverLetter.title || '제목 없음'}
-                                            </h3>
+                                            zIndex: 9999,
+                                            padding: '20px'
+                                        }}
+                                        onClick={() => setSelectedAiCoverLetter(null)}
+                                    >
+                                        <div
+                                            style={{
+                                                background: 'white',
+                                                borderRadius: '16px',
+                                                padding: '35px',
+                                                maxWidth: '800px',
+                                                width: '100%',
+                                                maxHeight: '90vh',
+                                                overflowY: 'auto',
+                                                boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
+                                                border: '3px solid #ffb366',
+                                                position: 'relative'
+                                            }}
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            {/* 닫기 버튼 */}
                                             <button
                                                 onClick={() => setSelectedAiCoverLetter(null)}
                                                 style={{
+                                                    position: 'absolute',
+                                                    top: '15px',
+                                                    right: '15px',
                                                     background: '#f5f5f5',
                                                     color: '#666',
                                                     border: 'none',
-                                                    padding: '8px 16px',
-                                                    borderRadius: '6px',
-                                                    fontSize: '0.9rem',
-                                                    fontWeight: '600',
+                                                    width: '36px',
+                                                    height: '36px',
+                                                    borderRadius: '50%',
+                                                    fontSize: '1.2rem',
+                                                    fontWeight: '700',
                                                     cursor: 'pointer',
-                                                    transition: 'all 0.2s'
+                                                    transition: 'all 0.2s',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center'
                                                 }}
                                                 onMouseEnter={(e) => {
                                                     e.currentTarget.style.background = '#e0e0e0';
                                                 }}
                                                 onMouseLeave={(e) => {
                                                     e.currentTarget.style.background = '#f5f5f5';
-                                                }}>
-                                                ✕ 닫기
+                                                }}
+                                            >
+                                                ✕
                                             </button>
-                                        </div>
 
-                                        {selectedAiCoverLetter.company && (
-                                            <div style={{
-                                                fontSize: '0.95rem',
-                                                color: '#666',
-                                                marginBottom: '15px',
+                                            {/* 제목 */}
+                                            <h3 style={{
+                                                fontSize: '1.5rem',
+                                                fontWeight: '700',
+                                                color: '#ff8833',
+                                                margin: '0 0 20px 0',
+                                                paddingRight: '40px',
                                                 display: 'flex',
                                                 alignItems: 'center',
-                                                gap: '6px'
+                                                gap: '10px',
+                                                borderBottom: '2px solid #ffb366',
+                                                paddingBottom: '15px'
                                             }}>
-                                                <span style={{ fontWeight: '600' }}>🏢 회사:</span>
-                                                <span>{selectedAiCoverLetter.company}</span>
-                                            </div>
-                                        )}
+                                                <span>🤖</span>
+                                                {selectedAiCoverLetter.title || '제목 없음'}
+                                            </h3>
 
-                                        {selectedAiCoverLetter.job_title && (
+                                            {/* 회사명 및 직무 정보 */}
+                                            <div style={{ marginBottom: '25px' }}>
+                                                {selectedAiCoverLetter.company && (
+                                                    <div style={{
+                                                        fontSize: '1rem',
+                                                        color: '#555',
+                                                        marginBottom: '10px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '8px'
+                                                    }}>
+                                                        <span style={{ fontWeight: '700', color: '#ff8833' }}>🏢 회사:</span>
+                                                        <span>{selectedAiCoverLetter.company}</span>
+                                                    </div>
+                                                )}
+
+                                                {selectedAiCoverLetter.job_title && (
+                                                    <div style={{
+                                                        fontSize: '1rem',
+                                                        color: '#555',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '8px'
+                                                    }}>
+                                                        <span style={{ fontWeight: '700', color: '#ff8833' }}>💼 직무:</span>
+                                                        <span>{selectedAiCoverLetter.job_title}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* 자소서 내용 */}
                                             <div style={{
-                                                fontSize: '0.95rem',
-                                                color: '#666',
-                                                marginBottom: '20px',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '6px'
+                                                fontSize: '1.05rem',
+                                                color: '#333',
+                                                lineHeight: '1.9',
+                                                whiteSpace: 'pre-wrap',
+                                                wordBreak: 'break-word',
+                                                background: 'linear-gradient(135deg, #fff9f0 0%, #ffe8d4 100%)',
+                                                padding: '30px',
+                                                borderRadius: '10px',
+                                                border: '1px solid #ffe8d4',
+                                                marginBottom: '20px'
                                             }}>
-                                                <span style={{ fontWeight: '600' }}>💼 직무:</span>
-                                                <span>{selectedAiCoverLetter.job_title}</span>
+                                                {selectedAiCoverLetter.content || '내용 없음'}
                                             </div>
-                                        )}
 
-                                        <div style={{
-                                            fontSize: '1rem',
-                                            color: '#333',
-                                            lineHeight: '1.8',
-                                            whiteSpace: 'pre-wrap',
-                                            wordBreak: 'break-word',
-                                            background: 'linear-gradient(135deg, #fff9f0 0%, #ffe8d4 100%)',
-                                            padding: '25px',
-                                            borderRadius: '8px',
-                                            border: '1px solid #ffe8d4'
-                                        }}>
-                                            {selectedAiCoverLetter.content || '내용 없음'}
+                                            {/* 저장일시 */}
+                                            {selectedAiCoverLetter.created_at && (
+                                                <div style={{
+                                                    fontSize: '0.9rem',
+                                                    color: '#999',
+                                                    textAlign: 'right',
+                                                    paddingTop: '15px',
+                                                    borderTop: '1px solid #f0f0f0'
+                                                }}>
+                                                    저장일시: {new Date(selectedAiCoverLetter.created_at).toLocaleString('ko-KR', {
+                                                        year: 'numeric',
+                                                        month: '2-digit',
+                                                        day: '2-digit',
+                                                        hour: '2-digit',
+                                                        minute: '2-digit',
+                                                        hour12: false
+                                                    })}
+                                                </div>
+                                            )}
                                         </div>
-
-                                        {selectedAiCoverLetter.created_at && (
-                                            <div style={{
-                                                fontSize: '0.85rem',
-                                                color: '#999',
-                                                marginTop: '20px',
-                                                textAlign: 'right'
-                                            }}>
-                                                작성일: {new Date(selectedAiCoverLetter.created_at).toLocaleDateString('ko-KR', {
-                                                    year: 'numeric',
-                                                    month: 'long',
-                                                    day: 'numeric'
-                                                })}
-                                            </div>
-                                        )}
                                     </div>
                                 )}
                             </div>
