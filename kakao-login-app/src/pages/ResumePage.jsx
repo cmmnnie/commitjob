@@ -2305,7 +2305,7 @@ export default function ResumePage() {
                         )}
 
                         {/* 기본정보 탭 */}
-                        {activeTab === 'basic' && (
+                        {activeTab === 'basic' && !showAiJobs && (
                             <>
                                 {/* 기본 정보 섹션 */}
                                 <div style={{
@@ -2561,8 +2561,7 @@ export default function ResumePage() {
                                 background: 'white',
                                 borderRadius: '12px',
                                 padding: '30px',
-                                boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                                marginTop: '20px'
+                                boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
                             }}>
                                 <div style={{
                                     display: 'flex',
