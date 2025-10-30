@@ -18,6 +18,7 @@ export default function ResumePage() {
         aiCoverLetters: 0
     });
     const [bookmarkedJobs, setBookmarkedJobs] = useState([]);
+    const [aiCoverLetters, setAiCoverLetters] = useState([]);
     const [formData, setFormData] = useState({
         jobs: '',
         careerType: '',  // '신입' 또는 '경력'
@@ -698,6 +699,29 @@ export default function ResumePage() {
                 setBookmarkedJobs(bookmarksRes.data.bookmarks);
             }
 
+            // AI 자소서 목록 가져오기
+            let aiCoverLetterCount = 0;
+            try {
+                const aiCoverLettersRes = await fetch(`${CONFIG.BACKEND_URL}/api/cover-letters/${userId}`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (aiCoverLettersRes.ok) {
+                    const aiData = await aiCoverLettersRes.json();
+                    if (aiData.success && aiData.cover_letters) {
+                        setAiCoverLetters(aiData.cover_letters);
+                        aiCoverLetterCount = aiData.cover_letters.length;
+                    }
+                }
+            } catch (err) {
+                console.error('[RESUME] AI 자소서 로드 오류:', err);
+            }
+
             // 자소서 개수는 coverLetterList에서 가져옴 (이미 로드됨)
             // AI 추천, AI 면접, 관심회사는 나중에 API 추가 가능
 
@@ -706,7 +730,7 @@ export default function ResumePage() {
                 favoriteCompanies: 0, // TODO: API 추가 시
                 aiRecommendations: 0, // TODO: API 추가 시
                 aiInterviews: 0, // TODO: API 추가 시
-                aiCoverLetters: 0 // coverLetterList.length로 업데이트 예정
+                aiCoverLetters: aiCoverLetterCount
             });
         } catch (error) {
             console.error('[RESUME] 활동 통계 로드 오류:', error);
@@ -1719,15 +1743,15 @@ export default function ResumePage() {
                                     AI자소서 현황 ({activityStats.aiCoverLetters}건)
                                 </h3>
 
-                                {coverLetterList.length === 0 ? (
+                                {aiCoverLetters.length === 0 ? (
                                     <div style={{
                                         textAlign: 'center',
                                         padding: '60px 20px',
                                         color: '#999'
                                     }}>
-                                        <div style={{ fontSize: '3rem', marginBottom: '15px' }}>📝</div>
-                                        <p style={{ fontSize: '1.1rem', fontWeight: '600' }}>아직 작성한 자기소개서가 없습니다</p>
-                                        <p style={{ fontSize: '0.9rem', marginTop: '8px' }}>자기소개서 탭에서 작성해보세요!</p>
+                                        <div style={{ fontSize: '3rem', marginBottom: '15px' }}>🤖</div>
+                                        <p style={{ fontSize: '1.1rem', fontWeight: '600' }}>아직 저장된 AI 자기소개서가 없습니다</p>
+                                        <p style={{ fontSize: '0.9rem', marginTop: '8px' }}>AI 자소서 작성 페이지에서 AI가 작성한 자소서를 저장해보세요!</p>
                                     </div>
                                 ) : (
                                     <div style={{
@@ -1735,7 +1759,7 @@ export default function ResumePage() {
                                         flexDirection: 'column',
                                         gap: '20px'
                                     }}>
-                                        {coverLetterList.map((coverLetter, index) => (
+                                        {aiCoverLetters.map((coverLetter, index) => (
                                             <div
                                                 key={index}
                                                 style={{
@@ -1764,11 +1788,11 @@ export default function ResumePage() {
                                                         margin: 0,
                                                         flex: 1
                                                     }}>
-                                                        {coverLetter.question || '질문 없음'}
+                                                        {coverLetter.title || '제목 없음'}
                                                     </h4>
                                                     <span style={{
                                                         fontSize: '1.5rem'
-                                                    }}>✍️</span>
+                                                    }}>🤖</span>
                                                 </div>
                                                 <div style={{
                                                     fontSize: '0.95rem',
@@ -1783,6 +1807,16 @@ export default function ResumePage() {
                                                 }}>
                                                     {coverLetter.content || '내용 없음'}
                                                 </div>
+                                                {coverLetter.created_at && (
+                                                    <div style={{
+                                                        fontSize: '0.8rem',
+                                                        color: '#999',
+                                                        marginTop: '12px',
+                                                        textAlign: 'right'
+                                                    }}>
+                                                        작성일: {new Date(coverLetter.created_at).toLocaleDateString('ko-KR')}
+                                                    </div>
+                                                )}
                                             </div>
                                         ))}
                                     </div>
