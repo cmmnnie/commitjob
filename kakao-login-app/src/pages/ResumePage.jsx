@@ -1431,8 +1431,170 @@ export default function ResumePage() {
                     </button>
                 </div>
 
-                {/* 자기소개서는 항상 표시 */}
-                {activeTab === 'coverLetter' ? (
+                {/* 탭 콘텐츠 표시 */}
+                {activeTab === 'aiJobs' ? (
+                    /* AI채용 탭 */
+                    <div style={{
+                        background: 'white',
+                        borderRadius: '12px',
+                        padding: '30px',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                    }}>
+                        <h3 style={{
+                            fontSize: '1.5rem',
+                            fontWeight: '700',
+                            color: '#333',
+                            marginBottom: '25px',
+                            paddingBottom: '15px',
+                            borderBottom: '2px solid #667eea',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px'
+                        }}>
+                            <span style={{ fontSize: '1.5rem' }}>🤖</span>
+                            저장한 AI 추천 채용공고
+                            <span style={{
+                                fontSize: '1rem',
+                                color: '#667eea',
+                                fontWeight: '600'
+                            }}>
+                                ({savedAiJobs.length}개)
+                            </span>
+                        </h3>
+
+                        {savedAiJobs.length === 0 ? (
+                            <div style={{
+                                textAlign: 'center',
+                                padding: '60px 20px',
+                                color: '#999'
+                            }}>
+                                <div style={{ fontSize: '4rem', marginBottom: '20px' }}>📋</div>
+                                <p style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '10px' }}>
+                                    저장된 AI 추천 공고가 없습니다
+                                </p>
+                                <p style={{ fontSize: '0.95rem', color: '#aaa', lineHeight: '1.6' }}>
+                                    AI채용추천 페이지에서<br/>
+                                    "추천공고 저장하기" 버튼을 눌러<br/>
+                                    AI가 추천한 공고를 저장해보세요
+                                </p>
+                            </div>
+                        ) : (
+                            <div style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '15px'
+                            }}>
+                                {savedAiJobs.map((job, index) => (
+                                    <div
+                                        key={job.id || index}
+                                        onClick={() => navigate(`/job/${job.job_id}`, {
+                                            state: {
+                                                job: {
+                                                    id: job.job_id,
+                                                    title: job.title,
+                                                    company: job.company
+                                                }
+                                            }
+                                        })}
+                                        style={{
+                                            background: 'linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%)',
+                                            borderRadius: '12px',
+                                            padding: '20px',
+                                            border: '2px solid #e9ecef',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.3s ease',
+                                            position: 'relative'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.transform = 'translateY(-3px)';
+                                            e.currentTarget.style.boxShadow = '0 8px 20px rgba(102, 126, 234, 0.15)';
+                                            e.currentTarget.style.borderColor = '#667eea';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.transform = 'translateY(0)';
+                                            e.currentTarget.style.boxShadow = 'none';
+                                            e.currentTarget.style.borderColor = '#e9ecef';
+                                        }}
+                                    >
+                                        {/* 저장일시 뱃지 */}
+                                        <div style={{
+                                            position: 'absolute',
+                                            top: '15px',
+                                            right: '15px',
+                                            fontSize: '0.75rem',
+                                            color: '#999',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '5px'
+                                        }}>
+                                            <span>🕐</span>
+                                            {new Date(job.saved_at).toLocaleDateString('ko-KR', {
+                                                year: 'numeric',
+                                                month: '2-digit',
+                                                day: '2-digit'
+                                            })}
+                                        </div>
+
+                                        {/* 회사명 */}
+                                        <div style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            marginBottom: '10px',
+                                            padding: '6px 12px',
+                                            background: 'rgba(102, 126, 234, 0.1)',
+                                            borderRadius: '20px'
+                                        }}>
+                                            <span style={{ fontSize: '0.9rem' }}>🏢</span>
+                                            <span style={{
+                                                fontSize: '0.95rem',
+                                                color: '#667eea',
+                                                fontWeight: '700'
+                                            }}>
+                                                {job.company}
+                                            </span>
+                                        </div>
+
+                                        {/* 공고 제목 */}
+                                        <h4 style={{
+                                            fontSize: '1.1rem',
+                                            fontWeight: '700',
+                                            color: '#333',
+                                            marginBottom: '12px',
+                                            lineHeight: '1.5',
+                                            paddingRight: '80px'
+                                        }}>
+                                            {job.title}
+                                        </h4>
+
+                                        {/* 등록/마감 정보 */}
+                                        {job.registration_info && (
+                                            <div style={{
+                                                display: 'flex',
+                                                gap: '8px',
+                                                flexWrap: 'wrap',
+                                                marginTop: '12px'
+                                            }}>
+                                                {JSON.parse(job.registration_info).map((info, idx) => (
+                                                    <span key={idx} style={{
+                                                        fontSize: '0.85rem',
+                                                        color: info.includes('D-') ? '#e74c3c' : '#666',
+                                                        fontWeight: info.includes('D-') ? '700' : '500',
+                                                        background: info.includes('D-') ? '#ffe5e5' : '#f8f9fa',
+                                                        padding: '4px 10px',
+                                                        borderRadius: '12px'
+                                                    }}>
+                                                        {info}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                ) : activeTab === 'coverLetter' ? (
                     <>
                         {/* 자기소개서 탭 */}
                         {activeTab === 'coverLetter' && (
@@ -4478,170 +4640,6 @@ export default function ResumePage() {
                             </div>
                         )}
                     </>
-                )}
-
-                {/* AI채용 탭 */}
-                {activeTab === 'aiJobs' && (
-                    <div style={{
-                        background: 'white',
-                        borderRadius: '12px',
-                        padding: '30px',
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
-                    }}>
-                        <h3 style={{
-                            fontSize: '1.5rem',
-                            fontWeight: '700',
-                            color: '#333',
-                            marginBottom: '25px',
-                            paddingBottom: '15px',
-                            borderBottom: '2px solid #667eea',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '10px'
-                        }}>
-                            <span style={{ fontSize: '1.5rem' }}>🤖</span>
-                            저장한 AI 추천 채용공고
-                            <span style={{
-                                fontSize: '1rem',
-                                color: '#667eea',
-                                fontWeight: '600'
-                            }}>
-                                ({savedAiJobs.length}개)
-                            </span>
-                        </h3>
-
-                        {savedAiJobs.length === 0 ? (
-                            <div style={{
-                                textAlign: 'center',
-                                padding: '60px 20px',
-                                color: '#999'
-                            }}>
-                                <div style={{ fontSize: '4rem', marginBottom: '20px' }}>📋</div>
-                                <p style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '10px' }}>
-                                    저장된 AI 추천 공고가 없습니다
-                                </p>
-                                <p style={{ fontSize: '0.95rem', color: '#aaa', lineHeight: '1.6' }}>
-                                    AI채용추천 페이지에서<br/>
-                                    "추천공고 저장하기" 버튼을 눌러<br/>
-                                    AI가 추천한 공고를 저장해보세요
-                                </p>
-                            </div>
-                        ) : (
-                            <div style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '15px'
-                            }}>
-                                {savedAiJobs.map((job, index) => (
-                                    <div
-                                        key={job.id || index}
-                                        onClick={() => navigate(`/job/${job.job_id}`, {
-                                            state: {
-                                                job: {
-                                                    id: job.job_id,
-                                                    title: job.title,
-                                                    company: job.company
-                                                }
-                                            }
-                                        })}
-                                        style={{
-                                            background: 'linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%)',
-                                            borderRadius: '12px',
-                                            padding: '20px',
-                                            border: '2px solid #e9ecef',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.3s ease',
-                                            position: 'relative'
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.transform = 'translateY(-3px)';
-                                            e.currentTarget.style.boxShadow = '0 8px 20px rgba(102, 126, 234, 0.15)';
-                                            e.currentTarget.style.borderColor = '#667eea';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.transform = 'translateY(0)';
-                                            e.currentTarget.style.boxShadow = 'none';
-                                            e.currentTarget.style.borderColor = '#e9ecef';
-                                        }}
-                                    >
-                                        {/* 저장일시 뱃지 */}
-                                        <div style={{
-                                            position: 'absolute',
-                                            top: '15px',
-                                            right: '15px',
-                                            fontSize: '0.75rem',
-                                            color: '#999',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '5px'
-                                        }}>
-                                            <span>🕐</span>
-                                            {new Date(job.saved_at).toLocaleDateString('ko-KR', {
-                                                year: 'numeric',
-                                                month: '2-digit',
-                                                day: '2-digit'
-                                            })}
-                                        </div>
-
-                                        {/* 회사명 */}
-                                        <div style={{
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            gap: '8px',
-                                            marginBottom: '10px',
-                                            padding: '6px 12px',
-                                            background: 'rgba(102, 126, 234, 0.1)',
-                                            borderRadius: '20px'
-                                        }}>
-                                            <span style={{ fontSize: '0.9rem' }}>🏢</span>
-                                            <span style={{
-                                                fontSize: '0.95rem',
-                                                color: '#667eea',
-                                                fontWeight: '700'
-                                            }}>
-                                                {job.company}
-                                            </span>
-                                        </div>
-
-                                        {/* 공고 제목 */}
-                                        <h4 style={{
-                                            fontSize: '1.1rem',
-                                            fontWeight: '700',
-                                            color: '#333',
-                                            marginBottom: '12px',
-                                            lineHeight: '1.5',
-                                            paddingRight: '80px'
-                                        }}>
-                                            {job.title}
-                                        </h4>
-
-                                        {/* 등록/마감 정보 */}
-                                        {job.registration_info && (
-                                            <div style={{
-                                                display: 'flex',
-                                                gap: '8px',
-                                                flexWrap: 'wrap',
-                                                marginTop: '12px'
-                                            }}>
-                                                {JSON.parse(job.registration_info).map((info, idx) => (
-                                                    <span key={idx} style={{
-                                                        fontSize: '0.85rem',
-                                                        color: info.includes('D-') ? '#e74c3c' : '#666',
-                                                        fontWeight: info.includes('D-') ? '700' : '500',
-                                                        background: info.includes('D-') ? '#ffe5e5' : '#f8f9fa',
-                                                        padding: '4px 10px',
-                                                        borderRadius: '12px'
-                                                    }}>
-                                                        {info}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
                 )}
             </div>
         </div>
