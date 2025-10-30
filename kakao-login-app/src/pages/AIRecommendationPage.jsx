@@ -1153,39 +1153,36 @@ export default function AIRecommendationPage() {
                                 }
                             }}
                             style={{
-                                padding: '16px 40px',
-                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
                                 color: 'white',
-                                border: 'none',
-                                borderRadius: '30px',
-                                fontSize: '1.15rem',
-                                fontWeight: '700',
+                                border: '3px solid white',
+                                padding: '14px 28px',
+                                borderRadius: '20px',
+                                fontSize: '1rem',
+                                fontWeight: '800',
                                 cursor: 'pointer',
-                                boxShadow: '0 8px 24px rgba(102, 126, 234, 0.4)',
                                 transition: 'all 0.3s',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '10px'
+                                gap: '10px',
+                                boxShadow: '0 6px 20px rgba(240, 147, 251, 0.4)',
+                                letterSpacing: '-0.3px'
                             }}
                             onMouseEnter={(e) => {
-                                e.currentTarget.style.transform = 'translateY(-3px)';
-                                e.currentTarget.style.boxShadow = '0 12px 32px rgba(102, 126, 234, 0.5)';
+                                e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)';
+                                e.currentTarget.style.boxShadow = '0 8px 24px rgba(240, 147, 251, 0.5)';
                             }}
                             onMouseLeave={(e) => {
-                                e.currentTarget.style.transform = 'translateY(0)';
-                                e.currentTarget.style.boxShadow = '0 8px 24px rgba(102, 126, 234, 0.4)';
+                                e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                                e.currentTarget.style.boxShadow = '0 6px 20px rgba(240, 147, 251, 0.4)';
                             }}
                         >
-                            <span style={{ fontSize: '1.3rem' }}>💾</span>
-                            추천공고 저장하기
                             <span style={{
-                                background: 'rgba(255, 255, 255, 0.3)',
-                                padding: '4px 10px',
-                                borderRadius: '20px',
-                                fontSize: '0.9rem'
-                            }}>
-                                {allJobs.length}개
-                            </span>
+                                fontSize: '1.3rem',
+                                display: 'inline-block',
+                                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))'
+                            }}>💾</span>
+                            <span>추천공고 저장하기 ({allJobs.length}개)</span>
                         </button>
                     </div>
                 )}
