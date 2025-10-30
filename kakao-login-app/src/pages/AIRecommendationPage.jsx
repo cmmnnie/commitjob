@@ -1111,6 +1111,85 @@ export default function AIRecommendationPage() {
                     `}</style>
                 </div>
 
+                {/* 추천공고 저장하기 버튼 */}
+                {allJobs.length > 0 && (
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        marginBottom: '24px'
+                    }}>
+                        <button
+                            onClick={async () => {
+                                if (!currentUser) {
+                                    alert('로그인이 필요합니다.');
+                                    return;
+                                }
+
+                                try {
+                                    const token = localStorage.getItem('app_session');
+                                    const response = await fetch(`${API_BASE_URL}/api/save-recommended-jobs`, {
+                                        method: 'POST',
+                                        credentials: 'include',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'Authorization': `Bearer ${token}`
+                                        },
+                                        body: JSON.stringify({
+                                            user_id: currentUser.id,
+                                            jobs: allJobs
+                                        })
+                                    });
+
+                                    const data = await response.json();
+
+                                    if (response.ok && data.success) {
+                                        alert(`${data.saved_count || allJobs.length}개의 추천 공고가 저장되었습니다!`);
+                                    } else {
+                                        throw new Error(data.error || '저장에 실패했습니다.');
+                                    }
+                                } catch (error) {
+                                    console.error('[추천공고 저장] 오류:', error);
+                                    alert(error.message || '추천 공고 저장에 실패했습니다.');
+                                }
+                            }}
+                            style={{
+                                padding: '16px 40px',
+                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '30px',
+                                fontSize: '1.15rem',
+                                fontWeight: '700',
+                                cursor: 'pointer',
+                                boxShadow: '0 8px 24px rgba(102, 126, 234, 0.4)',
+                                transition: 'all 0.3s',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '10px'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-3px)';
+                                e.currentTarget.style.boxShadow = '0 12px 32px rgba(102, 126, 234, 0.5)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 8px 24px rgba(102, 126, 234, 0.4)';
+                            }}
+                        >
+                            <span style={{ fontSize: '1.3rem' }}>💾</span>
+                            추천공고 저장하기
+                            <span style={{
+                                background: 'rgba(255, 255, 255, 0.3)',
+                                padding: '4px 10px',
+                                borderRadius: '20px',
+                                fontSize: '0.9rem'
+                            }}>
+                                {allJobs.length}개
+                            </span>
+                        </button>
+                    </div>
+                )}
+
                 {/* 추천 공고 목록 */}
                 {allJobs.length === 0 ? (
                     <div style={{

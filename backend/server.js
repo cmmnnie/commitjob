@@ -8374,6 +8374,70 @@ app.delete('/api/bookmarks/:jobId', authenticateUser, async (req, res) => {
   }
 });
 
+// 추천공고 일괄 저장
+app.post('/api/save-recommended-jobs', authenticateUser, async (req, res) => {
+  console.log('[SAVE-RECOMMENDED-JOBS] 추천공고 일괄 저장 요청');
+
+  try {
+    const { jobs } = req.body;
+    const user = req.user;
+
+    if (!Array.isArray(jobs) || jobs.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'jobs 배열이 필요합니다.'
+      });
+    }
+
+    console.log(`[SAVE-RECOMMENDED-JOBS] user_id: ${user.id}, jobs count: ${jobs.length}`);
+
+    let savedCount = 0;
+    let skippedCount = 0;
+
+    // 각 job을 북마크로 저장 (중복 무시)
+    for (const job of jobs) {
+      if (!job.id) {
+        console.warn(`[SAVE-RECOMMENDED-JOBS] ⚠️ job.id가 없는 항목 스킵:`, job);
+        skippedCount++;
+        continue;
+      }
+
+      try {
+        const [result] = await pool.execute(`
+          INSERT IGNORE INTO job_bookmarks (user_id, job_id, note)
+          VALUES (?, ?, ?)
+        `, [user.id, job.id, 'AI 추천공고']);
+
+        if (result.affectedRows > 0) {
+          savedCount++;
+        } else {
+          skippedCount++;
+        }
+      } catch (jobError) {
+        console.error(`[SAVE-RECOMMENDED-JOBS] job_id: ${job.id} 저장 실패:`, jobError.message);
+        skippedCount++;
+      }
+    }
+
+    console.log(`[SAVE-RECOMMENDED-JOBS] ✅ 저장 완료 - saved: ${savedCount}, skipped: ${skippedCount}`);
+
+    res.json({
+      success: true,
+      message: `${savedCount}개의 추천공고가 저장되었습니다.${skippedCount > 0 ? ` (${skippedCount}개는 이미 저장되어 있거나 저장에 실패했습니다.)` : ''}`,
+      saved_count: savedCount,
+      skipped_count: skippedCount
+    });
+
+  } catch (error) {
+    console.error('[SAVE-RECOMMENDED-JOBS] Error:', error);
+    res.status(500).json({
+      success: false,
+      error: '추천공고 저장 중 오류가 발생했습니다.',
+      message: error.message
+    });
+  }
+});
+
 // 사용자의 모든 북마크 조회
 app.get('/api/bookmarks', authenticateUser, async (req, res) => {
   console.log('[BOOKMARK-LIST] 북마크 목록 조회 요청');
