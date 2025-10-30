@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { CONFIG } from '../config';
 import axios from 'axios';
 
 export default function ResumePage() {
+    const navigate = useNavigate();
     const [currentUser, setCurrentUser] = useState(null);
     const [userProfile, setUserProfile] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
-    const [activeTab, setActiveTab] = useState('basic'); // 'basic', 'experience', 'education', 'coverLetter'
+    const [activeTab, setActiveTab] = useState('basic'); // 'basic', 'experience', 'education', 'coverLetter', 'bookmarks'
     const [activityStats, setActivityStats] = useState({
         bookmarks: 0,
         favoriteCompanies: 0,
@@ -15,6 +17,7 @@ export default function ResumePage() {
         aiInterviews: 0,
         aiCoverLetters: 0
     });
+    const [bookmarkedJobs, setBookmarkedJobs] = useState([]);
     const [formData, setFormData] = useState({
         jobs: '',
         careerType: '',  // '신입' 또는 '경력'
@@ -684,11 +687,16 @@ export default function ResumePage() {
             const token = localStorage.getItem('app_session');
             const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-            // 북마크 개수 가져오기
+            // 북마크 개수 및 목록 가져오기
             const bookmarksRes = await axios.get(`${CONFIG.BACKEND_URL}/api/bookmarks`, {
                 withCredentials: true,
                 headers
             });
+
+            // 북마크 목록 저장
+            if (bookmarksRes.data.bookmarks) {
+                setBookmarkedJobs(bookmarksRes.data.bookmarks);
+            }
 
             // 자소서 개수는 coverLetterList에서 가져옴 (이미 로드됨)
             // AI 추천, AI 면접, 관심회사는 나중에 API 추가 가능
@@ -1074,13 +1082,25 @@ export default function ResumePage() {
                         gap: '12px'
                     }}>
                         {/* 관심공고 */}
-                        <div style={{
-                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                            padding: '15px',
-                            borderRadius: '12px',
-                            color: 'white',
-                            textAlign: 'center'
-                        }}>
+                        <div
+                            onClick={() => handleTabChange('bookmarks')}
+                            style={{
+                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                padding: '15px',
+                                borderRadius: '12px',
+                                color: 'white',
+                                textAlign: 'center',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.4)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = 'none';
+                            }}>
                             <div style={{
                                 fontSize: '1.1rem',
                                 marginBottom: '6px',
@@ -1193,7 +1213,7 @@ export default function ResumePage() {
                         style={{
                             flex: 1,
                             padding: '16px 20px',
-                            background: activeTab === 'basic' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'transparent',
+                            background: activeTab === 'basic' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'white',
                             color: activeTab === 'basic' ? 'white' : '#666',
                             border: 'none',
                             borderBottom: activeTab === 'basic' ? 'none' : '2px solid transparent',
@@ -1211,7 +1231,7 @@ export default function ResumePage() {
                         style={{
                             flex: 1,
                             padding: '16px 20px',
-                            background: activeTab === 'experience' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'transparent',
+                            background: activeTab === 'experience' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'white',
                             color: activeTab === 'experience' ? 'white' : '#666',
                             border: 'none',
                             borderBottom: activeTab === 'experience' ? 'none' : '2px solid transparent',
@@ -1229,7 +1249,7 @@ export default function ResumePage() {
                         style={{
                             flex: 1,
                             padding: '16px 20px',
-                            background: activeTab === 'education' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'transparent',
+                            background: activeTab === 'education' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'white',
                             color: activeTab === 'education' ? 'white' : '#666',
                             border: 'none',
                             borderBottom: activeTab === 'education' ? 'none' : '2px solid transparent',
@@ -1247,7 +1267,7 @@ export default function ResumePage() {
                         style={{
                             flex: 1,
                             padding: '16px 20px',
-                            background: activeTab === 'coverLetter' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'transparent',
+                            background: activeTab === 'coverLetter' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'white',
                             color: activeTab === 'coverLetter' ? 'white' : '#666',
                             border: 'none',
                             borderBottom: activeTab === 'coverLetter' ? 'none' : '2px solid transparent',
@@ -1532,6 +1552,138 @@ export default function ResumePage() {
                     </>
                 ) : (userProfile && !isEditing) ? (
                     <>
+                        {/* 관심공고 탭 */}
+                        {activeTab === 'bookmarks' && (
+                            <div style={{
+                                background: 'white',
+                                borderRadius: '12px',
+                                padding: '30px',
+                                boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                            }}>
+                                <h3 style={{
+                                    fontSize: '1.3rem',
+                                    fontWeight: '700',
+                                    color: '#333',
+                                    marginBottom: '25px',
+                                    paddingBottom: '15px',
+                                    borderBottom: '2px solid #667eea',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px'
+                                }}>
+                                    <span>⭐</span>
+                                    관심공고 현황 ({activityStats.bookmarks}건)
+                                </h3>
+
+                                {bookmarkedJobs.length === 0 ? (
+                                    <div style={{
+                                        textAlign: 'center',
+                                        padding: '60px 20px',
+                                        color: '#999'
+                                    }}>
+                                        <div style={{ fontSize: '3rem', marginBottom: '15px' }}>📋</div>
+                                        <p style={{ fontSize: '1.1rem', fontWeight: '600' }}>아직 북마크한 공고가 없습니다</p>
+                                        <p style={{ fontSize: '0.9rem', marginTop: '8px' }}>관심있는 공고를 북마크해보세요!</p>
+                                    </div>
+                                ) : (
+                                    <div style={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: '15px'
+                                    }}>
+                                        {bookmarkedJobs.map((bookmark, index) => (
+                                            <div
+                                                key={bookmark.id}
+                                                onClick={() => navigate(`/jobs/detail/${bookmark.job_id}`, { state: { job: bookmark } })}
+                                                style={{
+                                                    background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+                                                    borderRadius: '12px',
+                                                    padding: '20px',
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s',
+                                                    border: '2px solid transparent'
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.1)';
+                                                    e.currentTarget.style.borderColor = '#667eea';
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.currentTarget.style.transform = 'translateY(0)';
+                                                    e.currentTarget.style.boxShadow = 'none';
+                                                    e.currentTarget.style.borderColor = 'transparent';
+                                                }}>
+                                                <div style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'flex-start',
+                                                    marginBottom: '12px'
+                                                }}>
+                                                    <h4 style={{
+                                                        fontSize: '1.1rem',
+                                                        fontWeight: '700',
+                                                        color: '#333',
+                                                        margin: 0,
+                                                        flex: 1
+                                                    }}>
+                                                        {bookmark.title || '제목 없음'}
+                                                    </h4>
+                                                    <span style={{
+                                                        fontSize: '1.5rem'
+                                                    }}>⭐</span>
+                                                </div>
+                                                <div style={{
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    gap: '8px'
+                                                }}>
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '6px',
+                                                        fontSize: '0.9rem',
+                                                        color: '#555'
+                                                    }}>
+                                                        <span style={{ fontWeight: '600' }}>🏢</span>
+                                                        <span>{bookmark.company || '-'}</span>
+                                                    </div>
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '6px',
+                                                        fontSize: '0.9rem',
+                                                        color: '#555'
+                                                    }}>
+                                                        <span style={{ fontWeight: '600' }}>📍</span>
+                                                        <span>{bookmark.location || '-'}</span>
+                                                    </div>
+                                                    {bookmark.deadline && (
+                                                        <div style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '6px',
+                                                            fontSize: '0.9rem',
+                                                            color: '#555'
+                                                        }}>
+                                                            <span style={{ fontWeight: '600' }}>📅</span>
+                                                            <span>{bookmark.deadline}</span>
+                                                        </div>
+                                                    )}
+                                                    <div style={{
+                                                        fontSize: '0.8rem',
+                                                        color: '#999',
+                                                        marginTop: '8px'
+                                                    }}>
+                                                        북마크 일시: {new Date(bookmark.created_at).toLocaleDateString('ko-KR')}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                         {/* 기본정보 탭 */}
                         {activeTab === 'basic' && (
                             <>
