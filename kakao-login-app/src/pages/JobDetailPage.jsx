@@ -16,8 +16,11 @@ export default function JobDetailPage() {
     const [activeTab, setActiveTab] = useState('job'); // 'job', 'company', 'interview'
 
     useEffect(() => {
-        // job이 state로 전달되지 않았으면 API로 가져오기
+        // job이 state로 전달되지 않았거나, job 객체에 상세 정보가 없으면 API로 가져오기
         if (!job && id) {
+            fetchJobDetail();
+        } else if (job && (!job.job_info && !job.conditions && !job.url)) {
+            // job 객체는 있지만 상세 정보가 없는 경우 (저장된 자소서에서 온 경우)
             fetchJobDetail();
         } else if (job) {
             // job 데이터에 이미 회사 정보가 포함되어 있으면 사용
