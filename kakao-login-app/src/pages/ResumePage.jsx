@@ -1952,22 +1952,27 @@ export default function ResumePage() {
                                                 </div>
 
                                                 {/* 저장일시 */}
-                                                {coverLetter.created_at && (
-                                                    <div style={{
-                                                        fontSize: '0.8rem',
-                                                        color: '#999',
-                                                        textAlign: 'right'
-                                                    }}>
-                                                        저장일시: {new Date(coverLetter.created_at).toLocaleString('ko-KR', {
-                                                            year: 'numeric',
-                                                            month: '2-digit',
-                                                            day: '2-digit',
-                                                            hour: '2-digit',
-                                                            minute: '2-digit',
-                                                            hour12: false
-                                                        })}
-                                                    </div>
-                                                )}
+                                                {coverLetter.created_at && (() => {
+                                                    // UTC 시간을 한국시간(UTC+9)으로 변환
+                                                    const utcDate = new Date(coverLetter.created_at);
+                                                    const kstDate = new Date(utcDate.getTime() + (9 * 60 * 60 * 1000));
+                                                    const year = kstDate.getFullYear();
+                                                    const month = String(kstDate.getMonth() + 1).padStart(2, '0');
+                                                    const day = String(kstDate.getDate()).padStart(2, '0');
+                                                    const hours = String(kstDate.getHours()).padStart(2, '0');
+                                                    const minutes = String(kstDate.getMinutes()).padStart(2, '0');
+                                                    const timeText = `${year}-${month}-${day} ${hours}:${minutes}`;
+
+                                                    return (
+                                                        <div style={{
+                                                            fontSize: '0.8rem',
+                                                            color: '#999',
+                                                            textAlign: 'right'
+                                                        }}>
+                                                            저장일시: {timeText}
+                                                        </div>
+                                                    );
+                                                })()}
                                             </div>
                                         ))}
                                     </div>
@@ -2101,24 +2106,29 @@ export default function ResumePage() {
                                             </div>
 
                                             {/* 저장일시 */}
-                                            {selectedAiCoverLetter.created_at && (
-                                                <div style={{
-                                                    fontSize: '0.9rem',
-                                                    color: '#999',
-                                                    textAlign: 'right',
-                                                    paddingTop: '15px',
-                                                    borderTop: '1px solid #f0f0f0'
-                                                }}>
-                                                    저장일시: {new Date(selectedAiCoverLetter.created_at).toLocaleString('ko-KR', {
-                                                        year: 'numeric',
-                                                        month: '2-digit',
-                                                        day: '2-digit',
-                                                        hour: '2-digit',
-                                                        minute: '2-digit',
-                                                        hour12: false
-                                                    })}
-                                                </div>
-                                            )}
+                                            {selectedAiCoverLetter.created_at && (() => {
+                                                // UTC 시간을 한국시간(UTC+9)으로 변환
+                                                const utcDate = new Date(selectedAiCoverLetter.created_at);
+                                                const kstDate = new Date(utcDate.getTime() + (9 * 60 * 60 * 1000));
+                                                const year = kstDate.getFullYear();
+                                                const month = String(kstDate.getMonth() + 1).padStart(2, '0');
+                                                const day = String(kstDate.getDate()).padStart(2, '0');
+                                                const hours = String(kstDate.getHours()).padStart(2, '0');
+                                                const minutes = String(kstDate.getMinutes()).padStart(2, '0');
+                                                const timeText = `${year}-${month}-${day} ${hours}:${minutes}`;
+
+                                                return (
+                                                    <div style={{
+                                                        fontSize: '0.9rem',
+                                                        color: '#999',
+                                                        textAlign: 'right',
+                                                        paddingTop: '15px',
+                                                        borderTop: '1px solid #f0f0f0'
+                                                    }}>
+                                                        저장일시: {timeText}
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
                                     </div>
                                 )}
