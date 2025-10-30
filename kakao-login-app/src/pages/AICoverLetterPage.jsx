@@ -2416,13 +2416,43 @@ export default function AICoverLetterPage() {
                                                             </div>
                                                         )}
                                                         {letter.job_title && (
-                                                            <div style={{
+                                                            <div
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    if (letter.job_id) {
+                                                                        setShowLoadModal(false);
+                                                                        navigate(`/job/${letter.job_id}`, {
+                                                                            state: {
+                                                                                job: {
+                                                                                    id: letter.job_id,
+                                                                                    title: letter.job_title,
+                                                                                    company: letter.company
+                                                                                }
+                                                                            }
+                                                                        });
+                                                                    }
+                                                                }}
+                                                                style={{
                                                                 display: 'inline-flex',
                                                                 alignItems: 'center',
                                                                 gap: '6px',
                                                                 padding: '6px 12px',
                                                                 background: 'rgba(139, 92, 246, 0.1)',
-                                                                borderRadius: '8px'
+                                                                borderRadius: '8px',
+                                                                cursor: letter.job_id ? 'pointer' : 'default',
+                                                                transition: 'all 0.2s'
+                                                            }}
+                                                            onMouseEnter={(e) => {
+                                                                if (letter.job_id) {
+                                                                    e.currentTarget.style.background = 'rgba(139, 92, 246, 0.2)';
+                                                                    e.currentTarget.style.transform = 'scale(1.05)';
+                                                                }
+                                                            }}
+                                                            onMouseLeave={(e) => {
+                                                                if (letter.job_id) {
+                                                                    e.currentTarget.style.background = 'rgba(139, 92, 246, 0.1)';
+                                                                    e.currentTarget.style.transform = 'scale(1)';
+                                                                }
                                                             }}>
                                                                 <span style={{ fontSize: '0.85rem' }}>📋</span>
                                                                 <span style={{
