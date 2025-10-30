@@ -37,6 +37,7 @@ function App() {
                 <Route path="/jobs/ai" element={<AIJobsPage />} />
                 <Route path="/jobs/it" element={<ITJobsPage />} />
                 <Route path="/jobs/detail/:id" element={<JobDetailPage />} />
+                <Route path="/job/:id" element={<JobDetailPage />} />
                 <Route path="/resume" element={<ResumePage />} />
                 <Route path="/coding-test" element={<CodingTestPage />} />
                 <Route path="/lg-coding-test" element={<LGCodingTestPage />} />
