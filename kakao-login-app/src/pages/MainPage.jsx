@@ -808,20 +808,25 @@ export default function MainPage() {
                         <span style={{ fontSize: '1rem' }}>🏢</span>
                         {job.company}
                     </p>
-                    {job.location && typeof job.location === 'string' && job.location.trim() !== '' && (
-                        <p style={{
-                            fontSize: '0.85rem',
-                            color: '#888',
-                            fontWeight: '400',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            marginBottom: '12px'
-                        }}>
-                            <span style={{ fontSize: '0.9rem' }}>📍</span>
-                            {job.location.split(' ').slice(0, 2).join(' ')}
-                        </p>
-                    )}
+                    <p style={{
+                        fontSize: '0.85rem',
+                        color: '#888',
+                        fontWeight: '400',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        marginBottom: '12px',
+                        minHeight: '20px'
+                    }}>
+                        {job.location && typeof job.location === 'string' && job.location.trim() !== '' ? (
+                            <>
+                                <span style={{ fontSize: '0.9rem' }}>📍</span>
+                                {job.location.split(' ').slice(0, 2).join(' ')}
+                            </>
+                        ) : (
+                            <span style={{ visibility: 'hidden' }}>-</span>
+                        )}
+                    </p>
 
                     {/* 버튼 영역 - 2x2 그리드 */}
                     <div style={{
