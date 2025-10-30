@@ -1917,39 +1917,80 @@ export default function ResumePage() {
                                                 </div>
 
                                                 {/* 회사명과 채용공고 제목 */}
-                                                <div style={{
-                                                    display: 'flex',
-                                                    flexDirection: 'column',
-                                                    gap: '6px',
-                                                    marginBottom: '12px',
-                                                    paddingBottom: '12px',
-                                                    borderBottom: '1px solid #ffe8d4'
-                                                }}>
-                                                    {coverLetter.company && (
-                                                        <div style={{
-                                                            fontSize: '0.9rem',
-                                                            color: '#666',
+                                                {(coverLetter.company || coverLetter.job_title) && (
+                                                    <div
+                                                        onClick={(e) => {
+                                                            if (coverLetter.job_id) {
+                                                                e.stopPropagation();
+                                                                navigate(`/jobs/detail/${coverLetter.job_id}`);
+                                                            }
+                                                        }}
+                                                        style={{
                                                             display: 'flex',
-                                                            alignItems: 'center',
-                                                            gap: '6px'
-                                                        }}>
-                                                            <span style={{ fontWeight: '600' }}>🏢</span>
-                                                            <span>{coverLetter.company}</span>
-                                                        </div>
-                                                    )}
-                                                    {coverLetter.job_title && (
-                                                        <div style={{
-                                                            fontSize: '0.9rem',
-                                                            color: '#666',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            gap: '6px'
-                                                        }}>
-                                                            <span style={{ fontWeight: '600' }}>💼</span>
-                                                            <span>{coverLetter.job_title}</span>
-                                                        </div>
-                                                    )}
-                                                </div>
+                                                            flexDirection: 'column',
+                                                            gap: '6px',
+                                                            marginBottom: '12px',
+                                                            paddingBottom: '12px',
+                                                            borderBottom: '1px solid #ffe8d4',
+                                                            cursor: coverLetter.job_id ? 'pointer' : 'default',
+                                                            transition: 'all 0.2s'
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            if (coverLetter.job_id) {
+                                                                e.currentTarget.style.background = 'rgba(255, 179, 102, 0.1)';
+                                                                e.currentTarget.style.marginLeft = '-10px';
+                                                                e.currentTarget.style.marginRight = '-10px';
+                                                                e.currentTarget.style.paddingLeft = '10px';
+                                                                e.currentTarget.style.paddingRight = '10px';
+                                                                e.currentTarget.style.borderRadius = '6px';
+                                                            }
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            if (coverLetter.job_id) {
+                                                                e.currentTarget.style.background = 'transparent';
+                                                                e.currentTarget.style.marginLeft = '0';
+                                                                e.currentTarget.style.marginRight = '0';
+                                                                e.currentTarget.style.paddingLeft = '0';
+                                                                e.currentTarget.style.paddingRight = '0';
+                                                                e.currentTarget.style.borderRadius = '0';
+                                                            }
+                                                        }}
+                                                    >
+                                                        {coverLetter.company && (
+                                                            <div style={{
+                                                                fontSize: '0.9rem',
+                                                                color: '#666',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '6px'
+                                                            }}>
+                                                                <span style={{ fontWeight: '600' }}>🏢</span>
+                                                                <span>{coverLetter.company}</span>
+                                                            </div>
+                                                        )}
+                                                        {coverLetter.job_title && (
+                                                            <div style={{
+                                                                fontSize: '0.9rem',
+                                                                color: '#666',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '6px'
+                                                            }}>
+                                                                <span style={{ fontWeight: '600' }}>💼</span>
+                                                                <span>{coverLetter.job_title}</span>
+                                                                {coverLetter.job_id && (
+                                                                    <span style={{
+                                                                        fontSize: '0.75rem',
+                                                                        color: '#ff8833',
+                                                                        marginLeft: '4px'
+                                                                    }}>
+                                                                        👉 상세보기
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
 
                                                 {/* 저장일시 */}
                                                 {coverLetter.created_at && (() => {
@@ -2060,34 +2101,75 @@ export default function ResumePage() {
                                             </h3>
 
                                             {/* 회사명 및 직무 정보 */}
-                                            <div style={{ marginBottom: '25px' }}>
-                                                {selectedAiCoverLetter.company && (
-                                                    <div style={{
-                                                        fontSize: '1rem',
-                                                        color: '#555',
-                                                        marginBottom: '10px',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: '8px'
-                                                    }}>
-                                                        <span style={{ fontWeight: '700', color: '#ff8833' }}>🏢 회사:</span>
-                                                        <span>{selectedAiCoverLetter.company}</span>
-                                                    </div>
-                                                )}
+                                            {(selectedAiCoverLetter.company || selectedAiCoverLetter.job_title) && (
+                                                <div
+                                                    onClick={() => {
+                                                        if (selectedAiCoverLetter.job_id) {
+                                                            navigate(`/jobs/detail/${selectedAiCoverLetter.job_id}`);
+                                                        }
+                                                    }}
+                                                    style={{
+                                                        marginBottom: '25px',
+                                                        cursor: selectedAiCoverLetter.job_id ? 'pointer' : 'default',
+                                                        padding: '15px',
+                                                        borderRadius: '10px',
+                                                        border: selectedAiCoverLetter.job_id ? '2px solid #ffe8d4' : 'none',
+                                                        background: selectedAiCoverLetter.job_id ? 'linear-gradient(135deg, #fff9f0 0%, #ffe8d4 100%)' : 'transparent',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        if (selectedAiCoverLetter.job_id) {
+                                                            e.currentTarget.style.transform = 'translateY(-2px)';
+                                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 179, 102, 0.3)';
+                                                            e.currentTarget.style.borderColor = '#ffb366';
+                                                        }
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        if (selectedAiCoverLetter.job_id) {
+                                                            e.currentTarget.style.transform = 'translateY(0)';
+                                                            e.currentTarget.style.boxShadow = 'none';
+                                                            e.currentTarget.style.borderColor = '#ffe8d4';
+                                                        }
+                                                    }}
+                                                >
+                                                    {selectedAiCoverLetter.company && (
+                                                        <div style={{
+                                                            fontSize: '1rem',
+                                                            color: '#555',
+                                                            marginBottom: '10px',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '8px'
+                                                        }}>
+                                                            <span style={{ fontWeight: '700', color: '#ff8833' }}>🏢 회사:</span>
+                                                            <span>{selectedAiCoverLetter.company}</span>
+                                                        </div>
+                                                    )}
 
-                                                {selectedAiCoverLetter.job_title && (
-                                                    <div style={{
-                                                        fontSize: '1rem',
-                                                        color: '#555',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: '8px'
-                                                    }}>
-                                                        <span style={{ fontWeight: '700', color: '#ff8833' }}>💼 직무:</span>
-                                                        <span>{selectedAiCoverLetter.job_title}</span>
-                                                    </div>
-                                                )}
-                                            </div>
+                                                    {selectedAiCoverLetter.job_title && (
+                                                        <div style={{
+                                                            fontSize: '1rem',
+                                                            color: '#555',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '8px'
+                                                        }}>
+                                                            <span style={{ fontWeight: '700', color: '#ff8833' }}>💼 직무:</span>
+                                                            <span>{selectedAiCoverLetter.job_title}</span>
+                                                            {selectedAiCoverLetter.job_id && (
+                                                                <span style={{
+                                                                    fontSize: '0.85rem',
+                                                                    color: '#ff8833',
+                                                                    marginLeft: '8px',
+                                                                    fontWeight: '600'
+                                                                }}>
+                                                                    👉 상세보기
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
 
                                             {/* 자소서 내용 */}
                                             <div style={{
