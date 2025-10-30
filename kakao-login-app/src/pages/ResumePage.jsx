@@ -9,7 +9,7 @@ export default function ResumePage() {
     const [userProfile, setUserProfile] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
-    const [activeTab, setActiveTab] = useState('basic'); // 'basic', 'experience', 'education', 'coverLetter', 'bookmarks'
+    const [activeTab, setActiveTab] = useState('basic'); // 'basic', 'experience', 'education', 'coverLetter', 'bookmarks', 'aiCoverLetters'
     const [activityStats, setActivityStats] = useState({
         bookmarks: 0,
         favoriteCompanies: 0,
@@ -1178,13 +1178,25 @@ export default function ResumePage() {
                         </div>
 
                         {/* AI자소서 */}
-                        <div style={{
-                            background: 'linear-gradient(135deg, #ffb366 0%, #ff9944 100%)',
-                            padding: '15px',
-                            borderRadius: '12px',
-                            color: 'white',
-                            textAlign: 'center'
-                        }}>
+                        <div
+                            onClick={() => handleTabChange('aiCoverLetters')}
+                            style={{
+                                background: 'linear-gradient(135deg, #ffb366 0%, #ff9944 100%)',
+                                padding: '15px',
+                                borderRadius: '12px',
+                                color: 'white',
+                                textAlign: 'center',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 6px 20px rgba(255, 179, 102, 0.4)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = 'none';
+                            }}>
                             <div style={{
                                 fontSize: '1.1rem',
                                 marginBottom: '6px',
@@ -1676,6 +1688,100 @@ export default function ResumePage() {
                                                     }}>
                                                         북마크 일시: {new Date(bookmark.created_at).toLocaleDateString('ko-KR')}
                                                     </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* AI자소서 탭 */}
+                        {activeTab === 'aiCoverLetters' && (
+                            <div style={{
+                                background: 'white',
+                                borderRadius: '12px',
+                                padding: '30px',
+                                boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                            }}>
+                                <h3 style={{
+                                    fontSize: '1.3rem',
+                                    fontWeight: '700',
+                                    color: '#333',
+                                    marginBottom: '25px',
+                                    paddingBottom: '15px',
+                                    borderBottom: '2px solid #ffb366',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px'
+                                }}>
+                                    <span>✍️</span>
+                                    AI자소서 현황 ({activityStats.aiCoverLetters}건)
+                                </h3>
+
+                                {coverLetterList.length === 0 ? (
+                                    <div style={{
+                                        textAlign: 'center',
+                                        padding: '60px 20px',
+                                        color: '#999'
+                                    }}>
+                                        <div style={{ fontSize: '3rem', marginBottom: '15px' }}>📝</div>
+                                        <p style={{ fontSize: '1.1rem', fontWeight: '600' }}>아직 작성한 자기소개서가 없습니다</p>
+                                        <p style={{ fontSize: '0.9rem', marginTop: '8px' }}>자기소개서 탭에서 작성해보세요!</p>
+                                    </div>
+                                ) : (
+                                    <div style={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: '20px'
+                                    }}>
+                                        {coverLetterList.map((coverLetter, index) => (
+                                            <div
+                                                key={index}
+                                                style={{
+                                                    background: 'linear-gradient(135deg, #fff9f0 0%, #ffe8d4 100%)',
+                                                    borderRadius: '12px',
+                                                    padding: '25px',
+                                                    border: '2px solid #ffb366',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(255, 179, 102, 0.2)';
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.currentTarget.style.boxShadow = 'none';
+                                                }}>
+                                                <div style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'flex-start',
+                                                    marginBottom: '15px'
+                                                }}>
+                                                    <h4 style={{
+                                                        fontSize: '1.1rem',
+                                                        fontWeight: '700',
+                                                        color: '#ff8833',
+                                                        margin: 0,
+                                                        flex: 1
+                                                    }}>
+                                                        {coverLetter.question || '질문 없음'}
+                                                    </h4>
+                                                    <span style={{
+                                                        fontSize: '1.5rem'
+                                                    }}>✍️</span>
+                                                </div>
+                                                <div style={{
+                                                    fontSize: '0.95rem',
+                                                    color: '#555',
+                                                    lineHeight: '1.7',
+                                                    whiteSpace: 'pre-wrap',
+                                                    wordBreak: 'break-word',
+                                                    background: 'white',
+                                                    padding: '15px',
+                                                    borderRadius: '8px',
+                                                    border: '1px solid #ffe8d4'
+                                                }}>
+                                                    {coverLetter.content || '내용 없음'}
                                                 </div>
                                             </div>
                                         ))}
