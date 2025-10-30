@@ -8374,6 +8374,28 @@ app.delete('/api/bookmarks/:jobId', authenticateUser, async (req, res) => {
   }
 });
 
+// AI 추천공고 저장 테이블 생성 (서버 시작 시 자동 생성)
+(async () => {
+  try {
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS ai_recommended_jobs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        job_id INT NOT NULL,
+        saved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        UNIQUE KEY unique_user_job (user_id, job_id),
+        INDEX idx_user_id (user_id),
+        INDEX idx_job_id (job_id),
+        INDEX idx_saved_at (saved_at)
+      )
+    `);
+    console.log('[DB] ✅ ai_recommended_jobs 테이블 확인/생성 완료');
+  } catch (error) {
+    console.error('[DB] ❌ ai_recommended_jobs 테이블 생성 실패:', error.message);
+  }
+})();
+
 // 추천공고 일괄 저장
 app.post('/api/save-recommended-jobs', authenticateUser, async (req, res) => {
   console.log('[SAVE-RECOMMENDED-JOBS] 추천공고 일괄 저장 요청');
@@ -8394,7 +8416,7 @@ app.post('/api/save-recommended-jobs', authenticateUser, async (req, res) => {
     let savedCount = 0;
     let skippedCount = 0;
 
-    // 각 job을 북마크로 저장 (중복 무시)
+    // 각 job을 ai_recommended_jobs 테이블에 저장 (중복 무시)
     for (const job of jobs) {
       if (!job.id) {
         console.warn(`[SAVE-RECOMMENDED-JOBS] ⚠️ job.id가 없는 항목 스킵:`, job);
@@ -8403,15 +8425,18 @@ app.post('/api/save-recommended-jobs', authenticateUser, async (req, res) => {
       }
 
       try {
+        // 중복 체크 후 저장 (INSERT IGNORE 사용)
         const [result] = await pool.execute(`
-          INSERT IGNORE INTO job_bookmarks (user_id, job_id, note)
-          VALUES (?, ?, ?)
-        `, [user.id, job.id, 'AI 추천공고']);
+          INSERT IGNORE INTO ai_recommended_jobs (user_id, job_id, saved_at)
+          VALUES (?, ?, NOW())
+        `, [user.id, job.id]);
 
         if (result.affectedRows > 0) {
           savedCount++;
+          console.log(`[SAVE-RECOMMENDED-JOBS] ✅ 저장 성공 - job_id: ${job.id}`);
         } else {
           skippedCount++;
+          console.log(`[SAVE-RECOMMENDED-JOBS] ⏭️ 이미 존재 - job_id: ${job.id}`);
         }
       } catch (jobError) {
         console.error(`[SAVE-RECOMMENDED-JOBS] job_id: ${job.id} 저장 실패:`, jobError.message);
@@ -8423,7 +8448,7 @@ app.post('/api/save-recommended-jobs', authenticateUser, async (req, res) => {
 
     res.json({
       success: true,
-      message: `${savedCount}개의 추천공고가 저장되었습니다.${skippedCount > 0 ? ` (${skippedCount}개는 이미 저장되어 있거나 저장에 실패했습니다.)` : ''}`,
+      message: `${savedCount}개의 추천공고가 저장되었습니다.${skippedCount > 0 ? ` (${skippedCount}개는 이미 저장되어 있습니다.)` : ''}`,
       saved_count: savedCount,
       skipped_count: skippedCount
     });
@@ -8433,6 +8458,45 @@ app.post('/api/save-recommended-jobs', authenticateUser, async (req, res) => {
     res.status(500).json({
       success: false,
       error: '추천공고 저장 중 오류가 발생했습니다.',
+      message: error.message
+    });
+  }
+});
+
+// AI 추천공고 저장 목록 조회
+app.get('/api/saved-recommended-jobs', authenticateUser, async (req, res) => {
+  console.log('[SAVED-RECOMMENDED-JOBS] AI 추천공고 저장 목록 조회 요청');
+
+  try {
+    const user = req.user;
+
+    const [rows] = await pool.execute(`
+      SELECT
+        arj.id,
+        arj.job_id,
+        arj.saved_at,
+        j.title,
+        j.company,
+        j.url,
+        j.registration_info
+      FROM ai_recommended_jobs arj
+      LEFT JOIN jobs j ON arj.job_id = j.id
+      WHERE arj.user_id = ?
+      ORDER BY arj.saved_at DESC
+    `, [user.id]);
+
+    console.log(`[SAVED-RECOMMENDED-JOBS] ✅ 조회 완료 - ${rows.length}건`);
+
+    res.json({
+      success: true,
+      jobs: rows
+    });
+
+  } catch (error) {
+    console.error('[SAVED-RECOMMENDED-JOBS] Error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'AI 추천공고 목록 조회 중 오류가 발생했습니다.',
       message: error.message
     });
   }
