@@ -7329,7 +7329,10 @@ app.get('/api/job/:id', async (req, res) => {
         ...job,
         job_info: job.job_info ? JSON.parse(job.job_info) : [],
         conditions: job.conditions ? JSON.parse(job.conditions) : [],
-        registration_info: job.registration_info ? JSON.parse(job.registration_info) : []
+        registration_info: job.registration_info ? JSON.parse(job.registration_info) : [],
+        // 직무정보와 채용조건 명시적으로 포함
+        job_description: job.job_description || '',
+        recruitment_conditions: job.recruitment_conditions || ''
       };
 
       console.log(`[JOBS-API] Response ready in ${Date.now() - startTime}ms`);
@@ -7340,7 +7343,9 @@ app.get('/api/job/:id', async (req, res) => {
         ...job,
         job_info: [],
         conditions: [],
-        registration_info: []
+        registration_info: [],
+        job_description: job.job_description || '',
+        recruitment_conditions: job.recruitment_conditions || ''
       };
       res.json({ success: true, job: fallbackJob });
     }
