@@ -470,7 +470,7 @@ export default function JobDetailPage() {
                     border: '1px solid rgba(102, 126, 234, 0.1)'
                 }}>
                     {/* 직무 정보 */}
-                    {(job.job_description || (job.job_info && job.job_info.length > 0)) && (
+                    {job.job_info && job.job_info.length > 0 && (
                         <div style={{ marginBottom: '24px' }}>
                             <div style={{
                                 display: 'flex',
@@ -501,53 +501,85 @@ export default function JobDetailPage() {
                                     직무 정보
                                 </h3>
                             </div>
-                            {job.job_description ? (
+                            <div style={{
+                                display: 'flex',
+                                flexWrap: 'wrap',
+                                gap: '12px'
+                            }}>
+                                {job.job_info.map((info, index) => (
+                                    <span key={index} style={{
+                                        background: 'white',
+                                        color: '#333',
+                                        padding: '12px 20px',
+                                        borderRadius: '16px',
+                                        fontSize: '1rem',
+                                        fontWeight: '600',
+                                        boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                                        border: '1px solid #e0e0e0',
+                                        transition: 'all 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.transform = 'translateY(-2px)';
+                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.2)';
+                                        e.currentTarget.style.borderColor = '#667eea';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.transform = 'translateY(0)';
+                                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
+                                        e.currentTarget.style.borderColor = '#e0e0e0';
+                                    }}>
+                                        {info}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 직무 상세정보 */}
+                    {job.job_description && (
+                        <div style={{ marginBottom: '24px' }}>
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '12px',
+                                marginBottom: '20px',
+                                paddingBottom: '12px',
+                                borderBottom: '3px solid',
+                                borderImage: 'linear-gradient(90deg, #9c27b0 0%, #e91e63 100%) 1'
+                            }}>
                                 <div style={{
-                                    fontSize: '1.05rem',
-                                    color: '#333',
-                                    lineHeight: '1.8',
-                                    background: 'white',
-                                    padding: '20px 24px',
-                                    borderRadius: '16px',
-                                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                                    border: '1px solid #e0e0e0',
-                                    whiteSpace: 'pre-wrap'
-                                }}>
-                                    {job.job_description}
-                                </div>
-                            ) : (
-                                <div style={{
+                                    fontSize: '1.5rem',
+                                    background: 'linear-gradient(135deg, #9c27b0 0%, #e91e63 100%)',
+                                    borderRadius: '10px',
+                                    padding: '6px 10px',
                                     display: 'flex',
-                                    flexWrap: 'wrap',
-                                    gap: '12px'
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}>📝</div>
+                                <h3 style={{
+                                    fontSize: '1.4rem',
+                                    fontWeight: '800',
+                                    background: 'linear-gradient(135deg, #9c27b0 0%, #e91e63 100%)',
+                                    WebkitBackgroundClip: 'text',
+                                    WebkitTextFillColor: 'transparent',
+                                    margin: 0
                                 }}>
-                                    {job.job_info.map((info, index) => (
-                                        <span key={index} style={{
-                                            background: 'white',
-                                            color: '#333',
-                                            padding: '12px 20px',
-                                            borderRadius: '16px',
-                                            fontSize: '1rem',
-                                            fontWeight: '600',
-                                            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                                            border: '1px solid #e0e0e0',
-                                            transition: 'all 0.2s'
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.transform = 'translateY(-2px)';
-                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.2)';
-                                            e.currentTarget.style.borderColor = '#667eea';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.transform = 'translateY(0)';
-                                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
-                                            e.currentTarget.style.borderColor = '#e0e0e0';
-                                        }}>
-                                            {info}
-                                        </span>
-                                    ))}
-                                </div>
-                            )}
+                                    직무 상세정보
+                                </h3>
+                            </div>
+                            <div style={{
+                                fontSize: '1.05rem',
+                                color: '#333',
+                                lineHeight: '1.8',
+                                background: 'white',
+                                padding: '20px 24px',
+                                borderRadius: '16px',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                                border: '1px solid #e0e0e0',
+                                whiteSpace: 'pre-wrap'
+                            }}>
+                                {job.job_description}
+                            </div>
                         </div>
                     )}
 
