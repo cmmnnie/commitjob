@@ -16,6 +16,7 @@ import { fileURLToPath } from 'url';
 import { scrapeCompanyInfo } from './scrape-company-info.js';
 import { scrapeInterviewQuestions } from './scrape-interview-questions.js';
 import { scrapeLatestJobs } from './scrape-latest-jobs.js';
+import natural from 'natural';
 
 // ES modules에서 __dirname 정의
 const __filename = fileURLToPath(import.meta.url);
@@ -27,6 +28,86 @@ if (!globalThis.crypto) {
 }
 
 // Removed: Advanced Recommendation Algorithms (replaced with GPT MCP)
+
+// TF-IDF 기반 텍스트 유사도 계산 함수
+const TfIdf = natural.TfIdf;
+
+function calculateTextSimilarity(userProfile, job) {
+  const tfidf = new TfIdf();
+
+  // 사용자 프로필 텍스트 생성
+  const userSkills = Array.isArray(userProfile.skills) ? userProfile.skills.join(' ') : (userProfile.skills || '');
+  const userJobs = Array.isArray(userProfile.jobs) ? userProfile.jobs.join(' ') : (userProfile.jobs || '');
+  const userRegions = Array.isArray(userProfile.preferred_regions) ? userProfile.preferred_regions.join(' ') : (userProfile.preferred_regions || '');
+  const userText = `${userJobs} ${userSkills} ${userProfile.experience || ''} ${userRegions}`.toLowerCase();
+
+  // 채용공고 텍스트 생성 (title, recruitment_conditions, job_description 사용)
+  const jobTitle = job.title || '';
+  const jobRecruitmentConditions = job.recruitment_conditions || '';
+  const jobDescription = job.job_description || '';
+  const jobText = `${jobTitle} ${jobRecruitmentConditions} ${jobDescription}`.toLowerCase();
+
+  // TF-IDF 문서 추가
+  tfidf.addDocument(userText);
+  tfidf.addDocument(jobText);
+
+  // 코사인 유사도 계산
+  const userTerms = tfidf.listTerms(0);
+  const jobTerms = tfidf.listTerms(1);
+
+  // 벡터 생성
+  const allTerms = new Set([...userTerms.map(t => t.term), ...jobTerms.map(t => t.term)]);
+
+  let dotProduct = 0;
+  let userMagnitude = 0;
+  let jobMagnitude = 0;
+
+  for (const term of allTerms) {
+    const userTfidf = userTerms.find(t => t.term === term)?.tfidf || 0;
+    const jobTfidf = jobTerms.find(t => t.term === term)?.tfidf || 0;
+
+    dotProduct += userTfidf * jobTfidf;
+    userMagnitude += userTfidf * userTfidf;
+    jobMagnitude += jobTfidf * jobTfidf;
+  }
+
+  userMagnitude = Math.sqrt(userMagnitude);
+  jobMagnitude = Math.sqrt(jobMagnitude);
+
+  if (userMagnitude === 0 || jobMagnitude === 0) {
+    return 0;
+  }
+
+  const cosineSimilarity = dotProduct / (userMagnitude * jobMagnitude);
+
+  // 추가 보너스 점수 계산
+  let bonusScore = 0;
+
+  // 스킬 매칭 보너스 (recruitment_conditions와 job_description에서 스킬 검색)
+  const userSkillsArray = Array.isArray(userProfile.skills) ? userProfile.skills : [];
+  const combinedJobText = `${jobRecruitmentConditions} ${jobDescription}`.toLowerCase();
+  const skillMatches = userSkillsArray.filter(skill =>
+    combinedJobText.includes(skill.toLowerCase())
+  );
+  bonusScore += skillMatches.length * 0.05;
+
+  // 지역 매칭 보너스
+  const userRegionsArray = Array.isArray(userProfile.preferred_regions) ? userProfile.preferred_regions : [];
+  const jobLocation = job.location || '';
+  const regionMatch = userRegionsArray.some(region => jobLocation.includes(region));
+  if (regionMatch) bonusScore += 0.1;
+
+  // 직무 매칭 보너스 (title과 job_description에서 확인)
+  const userJobsArray = Array.isArray(userProfile.jobs) ? userProfile.jobs : [];
+  const titleMatch = userJobsArray.some(userJob =>
+    jobTitle.toLowerCase().includes(userJob.toLowerCase()) ||
+    jobDescription.toLowerCase().includes(userJob.toLowerCase())
+  );
+  if (titleMatch) bonusScore += 0.15;
+
+  // 최종 유사도 (0~1 범위, 최대 1.0)
+  return Math.min(cosineSimilarity + bonusScore, 1.0);
+}
 
 // 헬퍼 함수: 스킬로부터 직무 유형 추론
 function inferJobTypeFromSkills(skills) {
@@ -41,6 +122,60 @@ function inferJobTypeFromSkills(skills) {
   if (hasAiSkills) return 'AI';
   if (hasDataSkills) return '빅데이터';
   return 'IT';
+}
+
+// 헬퍼 함수: 마감되지 않은 채용공고만 필터링
+function filterActiveJobs(jobs, includeAlwaysOpen = true) {
+  const now = new Date();
+
+  return jobs.filter(job => {
+    if (!job.registration_info) return true;
+
+    try {
+      // registration_info는 JSON 배열 형태: ["~11.02(일)", "3일 전 등록"]
+      const regInfo = typeof job.registration_info === 'string'
+        ? JSON.parse(job.registration_info)
+        : job.registration_info;
+
+      if (!Array.isArray(regInfo) || regInfo.length === 0) return true;
+
+      const deadlineStr = regInfo[0]; // "~11.02(일)" 형식
+
+      // 상시채용, 수시지원 제외 (includeAlwaysOpen이 false면 제외)
+      if (!includeAlwaysOpen && (deadlineStr.includes('상시채용') || deadlineStr.includes('수시지원'))) {
+        return false;
+      }
+
+      // 상시채용/수시지원은 마감일 체크 없이 통과
+      if (deadlineStr.includes('상시채용') || deadlineStr.includes('수시지원')) {
+        return true;
+      }
+
+      if (!deadlineStr || !deadlineStr.startsWith('~')) return true;
+
+      // 마감일 파싱: "~11.02(일)" -> "11.02"
+      const dateMatch = deadlineStr.match(/~(\d+)\.(\d+)/);
+      if (!dateMatch) return true;
+
+      const month = parseInt(dateMatch[1]);
+      const day = parseInt(dateMatch[2]);
+
+      // 현재 연도 사용 (올해 또는 내년)
+      let year = now.getFullYear();
+      const deadlineDate = new Date(year, month - 1, day, 23, 59, 59);
+
+      // 만약 마감일이 과거라면 내년으로 설정
+      if (deadlineDate < now) {
+        deadlineDate.setFullYear(year + 1);
+      }
+
+      // 마감일이 지났는지 확인
+      return deadlineDate >= now;
+    } catch (e) {
+      console.warn(`[FILTER] Failed to parse deadline for job ${job.id}:`, e);
+      return true; // 파싱 실패 시 포함
+    }
+  });
 }
 
 dotenv.config();
@@ -2199,96 +2334,28 @@ app.get("/api/main-recommendations", async (req, res) => {
       }
 
       try {
-        // 직무 타입별 필터 조건 생성
-        let jobTitleFilter = '';
-        if (jobKeywords.length > 0) {
-          const titleFilterConditions = jobKeywords.map(keyword =>
-            `j.title LIKE '%${keyword.replace(/'/g, "''")}%'`
-          ).join(' OR ');
-
-          if (userJobType === 'developer') {
-            // 개발자: 직무 키워드 매칭 OR 일반 개발자 (단, 보안/네트워크/DBA 제외)
-            jobTitleFilter = `AND (
-              (${titleFilterConditions})
-              OR (
-                j.title LIKE '%개발자%'
-                AND j.title NOT LIKE '%정보보안%'
-                AND j.title NOT LIKE '%보안%'
-                AND j.title NOT LIKE '%네트워크%'
-                AND j.title NOT LIKE '%인프라%'
-                AND j.title NOT LIKE '%DBA%'
-                AND j.title NOT LIKE '%데이터베이스 관리%'
-              )
-            )`;
-          } else if (userJobType === 'dba') {
-            // DBA: DBA 키워드 매칭만
-            jobTitleFilter = `AND (${titleFilterConditions})`;
-          } else if (userJobType === 'security') {
-            // 보안: 보안 키워드 매칭만
-            jobTitleFilter = `AND (${titleFilterConditions})`;
-          } else if (userJobType === 'data' || userJobType === 'ai') {
-            // 데이터/AI: 직무 키워드 매칭
-            jobTitleFilter = `AND (${titleFilterConditions})`;
-          } else {
-            // 일반: 키워드 매칭만
-            jobTitleFilter = `AND (${titleFilterConditions})`;
-          }
-        }
-
+        // 최근 50건의 채용공고 조회 (IT, BIGDATA_AI 카테고리)
         const query = `
-          SELECT j.id, j.company, j.title, j.category, j.url, j.job_info, j.conditions, j.company_search_key, j.registration_info,
-                 cc.location,
-                 ${jobTitleMatchScore} + ${skillMatchScore} + ${locationMatchScore} as total_match_score
+          SELECT j.id, j.company, j.title, j.category, j.url,
+                 j.job_info, j.conditions, j.company_search_key, j.registration_info,
+                 j.recruitment_conditions, j.job_description,
+                 cc.location
           FROM jobs j
           LEFT JOIN catch_companies cc ON j.company = cc.company
           WHERE j.category IN ('BIGDATA_AI', 'IT')
-          ${jobTitleFilter}
-          ORDER BY
-            total_match_score DESC,
-            ${categoryOrder},
-            j.scraped_at DESC
-          LIMIT 20
+          ORDER BY j.scraped_at DESC
+          LIMIT 50
         `;
 
         console.log('[MAIN-RECS] 사용자 희망직무:', userJobs.join(', ') || '미설정');
-        console.log('[MAIN-RECS] 직무 타입:', userJobType);
-        console.log('[MAIN-RECS] 직무 키워드:', jobKeywords.join(', ') || '없음');
         console.log('[MAIN-RECS] 사용자 스킬:', userSkills.join(', ') || '미설정');
         console.log('[MAIN-RECS] 희망지역:', userRegions.join(', ') || '미설정');
-        console.log('[MAIN-RECS] 프로필 기반 매칭 - 직무명 우선, 스킬/지역 고려');
+        console.log('[MAIN-RECS] 최근 50건 채용공고 조회 중...');
 
         let [dbJobs] = await pool.execute(query);
 
-        // 필터링된 공고가 부족한 경우 유사 공고 추가
-        if (dbJobs.length < 10 && jobKeywords.length > 0) {
-          console.log(`[MAIN-RECS] ⚠️ 필터링된 공고 ${dbJobs.length}개 부족 - 유사 공고 추가 조회`);
-
-          const fallbackQuery = `
-            SELECT j.id, j.company, j.title, j.category, j.url, j.job_info, j.conditions, j.company_search_key, j.registration_info,
-                   cc.location,
-                   ${skillMatchScore} + ${locationMatchScore} as total_match_score
-            FROM jobs j
-            LEFT JOIN catch_companies cc ON j.company = cc.company
-            WHERE j.category IN ('BIGDATA_AI', 'IT')
-            ORDER BY
-              total_match_score DESC,
-              ${categoryOrder},
-              j.scraped_at DESC
-            LIMIT ${20 - dbJobs.length}
-          `;
-
-          const [fallbackJobs] = await pool.execute(fallbackQuery);
-
-          // 중복 제거하여 추가
-          const existingIds = new Set(dbJobs.map(j => j.id));
-          const additionalJobs = fallbackJobs.filter(j => !existingIds.has(j.id));
-          dbJobs = [...dbJobs, ...additionalJobs];
-
-          console.log(`[MAIN-RECS] ✅ 유사 공고 ${additionalJobs.length}개 추가 (총 ${dbJobs.length}개)`);
-        }
-
         if (dbJobs.length > 0) {
-          allJobs = dbJobs.map(job => {
+          const mappedJobs = dbJobs.map(job => {
             // job_info, conditions, registration_info를 JSON으로 파싱
             let jobInfo = [];
             let conditions = [];
@@ -2337,13 +2404,46 @@ app.get("/api/main-recommendations", async (req, res) => {
               skills: jobInfo, // job_info를 skills로도 제공
               salary: "회사내규에 따름",
               jobType: job.category === 'BIGDATA_AI' ? '빅데이터/AI' : 'IT',
-              source: 'Database'
+              source: 'Database',
+              // 텍스트 유사도 계산용 필드
+              recruitment_conditions: job.recruitment_conditions || '',
+              job_description: job.job_description || ''
             };
           });
 
-          const skillMatchedCount = dbJobs.filter(j => j.skill_match_score > 0).length;
-          console.log(`[MAIN-RECS] ✅ 회원 프로필 기반 매칭 완료`);
-          console.log(`[MAIN-RECS]    총 ${allJobs.length}개 공고 (스킬 매칭: ${skillMatchedCount}개, 기타: ${allJobs.length - skillMatchedCount}개)`);
+          // 마감되지 않은 공고만 필터링 (상시채용 포함)
+          const activeJobs = filterActiveJobs(mappedJobs, true);
+
+          console.log(`[MAIN-RECS] ✅ DB 조회 완료`);
+          console.log(`[MAIN-RECS]    최근 50건 조회: ${dbJobs.length}개 -> 마감 필터 후: ${activeJobs.length}개 공고`);
+
+          // 텍스트 유사도 계산 및 정렬
+          console.log('[MAIN-RECS] 📊 텍스트 유사도 계산 중 (title, recruitment_conditions, job_description 사용)...');
+          const jobsWithSimilarity = activeJobs.map(job => {
+            const similarity = calculateTextSimilarity(userProfile, job);
+            return {
+              ...job,
+              similarity_score: similarity
+            };
+          });
+
+          // 유사도 기준 내림차순 정렬
+          jobsWithSimilarity.sort((a, b) => b.similarity_score - a.similarity_score);
+
+          console.log(`[MAIN-RECS] ✅ 텍스트 유사도 계산 완료`);
+          console.log(`[MAIN-RECS]    상위 10개 공고 유사도 점수:`);
+          jobsWithSimilarity.slice(0, 10).forEach((job, idx) => {
+            console.log(`      ${idx + 1}. ${job.company} - ${job.title} (유사도: ${(job.similarity_score * 100).toFixed(2)}%)`);
+          });
+
+          // 상위 20개만 GPT에 전달 (또는 마감되지 않은 공고가 20개 미만이면 전체)
+          const topCount = Math.min(20, jobsWithSimilarity.length);
+          allJobs = jobsWithSimilarity.slice(0, topCount);
+
+          if (allJobs.length > 0) {
+            console.log(`[MAIN-RECS] 🎯 상위 ${allJobs.length}개 공고 선정 완료 (유사도 ${(allJobs[0].similarity_score * 100).toFixed(2)}% ~ ${(allJobs[allJobs.length - 1].similarity_score * 100).toFixed(2)}%)`);
+          }
+
         } else {
           console.error('[MAIN-RECS] DB에 채용공고가 없습니다');
           return res.status(404).json({
@@ -2361,7 +2461,7 @@ app.get("/api/main-recommendations", async (req, res) => {
         });
       }
 
-      console.log(`[MAIN-RECS] 총 ${allJobs.length}개 공고 준비 완료 (출처: Database)`);
+      console.log(`[MAIN-RECS] 총 ${allJobs.length}개 공고 준비 완료 (출처: Database + Text Similarity)`);
 
       // 공고가 없으면 에러 반환
       if (allJobs.length === 0) {
@@ -2375,25 +2475,16 @@ app.get("/api/main-recommendations", async (req, res) => {
 
       // GPT에게 전달할 공고 목록 상세 출력
       console.log('[MAIN-RECS] GPT에게 전달되는 공고 목록:');
-      // allJobs.slice(0, 10).forEach((job, idx) => {
-      //   console.log(`  [${idx + 1}] ${job.company} - ${job.title} [출처: ${job.source}]`);
-      //   console.log(`      경력: ${job.experience}, 지역: ${job.location?.join(', ')}`);
-      //   console.log(`      스킬: ${Array.isArray(job.skills) ? job.skills.join(', ') : job.skills}`);
-      //   console.log(`      연봉: ${job.salary}`);
-      // });
-      // if (allJobs.length > 10) {
-        console.log(` ${allJobs.length }개 공고`);
-      // }
+      console.log(`   ${allJobs.length}개 공고 (텍스트 유사도 상위 20개)`);
 
-      // GPT-5-mini 기반 추천 시도
+      // GPT-4o-mini 기반 추천 시도
       let rerankedJobs = [];
 
       if (openai) {
         try {
-          console.log('[MAIN-RECS] GPT-4o-mini 기반 추천 시작 (최근 20개 공고 전달 → 3개 선택)');
-          // 최근 20개 공고를 GPT에 전달
-          const topCandidates = allJobs.slice(0, 20);
-          rerankedJobs = await generateGPT4Recommendations(userProfile, topCandidates, 3);
+          console.log('[MAIN-RECS] GPT-4o-mini 기반 추천 시작 (텍스트 유사도 상위 20개 전달 → 3개 선택)');
+          // 텍스트 유사도 상위 20개 공고를 GPT에 전달
+          rerankedJobs = await generateGPT4Recommendations(userProfile, allJobs, 3);
           console.log(`[MAIN-RECS] ✅ GPT-4o-mini로 ${rerankedJobs.length}개 공고 추천 완료`);
         } catch (gptError) {
           console.error('[MAIN-RECS] ❌ GPT-4o-mini 추천 실패:', gptError.message);
@@ -5234,52 +5325,7 @@ app.get('/api/jobs-by-company', async (req, res) => {
     `, [company, `${company}%`, company, `${company}%`]);
 
     // 마감되지 않은 공고만 필터링 + 상시채용/수시지원 제외
-    const now = new Date();
-    const activeJobs = jobRows.filter(job => {
-      if (!job.registration_info) return true;
-
-      try {
-        // registration_info는 JSON 배열 형태: ["~11.02(일)", "3일 전 등록"]
-        const regInfo = JSON.parse(job.registration_info);
-        if (!Array.isArray(regInfo) || regInfo.length === 0) return true;
-
-        const deadlineStr = regInfo[0]; // "~11.02(일)" 형식
-
-        // 상시채용, 수시지원 제외 (includeAlways가 true면 포함)
-        if (!includeAlwaysOpen && (deadlineStr.includes('상시채용') || deadlineStr.includes('수시지원'))) {
-          return false;
-        }
-
-        // 상시채용/수시지원은 마감일 체크 없이 통과
-        if (deadlineStr.includes('상시채용') || deadlineStr.includes('수시지원')) {
-          return true;
-        }
-
-        if (!deadlineStr || !deadlineStr.startsWith('~')) return true;
-
-        // 마감일 파싱: "~11.02(일)" -> "11.02"
-        const dateMatch = deadlineStr.match(/~(\d+)\.(\d+)/);
-        if (!dateMatch) return true;
-
-        const month = parseInt(dateMatch[1]);
-        const day = parseInt(dateMatch[2]);
-
-        // 현재 연도 사용 (올해 또는 내년)
-        let year = now.getFullYear();
-        const deadlineDate = new Date(year, month - 1, day, 23, 59, 59);
-
-        // 만약 마감일이 과거라면 내년으로 설정
-        if (deadlineDate < now) {
-          deadlineDate.setFullYear(year + 1);
-        }
-
-        // 마감일이 지났는지 확인
-        return deadlineDate >= now;
-      } catch (e) {
-        console.warn(`[JOBS-BY-COMPANY] Failed to parse deadline for job ${job.id}:`, e);
-        return true; // 파싱 실패 시 포함
-      }
-    });
+    const activeJobs = filterActiveJobs(jobRows, includeAlwaysOpen);
 
     // 회사명 + 채용공고 제목 기준으로 중복 제거 (최신 공고 우선)
     const uniqueJobsMap = new Map();

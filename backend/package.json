@@ -21,6 +21,7 @@
     "jose": "^6.1.0",
     "multer": "^2.0.2",
     "mysql2": "^3.14.4",
+    "natural": "^8.1.0",
     "openai": "^6.2.0",
     "puppeteer": "^23.0.0",
     "swagger-jsdoc": "^6.2.8",
