@@ -41,10 +41,21 @@ function calculateTextSimilarity(userProfile, job) {
   const userRegions = Array.isArray(userProfile.preferred_regions) ? userProfile.preferred_regions.join(' ') : (userProfile.preferred_regions || '');
   const userText = `${userJobs} ${userSkills} ${userProfile.experience || ''} ${userRegions}`.toLowerCase();
 
-  // 채용공고 텍스트 생성 (title, recruitment_conditions, job_description 사용)
+  // 채용공고 텍스트 생성 (title, recruitment_conditions (fallback: conditions), job_description (fallback: job_info) 사용)
   const jobTitle = job.title || '';
-  const jobRecruitmentConditions = job.recruitment_conditions || '';
-  const jobDescription = job.job_description || '';
+
+  // recruitment_conditions가 없으면 conditions 배열 사용
+  let jobRecruitmentConditions = job.recruitment_conditions || '';
+  if (!jobRecruitmentConditions && job.conditions) {
+    jobRecruitmentConditions = Array.isArray(job.conditions) ? job.conditions.join(' ') : job.conditions;
+  }
+
+  // job_description이 없으면 job_info 배열 사용
+  let jobDescription = job.job_description || '';
+  if (!jobDescription && job.job_info) {
+    jobDescription = Array.isArray(job.job_info) ? job.job_info.join(' ') : job.job_info;
+  }
+
   const jobText = `${jobTitle} ${jobRecruitmentConditions} ${jobDescription}`.toLowerCase();
 
   // TF-IDF 문서 추가
@@ -2334,7 +2345,7 @@ app.get("/api/main-recommendations", async (req, res) => {
       }
 
       try {
-        // 최근 50건의 채용공고 조회 (IT, BIGDATA_AI 카테고리)
+        // 최근 60건의 채용공고 조회 (IT, BIGDATA_AI 카테고리)
         const query = `
           SELECT j.id, j.company, j.title, j.category, j.url,
                  j.job_info, j.conditions, j.company_search_key, j.registration_info,
@@ -2344,13 +2355,13 @@ app.get("/api/main-recommendations", async (req, res) => {
           LEFT JOIN catch_companies cc ON j.company = cc.company
           WHERE j.category IN ('BIGDATA_AI', 'IT')
           ORDER BY j.scraped_at DESC
-          LIMIT 50
+          LIMIT 60
         `;
 
         console.log('[MAIN-RECS] 사용자 희망직무:', userJobs.join(', ') || '미설정');
         console.log('[MAIN-RECS] 사용자 스킬:', userSkills.join(', ') || '미설정');
         console.log('[MAIN-RECS] 희망지역:', userRegions.join(', ') || '미설정');
-        console.log('[MAIN-RECS] 최근 50건 채용공고 조회 중...');
+        console.log('[MAIN-RECS] 최근 60건 채용공고 조회 중...');
 
         let [dbJobs] = await pool.execute(query);
 
@@ -2415,10 +2426,10 @@ app.get("/api/main-recommendations", async (req, res) => {
           const activeJobs = filterActiveJobs(mappedJobs, true);
 
           console.log(`[MAIN-RECS] ✅ DB 조회 완료`);
-          console.log(`[MAIN-RECS]    최근 50건 조회: ${dbJobs.length}개 -> 마감 필터 후: ${activeJobs.length}개 공고`);
+          console.log(`[MAIN-RECS]    최근 60건 조회: ${dbJobs.length}개 -> 마감 필터 후: ${activeJobs.length}개 공고`);
 
           // 텍스트 유사도 계산 및 정렬
-          console.log('[MAIN-RECS] 📊 텍스트 유사도 계산 중 (title, recruitment_conditions, job_description 사용)...');
+          console.log('[MAIN-RECS] 📊 텍스트 유사도 계산 중 (title, recruitment_conditions (fallback: conditions), job_description (fallback: job_info) 사용)...');
           const jobsWithSimilarity = activeJobs.map(job => {
             const similarity = calculateTextSimilarity(userProfile, job);
             return {
@@ -7844,9 +7855,29 @@ async function generateGPT4Recommendations(userProfile, jobCandidates, limit) {
   const userJobs = formatArray(userProfile.jobs);
   const userExperience = userProfile.experience || '무관';
 
+  // 각 채용공고의 상세 정보 생성 (fallback 로직 포함)
+  const jobDescriptions = jobCandidates.map((job, idx) => {
+    // recruitment_conditions 우선, 없으면 conditions 사용
+    let conditions = job.recruitment_conditions || '';
+    if (!conditions && job.conditions) {
+      conditions = Array.isArray(job.conditions) ? job.conditions.join(' ') : job.conditions;
+    }
+
+    // job_description 우선, 없으면 job_info 사용
+    let description = job.job_description || '';
+    if (!description && job.job_info) {
+      description = Array.isArray(job.job_info) ? job.job_info.join(' ') : job.job_info;
+    }
+
+    // 스킬 정보는 기존 skills 필드 또는 job_info 사용
+    const skills = formatSkills(job.skills || job.job_info);
+
+    return `${idx+1}.${job.title}|${job.company}|스킬:${skills}|조건:${conditions}|설명:${description}|지역:${job.location || '미정'}|경력:${job.experience || '무관'}|ID:${job.id}`;
+  }).join('\n');
+
   const prompt = `희망직무:${userJobs}|기술스택:${userSkills}|경력:${userExperience}|희망지역:${userRegions}
 공고:
-${jobCandidates.map((job, idx) => `${idx+1}.${job.title}|${job.company}|${formatSkills(job.skills)}|지역:${job.location || '미정'}|경력:${job.experience || '무관'}|ID:${job.id}`).join('\n')}
+${jobDescriptions}
 
 반드시 상위${limit}개 추천. 매칭 이유는 구체적이고 정직하게 3개 작성.
 
