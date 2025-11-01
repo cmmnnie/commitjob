@@ -20,7 +20,6 @@ export default function ResumePage() {
     const [bookmarkedJobs, setBookmarkedJobs] = useState([]);
     const [aiCoverLetters, setAiCoverLetters] = useState([]);
     const [savedAiJobs, setSavedAiJobs] = useState([]);
-    const [showAiJobs, setShowAiJobs] = useState(false);
     const [selectedAiCoverLetter, setSelectedAiCoverLetter] = useState(null);
     const [formData, setFormData] = useState({
         jobs: '',
@@ -132,11 +131,6 @@ export default function ResumePage() {
         setIsEditingAward(false); // 수상 편집 모드도 해제
         setIsEditingExperience(false); // 경력 편집 모드도 해제
         setIsEditingCoverLetter(false); // 자기소개서 편집 모드도 해제
-
-        // 다른 탭으로 전환시 AI 추천공고 숨기기
-        if (tab !== 'basic') {
-            setShowAiJobs(false);
-        }
     };
 
     // 저장된 AI 추천공고 가져오기
@@ -1287,15 +1281,8 @@ export default function ResumePage() {
                             onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                console.log('[AI채용 버튼] 클릭됨');
-                                console.log('[AI채용 버튼] 현재 activeTab:', activeTab);
-                                console.log('[AI채용 버튼] 현재 showAiJobs:', showAiJobs);
-
-                                setActiveTab('basic');
-                                setShowAiJobs(true);
+                                handleTabChange('aiJobs');
                                 fetchSavedAiJobs();
-
-                                console.log('[AI채용 버튼] activeTab을 basic으로, showAiJobs를 true로 설정');
                             }}
                             style={{
                                 background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
@@ -1400,11 +1387,11 @@ export default function ResumePage() {
                         style={{
                             flex: 1,
                             padding: '16px 20px',
-                            background: activeTab === 'basic' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'white',
-                            color: activeTab === 'basic' ? 'white' : '#666',
+                            background: 'white',
+                            color: '#666',
                             border: 'none',
-                            borderBottom: activeTab === 'basic' ? 'none' : '2px solid transparent',
-                            borderRadius: activeTab === 'basic' ? '8px 8px 0 0' : '0',
+                            borderBottom: '2px solid transparent',
+                            borderRadius: '0',
                             fontSize: '1rem',
                             fontWeight: '700',
                             cursor: 'pointer',
@@ -1418,11 +1405,11 @@ export default function ResumePage() {
                         style={{
                             flex: 1,
                             padding: '16px 20px',
-                            background: activeTab === 'experience' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'white',
-                            color: activeTab === 'experience' ? 'white' : '#666',
+                            background: 'white',
+                            color: '#666',
                             border: 'none',
-                            borderBottom: activeTab === 'experience' ? 'none' : '2px solid transparent',
-                            borderRadius: activeTab === 'experience' ? '8px 8px 0 0' : '0',
+                            borderBottom: '2px solid transparent',
+                            borderRadius: '0',
                             fontSize: '1rem',
                             fontWeight: '700',
                             cursor: 'pointer',
@@ -1436,11 +1423,11 @@ export default function ResumePage() {
                         style={{
                             flex: 1,
                             padding: '16px 20px',
-                            background: activeTab === 'education' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'white',
-                            color: activeTab === 'education' ? 'white' : '#666',
+                            background: 'white',
+                            color: '#666',
                             border: 'none',
-                            borderBottom: activeTab === 'education' ? 'none' : '2px solid transparent',
-                            borderRadius: activeTab === 'education' ? '8px 8px 0 0' : '0',
+                            borderBottom: '2px solid transparent',
+                            borderRadius: '0',
                             fontSize: '0.9rem',
                             fontWeight: '700',
                             cursor: 'pointer',
@@ -1454,11 +1441,11 @@ export default function ResumePage() {
                         style={{
                             flex: 1,
                             padding: '16px 20px',
-                            background: activeTab === 'coverLetter' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'white',
-                            color: activeTab === 'coverLetter' ? 'white' : '#666',
+                            background: 'white',
+                            color: '#666',
                             border: 'none',
-                            borderBottom: activeTab === 'coverLetter' ? 'none' : '2px solid transparent',
-                            borderRadius: activeTab === 'coverLetter' ? '8px 8px 0 0' : '0',
+                            borderBottom: '2px solid transparent',
+                            borderRadius: '0',
                             fontSize: '1rem',
                             fontWeight: '700',
                             cursor: 'pointer',
@@ -2305,7 +2292,7 @@ export default function ResumePage() {
                         )}
 
                         {/* 기본정보 탭 */}
-                        {activeTab === 'basic' && !showAiJobs && (
+                        {activeTab === 'basic' && (
                             <>
                                 {/* 기본 정보 섹션 */}
                                 <div style={{
@@ -2555,60 +2542,28 @@ export default function ResumePage() {
                             </>
                         )}
 
-                        {/* AI 추천 채용공고 섹션 - 기본정보 탭에서만 표시 */}
-                        {activeTab === 'basic' && showAiJobs && (
+                        {/* AI 추천 채용공고 탭 */}
+                        {activeTab === 'aiJobs' && (
                             <div style={{
                                 background: 'white',
                                 borderRadius: '12px',
                                 padding: '30px',
                                 boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
                             }}>
-                                <div style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
+                                <h3 style={{
+                                    fontSize: '1.3rem',
+                                    fontWeight: '700',
+                                    color: '#333',
                                     marginBottom: '25px',
                                     paddingBottom: '15px',
-                                    borderBottom: '2px solid #667eea'
+                                    borderBottom: '2px solid #667eea',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px'
                                 }}>
-                                    <h3 style={{
-                                        fontSize: '1.5rem',
-                                        fontWeight: '700',
-                                        color: '#333',
-                                        margin: 0,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '10px'
-                                    }}>
-                                        <span style={{ fontSize: '1.5rem' }}>🤖</span>
-                                        저장한 AI 추천 채용공고
-                                        <span style={{
-                                            fontSize: '1rem',
-                                            color: '#667eea',
-                                            fontWeight: '600'
-                                        }}>
-                                            ({savedAiJobs.length}개)
-                                        </span>
-                                    </h3>
-                                    <button
-                                        onClick={() => setShowAiJobs(false)}
-                                        style={{
-                                            padding: '8px 16px',
-                                            background: '#f1f3f5',
-                                            border: 'none',
-                                            borderRadius: '8px',
-                                            color: '#666',
-                                            fontSize: '0.9rem',
-                                            fontWeight: '600',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.2s'
-                                        }}
-                                        onMouseEnter={(e) => e.currentTarget.style.background = '#e9ecef'}
-                                        onMouseLeave={(e) => e.currentTarget.style.background = '#f1f3f5'}
-                                    >
-                                        닫기
-                                    </button>
-                                </div>
+                                    <span>🤖</span>
+                                    저장한 AI 추천 채용공고 ({savedAiJobs.length}건)
+                                </h3>
 
                                 {savedAiJobs.length === 0 ? (
                                     <div style={{
