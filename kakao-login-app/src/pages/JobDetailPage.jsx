@@ -470,7 +470,7 @@ export default function JobDetailPage() {
                     border: '1px solid rgba(102, 126, 234, 0.1)'
                 }}>
                     {/* 직무 정보 */}
-                    {job.job_description && (
+                    {(job.job_description || (job.job_info && job.job_info.length > 0)) && (
                         <div style={{ marginBottom: '24px' }}>
                             <div style={{
                                 display: 'flex',
@@ -501,24 +501,58 @@ export default function JobDetailPage() {
                                     직무 정보
                                 </h3>
                             </div>
-                            <div style={{
-                                fontSize: '1.05rem',
-                                color: '#333',
-                                lineHeight: '1.8',
-                                background: 'white',
-                                padding: '20px 24px',
-                                borderRadius: '16px',
-                                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                                border: '1px solid #e0e0e0',
-                                whiteSpace: 'pre-wrap'
-                            }}>
-                                {job.job_description}
-                            </div>
+                            {job.job_description ? (
+                                <div style={{
+                                    fontSize: '1.05rem',
+                                    color: '#333',
+                                    lineHeight: '1.8',
+                                    background: 'white',
+                                    padding: '20px 24px',
+                                    borderRadius: '16px',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                                    border: '1px solid #e0e0e0',
+                                    whiteSpace: 'pre-wrap'
+                                }}>
+                                    {job.job_description}
+                                </div>
+                            ) : (
+                                <div style={{
+                                    display: 'flex',
+                                    flexWrap: 'wrap',
+                                    gap: '12px'
+                                }}>
+                                    {job.job_info.map((info, index) => (
+                                        <span key={index} style={{
+                                            background: 'white',
+                                            color: '#333',
+                                            padding: '12px 20px',
+                                            borderRadius: '16px',
+                                            fontSize: '1rem',
+                                            fontWeight: '600',
+                                            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                                            border: '1px solid #e0e0e0',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.transform = 'translateY(-2px)';
+                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.2)';
+                                            e.currentTarget.style.borderColor = '#667eea';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.transform = 'translateY(0)';
+                                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
+                                            e.currentTarget.style.borderColor = '#e0e0e0';
+                                        }}>
+                                            {info}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
 
                     {/* 채용 조건 */}
-                    {job.recruitment_conditions && (
+                    {(job.recruitment_conditions || (job.conditions && job.conditions.length > 0)) && (
                         <div style={{ marginBottom: '24px' }}>
                             <div style={{
                                 display: 'flex',
@@ -549,19 +583,61 @@ export default function JobDetailPage() {
                                     채용 조건
                                 </h3>
                             </div>
-                            <div style={{
-                                fontSize: '1.05rem',
-                                color: '#333',
-                                lineHeight: '1.8',
-                                background: 'white',
-                                padding: '20px 24px',
-                                borderRadius: '16px',
-                                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                                border: '1px solid #e0e0e0',
-                                whiteSpace: 'pre-wrap'
-                            }}>
-                                {job.recruitment_conditions}
-                            </div>
+                            {job.recruitment_conditions ? (
+                                <div style={{
+                                    fontSize: '1.05rem',
+                                    color: '#333',
+                                    lineHeight: '1.8',
+                                    background: 'white',
+                                    padding: '20px 24px',
+                                    borderRadius: '16px',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                                    border: '1px solid #e0e0e0',
+                                    whiteSpace: 'pre-wrap'
+                                }}>
+                                    {job.recruitment_conditions}
+                                </div>
+                            ) : (
+                                <div style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '12px'
+                                }}>
+                                    {job.conditions.map((condition, index) => (
+                                        <div key={index} style={{
+                                            display: 'flex',
+                                            alignItems: 'flex-start',
+                                            gap: '12px',
+                                            fontSize: '1.05rem',
+                                            color: '#333',
+                                            background: 'white',
+                                            padding: '16px 20px',
+                                            borderRadius: '12px',
+                                            boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                                            transition: 'all 0.2s',
+                                            border: '1px solid transparent'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.transform = 'translateX(4px)';
+                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(76, 175, 80, 0.15)';
+                                            e.currentTarget.style.borderColor = '#4caf50';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.transform = 'translateX(0)';
+                                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
+                                            e.currentTarget.style.borderColor = 'transparent';
+                                        }}>
+                                            <span style={{
+                                                color: '#4caf50',
+                                                fontWeight: '900',
+                                                fontSize: '1.3rem',
+                                                lineHeight: '1'
+                                            }}>•</span>
+                                            <span style={{ fontWeight: '500', flex: 1 }}>{condition}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
 
