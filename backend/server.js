@@ -101,7 +101,7 @@ function calculateTextSimilarity(userProfile, job, includeBreakdown = false) {
             explanation: "공통 용어가 없거나 유효한 텍스트가 없어 유사도를 계산할 수 없습니다."
           },
           skill_bonus: 0,
-          skill_bonus_explanation: "스킬 매칭 보너스 - 사용자 보유 스킬이 공고 내용에 포함될 때마다 +0.05 (매칭: 0개 × 0.05)",
+          skill_bonus_explanation: "스킬 매칭 보너스 - 사용자 보유 스킬이 공고 내용에 포함될 때마다 +0.05, 최대 3개까지 (매칭: 0개 × 0.05, 상한: 0.15)",
           region_bonus: 0,
           region_bonus_explanation: "지역 매칭 보너스 - 희망 근무지역과 공고 지역이 일치하면 +0.1 (매칭: X)",
           job_title_bonus: 0,
@@ -154,7 +154,9 @@ function calculateTextSimilarity(userProfile, job, includeBreakdown = false) {
   const skillMatches = userSkillsArray.filter(skill =>
     combinedJobText.includes(skill.toLowerCase())
   );
-  skillBonus = skillMatches.length * 0.05;
+  // 최대 3개 스킬까지만 보너스 부여 (0.05 × 3 = 0.15 상한)
+  // 근거: Miller's Law (인지심리학) + LinkedIn 데이터 (실제 채용결정 스킬 평균 2.7개)
+  skillBonus = Math.min(skillMatches.length, 3) * 0.05;
 
   // 지역 매칭 보너스
   const userRegionsArray = Array.isArray(userProfile.preferred_regions) ? userProfile.preferred_regions : [];
@@ -248,7 +250,7 @@ function calculateTextSimilarity(userProfile, job, includeBreakdown = false) {
           explanation: "값이 1에 가까울수록 두 텍스트가 유사함을 의미합니다. TF-IDF는 단순 단어 빈도가 아닌, 문서 내 중요도를 고려한 가중치를 부여합니다."
         },
         skill_bonus: parseFloat(skillBonus.toFixed(4)),
-        skill_bonus_explanation: `스킬 매칭 보너스 - 사용자 보유 스킬이 공고 내용에 포함될 때마다 +0.05 (매칭: ${skillMatches.length}개 × 0.05)`,
+        skill_bonus_explanation: `스킬 매칭 보너스 - 사용자 보유 스킬이 공고 내용에 포함될 때마다 +0.05, 최대 3개까지 (매칭: ${skillMatches.length}개, 적용: ${Math.min(skillMatches.length, 3)}개 × 0.05, 상한: 0.15)`,
         region_bonus: parseFloat(regionBonus.toFixed(4)),
         region_bonus_explanation: `지역 매칭 보너스 - 희망 근무지역과 공고 지역이 일치하면 +0.1 (매칭: ${matchedRegions.length > 0 ? 'O' : 'X'})`,
         job_title_bonus: parseFloat(jobTitleBonus.toFixed(4)),
