@@ -51,22 +51,39 @@ function calculateTextSimilarity(userProfile, job, includeBreakdown = false) {
         score: 0,
         breakdown: {
           cosine_similarity: 0,
+          cosine_similarity_explanation: "TF-IDF 기반 코사인 유사도 - 사용자 프로필과 채용공고 텍스트의 의미적 유사도를 0~1 사이 값으로 측정 (유효한 용어 없음)",
           skill_bonus: 0,
+          skill_bonus_explanation: "스킬 매칭 보너스 - 사용자 보유 스킬이 공고 내용에 포함될 때마다 +0.05 (매칭: 0개 × 0.05)",
           region_bonus: 0,
+          region_bonus_explanation: "지역 매칭 보너스 - 희망 근무지역과 공고 지역이 일치하면 +0.1 (매칭: X)",
           job_title_bonus: 0,
+          job_title_bonus_explanation: "직무 매칭 보너스 - 희망 직무가 공고 제목/설명에 포함되면 +0.15 (매칭: X)",
           total_bonus: 0,
+          total_bonus_explanation: "전체 보너스 합계 (스킬 + 지역 + 직무)",
           final_score: 0,
+          final_score_explanation: "최종 유사도 점수 = 코사인 유사도 + 전체 보너스 (최대 1.0)",
           matched_skills: [],
+          matched_skills_explanation: "사용자 보유 스킬 중 공고에서 발견된 스킬 목록",
           matched_regions: [],
+          matched_regions_explanation: "희망 근무지역 중 공고 위치와 일치하는 지역 목록",
           matched_job_titles: [],
+          matched_job_titles_explanation: "희망 직무 중 공고 제목/설명에서 발견된 직무 목록",
           tfidf_stats: {
             user_terms_count: userTerms.length,
+            user_terms_count_explanation: "사용자 프로필에서 추출된 고유 용어(단어) 개수",
             job_terms_count: jobTerms.length,
+            job_terms_count_explanation: "채용공고에서 추출된 고유 용어(단어) 개수",
             common_terms_count: 0,
+            common_terms_count_explanation: "사용자 프로필과 채용공고에 모두 나타나는 공통 용어 개수",
             dot_product: 0,
+            dot_product_explanation: "TF-IDF 벡터 내적 - 두 벡터의 유사성을 나타내는 기본 값",
             user_magnitude: 0,
-            job_magnitude: 0
-          }
+            user_magnitude_explanation: "사용자 프로필 TF-IDF 벡터의 크기(노름)",
+            job_magnitude: 0,
+            job_magnitude_explanation: "채용공고 TF-IDF 벡터의 크기(노름)",
+            formula_explanation: "코사인 유사도 = 내적 / (사용자벡터크기 × 공고벡터크기)"
+          },
+          calculation_summary: "최종점수 0.00% = 코사인유사도 0.00% + 보너스 0.00% (공통 용어 없음)"
         }
       };
     }
@@ -114,26 +131,43 @@ function calculateTextSimilarity(userProfile, job, includeBreakdown = false) {
       score: finalScore,
       breakdown: {
         cosine_similarity: parseFloat(cosineSimilarity.toFixed(4)),
+        cosine_similarity_explanation: "TF-IDF 기반 코사인 유사도 - 사용자 프로필과 채용공고 텍스트의 의미적 유사도를 0~1 사이 값으로 측정",
         skill_bonus: parseFloat(skillBonus.toFixed(4)),
+        skill_bonus_explanation: `스킬 매칭 보너스 - 사용자 보유 스킬이 공고 내용에 포함될 때마다 +0.05 (매칭: ${skillMatches.length}개 × 0.05)`,
         region_bonus: parseFloat(regionBonus.toFixed(4)),
+        region_bonus_explanation: `지역 매칭 보너스 - 희망 근무지역과 공고 지역이 일치하면 +0.1 (매칭: ${matchedRegions.length > 0 ? 'O' : 'X'})`,
         job_title_bonus: parseFloat(jobTitleBonus.toFixed(4)),
+        job_title_bonus_explanation: `직무 매칭 보너스 - 희망 직무가 공고 제목/설명에 포함되면 +0.15 (매칭: ${matchedJobTitles.length > 0 ? 'O' : 'X'})`,
         total_bonus: parseFloat(totalBonus.toFixed(4)),
+        total_bonus_explanation: "전체 보너스 합계 (스킬 + 지역 + 직무)",
         final_score: parseFloat(finalScore.toFixed(4)),
+        final_score_explanation: "최종 유사도 점수 = 코사인 유사도 + 전체 보너스 (최대 1.0)",
         matched_skills: skillMatches,
+        matched_skills_explanation: "사용자 보유 스킬 중 공고에서 발견된 스킬 목록",
         matched_regions: matchedRegions,
+        matched_regions_explanation: "희망 근무지역 중 공고 위치와 일치하는 지역 목록",
         matched_job_titles: matchedJobTitles,
+        matched_job_titles_explanation: "희망 직무 중 공고 제목/설명에서 발견된 직무 목록",
         tfidf_stats: {
           user_terms_count: userTerms.length,
+          user_terms_count_explanation: "사용자 프로필에서 추출된 고유 용어(단어) 개수",
           job_terms_count: jobTerms.length,
+          job_terms_count_explanation: "채용공고에서 추출된 고유 용어(단어) 개수",
           common_terms_count: Array.from(allTerms).filter(term => {
             const userTfidf = userTerms.find(t => t.term === term)?.tfidf || 0;
             const jobTfidf = jobTerms.find(t => t.term === term)?.tfidf || 0;
             return userTfidf > 0 && jobTfidf > 0;
           }).length,
+          common_terms_count_explanation: "사용자 프로필과 채용공고에 모두 나타나는 공통 용어 개수",
           dot_product: parseFloat(dotProduct.toFixed(4)),
+          dot_product_explanation: "TF-IDF 벡터 내적 - 두 벡터의 유사성을 나타내는 기본 값",
           user_magnitude: parseFloat(userMagnitude.toFixed(4)),
-          job_magnitude: parseFloat(jobMagnitude.toFixed(4))
-        }
+          user_magnitude_explanation: "사용자 프로필 TF-IDF 벡터의 크기(노름)",
+          job_magnitude: parseFloat(jobMagnitude.toFixed(4)),
+          job_magnitude_explanation: "채용공고 TF-IDF 벡터의 크기(노름)",
+          formula_explanation: "코사인 유사도 = 내적 / (사용자벡터크기 × 공고벡터크기)"
+        },
+        calculation_summary: `최종점수 ${(finalScore * 100).toFixed(2)}% = 코사인유사도 ${(cosineSimilarity * 100).toFixed(2)}% + 보너스 ${(totalBonus * 100).toFixed(2)}%`
       }
     };
   }
@@ -192,27 +226,43 @@ jobs.forEach((job, index) => {
 
   const result = calculateTextSimilarity(userProfile, job, true);
 
-  console.log(`\n🎯 최종 유사도 점수: ${(result.score * 100).toFixed(2)}%\n`);
+  console.log(`\n🎯 최종 유사도 점수: ${(result.score * 100).toFixed(2)}%`);
+  console.log(`   ${result.breakdown.calculation_summary}\n`);
 
   console.log("📊 계산 내역:");
   console.log(`  • 코사인 유사도 (TF-IDF):     ${(result.breakdown.cosine_similarity * 100).toFixed(2)}%`);
+  console.log(`    └─ ${result.breakdown.cosine_similarity_explanation}`);
   console.log(`  • 스킬 매칭 보너스:           +${(result.breakdown.skill_bonus * 100).toFixed(2)}%`);
+  console.log(`    └─ ${result.breakdown.skill_bonus_explanation}`);
   console.log(`  • 지역 매칭 보너스:           +${(result.breakdown.region_bonus * 100).toFixed(2)}%`);
+  console.log(`    └─ ${result.breakdown.region_bonus_explanation}`);
   console.log(`  • 직무 매칭 보너스:           +${(result.breakdown.job_title_bonus * 100).toFixed(2)}%`);
+  console.log(`    └─ ${result.breakdown.job_title_bonus_explanation}`);
   console.log(`  • 총 보너스:                  +${(result.breakdown.total_bonus * 100).toFixed(2)}%`);
+  console.log(`    └─ ${result.breakdown.total_bonus_explanation}`);
 
   console.log(`\n✅ 매칭된 항목:`);
   console.log(`  • 스킬: ${result.breakdown.matched_skills.length > 0 ? result.breakdown.matched_skills.join(', ') : '없음'}`);
+  console.log(`    └─ ${result.breakdown.matched_skills_explanation}`);
   console.log(`  • 지역: ${result.breakdown.matched_regions.length > 0 ? result.breakdown.matched_regions.join(', ') : '없음'}`);
+  console.log(`    └─ ${result.breakdown.matched_regions_explanation}`);
   console.log(`  • 직무: ${result.breakdown.matched_job_titles.length > 0 ? result.breakdown.matched_job_titles.join(', ') : '없음'}`);
+  console.log(`    └─ ${result.breakdown.matched_job_titles_explanation}`);
 
   console.log(`\n📈 TF-IDF 통계:`);
   console.log(`  • 사용자 용어 수:             ${result.breakdown.tfidf_stats.user_terms_count}`);
+  console.log(`    └─ ${result.breakdown.tfidf_stats.user_terms_count_explanation}`);
   console.log(`  • 공고 용어 수:               ${result.breakdown.tfidf_stats.job_terms_count}`);
+  console.log(`    └─ ${result.breakdown.tfidf_stats.job_terms_count_explanation}`);
   console.log(`  • 공통 용어 수:               ${result.breakdown.tfidf_stats.common_terms_count}`);
+  console.log(`    └─ ${result.breakdown.tfidf_stats.common_terms_count_explanation}`);
   console.log(`  • 내적(Dot Product):          ${result.breakdown.tfidf_stats.dot_product}`);
+  console.log(`    └─ ${result.breakdown.tfidf_stats.dot_product_explanation}`);
   console.log(`  • 사용자 벡터 크기:           ${result.breakdown.tfidf_stats.user_magnitude}`);
+  console.log(`    └─ ${result.breakdown.tfidf_stats.user_magnitude_explanation}`);
   console.log(`  • 공고 벡터 크기:             ${result.breakdown.tfidf_stats.job_magnitude}`);
+  console.log(`    └─ ${result.breakdown.tfidf_stats.job_magnitude_explanation}`);
+  console.log(`  • 계산 공식:                  ${result.breakdown.tfidf_stats.formula_explanation}`);
 
   console.log("\n" + "=".repeat(60));
 });
