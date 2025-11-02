@@ -2464,7 +2464,7 @@ app.get("/api/main-recommendations", async (req, res) => {
           allJobs = jobsWithSimilarity.slice(0, topCount);
 
           // 텍스트 유사도 상위 20개 결과 저장 (로그용)
-          const similarityResults = allJobs.map(job => ({
+          similarityResults = allJobs.map(job => ({
             job_id: job.id,
             company: job.company,
             title: job.title,
