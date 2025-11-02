@@ -160,27 +160,52 @@ class CompanyInfoScraper:
         print("\n✅ 리소스 정리 완료")
 
     def get_companies_from_jobs(self):
-        """jobs 테이블에서 catch_companies에 없는 회사 목록 가져오기 (최신 채용공고 순)"""
+        """jobs 테이블에서 회사 목록 가져오기 (최신 채용공고 순)
+        1. catch_companies에 없는 회사
+        2. catch_companies에 있지만 특정 컬럼이 비어있는 회사
+        """
         cursor = self.connection.cursor()
 
-        # catch_companies에 없는 회사들을 최신 채용공고 날짜 순으로 조회
+        # 1. catch_companies에 없는 회사들 (우선순위 높음)
         cursor.execute("""
-            SELECT j2.company FROM (
+            SELECT j2.company, 'new' as status FROM (
                 SELECT j1.company, MAX(j1.scraped_at) AS scraped_at
                 FROM jobs j1
                 WHERE NOT EXISTS (
-                    SELECT 1 FROM catch_companies cc WHERE trim(cc.company) = trim(j1.company)
+                    SELECT 1 FROM catch_companies cc WHERE TRIM(cc.company) = TRIM(j1.company)
                 )
                 GROUP BY j1.company
             ) j2
             ORDER BY j2.scraped_at DESC
         """)
+        new_companies = [(row[0], row[1]) for row in cursor.fetchall()]
 
-        companies = [row[0] for row in cursor.fetchall()]
+        # 2. catch_companies에 있지만 주요 컬럼이 비어있는 회사들
+        cursor.execute("""
+            SELECT DISTINCT j.company, 'update' as status
+            FROM jobs j
+            INNER JOIN catch_companies cc ON TRIM(cc.company) = TRIM(j.company)
+            WHERE
+                cc.industry IS NULL OR cc.industry = '' OR
+                cc.company_type IS NULL OR cc.company_type = '' OR
+                cc.location IS NULL OR cc.location = '' OR
+                cc.employee_count IS NULL OR cc.employee_count = '' OR
+                cc.ceo IS NULL OR cc.ceo = '' OR
+                cc.establishment_date IS NULL OR cc.establishment_date = '' OR
+                cc.company_logo_url IS NULL OR cc.company_logo_url = ''
+            ORDER BY j.scraped_at DESC
+        """)
+        update_companies = [(row[0], row[1]) for row in cursor.fetchall()]
+
         cursor.close()
 
+        # 신규 회사를 먼저, 업데이트 회사를 나중에
+        companies = new_companies + update_companies
+
         self.stats['total_companies'] = len(companies)
-        print(f"📊 Jobs 테이블에서 {len(companies)}개 미등록 회사 발견 (최신 채용공고 순)\n")
+        print(f"📊 처리 대상 회사: 총 {len(companies)}개")
+        print(f"   - 신규 등록: {len(new_companies)}개")
+        print(f"   - 정보 보완: {len(update_companies)}개\n")
         return companies
 
     def generate_search_terms(self, company_name):
@@ -541,6 +566,41 @@ class CompanyInfoScraper:
             except:
                 company_info['industry_average_salary'] = ''
 
+            try:
+                # 회사 로고 이미지 URL 추출
+                logo_url = self.driver.execute_script("""
+                    // 회사 로고를 찾기 위한 다양한 선택자 시도
+                    const selectors = [
+                        'div.logo_corp img',
+                        'div.comp_logo img',
+                        'div.company-logo img',
+                        'img.corp_logo',
+                        'img.company_logo',
+                        'div.info_corp img',
+                        'div.comp_info img[alt*="로고"]',
+                        'div.comp_info img[src*="logo"]',
+                        'img[alt*="로고"]',
+                        'img[src*="logo"]',
+                        'div.info_top img',
+                        'div.logo img',
+                        'div.comp_head img',
+                        'div.company_info img',
+                        '.logo-img img',
+                        '.company-img img'
+                    ];
+
+                    for (let selector of selectors) {
+                        const img = document.querySelector(selector);
+                        if (img && img.src && !img.src.includes('data:image')) {
+                            return img.src;
+                        }
+                    }
+                    return '';
+                """)
+                company_info['company_logo_url'] = logo_url if logo_url else ''
+            except:
+                company_info['company_logo_url'] = ''
+
             return company_info
 
         except Exception as e:
@@ -548,55 +608,91 @@ class CompanyInfoScraper:
             return None
 
     def save_company_info(self, company_name, company_url, company_info):
-        """회사 정보를 DB에 저장 또는 업데이트"""
+        """회사 정보를 DB에 저장 또는 업데이트 (빈 컬럼만 업데이트)"""
         try:
             cursor = self.connection.cursor()
 
             # 회사명 앞뒤 공백 제거
             company_name = company_name.strip()
 
-            # 모든 컬럼값 앞뒤 공백 제거
+            # 모든 컬럼값 앞뒤 공백 제거 및 None을 빈 문자열로 변환
             for key in company_info:
-                if isinstance(company_info[key], str):
+                if company_info[key] is None:
+                    company_info[key] = ''
+                elif isinstance(company_info[key], str):
                     company_info[key] = company_info[key].strip()
 
-            # 기존 데이터 확인
-            cursor.execute("SELECT id FROM catch_companies WHERE company = %s", (company_name,))
+            # 기존 데이터 확인 (모든 컬럼 조회)
+            cursor.execute("""
+                SELECT id, industry, company_type, location, employee_count, revenue,
+                       ceo, establishment_date, company_form, credit_rating, tags,
+                       recommendation_keywords, starting_salary, average_salary,
+                       industry_average_salary, company_url, company_logo_url
+                FROM catch_companies WHERE TRIM(company) = %s
+            """, (company_name,))
             existing = cursor.fetchone()
 
             if existing:
-                # 업데이트
-                update_sql = """
-                    UPDATE catch_companies
-                    SET industry = %s, company_type = %s, location = %s,
-                        employee_count = %s, revenue = %s, ceo = %s,
-                        establishment_date = %s, company_form = %s, credit_rating = %s,
-                        tags = %s, recommendation_keywords = %s, starting_salary = %s,
-                        average_salary = %s, industry_average_salary = %s,
-                        company_url = %s, updated_at = %s
-                    WHERE company = %s
-                """
-                cursor.execute(update_sql, (
-                    company_info.get('industry', ''),
-                    company_info.get('company_type', ''),
-                    company_info.get('location', ''),
-                    company_info.get('employee_count', ''),
-                    company_info.get('revenue', ''),
-                    company_info.get('ceo', ''),
-                    company_info.get('establishment_date', ''),
-                    company_info.get('company_form', ''),
-                    company_info.get('credit_rating', ''),
-                    company_info.get('tags', ''),
-                    company_info.get('recommendation_keywords', ''),
-                    company_info.get('starting_salary', ''),
-                    company_info.get('average_salary', ''),
-                    company_info.get('industry_average_salary', ''),
-                    company_url,
-                    datetime.now(),
-                    company_name
-                ))
-                self.stats['updated'] += 1
-                print(f"  ✅ 회사 정보 업데이트")
+                # 기존 데이터가 있는 경우 - 빈 컬럼만 업데이트
+                existing_data = {
+                    'industry': existing[1],
+                    'company_type': existing[2],
+                    'location': existing[3],
+                    'employee_count': existing[4],
+                    'revenue': existing[5],
+                    'ceo': existing[6],
+                    'establishment_date': existing[7],
+                    'company_form': existing[8],
+                    'credit_rating': existing[9],
+                    'tags': existing[10],
+                    'recommendation_keywords': existing[11],
+                    'starting_salary': existing[12],
+                    'average_salary': existing[13],
+                    'industry_average_salary': existing[14],
+                    'company_url': existing[15],
+                    'company_logo_url': existing[16]
+                }
+
+                # 업데이트할 컬럼과 값을 동적으로 구성
+                update_fields = []
+                update_values = []
+                updated_columns = []
+
+                # 각 컬럼별로 기존 값이 비어있거나 NULL인 경우에만 업데이트
+                for column, new_value in company_info.items():
+                    existing_value = existing_data.get(column)
+
+                    # 기존 값이 비어있거나 NULL이고, 새로운 값이 있는 경우에만 업데이트
+                    if (not existing_value or existing_value == '' or existing_value is None) and new_value and new_value != '':
+                        update_fields.append(f"{column} = %s")
+                        update_values.append(new_value)
+                        updated_columns.append(column)
+
+                # company_url은 항상 업데이트 (최신 URL 유지)
+                if company_url and company_url != existing_data.get('company_url'):
+                    if 'company_url' not in updated_columns:
+                        update_fields.append("company_url = %s")
+                        update_values.append(company_url)
+                        updated_columns.append('company_url')
+
+                # updated_at은 항상 업데이트
+                update_fields.append("updated_at = %s")
+                update_values.append(datetime.now())
+
+                if len(update_fields) > 1:  # updated_at 외에 업데이트할 컬럼이 있는 경우
+                    update_values.append(company_name)
+                    update_sql = f"""
+                        UPDATE catch_companies
+                        SET {', '.join(update_fields)}
+                        WHERE TRIM(company) = %s
+                    """
+                    cursor.execute(update_sql, tuple(update_values))
+                    self.connection.commit()
+                    self.stats['updated'] += 1
+                    print(f"  ✅ 회사 정보 업데이트 (갱신된 컬럼: {', '.join(updated_columns)})")
+                else:
+                    print(f"  ℹ️  모든 컬럼이 이미 채워져 있어 업데이트 생략")
+
             else:
                 # 신규 삽입
                 insert_sql = """
@@ -604,11 +700,11 @@ class CompanyInfoScraper:
                     (company, industry, company_type, location, employee_count, revenue,
                      ceo, establishment_date, company_form, credit_rating, tags,
                      recommendation_keywords, starting_salary, average_salary,
-                     industry_average_salary, company_url, created_at, updated_at)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                     industry_average_salary, company_url, company_logo_url, created_at, updated_at)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """
                 now = datetime.now()
-                cursor.execute(insert_sql, (
+                insert_values = (
                     company_name,
                     company_info.get('industry', ''),
                     company_info.get('company_type', ''),
@@ -624,23 +720,38 @@ class CompanyInfoScraper:
                     company_info.get('starting_salary', ''),
                     company_info.get('average_salary', ''),
                     company_info.get('industry_average_salary', ''),
-                    company_url,
+                    company_url if company_url else '',
+                    company_info.get('company_logo_url', ''),
                     now, now
-                ))
-                self.stats['inserted'] += 1
-                print(f"  ✅ 회사 정보 신규 저장")
+                )
 
-            self.connection.commit()
+                print(f"  🔍 INSERT 시도: company='{company_name}', url='{company_url}'")
+                cursor.execute(insert_sql, insert_values)
+                self.connection.commit()
+                self.stats['inserted'] += 1
+                print(f"  ✅ 회사 정보 신규 저장 완료 (ID: {cursor.lastrowid})")
+
             cursor.close()
             return True
 
         except Exception as e:
             print(f"  ⚠️ DB 저장 실패: {e}")
+            traceback.print_exc()
+            self.connection.rollback()
             return False
 
-    def process_company(self, company_name, index, total):
+    def process_company(self, company_data, index, total):
         """개별 회사 처리"""
-        print(f"\n[{index}/{total}] 🏢 {company_name}")
+        # company_data는 (company_name, status) 튜플 또는 단순 문자열
+        if isinstance(company_data, tuple):
+            company_name = company_data[0]
+            status = company_data[1]
+        else:
+            company_name = company_data
+            status = 'unknown'
+
+        status_label = '🆕 신규' if status == 'new' else '🔄 업데이트' if status == 'update' else ''
+        print(f"\n[{index}/{total}] 🏢 {company_name} {status_label}")
         print("-" * 60)
 
         try:
@@ -662,6 +773,10 @@ class CompanyInfoScraper:
                 self.stats['processed'] += 1
                 return
 
+            # 스크래핑된 정보 요약 출력
+            filled_fields = [k for k, v in company_info.items() if v and v != '']
+            print(f"  📋 스크래핑된 필드: {len(filled_fields)}개 - {', '.join(filled_fields[:5])}{'...' if len(filled_fields) > 5 else ''}")
+
             # DB에 저장
             if self.save_company_info(company_name, company_url, company_info):
                 self.stats['processed'] += 1
@@ -670,6 +785,7 @@ class CompanyInfoScraper:
 
         except Exception as e:
             print(f"  ❌ 처리 실패: {e}")
+            traceback.print_exc()
             self.stats['errors'] += 1
             self.stats['processed'] += 1
 
@@ -690,7 +806,7 @@ class CompanyInfoScraper:
             self.close()
             return False
 
-        # 단일 회사 처리
+        # 단일 회사 처리 - 튜플이 아닌 문자열로 전달
         self.process_company(company_name, 1, 1)
 
         # 최종 통계
@@ -712,7 +828,9 @@ class CompanyInfoScraper:
         """메인 실행"""
         print("\n" + "="*60)
         print("🚀 회사 정보 스크래핑 시작")
-        print("   대상: Jobs 테이블 중 catch_companies에 없는 회사만")
+        print("   대상: Jobs 테이블의 회사")
+        print("   - 신규: catch_companies에 없는 회사")
+        print("   - 업데이트: 기업정보 컬럼이 비어있는 회사")
         print("   순서: 최신 채용공고의 회사부터 우선 처리")
         print("="*60 + "\n")
 

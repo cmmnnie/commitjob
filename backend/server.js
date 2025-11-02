@@ -157,8 +157,8 @@ function filterActiveJobs(jobs, includeAlwaysOpen = true) {
         return false;
       }
 
-      // 상시채용/수시지원은 마감일 체크 없이 통과
-      if (deadlineStr.includes('상시채용') || deadlineStr.includes('수시지원')) {
+      // 상시채용/수시지원/채용시 마감/상시 채용은 마감일 체크 없이 통과
+      if (deadlineStr.includes('상시채용') || deadlineStr.includes('수시지원') || deadlineStr.includes('채용시 마감') || deadlineStr.includes('상시 채용')) {
         return true;
       }
 
@@ -343,12 +343,13 @@ const swaggerUiOptions = {
 
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOptions));
 
-// 코딩 테스트 API는 아래 server.js에 직접 작성됨
-app.use('/api/programmers', programmersRouter);
-
 /* -------------------- 기본 설정 -------------------- */
 app.use(cookieParser());
 app.use(express.json());
+
+// 코딩 테스트 API는 아래 server.js에 직접 작성됨
+app.use('/api/programmers', programmersRouter);
+app.use('/api/admin', adminRouter);
 
 // --- 파일 업로드 (multer) ---
 
@@ -404,6 +405,7 @@ app.use('/uploads/cover-letters', express.static(path.join(process.cwd(), 'uploa
 // --- MySQL 풀 ---
 import mysql from 'mysql2/promise';
 import programmersRouter from './routes/programmers.js';
+import adminRouter from './routes/admin.js';
 
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
@@ -2238,6 +2240,8 @@ app.get("/api/main-recommendations", async (req, res) => {
     // GPT MCP 서비스에 추천 요청 (rerank_jobs 엔드포인트 사용)
     try {
       let allJobs = [];
+      let similarityResults = [];
+      let similarityCalcTime = 0;
 
       // jobs 테이블에서 공고 가져오기 (스크래퍼 사용 안 함)
       console.log('[MAIN-RECS] DB에서 회원 프로필과 유사한 채용공고 조회 중...');
@@ -2345,7 +2349,7 @@ app.get("/api/main-recommendations", async (req, res) => {
       }
 
       try {
-        // 최근 60건의 채용공고 조회 (IT, BIGDATA_AI 카테고리)
+        // 충분한 수의 최근 채용공고 조회 (마감 필터링 후 60건 확보를 위해 더 많이 조회)
         const query = `
           SELECT j.id, j.company, j.title, j.category, j.url,
                  j.job_info, j.conditions, j.company_search_key, j.registration_info,
@@ -2355,13 +2359,13 @@ app.get("/api/main-recommendations", async (req, res) => {
           LEFT JOIN catch_companies cc ON j.company = cc.company
           WHERE j.category IN ('BIGDATA_AI', 'IT')
           ORDER BY j.scraped_at DESC
-          LIMIT 60
+          LIMIT 200
         `;
 
         console.log('[MAIN-RECS] 사용자 희망직무:', userJobs.join(', ') || '미설정');
         console.log('[MAIN-RECS] 사용자 스킬:', userSkills.join(', ') || '미설정');
         console.log('[MAIN-RECS] 희망지역:', userRegions.join(', ') || '미설정');
-        console.log('[MAIN-RECS] 최근 60건 채용공고 조회 중...');
+        console.log('[MAIN-RECS] 최근 채용공고 조회 중 (마감 필터링 후 60건 확보 목표)...');
 
         let [dbJobs] = await pool.execute(query);
 
@@ -2422,15 +2426,21 @@ app.get("/api/main-recommendations", async (req, res) => {
             };
           });
 
-          // 마감되지 않은 공고만 필터링 (상시채용 포함)
+          // 마감되지 않은 공고만 필터링 (상시채용, 수시지원, 채용시 마감, 상시 채용 포함)
           const activeJobs = filterActiveJobs(mappedJobs, true);
 
           console.log(`[MAIN-RECS] ✅ DB 조회 완료`);
-          console.log(`[MAIN-RECS]    최근 60건 조회: ${dbJobs.length}개 -> 마감 필터 후: ${activeJobs.length}개 공고`);
+          console.log(`[MAIN-RECS]    전체 조회: ${dbJobs.length}개 -> 마감 필터 후: ${activeJobs.length}개 공고`);
 
-          // 텍스트 유사도 계산 및 정렬
+          // 마감되지 않은 공고 중 최근 60건만 선택
+          const top60ActiveJobs = activeJobs.slice(0, 60);
+          console.log(`[MAIN-RECS]    마감되지 않은 최근 60건 선택 완료`);
+
+          // 텍스트 유사도 계산 및 정렬 (마감되지 않은 최근 60건 대상)
           console.log('[MAIN-RECS] 📊 텍스트 유사도 계산 중 (title, recruitment_conditions (fallback: conditions), job_description (fallback: job_info) 사용)...');
-          const jobsWithSimilarity = activeJobs.map(job => {
+          const similarityStartTime = Date.now();
+
+          const jobsWithSimilarity = top60ActiveJobs.map(job => {
             const similarity = calculateTextSimilarity(userProfile, job);
             return {
               ...job,
@@ -2441,7 +2451,9 @@ app.get("/api/main-recommendations", async (req, res) => {
           // 유사도 기준 내림차순 정렬
           jobsWithSimilarity.sort((a, b) => b.similarity_score - a.similarity_score);
 
-          console.log(`[MAIN-RECS] ✅ 텍스트 유사도 계산 완료`);
+          const similarityCalcTime = Date.now() - similarityStartTime;
+
+          console.log(`[MAIN-RECS] ✅ 텍스트 유사도 계산 완료 (${similarityCalcTime}ms)`);
           console.log(`[MAIN-RECS]    상위 10개 공고 유사도 점수:`);
           jobsWithSimilarity.slice(0, 10).forEach((job, idx) => {
             console.log(`      ${idx + 1}. ${job.company} - ${job.title} (유사도: ${(job.similarity_score * 100).toFixed(2)}%)`);
@@ -2450,6 +2462,14 @@ app.get("/api/main-recommendations", async (req, res) => {
           // 상위 20개만 GPT에 전달 (또는 마감되지 않은 공고가 20개 미만이면 전체)
           const topCount = Math.min(20, jobsWithSimilarity.length);
           allJobs = jobsWithSimilarity.slice(0, topCount);
+
+          // 텍스트 유사도 상위 20개 결과 저장 (로그용)
+          const similarityResults = allJobs.map(job => ({
+            job_id: job.id,
+            company: job.company,
+            title: job.title,
+            similarity_score: job.similarity_score
+          }));
 
           if (allJobs.length > 0) {
             console.log(`[MAIN-RECS] 🎯 상위 ${allJobs.length}개 공고 선정 완료 (유사도 ${(allJobs[0].similarity_score * 100).toFixed(2)}% ~ ${(allJobs[allJobs.length - 1].similarity_score * 100).toFixed(2)}%)`);
@@ -2490,13 +2510,24 @@ app.get("/api/main-recommendations", async (req, res) => {
 
       // GPT-4o-mini 기반 추천 시도
       let rerankedJobs = [];
+      let gptPrompt = '';
+      let gptResponse = '';
+      let gptResponseTime = 0;
 
       if (openai) {
         try {
           console.log('[MAIN-RECS] GPT-4o-mini 기반 추천 시작 (텍스트 유사도 상위 20개 전달 → 3개 선택)');
+          const gptStartTime = Date.now();
+
           // 텍스트 유사도 상위 20개 공고를 GPT에 전달
-          rerankedJobs = await generateGPT4Recommendations(userProfile, allJobs, 3);
-          console.log(`[MAIN-RECS] ✅ GPT-4o-mini로 ${rerankedJobs.length}개 공고 추천 완료`);
+          const gptResult = await generateGPT4Recommendations(userProfile, allJobs, 3);
+
+          gptResponseTime = Date.now() - gptStartTime;
+          rerankedJobs = gptResult.recommendations;
+          gptPrompt = gptResult.prompt;
+          gptResponse = gptResult.response;
+
+          console.log(`[MAIN-RECS] ✅ GPT-4o-mini로 ${rerankedJobs.length}개 공고 추천 완료 (${gptResponseTime}ms)`);
         } catch (gptError) {
           console.error('[MAIN-RECS] ❌ GPT-4o-mini 추천 실패:', gptError.message);
           console.error('[MAIN-RECS] 오류 스택:', gptError.stack);
@@ -2610,6 +2641,41 @@ app.get("/api/main-recommendations", async (req, res) => {
           response = {
             "IT": finalItJobs
           };
+        }
+
+        // AI 추천 로그 저장 (텍스트 유사도 + GPT 프롬프트/응답)
+        try {
+          const sessionId = `session-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+
+          // 최종 추천 결과 (3개)
+          const finalRecommendationsLog = rerankedJobs.map(job => ({
+            job_id: job.job_id || job.id,
+            match_score: job.match_score,
+            match_reasons: job.match_reasons
+          }));
+
+          await pool.execute(
+            `INSERT INTO ai_recommendation_logs
+            (user_id, session_id, user_profile, similarity_results, gpt_prompt, gpt_response,
+             final_recommendations, similarity_calc_time_ms, gpt_response_time_ms)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              user_id,
+              sessionId,
+              JSON.stringify(userProfile),
+              JSON.stringify(similarityResults),
+              gptPrompt,
+              gptResponse,
+              JSON.stringify(finalRecommendationsLog),
+              similarityCalcTime,
+              gptResponseTime
+            ]
+          );
+
+          console.log(`[MAIN-RECS] ✅ AI 추천 로그 저장 완료 (session: ${sessionId})`);
+        } catch (logError) {
+          console.error('[MAIN-RECS] ⚠️ 로그 저장 실패:', logError.message);
+          // 로그 저장 실패는 무시하고 계속 진행
         }
 
         // 추천 이력 저장 (jobs 테이블의 공고 ID 저장)
@@ -7930,7 +7996,11 @@ JSON:{"recommendations":[{"job_id":"ID","match_score":75,"match_reasons":["이�
     if (!chatGPTResponse || chatGPTResponse.trim() === '') {
       console.error('[GPT-5] GPT가 빈 응답을 반환했습니다');
       console.error('[GPT-5] completion:', JSON.stringify(completion, null, 2));
-      return [];
+      return {
+        recommendations: [],
+        prompt: prompt,
+        response: '(empty response)'
+      };
     }
 
     console.log(`[AI-RECOMMENDATION] 🤖 GPT 응답:\n${chatGPTResponse}`);
@@ -7953,14 +8023,22 @@ JSON:{"recommendations":[{"job_id":"ID","match_score":75,"match_reasons":["이�
           recommendations = JSON.parse(jsonMatch[0]);
         } else {
           console.log('[GPT-5] JSON 배열을 찾을 수 없음, 원본:', chatGPTResponse);
-          return [];
+          return {
+            recommendations: [],
+            prompt: prompt,
+            response: chatGPTResponse
+          };
         }
       }
       console.log(`[GPT-5] 파싱 성공: ${recommendations.length}개 추천`);
     } catch (parseError) {
       console.error('[GPT-5] JSON 파싱 실패:', parseError.message);
       console.error('[GPT-5] 응답 내용:', chatGPTResponse ? chatGPTResponse.substring(0, 200) : '(empty)');
-      return [];
+      return {
+        recommendations: [],
+        prompt: prompt,
+        response: chatGPTResponse || ''
+      };
     }
 
     // 원본 job 데이터와 합치기
@@ -7991,7 +8069,14 @@ JSON:{"recommendations":[{"job_id":"ID","match_score":75,"match_reasons":["이�
       };
     }).filter(job => job !== null);
 
-    return enrichedRecommendations.slice(0, limit);
+    const finalRecommendations = enrichedRecommendations.slice(0, limit);
+
+    // 프롬프트, 응답, 추천 결과를 함께 반환
+    return {
+      recommendations: finalRecommendations,
+      prompt: prompt,
+      response: chatGPTResponse
+    };
 
   } catch (error) {
     console.error('[AI-RECOMMENDATION] ❌ GPT API 오류:', error.message);
@@ -7999,7 +8084,11 @@ JSON:{"recommendations":[{"job_id":"ID","match_score":75,"match_reasons":["이�
     if (error.code === 'ETIMEDOUT' || error.message.includes('timeout')) {
       console.error('[AI-RECOMMENDATION] ⏱️ 타임아웃 발생 - 프롬프트 길이나 공고 수를 줄이세요');
     }
-    return [];
+    return {
+      recommendations: [],
+      prompt: prompt || '',
+      response: error.message
+    };
   }
 }
 

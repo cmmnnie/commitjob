@@ -117,6 +117,126 @@ async function scrapeLatestJobs(pool = null) {
   return stats;
 }
 
+/**
+ * 채용공고 상세 페이지에서 추가 정보 스크래핑
+ * - recruitment_conditions: 채용조건 (홈페이지 지원 버튼 아래)
+ * - job_description: 상세 직무 정보 (채용조건 아래)
+ */
+async function scrapeJobDetails(page, job) {
+  try {
+    // 상세 페이지로 이동
+    await page.goto(job.url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await new Promise(r => setTimeout(r, 1500));
+
+    // 채용조건 및 상세 직무 정보 스크래핑
+    const detailInfo = await page.evaluate(() => {
+      let recruitmentConditions = '';
+      let jobDescription = '';
+
+      try {
+        // "홈페이지 지원" 버튼 찾기
+        const buttons = Array.from(document.querySelectorAll('button, a'));
+        const homepageButton = buttons.find(btn =>
+          btn.textContent.includes('홈페이지 지원') ||
+          btn.textContent.includes('홈페이지지원')
+        );
+
+        if (homepageButton) {
+          // 홈페이지 지원 버튼의 부모 요소 찾기
+          let currentElement = homepageButton.closest('div');
+
+          // 버튼 아래의 다음 형제 요소들을 탐색
+          let nextElement = currentElement?.nextElementSibling;
+          let foundRecruitmentConditions = false;
+
+          while (nextElement && !foundRecruitmentConditions) {
+            const text = nextElement.textContent.trim();
+
+            // "채용조건", "자격요건", "우대사항" 등이 포함된 섹션 찾기
+            if (text.includes('채용조건') || text.includes('자격요건') ||
+                text.includes('우대사항') || text.includes('필수요건') ||
+                text.includes('지원자격')) {
+              recruitmentConditions = text;
+              foundRecruitmentConditions = true;
+
+              // 채용조건 다음 요소에서 상세 직무 정보 찾기
+              let descElement = nextElement.nextElementSibling;
+              while (descElement) {
+                const descText = descElement.textContent.trim();
+
+                // "직무", "업무", "담당업무", "주요업무" 등이 포함된 섹션 찾기
+                if (descText.includes('상세') || descText.includes('직무') ||
+                    descText.includes('업무') || descText.includes('담당업무') ||
+                    descText.includes('주요업무') || descText.includes('Job Description')) {
+                  jobDescription = descText;
+                  break;
+                }
+
+                descElement = descElement.nextElementSibling;
+                // 최대 5개 요소까지만 탐색
+                if (!descElement || descElement === nextElement.nextElementSibling?.nextElementSibling?.nextElementSibling?.nextElementSibling?.nextElementSibling) {
+                  break;
+                }
+              }
+              break;
+            }
+
+            nextElement = nextElement.nextElementSibling;
+            // 최대 10개 요소까지만 탐색
+            if (!nextElement || nextElement === currentElement?.nextElementSibling?.nextElementSibling?.nextElementSibling?.nextElementSibling?.nextElementSibling?.nextElementSibling?.nextElementSibling?.nextElementSibling?.nextElementSibling?.nextElementSibling) {
+              break;
+            }
+          }
+        }
+
+        // 대안: 버튼이 없거나 찾지 못한 경우 페이지 전체에서 검색
+        if (!recruitmentConditions) {
+          const allDivs = Array.from(document.querySelectorAll('div, section'));
+
+          for (const div of allDivs) {
+            const text = div.textContent.trim();
+
+            if (!recruitmentConditions && (text.includes('채용조건') || text.includes('자격요건'))) {
+              // 너무 긴 텍스트는 제외 (전체 페이지를 긁는 것 방지)
+              if (text.length < 5000) {
+                recruitmentConditions = text;
+              }
+            }
+
+            if (!jobDescription && (text.includes('상세') && text.includes('직무'))) {
+              if (text.length < 5000) {
+                jobDescription = text;
+              }
+            }
+
+            if (recruitmentConditions && jobDescription) {
+              break;
+            }
+          }
+        }
+
+      } catch (e) {
+        console.error('Detail scraping error:', e.message);
+      }
+
+      return {
+        recruitment_conditions: recruitmentConditions || '',
+        job_description: jobDescription || ''
+      };
+    });
+
+    // job 객체에 추가
+    job.recruitment_conditions = detailInfo.recruitment_conditions;
+    job.job_description = detailInfo.job_description;
+
+  } catch (error) {
+    // 오류 발생 시 빈 값으로 설정
+    job.recruitment_conditions = '';
+    job.job_description = '';
+    throw error;
+  }
+}
+
 async function scrapeCategoryJobs(page, connection, categoryName, categoryCode, targetCount, stats) {
   console.log(`\n${'='.repeat(60)}`);
   console.log(`🔍 ${categoryName} 카테고리 스크래핑 시작`);
@@ -190,7 +310,7 @@ async function scrapeCategoryJobs(page, connection, categoryName, categoryCode, 
       // 페이지 로딩 대기
       await new Promise(r => setTimeout(r, 2000));
 
-      // 채용공고 데이터 추출
+      // 채용공고 데이터 추출 (리스트 페이지에서 기본 정보만)
       const jobs = await page.$$eval('tbody tr', (rows, category) => {
         return rows.map(row => {
           try {
@@ -225,6 +345,31 @@ async function scrapeCategoryJobs(page, connection, categoryName, categoryCode, 
           }
         }).filter(job => job !== null);
       }, categoryCode);
+
+      // 각 공고의 상세 페이지를 방문하여 추가 정보 스크래핑
+      console.log(`  📄 상세 정보 스크래핑 중... (${jobs.length}건)`);
+      const currentUrl = page.url(); // 리스트 페이지 URL 저장
+
+      for (let i = 0; i < jobs.length; i++) {
+        try {
+          await scrapeJobDetails(page, jobs[i]);
+          // 진행률 표시 (10건마다)
+          if ((i + 1) % 10 === 0 || i === jobs.length - 1) {
+            console.log(`     ⏳ ${i + 1}/${jobs.length}건 상세 정보 수집 완료`);
+          }
+        } catch (error) {
+          console.warn(`     ⚠️ 상세 정보 스크래핑 실패 (${jobs[i].title}):`, error.message);
+          // 실패해도 계속 진행 (기본 정보는 있음)
+        }
+      }
+
+      // 리스트 페이지로 복귀
+      try {
+        await page.goto(currentUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        await new Promise(r => setTimeout(r, 2000));
+      } catch (error) {
+        console.warn(`     ⚠️ 리스트 페이지 복귀 실패:`, error.message);
+      }
 
       if (jobs.length === 0) {
         console.log('  ⚠️ 데이터 없음\n');
@@ -293,8 +438,8 @@ async function insertJobs(connection, jobs, pageNum, stats) {
       // INSERT
       await connection.execute(
         `INSERT INTO jobs
-        (company, title, url, category, page, job_info, conditions, registration_info, scraped_at, company_search_key)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)`,
+        (company, title, url, category, page, job_info, conditions, registration_info, recruitment_conditions, job_description, scraped_at, company_search_key)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)`,
         [
           job.company,
           job.title,
@@ -304,6 +449,8 @@ async function insertJobs(connection, jobs, pageNum, stats) {
           JSON.stringify(job.job_info),
           JSON.stringify(job.conditions),
           JSON.stringify(job.registration_info),
+          job.recruitment_conditions || '',
+          job.job_description || '',
           company_search_key
         ]
       );
