@@ -105,9 +105,11 @@ function calculateTextSimilarity(userProfile, job, includeBreakdown = false) {
           region_bonus: 0,
           region_bonus_explanation: "지역 매칭 보너스 - 희망 근무지역과 공고 지역이 일치하면 +0.1 (매칭: X)",
           job_title_bonus: 0,
-          job_title_bonus_explanation: "직무 매칭 보너스 - 희망 직무가 공고 제목/설명에 포함되면 +0.15 (매칭: X)",
+          job_title_bonus_explanation: "직무 매칭 보너스 - 희망 직무가 공고 제목/설명에 포함되고 카테고리가 일치하면 +0.2 (매칭: X)",
+          job_mismatch_penalty: 0,
+          job_mismatch_penalty_explanation: "직무 카테고리 불일치 패널티 - 카테고리가 일치하거나 확인되지 않음",
           total_bonus: 0,
-          total_bonus_explanation: "전체 보너스 합계 (스킬 + 지역 + 직무)",
+          total_bonus_explanation: "전체 보너스/패널티 합계 (스킬 + 지역 + 직무 + 카테고리불일치패널티)",
           final_score: 0,
           final_score_explanation: "최종 유사도 점수 = 코사인 유사도 + 전체 보너스 (최대 1.0)",
           matched_skills: [],
@@ -140,10 +142,11 @@ function calculateTextSimilarity(userProfile, job, includeBreakdown = false) {
 
   const cosineSimilarity = dotProduct / (userMagnitude * jobMagnitude);
 
-  // 추가 보너스 점수 계산
+  // 추가 보너스/패널티 점수 계산
   let skillBonus = 0;
   let regionBonus = 0;
   let jobTitleBonus = 0;
+  let jobMismatchPenalty = 0;
 
   // 스킬 매칭 보너스 (recruitment_conditions와 job_description에서 스킬 검색)
   const userSkillsArray = Array.isArray(userProfile.skills) ? userProfile.skills : [];
@@ -160,19 +163,75 @@ function calculateTextSimilarity(userProfile, job, includeBreakdown = false) {
   const regionMatch = matchedRegions.length > 0;
   if (regionMatch) regionBonus = 0.1;
 
-  // 직무 매칭 보너스 (title과 job_description에서 확인)
+  // 직무 매칭 보너스 및 불일치 패널티 (title과 job_description에서 확인)
   const userJobsArray = Array.isArray(userProfile.jobs) ? userProfile.jobs : [];
   const matchedJobTitles = userJobsArray.filter(userJob =>
     jobTitle.toLowerCase().includes(userJob.toLowerCase()) ||
     jobDescription.toLowerCase().includes(userJob.toLowerCase())
   );
   const titleMatch = matchedJobTitles.length > 0;
-  if (titleMatch) jobTitleBonus = 0.15;
 
-  const totalBonus = skillBonus + regionBonus + jobTitleBonus;
+  // 직무 카테고리 정의
+  const developerKeywords = ['개발', 'developer', '프로그래머', 'programmer', '프론트엔드', 'frontend', '백엔드', 'backend', 'fullstack', '풀스택', 'web developer', '웹 개발', 'software engineer', '소프트웨어 엔지니어', 'application', '앱 개발'];
+  const securityKeywords = ['보안', 'security', '정보보호', 'infosec', '보안 관리', '보안컨설팅'];
+  const managerKeywords = ['관리자', 'manager', '매니저', '팀장', 'lead', '리더', 'pm', '기획', '총괄'];
+  const designerKeywords = ['디자이너', 'designer', 'ux', 'ui', '디자인'];
+  const marketingKeywords = ['마케팅', 'marketing', '광고', '홍보', 'pr'];
 
-  // 최종 유사도 (0~1 범위, 최대 1.0)
-  const finalScore = Math.min(cosineSimilarity + totalBonus, 1.0);
+  // 사용자 희망 직무 카테고리 파악
+  const userIsDeveloper = userJobsArray.some(job =>
+    developerKeywords.some(kw => job.toLowerCase().includes(kw))
+  );
+  const userIsSecurity = userJobsArray.some(job =>
+    securityKeywords.some(kw => job.toLowerCase().includes(kw))
+  );
+  const userIsManager = userJobsArray.some(job =>
+    managerKeywords.some(kw => job.toLowerCase().includes(kw))
+  );
+  const userIsDesigner = userJobsArray.some(job =>
+    designerKeywords.some(kw => job.toLowerCase().includes(kw))
+  );
+  const userIsMarketing = userJobsArray.some(job =>
+    marketingKeywords.some(kw => job.toLowerCase().includes(kw))
+  );
+
+  // 공고 직무 카테고리 파악 (보안을 먼저 체크)
+  const jobTextForCategory = `${jobTitle} ${jobDescription}`.toLowerCase();
+  const jobIsSecurity = securityKeywords.some(kw => jobTextForCategory.includes(kw));
+  const jobIsDeveloper = !jobIsSecurity && developerKeywords.some(kw => jobTextForCategory.includes(kw));
+  const jobIsManager = managerKeywords.some(kw => jobTextForCategory.includes(kw)) &&
+                       !jobIsDeveloper && !jobIsSecurity; // 개발/보안 관리자는 각 카테고리로 분류
+  const jobIsDesigner = designerKeywords.some(kw => jobTextForCategory.includes(kw));
+  const jobIsMarketing = marketingKeywords.some(kw => jobTextForCategory.includes(kw));
+
+  // 직무 카테고리 불일치 패널티 적용
+  let categoryMismatch = false;
+  if (userIsDeveloper && !jobIsDeveloper) {
+    categoryMismatch = true;
+    jobMismatchPenalty = -0.3; // 개발자가 비개발 직무 지원 시 -30%
+  } else if (userIsSecurity && !jobIsSecurity) {
+    categoryMismatch = true;
+    jobMismatchPenalty = -0.3; // 보안 전문가가 비보안 직무 지원 시 -30%
+  } else if (userIsManager && !jobIsManager) {
+    categoryMismatch = true;
+    jobMismatchPenalty = -0.3;
+  } else if (userIsDesigner && !jobIsDesigner) {
+    categoryMismatch = true;
+    jobMismatchPenalty = -0.3;
+  } else if (userIsMarketing && !jobIsMarketing) {
+    categoryMismatch = true;
+    jobMismatchPenalty = -0.3;
+  }
+
+  // 직무 타이틀 정확 매칭 보너스 (카테고리 불일치가 없을 때만)
+  if (titleMatch && !categoryMismatch) {
+    jobTitleBonus = 0.2; // 15%에서 20%로 증가
+  }
+
+  const totalBonus = skillBonus + regionBonus + jobTitleBonus + jobMismatchPenalty;
+
+  // 최종 유사도 (0~1 범위, 최소 0, 최대 1.0)
+  const finalScore = Math.max(0, Math.min(cosineSimilarity + totalBonus, 1.0));
 
   if (includeBreakdown) {
     return {
@@ -193,9 +252,11 @@ function calculateTextSimilarity(userProfile, job, includeBreakdown = false) {
         region_bonus: parseFloat(regionBonus.toFixed(4)),
         region_bonus_explanation: `지역 매칭 보너스 - 희망 근무지역과 공고 지역이 일치하면 +0.1 (매칭: ${matchedRegions.length > 0 ? 'O' : 'X'})`,
         job_title_bonus: parseFloat(jobTitleBonus.toFixed(4)),
-        job_title_bonus_explanation: `직무 매칭 보너스 - 희망 직무가 공고 제목/설명에 포함되면 +0.15 (매칭: ${matchedJobTitles.length > 0 ? 'O' : 'X'})`,
+        job_title_bonus_explanation: `직무 매칭 보너스 - 희망 직무가 공고 제목/설명에 포함되고 카테고리가 일치하면 +0.2 (매칭: ${matchedJobTitles.length > 0 && !categoryMismatch ? 'O' : 'X'})`,
+        job_mismatch_penalty: parseFloat(jobMismatchPenalty.toFixed(4)),
+        job_mismatch_penalty_explanation: categoryMismatch ? `직무 카테고리 불일치 패널티 - 희망 직무와 공고 직무의 카테고리가 다름 (${userIsDeveloper ? '개발자' : userIsSecurity ? '보안' : userIsManager ? '관리자' : userIsDesigner ? '디자이너' : userIsMarketing ? '마케팅' : '기타'} → ${jobIsDeveloper ? '개발자' : jobIsSecurity ? '보안' : jobIsManager ? '관리자' : jobIsDesigner ? '디자이너' : jobIsMarketing ? '마케팅' : '기타'})` : "직무 카테고리 불일치 패널티 - 카테고리가 일치하거나 확인되지 않음",
         total_bonus: parseFloat(totalBonus.toFixed(4)),
-        total_bonus_explanation: "전체 보너스 합계 (스킬 + 지역 + 직무)",
+        total_bonus_explanation: "전체 보너스/패널티 합계 (스킬 + 지역 + 직무 + 카테고리불일치패널티)",
         final_score: parseFloat(finalScore.toFixed(4)),
         final_score_explanation: "최종 유사도 점수 = 코사인 유사도 + 전체 보너스 (최대 1.0)",
         matched_skills: skillMatches,
@@ -223,7 +284,7 @@ function calculateTextSimilarity(userProfile, job, includeBreakdown = false) {
           job_magnitude_explanation: "채용공고 TF-IDF 벡터의 크기(노름)",
           formula_explanation: "코사인 유사도 = 내적 / (사용자벡터크기 × 공고벡터크기)"
         },
-        calculation_summary: `최종점수 ${(finalScore * 100).toFixed(2)}% = 코사인유사도 ${(cosineSimilarity * 100).toFixed(2)}% + 보너스 ${(totalBonus * 100).toFixed(2)}%`
+        calculation_summary: `최종점수 ${(finalScore * 100).toFixed(2)}% = 코사인유사도 ${(cosineSimilarity * 100).toFixed(2)}% + 보너스/패널티 ${(totalBonus * 100).toFixed(2)}%${categoryMismatch ? ' (직무 카테고리 불일치 -30%)' : ''}`
       }
     };
   }
