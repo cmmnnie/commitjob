@@ -39,7 +39,8 @@ function calculateTextSimilarity(userProfile, job, includeBreakdown = false) {
   const userSkills = Array.isArray(userProfile.skills) ? userProfile.skills.join(' ') : (userProfile.skills || '');
   const userJobs = Array.isArray(userProfile.jobs) ? userProfile.jobs.join(' ') : (userProfile.jobs || '');
   const userRegions = Array.isArray(userProfile.preferred_regions) ? userProfile.preferred_regions.join(' ') : (userProfile.preferred_regions || '');
-  const userText = `${userJobs} ${userSkills} ${userProfile.experience || ''} ${userRegions}`.toLowerCase();
+  const userSalary = userProfile.expected_salary || '';
+  const userText = `${userJobs} ${userSkills} ${userProfile.experience || ''} ${userRegions} ${userSalary}`.toLowerCase();
 
   // 채용공고 텍스트 생성 (title, recruitment_conditions (fallback: conditions), job_description (fallback: job_info) 사용)
   const jobTitle = job.title || '';
@@ -8091,11 +8092,12 @@ async function generateGPT4Recommendations(userProfile, jobCandidates, limit) {
     return String(arr);
   };
 
-  // 사용자 프로필 정보를 상세하게 포함한 프롬프트 (희망연봉 제외)
+  // 사용자 프로필 정보를 상세하게 포함한 프롬프트 (희망연봉 포함)
   const userSkills = formatSkills(userProfile.skills);
   const userRegions = formatArray(userProfile.preferred_regions);
   const userJobs = formatArray(userProfile.jobs);
   const userExperience = userProfile.experience || '무관';
+  const userSalary = userProfile.expected_salary || '';
 
   // 각 채용공고의 상세 정보 생성 (fallback 로직 포함)
   const jobDescriptions = jobCandidates.map((job, idx) => {
@@ -8117,7 +8119,7 @@ async function generateGPT4Recommendations(userProfile, jobCandidates, limit) {
     return `${idx+1}.${job.title}|${job.company}|스킬:${skills}|조건:${conditions}|설명:${description}|지역:${job.location || '미정'}|경력:${job.experience || '무관'}|ID:${job.id}`;
   }).join('\n');
 
-  const prompt = `희망직무:${userJobs}|기술스택:${userSkills}|경력:${userExperience}|희망지역:${userRegions}
+  const prompt = `희망직무:${userJobs}|기술스택:${userSkills}|경력:${userExperience}|희망지역:${userRegions}|희망연봉:${userSalary}
 공고:
 ${jobDescriptions}
 
@@ -8131,12 +8133,16 @@ ${jobDescriptions}
 2. 기술스택 실제 일치 여부 확인
 3. 희망지역 일치 시 +10점, 경력 연수 적합 시 +10점
 
-매칭 이유 작성:
-- 실제 일치하는 기술스택을 구체적으로 나열
-- 직무가 다른 경우 솔직하게 언급 (예: "백엔드 개발 경험을 보안 분야에 활용 가능")
-- "직무 적합성 높음" 같은 막연한 표현 금지
+매칭 이유 작성 규칙 (매우 중요):
+- 사용자의 희망직무와 공고 직무 간의 연관성을 중심으로 설명
+- 사용자가 보유한 기술/경험이 공고 직무에 어떻게 활용되는지 구체적으로 서술
+- 공고의 직무 정보를 단순 나열하지 말고, 사용자 이력서와의 접점을 설명
+- 예시(좋음): "보유하신 백엔드 개발 경험(Java, SQL)을 풀스택 포지션의 서버 개발 업무에 직접 활용 가능"
+- 예시(나쁨): "이 공고는 풀스택 개발자를 채용하며 Java, React를 사용합니다"
+- 직무가 다른 경우 솔직하게 언급하되, 전환 가능성 또는 공통점 설명
+- "직무 적합성 높음", "기술스택 일치" 같은 막연한 표현 금지
 
-JSON:{"recommendations":[{"job_id":"ID","match_score":75,"match_reasons":["이유1 (구체적 기술스택/직무 일치 내용)","이유2 (경력/지역 매칭 내용)","이유3 (기타 강점)"]}]}`;
+JSON:{"recommendations":[{"job_id":"ID","match_score":75,"match_reasons":["사용자 희망직무와 공고 직무의 연관성 중심 설명","사용자 보유 기술이 공고 업무에 활용되는 방식 설명","경력/지역 등 추가 매칭 요소 설명"]}]}`;
 
   console.log(`\n[AI-RECOMMENDATION] ========================================`);
   console.log(`[AI-RECOMMENDATION] 👤 사용자 프로필:`);
@@ -8144,6 +8150,7 @@ JSON:{"recommendations":[{"job_id":"ID","match_score":75,"match_reasons":["이�
   console.log(`   기술스택: ${userSkills || '미설정'}`);
   console.log(`   경력: ${userExperience}`);
   console.log(`   희망지역: ${userRegions || '미설정'}`);
+  console.log(`   희망연봉: ${userSalary || '미설정'}`);
   console.log(`\n[AI-RECOMMENDATION] 📝 GPT PROMPT:`);
   console.log(prompt);
   console.log(`\n[AI-RECOMMENDATION] 📊 요약:`);
