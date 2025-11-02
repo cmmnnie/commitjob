@@ -32,7 +32,7 @@ if (!globalThis.crypto) {
 // TF-IDF 기반 텍스트 유사도 계산 함수
 const TfIdf = natural.TfIdf;
 
-function calculateTextSimilarity(userProfile, job) {
+function calculateTextSimilarity(userProfile, job, includeBreakdown = false) {
   const tfidf = new TfIdf();
 
   // 사용자 프로필 텍스트 생성
@@ -86,13 +86,39 @@ function calculateTextSimilarity(userProfile, job) {
   jobMagnitude = Math.sqrt(jobMagnitude);
 
   if (userMagnitude === 0 || jobMagnitude === 0) {
+    if (includeBreakdown) {
+      return {
+        score: 0,
+        breakdown: {
+          cosine_similarity: 0,
+          skill_bonus: 0,
+          region_bonus: 0,
+          job_title_bonus: 0,
+          total_bonus: 0,
+          final_score: 0,
+          matched_skills: [],
+          matched_regions: [],
+          matched_job_titles: [],
+          tfidf_stats: {
+            user_terms_count: userTerms.length,
+            job_terms_count: jobTerms.length,
+            common_terms_count: 0,
+            dot_product: 0,
+            user_magnitude: 0,
+            job_magnitude: 0
+          }
+        }
+      };
+    }
     return 0;
   }
 
   const cosineSimilarity = dotProduct / (userMagnitude * jobMagnitude);
 
   // 추가 보너스 점수 계산
-  let bonusScore = 0;
+  let skillBonus = 0;
+  let regionBonus = 0;
+  let jobTitleBonus = 0;
 
   // 스킬 매칭 보너스 (recruitment_conditions와 job_description에서 스킬 검색)
   const userSkillsArray = Array.isArray(userProfile.skills) ? userProfile.skills : [];
@@ -100,24 +126,59 @@ function calculateTextSimilarity(userProfile, job) {
   const skillMatches = userSkillsArray.filter(skill =>
     combinedJobText.includes(skill.toLowerCase())
   );
-  bonusScore += skillMatches.length * 0.05;
+  skillBonus = skillMatches.length * 0.05;
 
   // 지역 매칭 보너스
   const userRegionsArray = Array.isArray(userProfile.preferred_regions) ? userProfile.preferred_regions : [];
   const jobLocation = job.location || '';
-  const regionMatch = userRegionsArray.some(region => jobLocation.includes(region));
-  if (regionMatch) bonusScore += 0.1;
+  const matchedRegions = userRegionsArray.filter(region => jobLocation.includes(region));
+  const regionMatch = matchedRegions.length > 0;
+  if (regionMatch) regionBonus = 0.1;
 
   // 직무 매칭 보너스 (title과 job_description에서 확인)
   const userJobsArray = Array.isArray(userProfile.jobs) ? userProfile.jobs : [];
-  const titleMatch = userJobsArray.some(userJob =>
+  const matchedJobTitles = userJobsArray.filter(userJob =>
     jobTitle.toLowerCase().includes(userJob.toLowerCase()) ||
     jobDescription.toLowerCase().includes(userJob.toLowerCase())
   );
-  if (titleMatch) bonusScore += 0.15;
+  const titleMatch = matchedJobTitles.length > 0;
+  if (titleMatch) jobTitleBonus = 0.15;
+
+  const totalBonus = skillBonus + regionBonus + jobTitleBonus;
 
   // 최종 유사도 (0~1 범위, 최대 1.0)
-  return Math.min(cosineSimilarity + bonusScore, 1.0);
+  const finalScore = Math.min(cosineSimilarity + totalBonus, 1.0);
+
+  if (includeBreakdown) {
+    return {
+      score: finalScore,
+      breakdown: {
+        cosine_similarity: parseFloat(cosineSimilarity.toFixed(4)),
+        skill_bonus: parseFloat(skillBonus.toFixed(4)),
+        region_bonus: parseFloat(regionBonus.toFixed(4)),
+        job_title_bonus: parseFloat(jobTitleBonus.toFixed(4)),
+        total_bonus: parseFloat(totalBonus.toFixed(4)),
+        final_score: parseFloat(finalScore.toFixed(4)),
+        matched_skills: skillMatches,
+        matched_regions: matchedRegions,
+        matched_job_titles: matchedJobTitles,
+        tfidf_stats: {
+          user_terms_count: userTerms.length,
+          job_terms_count: jobTerms.length,
+          common_terms_count: Array.from(allTerms).filter(term => {
+            const userTfidf = userTerms.find(t => t.term === term)?.tfidf || 0;
+            const jobTfidf = jobTerms.find(t => t.term === term)?.tfidf || 0;
+            return userTfidf > 0 && jobTfidf > 0;
+          }).length,
+          dot_product: parseFloat(dotProduct.toFixed(4)),
+          user_magnitude: parseFloat(userMagnitude.toFixed(4)),
+          job_magnitude: parseFloat(jobMagnitude.toFixed(4))
+        }
+      }
+    };
+  }
+
+  return finalScore;
 }
 
 // 헬퍼 함수: 스킬로부터 직무 유형 추론
@@ -2441,10 +2502,11 @@ app.get("/api/main-recommendations", async (req, res) => {
           const similarityStartTime = Date.now();
 
           const jobsWithSimilarity = top60ActiveJobs.map(job => {
-            const similarity = calculateTextSimilarity(userProfile, job);
+            const similarityResult = calculateTextSimilarity(userProfile, job, true);
             return {
               ...job,
-              similarity_score: similarity
+              similarity_score: similarityResult.score,
+              similarity_breakdown: similarityResult.breakdown
             };
           });
 
@@ -2463,12 +2525,13 @@ app.get("/api/main-recommendations", async (req, res) => {
           const topCount = Math.min(20, jobsWithSimilarity.length);
           allJobs = jobsWithSimilarity.slice(0, topCount);
 
-          // 텍스트 유사도 상위 20개 결과 저장 (로그용)
+          // 텍스트 유사도 상위 20개 결과 저장 (로그용 - 상세 계산 내역 포함)
           similarityResults = allJobs.map(job => ({
             job_id: job.id,
             company: job.company,
             title: job.title,
-            similarity_score: job.similarity_score
+            similarity_score: job.similarity_score,
+            calculation_breakdown: job.similarity_breakdown
           }));
 
           if (allJobs.length > 0) {
