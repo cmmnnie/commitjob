@@ -52,6 +52,14 @@ function calculateTextSimilarity(userProfile, job, includeBreakdown = false) {
         breakdown: {
           cosine_similarity: 0,
           cosine_similarity_explanation: "TF-IDF 기반 코사인 유사도 - 사용자 프로필과 채용공고 텍스트의 의미적 유사도를 0~1 사이 값으로 측정 (유효한 용어 없음)",
+          cosine_similarity_calculation: {
+            step1: "사용자 프로필과 채용공고를 각각 텍스트로 변환",
+            step2: "TF-IDF(Term Frequency-Inverse Document Frequency)로 각 텍스트를 수치 벡터로 표현",
+            step3: "두 벡터의 내적(dot product) 계산: 0",
+            step4: "각 벡터의 크기(magnitude) 계산: 사용자=0, 공고=0",
+            step5: "코사인 유사도 = 0 (벡터 크기가 0이므로 계산 불가)",
+            explanation: "공통 용어가 없거나 유효한 텍스트가 없어 유사도를 계산할 수 없습니다."
+          },
           skill_bonus: 0,
           skill_bonus_explanation: "스킬 매칭 보너스 - 사용자 보유 스킬이 공고 내용에 포함될 때마다 +0.05 (매칭: 0개 × 0.05)",
           region_bonus: 0,
@@ -132,6 +140,14 @@ function calculateTextSimilarity(userProfile, job, includeBreakdown = false) {
       breakdown: {
         cosine_similarity: parseFloat(cosineSimilarity.toFixed(4)),
         cosine_similarity_explanation: "TF-IDF 기반 코사인 유사도 - 사용자 프로필과 채용공고 텍스트의 의미적 유사도를 0~1 사이 값으로 측정",
+        cosine_similarity_calculation: {
+          step1: "사용자 프로필과 채용공고를 각각 텍스트로 변환",
+          step2: "TF-IDF(Term Frequency-Inverse Document Frequency)로 각 텍스트를 수치 벡터로 표현",
+          step3: `두 벡터의 내적(dot product) 계산: ${parseFloat(dotProduct.toFixed(4))}`,
+          step4: `각 벡터의 크기(magnitude) 계산: 사용자=${parseFloat(userMagnitude.toFixed(4))}, 공고=${parseFloat(jobMagnitude.toFixed(4))}`,
+          step5: `코사인 유사도 = 내적 / (사용자벡터크기 × 공고벡터크기) = ${parseFloat(dotProduct.toFixed(4))} / (${parseFloat(userMagnitude.toFixed(4))} × ${parseFloat(jobMagnitude.toFixed(4))}) = ${parseFloat(cosineSimilarity.toFixed(4))}`,
+          explanation: "값이 1에 가까울수록 두 텍스트가 유사함을 의미합니다. TF-IDF는 단순 단어 빈도가 아닌, 문서 내 중요도를 고려한 가중치를 부여합니다."
+        },
         skill_bonus: parseFloat(skillBonus.toFixed(4)),
         skill_bonus_explanation: `스킬 매칭 보너스 - 사용자 보유 스킬이 공고 내용에 포함될 때마다 +0.05 (매칭: ${skillMatches.length}개 × 0.05)`,
         region_bonus: parseFloat(regionBonus.toFixed(4)),
@@ -232,6 +248,13 @@ jobs.forEach((job, index) => {
   console.log("📊 계산 내역:");
   console.log(`  • 코사인 유사도 (TF-IDF):     ${(result.breakdown.cosine_similarity * 100).toFixed(2)}%`);
   console.log(`    └─ ${result.breakdown.cosine_similarity_explanation}`);
+  console.log(`\n  📐 코사인 유사도 계산 과정:`);
+  console.log(`    1. ${result.breakdown.cosine_similarity_calculation.step1}`);
+  console.log(`    2. ${result.breakdown.cosine_similarity_calculation.step2}`);
+  console.log(`    3. ${result.breakdown.cosine_similarity_calculation.step3}`);
+  console.log(`    4. ${result.breakdown.cosine_similarity_calculation.step4}`);
+  console.log(`    5. ${result.breakdown.cosine_similarity_calculation.step5}`);
+  console.log(`    ℹ️  ${result.breakdown.cosine_similarity_calculation.explanation}\n`);
   console.log(`  • 스킬 매칭 보너스:           +${(result.breakdown.skill_bonus * 100).toFixed(2)}%`);
   console.log(`    └─ ${result.breakdown.skill_bonus_explanation}`);
   console.log(`  • 지역 매칭 보너스:           +${(result.breakdown.region_bonus * 100).toFixed(2)}%`);
