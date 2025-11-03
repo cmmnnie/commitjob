@@ -174,14 +174,18 @@ function calculateTextSimilarity(userProfile, job, includeBreakdown = false) {
   );
   const titleMatch = matchedJobTitles.length > 0;
 
-  // 직무 카테고리 정의
-  const developerKeywords = ['개발', 'developer', '프로그래머', 'programmer', '프론트엔드', 'frontend', '백엔드', 'backend', 'fullstack', '풀스택', 'web developer', '웹 개발', 'software engineer', '소프트웨어 엔지니어', 'application', '앱 개발'];
+  // 직무 카테고리 정의 (우선순위: QA/테스트 → 보안 → 개발자 → 기타)
+  const qaTestKeywords = ['qa', 'qe', '품질', 'quality', 'test', '테스트', 'tester', '테스터', 'quality assurance', 'quality engineer', 'sw 품질', '소프트웨어 품질', '검증'];
+  const developerKeywords = ['프로그래머', 'programmer', '프론트엔드', 'frontend', '백엔드', 'backend', 'fullstack', '풀스택', 'web developer', '웹 개발', 'software engineer', '소프트웨어 엔지니어', 'application', '앱 개발', 'software developer', '개발자'];
   const securityKeywords = ['보안', 'security', '정보보호', 'infosec', '보안 관리', '보안컨설팅'];
   const managerKeywords = ['관리자', 'manager', '매니저', '팀장', 'lead', '리더', 'pm', '기획', '총괄'];
   const designerKeywords = ['디자이너', 'designer', 'ux', 'ui', '디자인'];
   const marketingKeywords = ['마케팅', 'marketing', '광고', '홍보', 'pr'];
 
   // 사용자 희망 직무 카테고리 파악
+  const userIsQaTest = userJobsArray.some(job =>
+    qaTestKeywords.some(kw => job.toLowerCase().includes(kw))
+  );
   const userIsDeveloper = userJobsArray.some(job =>
     developerKeywords.some(kw => job.toLowerCase().includes(kw))
   );
@@ -198,20 +202,24 @@ function calculateTextSimilarity(userProfile, job, includeBreakdown = false) {
     marketingKeywords.some(kw => job.toLowerCase().includes(kw))
   );
 
-  // 공고 직무 카테고리 파악 (보안을 먼저 체크)
+  // 공고 직무 카테고리 파악 (우선순위: QA/테스트 → 보안 → 개발자 → 기타)
   const jobTextForCategory = `${jobTitle} ${jobDescription}`.toLowerCase();
-  const jobIsSecurity = securityKeywords.some(kw => jobTextForCategory.includes(kw));
-  const jobIsDeveloper = !jobIsSecurity && developerKeywords.some(kw => jobTextForCategory.includes(kw));
+  const jobIsQaTest = qaTestKeywords.some(kw => jobTextForCategory.includes(kw));
+  const jobIsSecurity = !jobIsQaTest && securityKeywords.some(kw => jobTextForCategory.includes(kw));
+  const jobIsDeveloper = !jobIsQaTest && !jobIsSecurity && developerKeywords.some(kw => jobTextForCategory.includes(kw));
   const jobIsManager = managerKeywords.some(kw => jobTextForCategory.includes(kw)) &&
-                       !jobIsDeveloper && !jobIsSecurity; // 개발/보안 관리자는 각 카테고리로 분류
-  const jobIsDesigner = designerKeywords.some(kw => jobTextForCategory.includes(kw));
-  const jobIsMarketing = marketingKeywords.some(kw => jobTextForCategory.includes(kw));
+                       !jobIsDeveloper && !jobIsSecurity && !jobIsQaTest; // 개발/보안/QA 관리자는 각 카테고리로 분류
+  const jobIsDesigner = !jobIsQaTest && designerKeywords.some(kw => jobTextForCategory.includes(kw));
+  const jobIsMarketing = !jobIsQaTest && marketingKeywords.some(kw => jobTextForCategory.includes(kw));
 
   // 직무 카테고리 불일치 패널티 적용
   let categoryMismatch = false;
   if (userIsDeveloper && !jobIsDeveloper) {
     categoryMismatch = true;
     jobMismatchPenalty = -0.3; // 개발자가 비개발 직무 지원 시 -30%
+  } else if (userIsQaTest && !jobIsQaTest) {
+    categoryMismatch = true;
+    jobMismatchPenalty = -0.3; // QA/테스트가 비QA/테스트 직무 지원 시 -30%
   } else if (userIsSecurity && !jobIsSecurity) {
     categoryMismatch = true;
     jobMismatchPenalty = -0.3; // 보안 전문가가 비보안 직무 지원 시 -30%
@@ -257,7 +265,7 @@ function calculateTextSimilarity(userProfile, job, includeBreakdown = false) {
         job_title_bonus: parseFloat(jobTitleBonus.toFixed(4)),
         job_title_bonus_explanation: `직무 매칭 보너스 - 희망 직무가 공고 제목/설명에 포함되고 카테고리가 일치하면 +0.2 (매칭: ${matchedJobTitles.length > 0 && !categoryMismatch ? 'O' : 'X'})`,
         job_mismatch_penalty: parseFloat(jobMismatchPenalty.toFixed(4)),
-        job_mismatch_penalty_explanation: categoryMismatch ? `직무 카테고리 불일치 패널티 - 희망 직무와 공고 직무의 카테고리가 다름 (${userIsDeveloper ? '개발자' : userIsSecurity ? '보안' : userIsManager ? '관리자' : userIsDesigner ? '디자이너' : userIsMarketing ? '마케팅' : '기타'} → ${jobIsDeveloper ? '개발자' : jobIsSecurity ? '보안' : jobIsManager ? '관리자' : jobIsDesigner ? '디자이너' : jobIsMarketing ? '마케팅' : '기타'})` : "직무 카테고리 불일치 패널티 - 카테고리가 일치하거나 확인되지 않음",
+        job_mismatch_penalty_explanation: categoryMismatch ? `직무 카테고리 불일치 패널티 - 희망 직무와 공고 직무의 카테고리가 다름 (${userIsDeveloper ? '개발자' : userIsQaTest ? 'QA/테스트' : userIsSecurity ? '보안' : userIsManager ? '관리자' : userIsDesigner ? '디자이너' : userIsMarketing ? '마케팅' : '기타'} → ${jobIsDeveloper ? '개발자' : jobIsQaTest ? 'QA/테스트' : jobIsSecurity ? '보안' : jobIsManager ? '관리자' : jobIsDesigner ? '디자이너' : jobIsMarketing ? '마케팅' : '기타'})` : "직무 카테고리 불일치 패널티 - 카테고리가 일치하거나 확인되지 않음",
         total_bonus: parseFloat(totalBonus.toFixed(4)),
         total_bonus_explanation: "전체 보너스/패널티 합계 (스킬 + 지역 + 직무 + 카테고리불일치패널티)",
         final_score: parseFloat(finalScore.toFixed(4)),
